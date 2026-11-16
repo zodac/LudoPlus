@@ -6,8 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -71,10 +74,12 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
     val backToMenu: () -> Unit = { navController.popBackStack(Screen.MENU, inclusive = false) }
 
     composable(Screen.MENU) {
+        // Null until the saved game's file has been read, so Play doesn't change shape under the player's finger.
+        val hasInProgressGame by container.inProgressGameRepository.hasInProgressGame.collectAsStateWithLifecycle(initialValue = null)
         MenuScreen(
-            // No saved games until Phase 4 of .claude/IMPLEMENTATION.md, so Play is never split for Continue.
-            hasInProgressGame = false,
-            onContinue = {},
+            hasInProgressGame = hasInProgressGame,
+            // Straight to the board, which brings the saved game back itself (see below).
+            onContinue = { navigate(Screen.PLAY_GAME) },
             onNewGame = { navigate(Screen.PLAY_GRAPH) },
             onRules = { navigate(Screen.RULES) },
             onSettings = { navigate(Screen.SETTINGS) },
@@ -92,10 +97,13 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
         }
         composable(Screen.PLAY_GAME) { backStackEntry ->
             val playGraphEntry = remember(backStackEntry) { navController.getBackStackEntry(Screen.PLAY_GRAPH) }
-            GameScreen(
-                viewModel = viewModel<GameViewModel>(playGraphEntry, factory = GameViewModel.factory(container)),
-                onBackToMenu = backToMenu,
-            )
+            val gameViewModel = viewModel<GameViewModel>(playGraphEntry, factory = GameViewModel.factory(container))
+            // With no game in hand (Continue, or Android ended the app while it was in the background), the saved one
+            // comes back; with none to bring back, the menu.
+            LaunchedEffect(gameViewModel) {
+                if (gameViewModel.game.value == null && !gameViewModel.resumeGame()) backToMenu()
+            }
+            GameScreen(viewModel = gameViewModel, onBackToMenu = backToMenu)
         }
     }
 

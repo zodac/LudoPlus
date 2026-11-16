@@ -13,7 +13,7 @@ reorders them.
 | 1 | The Ludo rules engine (pure, tested) | Done |
 | 2 | The board and game screen | Done |
 | 3 | CPU opponents | Done |
-| 4 | Saving, Game Over, Statistics, and the Leaderboard | Not started |
+| 4 | Saving, Game Over, Statistics, and the Leaderboard | In progress |
 | 5 | Rules, tutorial, sound, and polish (to 1.0.0) | Not started |
 | 6 | Achievements | Not started |
 | 7 | Styles | Not started |
@@ -216,7 +216,12 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 
 ## Phase 4: Saving, Game Over, Statistics, and the Leaderboard
 
-- [ ] Save and continue a game in progress (DataStore, as DiceFive's `data/game`), resilient to process death.
+- [x] Save and continue a game in progress (`data/game`: `SavedGameJson`, `InProgressGameRepository`), resilient to
+    process death. Saved as it starts and after every roll and move, cleared when it finishes; the menu's Continue (and
+    a game screen restored with no game) brings it back. A save that can't be read is removed. Play time
+    (`StartedGame.playMillis`) counts only while the game is on screen and not under a dialog. DiceFive's cloud-save
+    stamps and its crash-page removal of a save that can't be drawn (`ResumeAttempt`) were left in `5423b6c`: the
+    stamps come back with cloud save (Phase 10).
 - [ ] Game Over: the finishing order, turns, captures, and the celebration (reused).
 - [ ] Room schema v1: a game record per finished game (mode, players, placements, turns, captures, duration).
 - [ ] Leaderboard: fastest wins per mode (fewest turns, then more captures).

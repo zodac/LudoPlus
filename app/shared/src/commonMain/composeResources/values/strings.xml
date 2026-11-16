@@ -192,9 +192,9 @@
     <!-- Once every place is decided (the results page comes later). -->
     <string name="game_over_winner">%1$s wins!</string>
     <string name="game_over_menu">Back to menu</string>
-    <!-- The confirmation before leaving a game that isn't over. Games aren't saved yet, so leaving ends it. -->
+    <!-- The confirmation before leaving a game that isn't over. It stays saved, for the menu's Continue. -->
     <string name="game_leave_title">Leave game?</string>
-    <string name="game_leave_message">This game will end, and can't be continued later.</string>
+    <string name="game_leave_message">Your progress is saved, so you can continue this game later.</string>
     <string name="game_leave_confirm">Leave</string>
 
     <!-- New Game setup (ui/setup/*) -->

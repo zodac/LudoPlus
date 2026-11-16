@@ -1,5 +1,6 @@
 package net.zodac.ludo
 
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -35,7 +36,7 @@ class MainActivitySmokeTest {
     private val waitMillis = 30_000L
 
     @Test
-    fun `a game can be started from the menu and system back leaves it for the menu once confirmed`() {
+    fun `a game can be started from the menu, left with system back once confirmed, and continued`() {
         compose.onNodeWithText("Ludo Plus").assertExists()
 
         compose.onNodeWithText("Play").performClick()
@@ -53,6 +54,14 @@ class MainActivitySmokeTest {
         Espresso.pressBack()
         compose.waitUntil(timeoutMillis = waitMillis) { compose.onAllNodesWithText("Leave game?").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Leave").performClick()
-        compose.waitUntil(timeoutMillis = waitMillis) { compose.onAllNodesWithText("Play").fetchSemanticsNodes().isNotEmpty() }
+
+        // The game was saved, so Play is split: Continue brings it back as it was left.
+        compose.waitUntil(timeoutMillis = waitMillis) { compose.onAllNodesWithText("Continue").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("New Game").assertExists()
+        compose.onNodeWithText("Continue").performClick()
+        // The die, whatever a CPU going first has rolled since.
+        compose.waitUntil(timeoutMillis = waitMillis) {
+            compose.onAllNodes(hasContentDescription("Die", substring = true)).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }

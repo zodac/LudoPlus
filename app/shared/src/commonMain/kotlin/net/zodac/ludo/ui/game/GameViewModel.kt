@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlin.random.Random
+import kotlin.time.TimeSource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,12 +17,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import net.zodac.ludo.app.AppContainer
+import net.zodac.ludo.data.game.InProgressGameRepository
 import net.zodac.ludo.data.settings.SettingsRepository
 import net.zodac.ludo.game.CpuStrategy
 import net.zodac.ludo.game.GameState
 import net.zodac.ludo.game.LudoEngine
 import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
+import net.zodac.ludo.game.nowEpochMillis
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
@@ -32,10 +35,16 @@ import net.zodac.ludo.model.PlayerType
  *
  * The die is drawn from [random]. A CPU player's turn plays itself with its difficulty's [CpuStrategy], waiting before
  * each roll and move for the screen to finish showing the last one ([GamePacing], set by the screen).
+ *
+ * The game is saved to [savedGame] as it starts and after every roll and move, and the save is cleared when it finishes.
+ * Its play time ([StartedGame.playMillis]) counts, by [elapsedMillis], only while it's on screen and not held.
  */
 class GameViewModel(
     private val settingsRepository: SettingsRepository,
+    private val savedGame: InProgressGameRepository,
     private val random: Random = Random.Default,
+    private val elapsedMillis: () -> Long = monotonicMillis(),
+    private val now: () -> Long = ::nowEpochMillis,
 ) : ViewModel() {
 
     private var pacing = GamePacing()
@@ -66,13 +75,45 @@ class GameViewModel(
      */
     fun setForeground(value: Boolean) {
         onScreen = value
-        foreground.value = onScreen && !held
+        foregroundChanged()
     }
 
     /** Holds the CPU's turn while a dialog over the game (the leave confirmation) is up, as if off screen. */
     fun setHeld(value: Boolean) {
         held = value
-        foreground.value = onScreen && !held
+        foregroundChanged()
+    }
+
+    /** When the play time last counted from, while a game is on screen and not over; null otherwise. */
+    private var playMark: Long? = null
+
+    private fun foregroundChanged() {
+        val value = onScreen && !held
+        if (value == foreground.value) return
+        foreground.value = value
+        val game = _game.value ?: return
+        if (value) {
+            if (!game.state.isFinished) playMark = elapsedMillis()
+        } else {
+            // Leaving the screen: what was played so far is saved with it.
+            commit(game)
+            playMark = null
+        }
+    }
+
+    /** [game] with the time played since [playMark] added, which then counts from now; none once it's over. */
+    private fun withPlayTime(game: StartedGame): StartedGame {
+        val mark = playMark ?: return game
+        val time = elapsedMillis()
+        playMark = time.takeUnless { game.state.isFinished }
+        return game.copy(playMillis = game.playMillis + (time - mark))
+    }
+
+    /** Makes [game] the one being played, with its play time brought up to date, and saves it, or clears the save once it's over. */
+    private fun commit(game: StartedGame) {
+        val timed = withPlayTime(game)
+        _game.value = timed
+        if (timed.state.isFinished) savedGame.clear() else savedGame.save(timed)
     }
 
     /** [delay] that doesn't run while [foreground] is false - see [setForeground]. */
@@ -101,13 +142,31 @@ class GameViewModel(
         if (setup.duplicateNameSlots(defaultName).isNotEmpty()) return false
         val players = setupForm.playerConfigs(defaultName)
         val rollOff = RollOff.roll(players.size, setup.gameMode.rules.dieFaces, random)
-        _game.value = StartedGame(
-            mode = setup.gameMode,
-            players = players,
-            state = GameState.new(setup.gameMode, players.size, first = rollOff.first),
-            rollOff = rollOff,
+        cpuTurn?.cancel()
+        playMark = elapsedMillis().takeIf { foreground.value }
+        commit(
+            StartedGame(
+                mode = setup.gameMode,
+                players = players,
+                state = GameState.new(setup.gameMode, players.size, first = rollOff.first),
+                rollOff = rollOff,
+                startedAtEpochMillis = now(),
+            ),
         )
         viewModelScope.launch { setup.saveTo(settingsRepository) }
+        playCpuTurn()
+        return true
+    }
+
+    /**
+     * Brings back the saved game, for Continue, or after Android ended the app while the game was in the background.
+     * False with none to bring back (one that can't be read is removed): the screen goes back to the menu.
+     */
+    suspend fun resumeGame(): Boolean {
+        val game = savedGame.load() ?: return false
+        if (_game.value != null) return true
+        playMark = elapsedMillis().takeIf { foreground.value }
+        _game.value = game
         playCpuTurn()
         return true
     }
@@ -128,7 +187,8 @@ class GameViewModel(
     }
 
     private fun update(state: GameState) {
-        _game.value = _game.value?.copy(state = state)
+        val game = _game.value ?: return
+        commit(game.copy(state = state))
         playCpuTurn()
     }
 
@@ -147,7 +207,7 @@ class GameViewModel(
                 }
                 TurnPhase.Finished -> return@launch
             }
-            _game.value = now.copy(state = next)
+            commit(now.copy(state = next))
             cpuTurn = null
             playCpuTurn()
         }
@@ -155,16 +215,29 @@ class GameViewModel(
 
     companion object {
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
-            initializer { GameViewModel(settingsRepository = container.settingsRepository) }
+            initializer { GameViewModel(settingsRepository = container.settingsRepository, savedGame = container.inProgressGameRepository) }
         }
     }
 }
 
 /**
  * A game being played: its [mode], its [players] in seat order (each sits at the seat of their index), its [state], and
- * the [rollOff] that chose who went first.
+ * the [rollOff] that chose who went first. It started at [startedAtEpochMillis], and has been on screen for [playMillis].
  */
-data class StartedGame(val mode: GameMode, val players: List<PlayerConfig>, val state: GameState, val rollOff: RollOff) {
+data class StartedGame(
+    val mode: GameMode,
+    val players: List<PlayerConfig>,
+    val state: GameState,
+    val rollOff: RollOff,
+    val startedAtEpochMillis: Long = 0,
+    val playMillis: Long = 0,
+) {
     /** Whether the player whose turn it is is the computer. */
     val currentIsCpu: Boolean get() = players[state.current].type == PlayerType.AI
+}
+
+/** Milliseconds from a fixed, unspecified start that the wall clock's changes don't move: for measuring play time. */
+private fun monotonicMillis(): () -> Long {
+    val start = TimeSource.Monotonic.markNow()
+    return { start.elapsedNow().inWholeMilliseconds }
 }

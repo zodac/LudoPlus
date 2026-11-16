@@ -40,7 +40,7 @@ class LeaveGameTest : UiTest() {
     private fun startedGame(confirm: Boolean): GameViewModel {
         val settings = SettingsRepository(InMemoryPreferences())
         runBlocking { settings.setConfirmBeforeLeavingGame(confirm) }
-        val viewModel = GameViewModel(settings)
+        val viewModel = gameViewModel(settings)
         viewModel.setPacing(GamePacing(thinkMillis = 60_000))
         compose.waitUntil { viewModel.setupForm.setupRestored.value }
         assertTrue(viewModel.startGame { "Player $it" })
@@ -54,7 +54,7 @@ class LeaveGameTest : UiTest() {
         show(startedGame(confirm = true)) { left++ }
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("Leave game?").assertExists()
-        compose.onNodeWithText("This game will end, and can't be continued later.").assertExists()
+        compose.onNodeWithText("Your progress is saved, so you can continue this game later.").assertExists()
         compose.onNodeWithText("Cancel").performClick()
         compose.onNodeWithText("Leave game?").assertDoesNotExist()
         assertEquals(0, left)
