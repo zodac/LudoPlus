@@ -39,7 +39,7 @@ class RulesTextTest : UiTest() {
                 "If none of your pawns can move, your turn passes.",
             ),
             "Captures" to listOf(
-                "Land on a single rival pawn to send it back to its yard.",
+                "Land on a rival's pawns to send them back to their yard.",
                 "Start squares and star squares are safe: nobody can be captured there.",
                 "Your own pawns can share a square, and any pawn can pass any other.",
             ),

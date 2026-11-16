@@ -10,7 +10,7 @@ reorders them.
 | Phase | What | Status |
 | --- | --- | --- |
 | 0 | Gut the dice game, rebrand the chrome | Done |
-| 1 | The Ludo rules engine (pure, tested) | Not started |
+| 1 | The Ludo rules engine (pure, tested) | Done |
 | 2 | The board and game screen | Not started |
 | 3 | CPU opponents | Not started |
 | 4 | Saving, Game Over, Statistics, and the Leaderboard | Not started |
@@ -69,7 +69,8 @@ Sources: [Wikipedia, "Ludo"](https://en.wikipedia.org/wiki/Ludo),
     player chooses which pawn.
 - **Leaving the yard.** Only a **6** brings a pawn out of the yard, onto its start square. That move uses the whole
     6.
-- **Rolling a 6** gives another roll after the move.
+- **Rolling a 6** gives another roll after the move. A 6 with no legal move passes the turn like any other roll
+    (the maintainer, 2026-11-17), and a 6 that brings the player's last pawn home gives no roll.
 - **Three 6s in a row** end the turn: the third 6 isn't moved. This is the commonest house rule, so it's on in
     Classic. Turning it off is a modifier.
 - **No legal move** (say, everything in the yard and no 6): the turn passes.
@@ -78,8 +79,9 @@ Sources: [Wikipedia, "Ludo"](https://en.wikipedia.org/wiki/Ludo),
 
 ### Landing
 
-- **Capture.** A pawn that ends its move on a square holding one opponent pawn, off a safe square, sends that pawn
-    back to its owner's yard.
+- **Capture.** A pawn that ends its move on a square holding an opponent's pawn, off a safe square, sends it back
+    to its owner's yard. Two pawns of one colour can share a square off a safe square, and landing there captures both
+    (Classic has no blockades; the maintainer, 2026-11-17).
 - **Sharing.** Pawns of the same colour may share any square. Pawns of different colours may share a safe square.
 - **Passing.** Pawns may pass over any pawn. Classic has no blockades.
 
@@ -153,17 +155,23 @@ removed feature is restored from it in its phase (`git show 5423b6c:<path>`), no
 it independent of board size from the start (Phase 8), and keep every rule a `GameMode` field (`GAME_MODES.md`'s
 "mode is data" rule).
 
-- [ ] `BoardGeometry`: track length, start offsets per seat, star squares, home-column length. Classic has 52 / 13
-    per seat / 5. A position is either `Yard`, `Track(n)` (relative to the pawn's own start), `HomeColumn(n)`, or
-    `Home`.
-- [ ] `GameState`: seats, pawns, current player, roll and sixes-in-a-row, phase (`AwaitingRoll`, `AwaitingMove`,
-    `Finished`), finishing order, turn count, and a captures tally. Immutable, with `copy`.
-- [ ] `LudoEngine`: `roll(die)`, `legalMoves()`, `move(pawn)`, and passing on no legal move, implementing every rule
-    above. The die comes from an injected `Random`, so tests are deterministic.
-- [ ] Opening roll-off for first player.
-- [ ] Tests: each rule above gets one test or more, plus property tests (pawn count is conserved, positions stay in
-    range, a game always ends) over thousands of seeded random games.
-- [ ] Spoken positions: a pure `describePosition` ("Red pawn 2, 14 squares from home") for TalkBack in Phase 2.
+- [x] `BoardGeometry` (`model/`): track length, start offsets per seat, star squares, home-column length. Classic
+    has 52 / 13 per seat / 5. A pawn is stored as its progress from its start square (-1 in the yard, 56 home), and
+    read as a `PawnPosition`: `Yard`, `Track(n)` (relative to the pawn's own start), `HomeColumn(n)`, or `Home`.
+- [x] `GameRules` (`model/GameMode.kt`): every rule a mode or modifier can change (board, pawns, die faces, the rolls
+    that leave the yard and roll again, the three-6s limit). A `GameMode` holds its rules; a `GameState` carries the
+    rules it plays by, so Phase 9's modifiers change a copy.
+- [x] `GameState` (`game/`): players (seat, pawns, turns, captures, times captured), current player, the run of 6s,
+    phase (`AwaitingRoll`, `AwaitingMove` with its legal moves, `Finished`), finishing order, and the last event
+    (`Rolled`, `NoMove`, `RollAgainLimit`, `Moved`) for the screen to show and say. Immutable, with `copy`.
+- [x] `LudoEngine` (`game/`): pure `applyRoll`, `legalMoves`, and `move`, and `roll` drawing from an injected
+    `Random`, so tests are deterministic. A roll with no legal move passes the turn itself.
+- [x] Opening roll-off for first player (`RollOff`), keeping each round's rolls for the screen.
+- [x] Tests: each rule above (`LudoEngineTest`, `BoardGeometryTest`, `RollOffTest`), plus property tests over 2,000
+    seeded random games of 2-4 players (`LudoEnginePropertyTest`: pawn count, positions in range, no two colours off a
+    safe square, capture tallies agree, every game ends with every place decided).
+- [x] Spoken positions: `pawnSpoken` (`ui/game/PawnSpeech.kt`, "Red pawn 2, 14 squares from home"), with the pure
+    `stepsToHome` in `model/`, for TalkBack in Phase 2.
 
 ## Phase 2: The board and game screen
 

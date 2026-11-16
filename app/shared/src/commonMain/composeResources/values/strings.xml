@@ -129,6 +129,18 @@
     <!-- Game screen (ui/game/*, except the results page) -->
     <!-- TalkBack's name for the chip icon beside a computer player's name. -->
     <string name="common_cpu_cd">CPU</string>
+    <!-- What TalkBack says for a pawn: its colour (player_colour_*), its number (1 to 4), then where it is. -->
+    <string name="game_pawn_yard_spoken">%1$s pawn %2$d, in the yard</string>
+    <plurals name="game_pawn_track_spoken">
+        <item quantity="one">%1$s pawn %2$d, %3$d square from home</item>
+        <item quantity="other">%1$s pawn %2$d, %3$d squares from home</item>
+    </plurals>
+    <!-- The home column: the pawn's own coloured lane from the track to home, where nobody can capture it. -->
+    <plurals name="game_pawn_home_column_spoken">
+        <item quantity="one">%1$s pawn %2$d, in the home column, %3$d square from home</item>
+        <item quantity="other">%1$s pawn %2$d, in the home column, %3$d squares from home</item>
+    </plurals>
+    <string name="game_pawn_home_spoken">%1$s pawn %2$d, home</string>
 
     <!-- New Game setup (ui/setup/*) -->
     <!-- The name a human player gets when they type none, and what the empty name field shows as a hint. %1$d is the seat, 1 to 4. Not used for names the player has typed. -->
@@ -261,7 +273,7 @@
     <string name="rules_turn_3">Roll a 6 and you roll again. Roll three 6s in a row and your turn ends.</string>
     <string name="rules_turn_4">If none of your pawns can move, your turn passes.</string>
     <string name="rules_capture_heading">Captures</string>
-    <string name="rules_capture_1">Land on a single rival pawn to send it back to its yard.</string>
+    <string name="rules_capture_1">Land on a rival's pawns to send them back to their yard.</string>
     <string name="rules_capture_2">Start squares and star squares are safe: nobody can be captured there.</string>
     <string name="rules_capture_3">Your own pawns can share a square, and any pawn can pass any other.</string>
     <string name="rules_winning_heading">Winning</string>
