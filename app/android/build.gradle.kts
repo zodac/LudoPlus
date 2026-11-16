@@ -13,7 +13,6 @@ plugins {
     id("ludo.android.application")
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.aboutlibraries.android)
-    alias(libs.plugins.androidx.baselineprofile)
 }
 
 // Single source of truth for the app version - bump the repo root's VERSION file to release a new one.
@@ -179,13 +178,6 @@ android {
     }
 }
 
-// R8 lays the release dex out from the startup profile (startup-prof.txt, StartupProfileGenerator's cold start to the
-// menu), so the code a launch runs is loaded first, from the primary dex. The release workflow generates the profile
-// for every APK; a build without one (a local release) is laid out as before.
-baselineProfile {
-    dexLayoutOptimization = true
-}
-
 // Ad hoc debug builds are handed straight to testers (not distributed via Play, and not tied to
 // the VERSION-file release flow release/CI uses), so a debug APK built to install gets its own
 // always-increasing versionCode: the minute it was built. Otherwise two debug builds sharing one VERSION-derived
@@ -252,8 +244,8 @@ tasks.withType<Test>().configureEach {
 // quietly matching nothing here. One flavour's own task takes --tests: testPlayDebugUnitTest.
 // lintRelease is both release builds' full lint: what only they have (src/release, src/playRelease, the release
 // manifests), which lintDebug never sees and the release build's own lintVital only checks for fatal issues.
-// The app has no instrumented tests of its own: its one on-device code is the Baseline Profile journey, which the gates
-// compile with :app:baselineprofile:compileNonMinifiedReleaseKotlin.
+// The app has no instrumented tests of its own. The Baseline Profile journey (:app:baselineprofile) comes back in Phase 5
+// of .claude/IMPLEMENTATION.md.
 for (check in listOf("test%sDebugUnitTest", "lint%sDebug", "lint%sRelease")) {
     tasks.register(check.format("")) {
         group = "verification"
@@ -393,10 +385,9 @@ dependencies {
     implementation(project(":app:shared"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
-    // Installs the Baseline Profile on the device at first launch (Compose already brings it, but the
-    // generated profile is the app's own, so it is stated here), and is where the profile is generated from.
+    // Installs the Baseline Profile (src/main/baseline-prof.txt) on the device at first launch. Compose already brings it,
+    // but the profile is the app's own, so it is stated here.
     implementation(libs.androidx.profileinstaller)
-    "baselineProfile"(project(":app:baselineprofile"))
     // Compose UI and Material3 themselves arrive through :app:shared (as JetBrains' multiplatform
     // artifacts, which resolve to these same androidx ones on Android); the BOM keeps the test and
     // tooling artifacts below on matching versions.

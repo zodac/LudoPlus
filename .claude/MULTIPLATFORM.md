@@ -38,7 +38,6 @@ app/
 ├── android/     :app:android - the APK: MainActivity.kt; device/ (AndroidPlatformServices: SoundPool, Vibrator,
 │                SensorManager, Toast, licence JSON; AndroidAppContainer; TextViewLicenceDocument); the play and
 │                github flavours (src/play: Play Games and Play Billing; src/github: AndroidProgressFiles). Its tests are of it alone.
-├── baselineprofile/   :app:baselineprofile - the Baseline Profile journey (com.android.test)
 ├── audio/       the sound effects' sources; each app packages them its own way (Android: normalised into res/raw)
 └── licensing/   licence records for everything the app ships (see its README)
 ```
@@ -56,13 +55,14 @@ app/
 
 - **Convention plugins** (`build-logic/src/main/kotlin/net/zodac/ludo/buildlogic/`):
     - `ludo.kotlin.multiplatform` (`:app:shared`): the Android library target and its host tests.
-    - `ludo.android.application` (`:app:android`) and `ludo.android.test` (`:app:baselineprofile`).
+    - `ludo.android.application` (`:app:android`), and `ludo.android.test` (unused until `:app:baselineprofile` comes
+        back in Phase 5).
     - Each sets the SDK levels, the Java version, and the strict rules (`StrictChecks.kt`: compiler warnings are errors,
         and lint reads `code-quality-config/android/lint.xml`, where its warnings are errors). A module adds its
         namespace, dependencies and anything only it has.
 - **SDK levels** are read from `gradle/android-sdk.properties` (`BuildSettings.kt`'s `androidSdk`). The dependency
     update script and `.github/scripts/android_sdk_packages.sh` read and edit it, so keep each a plain `name=value` line.
-    A module that needs another minSdk (the Baseline Profile's 28) sets it itself.
+    A module that needs another minSdk (the Baseline Profile's 28, from Phase 5) sets it itself.
 - **The Java version** is `toolchainVersion` in `gradle/gradle-daemon-jvm.properties` (`javaVersion`).
 - **The app's version** is the `VERSION` file (`appVersion`).
 - **Custom tasks** (`tasks/`): the audio normalising, and the licence checks (`VerifyLicenseReportTask`,

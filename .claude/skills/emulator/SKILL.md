@@ -1,6 +1,6 @@
 ---
 name: emulator
-description: Boot the sandbox's Android emulator to look at the real app's screen or run/debug the Baseline Profile journey (app/baselineprofile). Not for timings or unit tests. Troubleshooting and CI details are in .claude/EMULATOR.md.
+description: Boot the sandbox's Android emulator to look at the real app's screen. Not for timings or unit tests. Troubleshooting and CI details are in .claude/EMULATOR.md.
 ---
 
 # The sandbox emulator
@@ -16,8 +16,6 @@ emulator.sh stop                # ALWAYS stop when done: it holds ~4GB RAM and 4
 
 **Use it for:**
 
-- **The Baseline Profile journey.** The release workflow runs the same journey, so one that fails here fails the
-    release.
 - **The real app's screen.** Install a build, launch it, take a screenshot. Drawing is in software, so it shows layout
     and behaviour, not smoothness or art quality; for art, use the `render` skill.
 
@@ -36,46 +34,7 @@ adb shell monkey -p net.zodac.ludo.github -c android.intent.category.LAUNCHER 1
 emulator.sh screenshot <scratchpad>/screen.png
 ```
 
-## Run the Baseline Profile journey
+## The Baseline Profile journey
 
-```sh
-emulator.sh start
-adb shell settings put system font_scale 1.0   # the emulator's settings outlast a session; CI's is 1.0
-adb uninstall net.zodac.ludo 2>/dev/null   # a debug build's higher versionCode makes the benchmark install a no-op
-./gradlew :app:android:generatePlayReleaseBaselineProfile -Pandroid.testInstrumentationRunnerArguments.journeyLaps=1
-emulator.sh stop
-```
-
-- A font scale left at 200% fails the journey for no fault of its own: the mode picker overflows, and `chooseMode` never
-    sees `Standard`. Compare the failure's screen with CI's before fixing anything.
-- Just after a boot on starved cores, the uninstall can fail with `DELETE_FAILED_INTERNAL_ERROR`, which the `2>/dev/null`
-    above doesn't hide: try it again, or the benchmark install may not replace what's there.
-- Two busy loops on two cores (below) can take a 3-lap run past 55 minutes. Start with fewer laps.
-- `journeyLaps=1` takes ~5 min. `journeyLaps=10` (CI's soak of a changed journey) takes ~45 min. The default is up to
-    15 laps (~70 min). One lap doesn't prove a full run, because timing races can take several laps to show.
-- The first lap clears the app's data (`wipeAppData`), so it starts like a fresh install on any run, CI's retry
-    included: it raises the one-time achievement banner, then plays a solo game to the end to unlock the modes
-    (`unlockModes`). Later laps keep those unlocks.
-- A journey step names labels the app shows, so removing or relabelling one means changing `Journeys.kt` with it.
-- A failing step names itself (`Baseline Profile journey: 'X' never appeared`). The report is at
-    `app/baselineprofile/build/reports/androidTests/connected/nonMinifiedRelease/index.html`. The screen and UI hierarchy
-    as it failed are saved as `journey-failure-lap<N>.png`/`.xml` under
-    `app/baselineprofile/build/outputs/connected_android_test_additional_output/`. Fix `Journeys.kt`, and rerun.
-- The four benchmark tests show as skipped during `generatePlayReleaseBaselineProfile`. That's expected.
-- The generated profile (`app/android/src/playRelease/generated/baselineProfiles/`, the play app's; CI copies it to the
-    github app's) is gitignored, because CI generates its own.
-
-**Write journey steps for a slow device.** A hosted runner takes 2-4s per UiAutomator lookup.
-
-- Wait for things rather than checking once: `hasText` only after an `await`.
-- A tap whose effect later steps rely on goes through `tapUntil` (or `startGame`, `roll`, `setChecked`, `selectTab`),
-    which taps again until that effect shows: a starved emulator drops taps.
-- Open screens with `openFromMenu`, which retries until the "Ludo Plus" wordmark is gone.
-- A check read straight after a tap can still see the screen from before it. So a tap's check must not hold
-    before the tap. `tapUntil` won't tap while it holds (read once idle), and a hand-written retry re-checks once
-    idle (`settledHolds`) before tapping again, so a slow tap is never doubled.
-- Never race anything that times out on its own, such as the 4s banner.
-- To shake out races, pin the emulator and two busy loops to two cores (`taskset -c 0-1`) and run two laps.
-
-If the emulator dies (`adb: device offline`, exit 139), see `.claude/EMULATOR.md`, "If the emulator dies". **Never
-remove the `debug.hwui.renderer=skiavk` step**: without it the emulator segfaults when Ludo Plus draws.
+Not in the repo yet: `app/baselineprofile` was removed until there is an app to profile, and comes back from commit
+`5423b6c` in Phase 5 of `IMPLEMENTATION.md`, with DiceFive's instructions for running it.

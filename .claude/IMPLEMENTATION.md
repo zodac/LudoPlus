@@ -108,7 +108,7 @@ The game screen is a placeholder.
 pages, the drifting backdrop), `ui/theme`, `ui/menu`, `ui/settings` (switches, Graphics, About, Licences),
 `ui/setup` (four seats: name, Player/CPU, difficulty, colour), `navigation`, `platform`, `app` (container,
 breadcrumbs), `data` (DataStore, failures, JSON), the D6 pips (`ui/style/Pips.kt`), the sound pipeline and four
-clips, build-logic, the licensing guard, the Baseline Profile set-up, CI, scripts, and the Claude set-up.
+clips, build-logic, the licensing guard, CI, scripts, and the Claude set-up.
 
 **What was removed, and comes back from commit `5423b6c`.** That commit is the renamed copy before the gut: each
 removed feature is restored from it in its phase (`git show 5423b6c:<path>`), not written again.
@@ -122,6 +122,7 @@ removed feature is restored from it in its phase (`git show 5423b6c:<path>`), no
 | Saved games and Continue (`data/game/`, `ResumeAttempt`) | Phase 4 |
 | Progress files (github flavour) | Phase 4 |
 | Achievements: engine, catalog, banners, and list (`data/achievements/`, `ui/achievements/`, `game/Achievement*`) | Phase 6 |
+| The Baseline Profile journey and benchmarks (`app/baselineprofile`), and its CI job | Phase 5 |
 | The guided tutorial | Phase 5 |
 | Play Games, cloud save, and online sync (`online/`, `src/play`) | Phase 10 |
 | Play Billing and "Unlock all styles" (`purchases/`) | Phase 11 |
@@ -138,7 +139,8 @@ removed feature is restored from it in its phase (`git show 5423b6c:<path>`), no
 - [x] Theme re-seeded (violet `#9C6BFF`, navy `#1E2A4A`, ivory `#F1E4C3`, generated with material-color-utilities).
     Player colours red, green, yellow, and blue.
 - [x] Placeholder launcher icon: an ivory pawn on the brand navy.
-- [x] Baseline Profile journey cut to the menu, setup, the placeholder game, Rules, and Settings.
+- [x] Baseline Profile journey (`app/baselineprofile`) and its CI job removed: premature with no app to profile. The
+    upgrade check runs only from the second release on.
 - [x] Docs that still describe DiceFive say so at their top; `UI.md`'s colour, player-colour, mode-colour, and icon
     notes rewritten.
 - [ ] Renders of the menu, setup, and settings in the new colours, for the maintainer's approval (`render` skill).
@@ -204,7 +206,8 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 - [ ] Rules screen: the classic rules with board diagrams.
 - [ ] Guided tutorial (`TUTORIAL.md`'s framework): a scripted first game.
 - [ ] Sounds (licensed, recorded in `app/licensing`, normalised): roll, move step, capture, home, win.
-- [ ] Baseline Profile journeys and benchmarks for the board (`BENCHMARKS.md`): 60fps while pawns move.
+- [ ] Baseline Profile journeys and benchmarks, restored from `5423b6c` (`app/baselineprofile`, the `baseline-profile`
+    job in `android-release.yml`) and written for Ludo's screens (`BENCHMARKS.md`): 60fps while pawns move.
 - [ ] Store-assets generator scenes for Ludo, README gallery, and `assets/full-description.txt`.
 - [ ] Privacy policy re-read against the app.
 - [ ] Set VERSION to 1.0.0, which turns publishing on: the first GitHub release.

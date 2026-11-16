@@ -529,8 +529,8 @@ install_sdk_package() {
 
 BUILD_LOG="${WORK_DIR}/gradle-build.log"
 
-# The same gates CI applies (.github/workflows/android-release.yml): the debug build, the unit tests, the
-# Baseline Profile journey compiling, and lint - so a bump that, say, deprecates an API only a test uses is
+# The same gates CI applies (.github/workflows/android-release.yml): the debug build, the unit tests, and lint - so a
+# bump that, say, deprecates an API only a test uses is
 # caught here rather than on the next push. Plus both flavours' release builds (unsigned here), the only
 # ones R8 shrinks: a bump that R8 can't build with otherwise first fails in the release's apk job, after
 # it is on main. No JAVA_HOME juggling: the Gradle toolchain
@@ -538,7 +538,7 @@ BUILD_LOG="${WORK_DIR}/gradle-build.log"
 # fetches it if this machine lacks it. Extra Gradle arguments may be passed.
 run_gradle_build() {
     ./gradlew --no-daemon --console=plain "${@}" \
-        assembleDebug testDebugUnitTest :app:baselineprofile:compileNonMinifiedReleaseKotlin lintDebug lintRelease \
+        assembleDebug testDebugUnitTest lintDebug lintRelease \
         :app:android:assembleGithubRelease :app:android:bundlePlayRelease > "${BUILD_LOG}" 2>&1
 }
 
@@ -2123,7 +2123,7 @@ verify_build() {
         return 0
     fi
     if [[ "${SKIP_BUILD}" == "true" ]]; then
-        warn "Gradle inputs changed but --skip-build was given - run './gradlew assembleDebug testDebugUnitTest :app:baselineprofile:compileNonMinifiedReleaseKotlin lintDebug lintRelease :app:android:assembleGithubRelease :app:android:bundlePlayRelease' before committing"
+        warn "Gradle inputs changed but --skip-build was given - run './gradlew assembleDebug testDebugUnitTest lintDebug lintRelease :app:android:assembleGithubRelease :app:android:bundlePlayRelease' before committing"
         return 0
     fi
 

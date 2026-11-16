@@ -26,4 +26,3 @@ rootProject.name = "LudoPlus"
 // home.
 include(":app:shared")
 include(":app:android")
-include(":app:baselineprofile")

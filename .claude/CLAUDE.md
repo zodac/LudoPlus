@@ -55,7 +55,7 @@ them all home first. In development, pre-1.0.0.
     - `app/android` is the APK shell and Android's platform code (`device/`). Two flavours (`DESIGN.md`,
         "Distribution"): `play` (Google Play, Play Games in `src/play`) and `github` (the GitHub APK, progress files in
         `src/github`).
-    - `app/baselineprofile` is the profile journey; `app/licensing` holds the licence records.
+    - `app/licensing` holds the licence records. (`app/baselineprofile`, the profile journey, comes back in Phase 5.)
     - `build-logic/` holds the convention plugins (SDK levels, Java version, the strict rules) and the custom tasks.
     - The package map is in `MULTIPLATFORM.md`, "Layout".
 - **Warnings are errors** throughout: Kotlin `allWarningsAsErrors`, lint `warningsAsErrors`, deprecations included.
