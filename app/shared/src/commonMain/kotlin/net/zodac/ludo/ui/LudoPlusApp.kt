@@ -33,6 +33,13 @@ import net.zodac.ludo.ui.common.LocalReduceMotion
 import net.zodac.ludo.ui.common.LocalScreenIdle
 import net.zodac.ludo.ui.common.ScreenIdle
 import net.zodac.ludo.ui.common.delayWhileResumed
+import net.zodac.ludo.ui.game.LeaveGameConfirmation
+import net.zodac.ludo.ui.game.LeaveGameConfirmationDialog
+import net.zodac.ludo.ui.game.LocalGameHaptics
+import net.zodac.ludo.ui.game.LocalLeaveGameConfirmation
+import net.zodac.ludo.ui.game.LocalSoundEffects
+import net.zodac.ludo.ui.game.rememberAppHaptics
+import net.zodac.ludo.ui.game.rememberAppSoundEffects
 import net.zodac.ludo.ui.common.rememberPageCover
 import net.zodac.ludo.ui.common.wakesScreen
 import net.zodac.ludo.ui.theme.LudoPlusTheme
@@ -77,6 +84,7 @@ fun LudoPlusApp(
         screenIdle.wake()
         onPauseOrDispose { }
     }
+    val leaveConfirmation = remember { LeaveGameConfirmation() }
     CompositionLocalProvider(
         LocalReduceMotion provides reduceMotion,
         LocalMotionSettings provides motion,
@@ -86,21 +94,29 @@ fun LudoPlusApp(
         LocalPlatformServices provides platform,
         LocalDriftState provides driftState,
         LocalScreenIdle provides screenIdle,
+        LocalLeaveGameConfirmation provides leaveConfirmation,
     ) {
-        LudoPlusTheme {
-            Surface(modifier = Modifier.fillMaxSize().wakesScreen(screenIdle)) {
-                val navController = rememberNavController()
-                val pageCover = rememberPageCover()
-                // Each page opened, for a crash report to say where the player was. It wakes the screen too: a screen
-                // reader's double tap opens a page with no touch for wakesScreen to see.
-                LaunchedEffect(navController) {
-                    navController.currentBackStackEntryFlow.map { it.destination.route }.distinctUntilChanged()
-                        .collect {
-                            Breadcrumbs.record("Opened $it") // i18n: not translated - a crash report's breadcrumb
-                            screenIdle.wake()
-                        }
+        // Inside the provider above, for the platform it creates its player from.
+        CompositionLocalProvider(
+            LocalSoundEffects provides rememberAppSoundEffects(container.settingsRepository.soundEnabled),
+            LocalGameHaptics provides rememberAppHaptics(container.settingsRepository.vibrationEnabled),
+        ) {
+            LudoPlusTheme {
+                Surface(modifier = Modifier.fillMaxSize().wakesScreen(screenIdle)) {
+                    val navController = rememberNavController()
+                    val pageCover = rememberPageCover()
+                    // Each page opened, for a crash report to say where the player was. It wakes the screen too: a screen
+                    // reader's double tap opens a page with no touch for wakesScreen to see.
+                    LaunchedEffect(navController) {
+                        navController.currentBackStackEntryFlow.map { it.destination.route }.distinctUntilChanged()
+                            .collect {
+                                Breadcrumbs.record("Opened $it") // i18n: not translated - a crash report's breadcrumb
+                                screenIdle.wake()
+                            }
+                    }
+                    LudoPlusNavHost(navController = navController, cover = pageCover)
+                    LeaveGameConfirmationDialog(leaveConfirmation)
                 }
-                LudoPlusNavHost(navController = navController, cover = pageCover)
             }
         }
     }

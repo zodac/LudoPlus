@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -43,7 +44,7 @@ private val WATERMARK_DICE = listOf(
 
 /**
  * The app's one piece of brand scenery: a gentle surface gradient, a spotlight tint from above
- * (which is where the logo sits), and a faint scatter of oversized dice for texture.
+ * (which is where the logo sits), and a faint scatter of oversized dice and pawns for texture.
  *
  * Every colour comes from the M3 scheme - `surfaceContainer` tones for the gradient, `primary`
  * for the light - so it tracks the theme instead of being a second palette running alongside it.
@@ -207,7 +208,10 @@ private const val MAX_DRIFT_STEP_SECONDS = 0.1f
 
 private fun WatermarkDie.toDrifting() = DriftingDie(x = centerX, y = centerY, size = size, rotation = rotation, value = value)
 
-/** Draws [dice] as barely-there outlined die faces - texture, never a readable element. */
+/**
+ * Draws [dice] as barely-there outlines - texture, never a readable element: a die face for an even value, and a pawn
+ * for an odd one, so the backdrop is a die among pawns (each crossing's new face may swap one for the other).
+ */
 internal fun DrawScope.drawDiceWatermark(color: Color, dice: List<DriftingDie>) {
     val outline = color.copy(alpha = 0.05f)
     val pips = color.copy(alpha = 0.04f)
@@ -217,6 +221,10 @@ internal fun DrawScope.drawDiceWatermark(color: Color, dice: List<DriftingDie>) 
         val topLeft = Offset(die.x * size.width - dieSize / 2f, die.y * size.height - dieSize / 2f)
 
         rotate(degrees = die.rotation, pivot = Offset(topLeft.x + dieSize / 2f, topLeft.y + dieSize / 2f)) {
+            if (die.value % 2 == 1) {
+                drawPawnWatermark(topLeft, dieSize, outline, pips)
+                return@rotate
+            }
             drawRoundRect(
                 color = outline,
                 topLeft = topLeft,
@@ -236,4 +244,22 @@ internal fun DrawScope.drawDiceWatermark(color: Color, dice: List<DriftingDie>) 
             }
         }
     }
+}
+
+/** A pawn standing in the [extent]-wide square at [topLeft], side on: a round head over a flared body on a base. */
+private fun DrawScope.drawPawnWatermark(topLeft: Offset, extent: Float, outline: Color, fill: Color) {
+    fun at(x: Float, y: Float) = Offset(topLeft.x + extent * x, topLeft.y + extent * y)
+    val stroke = Stroke(width = extent * 0.035f)
+    val body = Path().apply {
+        at(0.42f, 0.40f).let { moveTo(it.x, it.y) }
+        at(0.58f, 0.40f).let { lineTo(it.x, it.y) }
+        at(0.70f, 0.82f).let { lineTo(it.x, it.y) }
+        at(0.30f, 0.82f).let { lineTo(it.x, it.y) }
+        close()
+    }
+    drawPath(body, fill)
+    drawPath(body, outline, style = stroke)
+    drawRoundRect(outline, at(0.20f, 0.82f), Size(extent * 0.60f, extent * 0.12f), CornerRadius(extent * 0.05f), style = stroke)
+    drawCircle(fill, extent * 0.15f, at(0.5f, 0.27f))
+    drawCircle(outline, extent * 0.15f, at(0.5f, 0.27f), style = stroke)
 }

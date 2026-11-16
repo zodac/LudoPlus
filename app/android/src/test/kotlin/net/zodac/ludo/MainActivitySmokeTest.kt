@@ -35,7 +35,7 @@ class MainActivitySmokeTest {
     private val waitMillis = 30_000L
 
     @Test
-    fun `a game can be started from the menu and system back leaves it for the menu`() {
+    fun `a game can be started from the menu and system back leaves it for the menu once confirmed`() {
         compose.onNodeWithText("Ludo Plus").assertExists()
 
         compose.onNodeWithText("Play").performClick()
@@ -44,13 +44,15 @@ class MainActivitySmokeTest {
         compose.onNodeWithText("Start Game").performClick()
         compose.waitForIdle()
 
-        // The placeholder game screen (Phase 0 of .claude/IMPLEMENTATION.md): the players, and a note that the board is coming.
+        // The game screen: the roll-off's winner is named under the board.
         compose.waitUntil(timeoutMillis = waitMillis) {
-            compose.onAllNodesWithText("The board is on its way. For now, this is who's playing.").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("rolled highest, so goes first.", substring = true).fetchSemanticsNodes().isNotEmpty()
         }
 
-        // No game is saved or confirmed before leaving yet (Phases 2 and 4), so back goes straight to the menu.
+        // Back asks before leaving a game that's on (Settings' "Confirm leaving game", on by default); Leave goes to the menu.
         Espresso.pressBack()
+        compose.waitUntil(timeoutMillis = waitMillis) { compose.onAllNodesWithText("Leave game?").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Leave").performClick()
         compose.waitUntil(timeoutMillis = waitMillis) { compose.onAllNodesWithText("Play").fetchSemanticsNodes().isNotEmpty() }
     }
 }

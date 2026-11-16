@@ -141,6 +141,61 @@
         <item quantity="other">%1$s pawn %2$d, in the home column, %3$d squares from home</item>
     </plurals>
     <string name="game_pawn_home_spoken">%1$s pawn %2$d, home</string>
+    <!-- The board's squares as TalkBack says them, each followed by the pawns on it (game_pawn_*_spoken) or "empty". %1$s is a colour (player_colour_*). Squares of the track are numbered 1 to 52 round the board from red's start. -->
+    <string name="game_square_track_spoken">Square %1$d</string>
+    <string name="game_square_start_spoken">%1$s start</string>
+    <string name="game_square_safe_spoken">safe</string>
+    <string name="game_square_column_spoken">%1$s home column, square %2$d</string>
+    <string name="game_square_yard_spoken">%1$s yard</string>
+    <string name="game_square_home_spoken">Home</string>
+    <string name="game_square_empty_spoken">empty</string>
+    <plurals name="game_square_yard_pawns_spoken">
+        <item quantity="one">%1$d pawn waiting</item>
+        <item quantity="other">%1$d pawns waiting</item>
+    </plurals>
+    <!-- A move as TalkBack offers it, on the square of the pawn and on the line saying to pick one. %1$s is the pawn's colour, %2$d its number, %3$d the roll. The clauses after it are added when they apply: "Move Red pawn 2 4 squares, capturing Green pawn 1". -->
+    <plurals name="game_move_action">
+        <item quantity="one">Move %1$s pawn %2$d %3$d square</item>
+        <item quantity="other">Move %1$s pawn %2$d %3$d squares</item>
+    </plurals>
+    <string name="game_move_out_action">Bring %1$s pawn %2$d out of the yard</string>
+    <string name="game_move_capture_clause">capturing %1$s pawn %2$d</string>
+    <string name="game_move_home_clause">reaching home</string>
+    <!-- The die under the board: TalkBack's name for it before anyone has rolled, then with the roll it shows, and its action. -->
+    <string name="game_die_cd">Die</string>
+    <string name="game_die_showing_cd">Die showing %1$d</string>
+    <string name="game_roll_action">Roll</string>
+    <!-- A player's card above the board, as TalkBack says it after their name: how many of their pawns are home (drawn as dots), that it's their turn, and their place once all their pawns are home (%1$s is "1st", "2nd"...). -->
+    <plurals name="game_player_pawns_home_spoken">
+        <item quantity="one">%1$d pawn home</item>
+        <item quantity="other">%1$d pawns home</item>
+    </plurals>
+    <string name="game_player_turn_spoken">playing now</string>
+    <string name="game_player_place">%1$s place</string>
+    <!-- The line under the die saying what to do now. %1$s is the player's name, %2$d the roll. -->
+    <string name="game_prompt_roll">%1$s, tap the die to roll.</string>
+    <string name="game_prompt_cpu_roll">%1$s is rolling.</string>
+    <string name="game_prompt_move">%1$s rolled %2$d. Pick a pawn to move.</string>
+    <string name="game_prompt_cpu_move">%1$s rolled %2$d.</string>
+    <!-- The line above it, saying what just happened when it matters. %1$s is the player who acted, %2$d their roll. -->
+    <string name="game_event_first">%1$s rolled highest, so goes first.</string>
+    <string name="game_event_no_move">%1$s rolled %2$d and had no move.</string>
+    <string name="game_event_three_sixes">%1$s rolled a third 6 in a row, so the turn passed.</string>
+    <!-- %2$s is the captured pawns' owner, %3$d how many of their pawns went back to the yard. -->
+    <plurals name="game_event_capture">
+        <item quantity="one">%1$s captured %3$d of %2$s's pawns.</item>
+        <item quantity="other">%1$s captured %3$d of %2$s's pawns.</item>
+    </plurals>
+    <string name="game_event_home">%1$s brought a pawn home.</string>
+    <!-- %2$s is the place: "1st", "2nd"... -->
+    <string name="game_event_finished">%1$s has every pawn home, in %2$s place.</string>
+    <!-- Once every place is decided (the results page comes later). -->
+    <string name="game_over_winner">%1$s wins!</string>
+    <string name="game_over_menu">Back to menu</string>
+    <!-- The confirmation before leaving a game that isn't over. Games aren't saved yet, so leaving ends it. -->
+    <string name="game_leave_title">Leave game?</string>
+    <string name="game_leave_message">This game will end, and can't be continued later.</string>
+    <string name="game_leave_confirm">Leave</string>
 
     <!-- New Game setup (ui/setup/*) -->
     <!-- The name a human player gets when they type none, and what the empty name field shows as a hint. %1$d is the seat, 1 to 4. Not used for names the player has typed. -->
@@ -258,9 +313,6 @@
     <string name="mode_classic">Classic</string>
     <string name="mode_classic_description">The classic rules: roll a 6 to leave the yard, and race all four pawns home</string>
     <string name="player_colour_yellow">Yellow</string>
-    <string name="game_player_human">Player</string>
-    <string name="game_player_cpu">CPU</string>
-    <string name="game_board_coming">The board is on its way. For now, this is who's playing.</string>
     <string name="settings_motion_die_roll">Die roll</string>
     <string name="settings_motion_pawn_move">Pawn moves</string>
     <string name="rules_board_heading">The board</string>

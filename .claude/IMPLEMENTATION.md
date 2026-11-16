@@ -11,7 +11,7 @@ reorders them.
 | --- | --- | --- |
 | 0 | Gut the dice game, rebrand the chrome | Done |
 | 1 | The Ludo rules engine (pure, tested) | Done |
-| 2 | The board and game screen | Not started |
+| 2 | The board and game screen | Done |
 | 3 | CPU opponents | Not started |
 | 4 | Saving, Game Over, Statistics, and the Leaderboard | Not started |
 | 5 | Rules, tutorial, sound, and polish (to 1.0.0) | Not started |
@@ -177,20 +177,28 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 
 **Goal:** a playable pass-and-play game on a device. Visual work goes through `render` first.
 
-- [ ] Board drawn in Compose `Canvas` from `BoardGeometry`: the cross, the coloured yards and home columns, the stars,
-    the centre. It scales to phones and tablets, in portrait and landscape (`UI.md`, "Landscape pages").
-- [ ] Pawns: a stacked count badge when they share a square, the movable ones highlighted after a roll, a tap to
-    move, and a step-by-step move animation that respects reduced motion (`UI.md`, "Reduced motion").
-- [ ] The die: reuse DiceFive's D6 art and roll animation (`ui/style`'s dice), tapped to roll. Shake to roll stays a
-    setting.
-- [ ] Player header: whose turn it is, each player's pawns home, and the CPU icon.
-- [ ] Capture feedback: haptics and a short animation of the pawn returning to its yard.
-- [ ] Accessibility: each square is a node that says what's on it, and each movable pawn is an action ("Move red
-    pawn 2 by 4, captures green"), plus a "Roll" action. TalkBack must be able to play a whole game (`UI.md`, the
-    checklist).
-- [ ] Leave-game confirmation (restored from `5423b6c`), with back asking before it leaves.
-- [ ] The menu backdrop: DiceFive's drifting dice become a Ludo motif (pawns, or the die among pawns), as the
-    maintainer asked when approving Phase 0's renders (2026-11-17).
+- [x] Board drawn in Compose `Canvas` (`ui/game/LudoBoard.kt`) from `BoardLayout`, the classic 15x15 cross mapped
+    from `BoardGeometry` (`BoardLayoutTest`): the yards, start squares, home columns, and home triangles in the
+    seated players' colours, and the stars. Portrait and landscape, phones and tablets. Look approved 2026-11-17.
+- [x] Pawns (`BoardPieces.kt`): true pawns, standing, seen from the side (head, collar, flared body, base), shaded in
+    the player's colour. One colour's pawns on a square drawn as one with a count, colours sharing a safe square a
+    quarter each, each pawn home seen on its own spot in a line along its triangle's base (the maintainer,
+    2026-11-17), the movable ones ringed in violet, a tap within 1.6 squares picking the nearest, and a
+    square-by-square move (110ms a square) under the Pawn moves motion group.
+- [x] The die (`GameDie.kt`): DiceFive's ivory bevelled die, tapped to roll, tumbling through faces as it turns
+    under the Die roll motion group. Shake to roll waits for its setting (Phase 5).
+- [x] Player cards: name, CPU icon, a dot per pawn home, the current player outlined in their colour, and their place
+    once finished. Lines under the die say what just happened and what to do now; the end shows the winner.
+- [x] Capture feedback: the captured pawn slides back to its yard, with a buzz (`Haptics.kt`); a tick for a move,
+    the die's landing sound, a move click, and the fanfare (`SoundEffects.kt`, restored from `5423b6c`).
+- [x] Accessibility (`BoardSemantics.kt`, `BoardSemanticsTest`): every yard, track square (numbered 1-52 from red's
+    start), home-column square, and home is a node saying what is on it; a square with a movable pawn is a button
+    whose action names the move ("Move Red pawn 3 6 squares, capturing Green pawn 1"); the prompt line offers every
+    move as a custom action; the die is a "Roll" button.
+- [x] Leave-game confirmation (restored from `5423b6c`, `LeaveGameTest`): back asks first while Settings' "Confirm
+    leaving game" is on. A CPU's turn waits while the game is off screen or under the dialog.
+- [x] The menu backdrop: the drift's odd faces are pawns, so it is a die among pawns (maintainer, 2026-11-17).
+- [x] CPU seats play a random legal move, 700ms a step, until Phase 3's strategies.
 
 ## Phase 3: CPU opponents
 
@@ -214,6 +222,7 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 
 ## Phase 5: Rules, tutorial, sound, and polish (to 1.0.0)
 
+- [ ] Review the game screen in landscape with the maintainer, once every phase to 1.0.0 is in (asked 2026-11-17).
 - [ ] Rules screen: the classic rules with board diagrams.
 - [ ] Guided tutorial (`TUTORIAL.md`'s framework): a scripted first game.
 - [ ] Sounds (licensed, recorded in `app/licensing`, normalised): roll, move step, capture, home, win.

@@ -1,0 +1,145 @@
+package net.zodac.ludo.ui.game
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.unit.Dp
+import net.zodac.ludo.game.GameState
+import net.zodac.ludo.game.Move
+import net.zodac.ludo.model.PawnPosition
+import net.zodac.ludo.model.PlayerColour
+import net.zodac.ludo.resources.Res
+import net.zodac.ludo.resources.game_move_action
+import net.zodac.ludo.resources.game_move_capture_clause
+import net.zodac.ludo.resources.game_move_home_clause
+import net.zodac.ludo.resources.game_move_out_action
+import net.zodac.ludo.resources.game_square_column_spoken
+import net.zodac.ludo.resources.game_square_empty_spoken
+import net.zodac.ludo.resources.game_square_home_spoken
+import net.zodac.ludo.resources.game_square_safe_spoken
+import net.zodac.ludo.resources.game_square_start_spoken
+import net.zodac.ludo.resources.game_square_track_spoken
+import net.zodac.ludo.resources.game_square_yard_pawns_spoken
+import net.zodac.ludo.resources.game_square_yard_spoken
+import net.zodac.ludo.ui.common.joinClauses
+import net.zodac.ludo.ui.common.pluralStringResource
+import net.zodac.ludo.ui.common.stringResource
+
+/** A place on the board a screen reader stops at: where it is, in board squares, and what's said and offered there. */
+private class Spot(val column: Float, val row: Float, val size: Float, val description: String, val move: Move?, val moveLabel: String?)
+
+/**
+ * The board for a screen reader, laid over the drawn one: a node for each yard, each track square (numbered from red's
+ * start), each home-column square, and home, saying what's on it ("Square 14, Red pawn 2, 43 squares from home"). A
+ * square holding one of the current player's movable pawns is a button whose action moves it ([moves], [onPawn]).
+ */
+@Composable
+fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>, onPawn: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val spots = boardSpots(state, seatColours, moves)
+    BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
+        val unit: Dp = maxWidth / BoardLayout.SIZE
+        spots.forEachIndexed { index, spot ->
+            Box(
+                Modifier
+                    .offset(unit * spot.column, unit * spot.row)
+                    .size(unit * spot.size)
+                    .semantics {
+                        contentDescription = spot.description
+                        traversalIndex = index.toFloat()
+                        val move = spot.move
+                        if (move != null) onClick(label = spot.moveLabel) { onPawn(move.pawn); true }
+                    },
+            )
+        }
+    }
+}
+
+@Composable
+private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>): List<Spot> {
+    val board = state.board
+    val colourOf = { player: Int -> seatColours[state.players[player].seat] ?: PlayerColour.defaultFor(state.players[player].seat) }
+    // Every pawn's spoken name and where it is, once.
+    val pawns = state.players.indices.flatMap { player ->
+        state.players[player].pawns.indices.map { pawn ->
+            val position = state.position(player, pawn)
+            Triple(player, pawn, position) to pawnSpoken(colourOf(player), pawn + 1, position, board)
+        }
+    }
+    val moveLabels = moves.associateWith { moveLabel(state, it, colourOf) }
+    val movableAt = { player: Int, pawnsHere: List<Int> ->
+        if (player != state.current) null else moves.firstOrNull { it.pawn in pawnsHere }
+    }
+    val empty = stringResource(Res.string.game_square_empty_spoken)
+    val spots = mutableListOf<Spot>()
+    // The yards.
+    for (player in state.players.indices) {
+        val seat = state.players[player].seat
+        val waiting = state.players[player].pawns.indices.filter { state.position(player, it) == PawnPosition.Yard }
+        val origin = BoardLayout.yardOrigin(seat)
+        val description = joinClauses(
+            listOf(
+                stringResource(Res.string.game_square_yard_spoken, stringResource(colourOf(player).label)),
+                if (waiting.isEmpty()) empty else pluralStringResource(Res.plurals.game_square_yard_pawns_spoken, waiting.size, waiting.size),
+            ),
+        )
+        val move = movableAt(player, waiting)
+        spots += Spot(origin.column.toFloat(), origin.row.toFloat(), BoardLayout.YARD_SIZE.toFloat(), description, move, move?.let(moveLabels::get))
+    }
+    // The track, from red's start.
+    for (square in 0..<board.trackLength) {
+        val here = pawns.filter { (key, _) ->
+            val (player, _, position) = key
+            position is PawnPosition.Track && board.trackSquare(state.players[player].seat, position.steps) == square
+        }
+        val startOf = state.players.indexOfFirst { board.startSquare(it.seat) == square }.takeIf { it >= 0 }
+        val clauses = listOfNotNull(
+            stringResource(Res.string.game_square_track_spoken, square + 1),
+            startOf?.let { stringResource(Res.string.game_square_start_spoken, stringResource(colourOf(it).label)) },
+            if (board.isSafe(square)) stringResource(Res.string.game_square_safe_spoken) else null,
+        ) + here.map { it.second }.ifEmpty { listOf(empty) }
+        val move = state.players.indices.firstNotNullOfOrNull { player -> movableAt(player, here.filter { it.first.first == player }.map { it.first.second }) }
+        val cell = BoardLayout.trackCell(square)
+        spots += Spot(cell.column.toFloat(), cell.row.toFloat(), 1f, joinClauses(clauses), move, move?.let(moveLabels::get))
+    }
+    // Each home column, then home.
+    for (player in state.players.indices) {
+        val seat = state.players[player].seat
+        for (index in 0..<board.homeColumnLength) {
+            val here = pawns.filter { (key, _) -> key.first == player && key.third == PawnPosition.HomeColumn(index) }
+            val clauses = listOf(stringResource(Res.string.game_square_column_spoken, stringResource(colourOf(player).label), index + 1)) +
+                here.map { it.second }.ifEmpty { listOf(empty) }
+            val move = movableAt(player, here.map { it.first.second })
+            val cell = BoardLayout.homeColumnCell(seat, index)
+            spots += Spot(cell.column.toFloat(), cell.row.toFloat(), 1f, joinClauses(clauses), move, move?.let(moveLabels::get))
+        }
+    }
+    val home = pawns.filter { it.first.third == PawnPosition.Home }.map { it.second }
+    spots += Spot(6f, 6f, 3f, joinClauses(listOf(stringResource(Res.string.game_square_home_spoken)) + home.ifEmpty { listOf(empty) }), null, null)
+    return spots
+}
+
+/** What TalkBack offers for [move]: "Move Red pawn 2 4 squares, capturing Green pawn 1", or "Bring Red pawn 1 out of the yard". */
+@Composable
+fun moveLabel(state: GameState, move: Move, colourOf: (Int) -> PlayerColour): String {
+    val colour = stringResource(colourOf(state.current).label)
+    val number = move.pawn + 1
+    val roll = move.to - move.from
+    val main = if (move.from == PawnPosition.YARD_PROGRESS) {
+        stringResource(Res.string.game_move_out_action, colour, number)
+    } else {
+        pluralStringResource(Res.plurals.game_move_action, roll, colour, number, roll)
+    }
+    val captures = move.captures.map {
+        stringResource(Res.string.game_move_capture_clause, stringResource(colourOf(it.player).label), it.pawn + 1)
+    }
+    val home = if (move.to == state.board.homeProgress) listOf(stringResource(Res.string.game_move_home_clause)) else emptyList()
+    return joinClauses(listOf(main) + captures + home)
+}

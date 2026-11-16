@@ -84,3 +84,24 @@ val GameMode.color: Color
     get() = when (this) {
         GameMode.CLASSIC -> Primary
     }
+
+// ---------------------------------------------------------------------------------------------
+// The game table: the board, pawns, and die. Not colour roles (UI.md, "Two visual systems"); the
+// players' colours come from PlayerColour.color.
+// ---------------------------------------------------------------------------------------------
+
+/** The board's plain squares, and the inside of each yard: the brand's ivory seed. */
+val BoardIvory = Color(0xFFF1E4C3)
+
+/** The lines between squares, the star squares' stars, and a pawn's outline: the brand's navy seed. */
+val BoardInk = Color(0xFF1E2A4A)
+
+/** A yard, home column, or start square with nobody sitting there (fewer than four players). */
+val BoardEmptySeat = Color(0xFFB9B2A0)
+
+/** The ivory die, light at its top-left to shaded at its bottom-right (DiceFive's classic die). */
+val IvoryDiceTop = Color(0xFFFFFCF3)
+val IvoryDiceBottom = Color(0xFFD9C9A3)
+
+/** The die's pips. */
+val DicePipColor = Color(0xFF2B2118)
