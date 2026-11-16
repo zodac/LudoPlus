@@ -19,7 +19,7 @@ In order:
    without it.
 2. **A hosted privacy policy.** The draft is `docs/privacy-policy.md`.
    - GitHub Pages publishes it (`.github/workflows/pages.yml`, which runs when `docs/` changes; the Pages source must be
-     "GitHub Actions") at <https://zodac.github.io/Ludo Plus/privacy-policy>.
+     "GitHub Actions") at <https://zodac.github.io/LudoPlus/privacy-policy>.
    - The contact is <zodacapps@gmail.com>.
    - **Update it** when billing changes, a new SDK or `INTERNET` use ships, or when `android:allowBackup` changes (it
      mentions backup). It describes the purchase (section 6) and says there are no ads (section 5).
@@ -130,7 +130,7 @@ The sole holder can relicense later.
     - CC-BY-SA adaptations stay CC-BY-SA.
     - **NC licences are incompatible with the purchase.**
 - **Every library** in the licences dialog keeps its own licence.
-- **App artwork** is `LicenseRef-Ludo Plus-AllRightsReserved` in `asset-sources.json` (`APP_LICENSE` in
+- **App artwork** is `LicenseRef-LudoPlus-AllRightsReserved` in `asset-sources.json` (`APP_LICENSE` in
     `VerifyAssetSourcesTask`). Change both together.
 
 **Still open:**
@@ -145,14 +145,14 @@ The sole holder can relicense later.
 ## In-repo build changes
 
 - **App Bundle**: done. `android-release.yml` builds the play flavour's (`bundlePlayRelease`) beside the github APK and
-    attaches `Ludo Plus-<version>.aab` (`DESIGN.md`, "Distribution"). `play-release.yml` uploads it to Play, on demand (`DESIGN.md`, "Release pipeline"),
+    attaches `LudoPlus-<version>.aab` (`DESIGN.md`, "Distribution"). `play-release.yml` uploads it to Play, on demand (`DESIGN.md`, "Release pipeline"),
     with "Sidekick is on by default" ticked in Play Console (`PLAY_GAMES.md`, "Release").
 - **`INTERNET` permission**: not declared, and Play Games doesn't add it. The v2 SDK talks to the Play services app,
     which does the network work (`PLAY_GAMES.md`, "What Google provides"). The Billing Library's telemetry merges it,
     and the play manifest removes it (`PURCHASES.md`, "What Google provides").
 - **Signing**: done. Play App Signing holds the app key. The upload key backs the `RELEASE_KEY*` secrets (alias
     `upload`, SHA-256 `DD:9E:C8:0C:…:1E:A6:18`); the maintainer keeps a copy, and Play support can reset it if lost.
-- **`mapping.txt`**: done. Each release attaches `Ludo Plus-<version>-mapping.txt`, and the `.aab` carries it too
+- **`mapping.txt`**: done. Each release attaches `LudoPlus-<version>-mapping.txt`, and the `.aab` carries it too
     (`BUNDLE-METADATA/.../proguard.map`), which Play uses to deobfuscate vitals. The attached copy is for GitHub-APK
     traces.
 - **Native debug symbols**: done. The app has no native code, but AndroidX ships some (DataStore, Compose

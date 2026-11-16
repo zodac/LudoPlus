@@ -724,7 +724,7 @@ Two apps from one source, one per way the app reaches players: product flavours 
     - **What it stops**: editing a file by hand, or with a tool written from this public source. Not someone who pulls
         the key out of the APK, or edits a rooted phone's own data, which no offline app can stop. Neither reaches Play
         Games, as above.
-    - Named `Ludo Plus-<yyyy-MM-dd>.ludo` (the player's day). Tests: `ProgressFileCodecTest`, `ProgressTransferTest`,
+    - Named `LudoPlus-<yyyy-MM-dd>.ludo` (the player's day). Tests: `ProgressFileCodecTest`, `ProgressTransferTest`,
         `ProgressFilesViewModelTest`, `ProgressFilesSettingsTest`.
 - **Settings card** (`ProgressFilesCard`): Export progress and Import progress, each a whole-row button (a compact
     `SettingRow`, its label alone), where the online card would be. Import asks first ("Import progress?"). Under the
@@ -758,7 +758,7 @@ Two apps from one source, one per way the app reaches players: product flavours 
         (generated fresh on an emulator from the play app, and given to both; see `EMULATOR.md`), and the github APK plus
         the play App Bundle;
     - then a `release` job that publishes GitHub release `android-v<version>` once every check has passed, with
-        `Ludo Plus-<version>.apk` (github), `.aab` (play), `-mapping.txt` (the APK's) and `-play-mapping.txt` (the bundle's),
+        `LudoPlus-<version>.apk` (github), `.aab` (play), `-mapping.txt` (the APK's) and `-play-mapping.txt` (the bundle's),
         tagging the commit built;
     - then a commit that bumps the patch and empties `RELEASE_NOTES.md` (`[Release] Bump Android version to X
         [skip ci]`). A `VERSION` set by hand on `main` during the run is left as it is (`[Release] Clear the release notes

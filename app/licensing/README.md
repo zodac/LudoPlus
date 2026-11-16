@@ -46,7 +46,7 @@ nothing here lists dependencies. This folder only holds what the plugin can't di
     - `description` - what it is (and how it was modified, if it was);
     - `source` - where it came from: a download URL, or for the app's own work the Claude Code
         session and commit that created it;
-    - `license` - an SPDX id, or `LicenseRef-Ludo Plus-AllRightsReserved` for the app's own work
+    - `license` - an SPDX id, or `LicenseRef-LudoPlus-AllRightsReserved` for the app's own work
         (see `LICENSE` at the repo root). For a third-party asset, the license of its source material.
 
     Then either:
