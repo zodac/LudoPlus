@@ -1,0 +1,29 @@
+pluginManagement {
+    // The convention plugins and custom tasks every module's build script uses.
+    includeBuild("build-logic")
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "LudoPlus"
+// All the code lives under app/: app/shared is the platform-neutral Kotlin Multiplatform library (game,
+// UI, persistence), app/android the Android app that packages it. They have to be two modules - AGP 9
+// won't let one module be both Kotlin Multiplatform and an Android application - but they share one
+// home.
+include(":app:shared")
+include(":app:android")
+include(":app:baselineprofile")

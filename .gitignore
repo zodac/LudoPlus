@@ -1,0 +1,42 @@
+*.iml
+.gradle/
+.kotlin/
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+build/
+*.hprof
+*.jpg
+*.jpeg
+*.webp
+
+# Release signing material must never be committed - CI decodes it from secrets at build time.
+*.jks
+*.keystore
+keystore.properties
+
+# ...except the debug key, which IS committed on purpose: it holds no real signing authority (Play
+# Store rejects a debug-signed upload outright), and committing it is what lets every debug build -
+# Android Studio, CI, a throwaway sandbox container - share one signature so they can always install
+# over each other. See the signingConfigs comment in app/android/build.gradle.kts.
+!/app/android/debug.keystore
+
+# The Play Store listing's generated graphics (scripts/generate-store-assets.sh, see .claude/STORE_ASSETS.md) - never
+# committed. Anchored to the root, so an Android source set's own src/*/assets/ folder is still tracked. Its contents,
+# not the folder itself, so the hand-written full description can be tracked: git can't re-include a file whose
+# parent folder is ignored.
+/assets/*
+!/assets/full-description.txt
+
+# The generated Baseline Profile: the release workflow generates a fresh one for every APK (android-release.yml's
+# baseline-profile job), so a copy here would only go stale. See .claude/DESIGN.md, "Release pipeline".
+/app/android/src/*[rR]elease/generated/
+
+
+# Claude Code's lock for scheduled tasks in a running session - per-machine state.
+/.claude/scheduled_tasks.lock
