@@ -62,7 +62,9 @@ import net.zodac.ludo.resources.game_prompt_cpu_move
 import net.zodac.ludo.resources.game_prompt_cpu_roll
 import net.zodac.ludo.resources.game_prompt_move
 import net.zodac.ludo.resources.game_prompt_roll
+import net.zodac.ludo.data.settings.MotionGroup
 import net.zodac.ludo.ui.common.BackHandler
+import net.zodac.ludo.ui.common.groupReduceMotion
 import net.zodac.ludo.ui.common.ScreenScaffold
 import net.zodac.ludo.ui.common.joinClauses
 import net.zodac.ludo.ui.common.ordinal
@@ -92,6 +94,11 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit) {
         viewModel.setForeground(true)
         onPauseOrDispose { viewModel.setForeground(false) }
     }
+    val pacing = GamePacing(
+        pawnsAnimated = !groupReduceMotion(MotionGroup.PAWN_MOVE),
+        dieAnimated = !groupReduceMotion(MotionGroup.DIE_ROLL),
+    )
+    LaunchedEffect(pacing) { viewModel.setPacing(pacing) }
     val held = leaveConfirmation.isShowing
     LaunchedEffect(held) { viewModel.setHeld(held) }
     GameFeedback(started.state)

@@ -12,7 +12,7 @@ reorders them.
 | 0 | Gut the dice game, rebrand the chrome | Done |
 | 1 | The Ludo rules engine (pure, tested) | Done |
 | 2 | The board and game screen | Done |
-| 3 | CPU opponents | Not started |
+| 3 | CPU opponents | Done |
 | 4 | Saving, Game Over, Statistics, and the Leaderboard | Not started |
 | 5 | Rules, tutorial, sound, and polish (to 1.0.0) | Not started |
 | 6 | Achievements | Not started |
@@ -198,16 +198,21 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 - [x] Leave-game confirmation (restored from `5423b6c`, `LeaveGameTest`): back asks first while Settings' "Confirm
     leaving game" is on. A CPU's turn waits while the game is off screen or under the dialog.
 - [x] The menu backdrop: the drift's odd faces are pawns, so it is a die among pawns (maintainer, 2026-11-17).
-- [x] CPU seats play a random legal move, 700ms a step, until Phase 3's strategies.
 
 ## Phase 3: CPU opponents
 
-- [ ] `CpuStrategy` per difficulty, reusing DiceFive's CPU-pacing UI (`CpuTurns`, `GamePacing`).
+- [x] `CpuStrategy` per difficulty (`game/CpuStrategy.kt`, `CpuStrategyTest`), played by the view model.
     - Easy: a random legal move.
-    - Medium: a scored heuristic (capture > leave the yard > reach safety > advance the furthest pawn > avoid ending in
-        reach of an opponent).
-    - Hard: an expectimax one ply deep over the opponents' next rolls, with tuned weights.
-- [ ] A tournament test: Hard beats Medium beats Easy over N seeded games, by a margin the test asserts.
+    - Medium: a scored heuristic (capture > reach home > leave the yard > reach safety > escape a threat > advance
+        the furthest pawn; ending in reach of an opponent costs).
+    - Hard: an expectimax one ply deep: every pawn's worth for and against, less the expected loss over each
+        opponent's next roll, plus the expected capture on its own. Weights tuned 2026-11-17 over 1,000 two-player
+        games a setting against Medium.
+- [x] Pacing (`GamePacing`, `GamePacingTest`): a CPU thinks 500ms before each roll and move, and first waits out the
+    die's tumble or the pawn's move and capture slide, unless those motion groups are off. DiceFive's `CpuTurns` was
+    about its dice cup, so only its pacing idea came back.
+- [x] A tournament test (`CpuTournamentTest`, 1,000 two-player games a pairing, seeded apart from the tuning): Medium
+    beats Easy 89%, Hard beats Medium 57%, Hard beats Easy 93%; each must beat the one below at least 55%.
 
 ## Phase 4: Saving, Game Over, Statistics, and the Leaderboard
 

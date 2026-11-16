@@ -42,9 +42,8 @@ import net.zodac.ludo.ui.theme.Primary
 /** How rounded the die's corners are, as a percentage of its size (DiceFive's bevelled die). */
 private const val DIE_CORNER_PERCENT = 22
 
-/** The tumble: how many faces flick past, how long each shows, and how far the die turns as it settles. */
+/** The tumble ([DIE_TUMBLE_MILLIS] long): how many faces flick past, and how far the die turns as it settles. */
 private const val TUMBLE_FACES = 7
-private const val TUMBLE_FACE_MILLIS = 60L
 private const val TUMBLE_TURN_DEGREES = 300f
 
 /**
@@ -62,7 +61,7 @@ fun GameDie(value: Int?, roll: Any?, canRoll: Boolean, onRoll: () -> Unit, modif
     // The faces it flicks through, and how far through them it is: 1 is settled on [value].
     val faces = remember(roll) { List(TUMBLE_FACES) { Random.nextInt(1, 7) } }
     val tumble = remember(roll) { Animatable(if (roll == null || roll === firstRoll || reduce) 1f else 0f) }
-    LaunchedEffect(roll) { tumble.animateTo(1f, tween((TUMBLE_FACES * TUMBLE_FACE_MILLIS).toInt(), easing = LinearEasing)) }
+    LaunchedEffect(roll) { tumble.animateTo(1f, tween(DIE_TUMBLE_MILLIS, easing = LinearEasing)) }
     val tumbleFace = if (tumble.value < 1f) faces[(tumble.value * TUMBLE_FACES).toInt().coerceAtMost(TUMBLE_FACES - 1)] else null
     val description = if (value == null) stringResource(Res.string.game_die_cd) else stringResource(Res.string.game_die_showing_cd, value)
     val rollLabel = stringResource(Res.string.game_roll_action)

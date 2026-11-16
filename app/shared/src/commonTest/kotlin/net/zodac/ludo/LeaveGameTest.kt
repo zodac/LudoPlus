@@ -12,6 +12,7 @@ import net.zodac.ludo.data.InMemoryPreferences
 import net.zodac.ludo.data.settings.SettingsRepository
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.platform.SilentPlatformServices
+import net.zodac.ludo.ui.game.GamePacing
 import net.zodac.ludo.ui.game.GameScreen
 import net.zodac.ludo.ui.game.GameViewModel
 import net.zodac.ludo.ui.game.LeaveGameConfirmation
@@ -39,7 +40,8 @@ class LeaveGameTest : UiTest() {
     private fun startedGame(confirm: Boolean): GameViewModel {
         val settings = SettingsRepository(InMemoryPreferences())
         runBlocking { settings.setConfirmBeforeLeavingGame(confirm) }
-        val viewModel = GameViewModel(settings, cpuPauseMillis = 60_000)
+        val viewModel = GameViewModel(settings)
+        viewModel.setPacing(GamePacing(thinkMillis = 60_000))
         compose.waitUntil { viewModel.setupForm.setupRestored.value }
         assertTrue(viewModel.startGame { "Player $it" })
         compose.waitUntil { viewModel.confirmBeforeLeavingGame.value == confirm }

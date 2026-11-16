@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.data.settings.SettingsRepository
+import net.zodac.ludo.game.CpuStrategy
 import net.zodac.ludo.game.GameState
 import net.zodac.ludo.game.LudoEngine
 import net.zodac.ludo.game.RollOff
@@ -29,14 +30,20 @@ import net.zodac.ludo.model.PlayerType
  * The play graph's state: the setup form, and the game it starts. Shared by the setup screen and the game screen, so a
  * game never travels through navigation arguments.
  *
- * The die is drawn from [random]. A CPU player's turn plays itself, [cpuPauseMillis] between its actions: for now a
- * random legal move, until the CPU's strategies come (Phase 3 of `.claude/IMPLEMENTATION.md`).
+ * The die is drawn from [random]. A CPU player's turn plays itself with its difficulty's [CpuStrategy], waiting before
+ * each roll and move for the screen to finish showing the last one ([GamePacing], set by the screen).
  */
 class GameViewModel(
     private val settingsRepository: SettingsRepository,
     private val random: Random = Random.Default,
-    private val cpuPauseMillis: Long = CPU_PAUSE_MILLIS,
 ) : ViewModel() {
+
+    private var pacing = GamePacing()
+
+    /** How long a CPU waits on the screen's animations: set by the screen from the motion settings. */
+    fun setPacing(pacing: GamePacing) {
+        this.pacing = pacing
+    }
 
     val setupForm = GameSetupForm()
 
@@ -125,16 +132,19 @@ class GameViewModel(
         playCpuTurn()
     }
 
-    /** While a CPU player has the turn, it rolls, then moves, each after a pause. */
+    /** While a CPU player has the turn, it rolls, then moves with its strategy, each once the screen has caught up. */
     private fun playCpuTurn() {
         val game = _game.value ?: return
         if (!game.currentIsCpu || game.state.isFinished || cpuTurn?.isActive == true) return
         cpuTurn = viewModelScope.launch {
-            pausableDelay(cpuPauseMillis)
+            pausableDelay(pacing.waitAfter(game.state.lastEvent))
             val now = _game.value ?: return@launch
             val next = when (val phase = now.state.phase) {
                 TurnPhase.AwaitingRoll -> LudoEngine.roll(now.state, random)
-                is TurnPhase.AwaitingMove -> LudoEngine.move(now.state, phase.moves.random(random).pawn)
+                is TurnPhase.AwaitingMove -> {
+                    val strategy = CpuStrategy.of(now.players[now.state.current].difficulty)
+                    LudoEngine.move(now.state, strategy.choose(now.state, phase.moves, random).pawn)
+                }
                 TurnPhase.Finished -> return@launch
             }
             _game.value = now.copy(state = next)
@@ -147,9 +157,6 @@ class GameViewModel(
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
             initializer { GameViewModel(settingsRepository = container.settingsRepository) }
         }
-
-        /** How long a CPU player waits before each roll and move, so each can be followed. */
-        const val CPU_PAUSE_MILLIS = 700L
     }
 }
 

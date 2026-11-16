@@ -37,7 +37,9 @@ class GameViewModelTest {
 
     /** A started game whose die and roll-off come from [seed]; seats 2 to 4 are CPUs unless [humans]. */
     private fun TestScope.started(seed: Int, humans: Boolean = false): GameViewModel {
-        val viewModel = GameViewModel(SettingsRepository(InMemoryPreferences()), Random(seed), cpuPauseMillis = 700)
+        val viewModel = GameViewModel(SettingsRepository(InMemoryPreferences()), Random(seed))
+        // A 700ms think, and nothing animated to wait for.
+        viewModel.setPacing(GamePacing(thinkMillis = 700, pawnsAnimated = false, dieAnimated = false))
         runCurrent()
         if (humans) (2..4).forEach { viewModel.setupForm.setPlayerType(it, PlayerType.HUMAN) }
         viewModel.startGame { "Player $it" }

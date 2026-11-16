@@ -53,10 +53,6 @@ import net.zodac.ludo.ui.theme.color
 /** The ring round a pawn that can be moved: the brand violet, "press this" (`UI.md`, "Colour"). */
 private val MovableRing = Primary
 
-/** How long a moving pawn takes over each square, and a captured pawn to slide back to its yard. */
-private const val STEP_MILLIS = 110
-private const val CAPTURE_SLIDE_MILLIS = 280
-
 /** How much a moving pawn swells at the top of each hop from square to square. */
 private const val HOP_SWELL = 0.18f
 
@@ -155,7 +151,7 @@ private fun rememberMoveMotion(state: GameState): MoveMotion {
     LaunchedEffect(event) {
         if (moving == null) return@LaunchedEffect
         val count = moving.path.size - 1
-        steps.animateTo(count.toFloat(), tween(count * STEP_MILLIS, easing = LinearEasing))
+        steps.animateTo(count.toFloat(), tween(count * PAWN_STEP_MILLIS, easing = LinearEasing))
         if (moving.captured.isNotEmpty()) slide.animateTo(1f, tween(CAPTURE_SLIDE_MILLIS))
         done = true
     }
