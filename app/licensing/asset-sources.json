@@ -1,0 +1,180 @@
+{
+  "_comment": "Where every bundled asset file came from - see README.md. Each key is a path relative to the repository root. Every entry needs a description, a source (where it came from: a URL, or the session/commit that created it) and a license. The app's own work (LicenseRef-LudoPlus-AllRightsReserved - see /LICENSE) also needs its copyright line. A third-party asset instead lists, in \"libraries\", the libraries/ entry for each source it was made from - those carry the license, copyright/credit and source URL, and are what the Licences dialog shows; \"license\" is the license of that source material. The build fails on any asset missing from here, any incomplete entry, and any entry whose file no longer exists.",
+  "app/audio/celebration.ogg": {
+    "description": "Win celebration fanfare: a remix of two fireworks recordings, modified and volume-normalised",
+    "source": "https://freesound.org/s/588198/ and https://freesound.org/s/695731/",
+    "license": "CC0-1.0",
+    "libraries": [
+      "freesound-588198",
+      "freesound-695731"
+    ]
+  },
+  "app/audio/chicken_egg_lay.ogg": {
+    "description": "Golden egg laid: cut from a recording of a chicken clucking, modified",
+    "source": "https://freesound.org/s/456803/",
+    "license": "CC0-1.0",
+    "libraries": [
+      "freesound-456803"
+    ]
+  },
+  "app/audio/cup_shake.ogg": {
+    "description": "Dice cup shake: a modified recording of six dice shaken in a cup",
+    "source": "https://freesound.org/s/185986/",
+    "license": "CC0-1.0",
+    "libraries": [
+      "freesound-185986"
+    ]
+  },
+  "app/audio/cup_shake_chicken.ogg": {
+    "description": "Chicken cup shake: cut from a recording of a chicken clucking, modified",
+    "source": "https://freesound.org/s/456803/",
+    "license": "CC0-1.0",
+    "libraries": [
+      "freesound-456803"
+    ]
+  },
+  "app/audio/empty_cup_shake.ogg": {
+    "description": "Empty cup shake: cut from a recording of an empty lotion bottle, modified",
+    "source": "https://freesound.org/s/446043/",
+    "license": "CC-BY-4.0",
+    "libraries": [
+      "freesound-446043"
+    ]
+  },
+  "app/audio/hold.ogg": {
+    "description": "Die hold click: cut from a mantel clock tick, modified",
+    "source": "https://freesound.org/s/140147/",
+    "license": "CC-BY-4.0",
+    "libraries": [
+      "freesound-140147"
+    ]
+  },
+  "app/audio/mat_landing.ogg": {
+    "description": "Dice landing on the mat: a modified recording of a single die",
+    "source": "https://freesound.org/s/596051/",
+    "license": "CC0-1.0",
+    "libraries": [
+      "freesound-596051"
+    ]
+  },
+  "app/audio/unhold.ogg": {
+    "description": "Die unhold click: cut from a mantel clock tick, modified",
+    "source": "https://freesound.org/s/140147/",
+    "license": "CC-BY-4.0",
+    "libraries": [
+      "freesound-140147"
+    ]
+  },
+  "app/android/src/play/res/drawable-nodpi/ic_play_games_controller.png": {
+    "description": "Google's Play Games controller badge (games_controller.png), resized from 512px to 96px",
+    "source": "https://developer.android.com/static/games/pgs/download-files/games-branding-icons.zip",
+    "license": "LicenseRef-Google-Play-Games-Branding",
+    "libraries": [
+      "google-play-games-branding-icons"
+    ]
+  },
+  "app/android/src/main/res/drawable/ic_launcher_background.xml": {
+    "description": "Launcher icon background layer: navy felt, the blue mat, and its gold ring",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01FqpTvMHx2Fya7M6gpTXGHJ",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/android/src/main/res/drawable/ic_launcher_foreground.xml": {
+    "description": "Launcher icon artwork (cup and dice); reworked in 4e44b46 (session 01URv4Rg19E1Tk4yPwdUtKKK) and fac9caf; shaded, with cube dice, in session 01FqpTvMHx2Fya7M6gpTXGHJ",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01XHKZahXD9TiHU4GnGuV2FB (commit 67eae6c)",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/android/src/main/res/drawable/ic_launcher_monochrome.xml": {
+    "description": "Themed-icon (monochrome) layer of the launcher icon: the cup and dice of ic_launcher_foreground as one flat silhouette",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01BLdhRGLJqmptfL2R2xmNwR, derived from ic_launcher_foreground.xml",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/android/src/main/res/mipmap-anydpi/ic_launcher.xml": {
+    "description": "Adaptive launcher icon wrapper around ic_launcher_background, ic_launcher_foreground, and ic_launcher_monochrome",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01XHKZahXD9TiHU4GnGuV2FB (commit 67eae6c)",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/android/src/main/res/resources.properties": {
+    "description": "Android resource config declaring British English (en-GB) as the language of the untranslated resources, for the per-app language setting",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01Fznrb6vve3wanYg6gqhABJ (the i18n work)",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/android/src/play/res/xml/backup_rules.xml": {
+    "description": "Auto Backup rules up to Android 11: leaves out Play Games' start-at-launch choice",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_011pQ5G3K1HaY2XL2VD7bzXF",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/android/src/play/res/xml/data_extraction_rules.xml": {
+    "description": "Backup and device-transfer rules from Android 12: leaves out Play Games' start-at-launch choice",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_011pQ5G3K1HaY2XL2VD7bzXF",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/android/src/play/res/xml/sidekick_config.xml": {
+    "description": "Play Games Sidekick config: the tab's default position and the first-session snooze",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01B2fBbenxLkeAc4xpD93yyf",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/shared/src/commonMain/composeResources/drawable/ic_cowboy_hat.xml": {
+    "description": "Comeback Kid achievement icon",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01LdEuMcqQiztgmfaK6BjQ6y (commit e8aba36)",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/shared/src/commonMain/composeResources/drawable/ic_stairs.xml": {
+    "description": "Small/Large Straight tile icon",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_011BHfVnRWmyxzvnbxxezBMT (commit 18de2b5)",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/shared/src/commonMain/composeResources/drawable/ic_time_machine_car.xml": {
+    "description": "Achievement icon (original silhouette, not traced from any image)",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01LdEuMcqQiztgmfaK6BjQ6y (commit 1f5dd9f)",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/shared/src/commonMain/composeResources/files/standard_perfect_play.bin": {
+    "description": "Standard mode's perfect-play table: the expected rest-of-game score of every start-of-turn state under perfect solo play, which a Hard CPU plays Standard by. Generated from the game's own rules by StandardPerfectPlayTable.solve() (regenerate with -PregeneratePerfectPlayTable - see StandardPerfectPlayTableTest)",
+    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01Fi47YDwGxD3FKKryEtXkMe",
+    "copyright": "Copyright 2026 zodac.net",
+    "license": "LicenseRef-LudoPlus-AllRightsReserved"
+  },
+  "app/shared/src/commonMain/composeResources/font/ludo_d20.ttf": {
+    "description": "Ludo Plus D20: Andika Bold, for the D20 dice's numbers - its 1 has a foot and its 7 is crossed, so neither reads as the other. Modified, a modification the OFL permits: cut down to the digits 0-9, the crossed seven (Andika's seven.Bar) made the 7, and renamed, as the OFL requires of a modified font with a Reserved Font Name, by scripts/subset-d20-font.sh from the original kept in app/licensing/sources/ (ofl/andika/Andika-Bold.ttf in github.com/google/fonts)",
+    "source": "https://github.com/google/fonts/blob/main/ofl/andika/Andika-Bold.ttf",
+    "license": "OFL-1.1",
+    "libraries": [
+      "andika-font"
+    ]
+  },
+  "app/shared/src/commonMain/composeResources/font/ludo_maths_italic.otf": {
+    "description": "Ludo Plus Maths Italic: MathJax_Math Italic (Computer Modern math italic, as in Wikipedia's formulas) for the Maths dice's x, e and π - modified, a modification the OFL permits: cut down to those characters and renamed, as the OFL requires of a modified font with a Reserved Font Name, by scripts/subset-maths-fonts.sh from the original kept in app/licensing/sources/ (fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf in MathJax 2.7.9)",
+    "source": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf",
+    "license": "OFL-1.1",
+    "libraries": [
+      "mathjax-fonts"
+    ]
+  },
+  "app/shared/src/commonMain/composeResources/font/ludo_maths_regular.otf": {
+    "description": "Ludo Plus Maths Regular: MathJax_Main Regular (Computer Modern roman, as in Wikipedia's formulas) for the Maths dice's digits, root sign, floor brackets, \"ln\" and factorial and the Poker dice's ranks - modified, a modification the OFL permits: cut down to those characters and renamed, as the OFL requires of a modified font with a Reserved Font Name, by scripts/subset-maths-fonts.sh from the original kept in app/licensing/sources/ (fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf in MathJax 2.7.9)",
+    "source": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf",
+    "license": "OFL-1.1",
+    "libraries": [
+      "mathjax-fonts"
+    ]
+  },
+  "app/shared/src/commonMain/composeResources/font/sora.ttf": {
+    "description": "Sora, reduced to a static weight-700 instance subset to ASCII and Latin-1, for the wordmark, titles and game-board marks (commit f939500/fce850f; Latin-1 added later) - a modification the OFL permits; Sora declares no Reserved Font Name, so the name can stay",
+    "source": "https://github.com/sora-xor/sora-font",
+    "license": "OFL-1.1",
+    "libraries": [
+      "sora"
+    ]
+  }
+}

@@ -1,0 +1,182 @@
+package net.zodac.ludo.app
+
+import androidx.annotation.VisibleForTesting
+import androidx.compose.runtime.staticCompositionLocalOf
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.random.Random
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import androidx.room.RoomDatabase
+import net.zodac.ludo.data.PreferencesFile
+import net.zodac.ludo.data.achievements.AchievementsRepository
+import net.zodac.ludo.data.createPreferencesDataStore
+import net.zodac.ludo.data.game.InProgressGameRepository
+import net.zodac.ludo.data.game.SavedGameDiscard
+import net.zodac.ludo.data.orNullOnFailure
+import net.zodac.ludo.data.scores.AppDatabase
+import net.zodac.ludo.data.scores.ScoreRepository
+import net.zodac.ludo.data.scores.buildAppDatabase
+import net.zodac.ludo.data.settings.SavedStyles
+import net.zodac.ludo.data.settings.SettingsRepository
+import net.zodac.ludo.data.settings.savedStylesFlow
+import net.zodac.ludo.game.StandardPerfectPlayTable
+import net.zodac.ludo.model.ModePage
+import net.zodac.ludo.online.OnlineSettingsRepository
+import net.zodac.ludo.purchases.PurchasesRepository
+import net.zodac.ludo.resources.Res
+import net.zodac.ludo.ui.statistics.StatisticsSortOrder
+import net.zodac.ludo.ui.statistics.parseStatisticsSorts
+
+/**
+ * The app's long-lived objects, built once per process by the platform's entry point and handed to
+ * the UI through [LocalAppContainer]: the ViewModel factories take their repositories from here,
+ * rather than each one reaching for an Android `Context` to build its own.
+ */
+class AppContainer(
+    val scoreRepository: ScoreRepository,
+    val settingsRepository: SettingsRepository,
+    val achievementsRepository: AchievementsRepository,
+    val inProgressGameRepository: InProgressGameRepository,
+    val onlineSettingsRepository: OnlineSettingsRepository,
+    val purchasesRepository: PurchasesRepository,
+    val buildInfo: BuildInfo,
+    /** Where [savedStyles] is kept loaded - the process, not any one screen. */
+    scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+) {
+    /**
+     * Debug builds only: the Styles page's hidden "pretend all styles are owned" switch (see
+     * [net.zodac.ludo.ui.styles.StylesViewModel.onUnlockedCountTapped]). Kept for the process, never saved.
+     */
+    val pretendOwnsAllStyles = MutableStateFlow(false)
+
+    /**
+     * Whether the "Unlock all styles" purchase unlocks every style: what the store last said
+     * ([PurchasesRepository.ownsAllStyles]), or, in a debug build only, [pretendOwnsAllStyles].
+     */
+    val ownsAllStyles: Flow<Boolean> =
+        combine(purchasesRepository.ownsAllStyles, pretendOwnsAllStyles) { owns, pretend -> owns || (pretend && buildInfo.isDebug) }
+            .distinctUntilChanged()
+
+    /**
+     * The saved Styles picks, loaded as soon as the container is built and kept up to date for the
+     * life of the process - null only until the first load. The menu's logo needs them at launch
+     * anyway, so the Styles screen opens with them already in hand instead of waiting on its own load.
+     */
+    val savedStyles: StateFlow<SavedStyles?> =
+        savedStylesFlow(settingsRepository, achievementsRepository, ownsAllStyles).stateIn(scope, SharingStarted.Eagerly, null)
+
+    /** Counts the time the app is on screen, for the life of the process, so a write outlives the page that asked. */
+    val playTime: PlayTimeTracker = PlayTimeTracker(achievementsRepository::addPlaySeconds, scope)
+
+    /** The one way an achievement is earned, shared by every screen - see [AchievementUnlocker]. */
+    val achievementUnlocker: AchievementUnlocker = AchievementUnlocker(achievementsRepository, ownsAllStyles)
+
+    /** Settings' Leaderboard reset - see [ProgressResets]. */
+    val progressResets: ProgressResets = ProgressResets(scoreRepository, onlineSettingsRepository)
+
+    private val mutableDatabaseFailure = MutableStateFlow<String?>(null)
+
+    /**
+     * Why the scores database couldn't be opened (a migration missing or failing), as the error's stack trace - null
+     * while it opens, or did. Opened as the container is built, so the app can say so in place of its pages, rather than
+     * fail on the first one to read a score.
+     */
+    val databaseFailure: StateFlow<String?> = mutableDatabaseFailure.asStateFlow()
+
+    init {
+        // Tidies away settings an older version left behind.
+        scope.launch { settingsRepository.forgetRetired() }
+        scope.launch {
+            try {
+                scoreRepository.open()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                mutableDatabaseFailure.value = e.stackTraceToString()
+            }
+        }
+    }
+
+    /** Each Statistics page's sort, loaded with the container so the screen opens already in order - null until then. */
+    val statisticsSorts: StateFlow<Map<ModePage, StatisticsSortOrder>?> = settingsRepository.statisticsSorts
+        .map(::parseStatisticsSorts)
+        .stateIn(scope, SharingStarted.Eagerly, null)
+
+    /** The Statistics page, loaded as [leaderboardChoice] is. */
+    val statisticsChoice: StateFlow<ModePage?> =
+        settingsRepository.statisticsChoice.map { ModePage.parse(it) }.stateIn(scope, SharingStarted.Eagerly, null)
+
+    /** The Achievements page's Locked only switch, loaded with the container so the page opens already filtered - null until then. */
+    val lockedOnlyAchievements: StateFlow<Boolean?> = settingsRepository.lockedOnlyAchievements.stateIn(scope, SharingStarted.Eagerly, null)
+
+    /** The Styles page's Unlocked only switch, loaded as [lockedOnlyAchievements] is. */
+    val unlockedOnlyStyles: StateFlow<Boolean?> = settingsRepository.unlockedOnlyStyles.stateIn(scope, SharingStarted.Eagerly, null)
+
+    /** The Leaderboard's board, loaded with the container so the screen opens already on it - null until then. */
+    val leaderboardChoice: StateFlow<ModePage?> =
+        settingsRepository.leaderboardChoice.map { ModePage.parse(it) }.stateIn(scope, SharingStarted.Eagerly, null)
+
+    /**
+     * The dice every game rolls ([net.zodac.ludo.ui.game.GameViewModel]'s random). Replaced only by the store-asset
+     * generator, to deal the rolls its promo video shows - see `.claude/STORE_ASSETS.md`.
+     */
+    @set:VisibleForTesting
+    var diceRandom: Random = Random.Default
+
+    private val standardPerfectPlay = scope.async(start = CoroutineStart.LAZY) { loadStandardPerfectPlayTable() }
+
+    /**
+     * Standard's perfect-play table, which a Hard CPU plays Standard by (see [StandardPerfectPlayTable]):
+     * read from the app's resources the first time it's asked for and kept - a megabyte, not worth
+     * reading for a player who never meets a Hard CPU in Standard. Null if it can't be read, in which
+     * case Hard estimates, as it does in every other mode.
+     */
+    suspend fun standardPerfectPlayTable(): StandardPerfectPlayTable? = standardPerfectPlay.await()
+
+    // A missing or damaged table costs Hard its strength in Standard, not the game: it falls back to
+    // estimating. StandardPerfectPlayTableTest keeps the bundled one whole and current.
+    private suspend fun loadStandardPerfectPlayTable(): StandardPerfectPlayTable? =
+        orNullOnFailure { StandardPerfectPlayTable.decode(Res.readBytes(StandardPerfectPlayTable.RESOURCE_PATH)) }
+
+    companion object {
+        /**
+         * Builds the container every platform shares: the scores database from the platform's
+         * [databaseBuilder] (its driver and path), and one DataStore per [PreferencesFile] in [dataDir].
+         */
+        fun create(
+            dataDir: String,
+            databaseBuilder: RoomDatabase.Builder<AppDatabase>,
+            buildInfo: BuildInfo,
+            savedGameDiscard: SavedGameDiscard = SavedGameDiscard.None,
+        ): AppContainer {
+            fun dataStore(file: PreferencesFile) = createPreferencesDataStore("$dataDir/${file.fileName}")
+
+            return AppContainer(
+                scoreRepository = ScoreRepository(databaseBuilder.buildAppDatabase().scoreDao(), computeContext = Dispatchers.Default),
+                settingsRepository = SettingsRepository(dataStore(PreferencesFile.SETTINGS)),
+                achievementsRepository = AchievementsRepository(dataStore(PreferencesFile.ACHIEVEMENTS)),
+                inProgressGameRepository = InProgressGameRepository(dataStore(PreferencesFile.IN_PROGRESS_GAME), discard = savedGameDiscard),
+                onlineSettingsRepository = OnlineSettingsRepository(dataStore(PreferencesFile.ONLINE)),
+                purchasesRepository = PurchasesRepository(dataStore(PreferencesFile.PURCHASES)),
+                buildInfo = buildInfo,
+            )
+        }
+    }
+}
+
+val LocalAppContainer = staticCompositionLocalOf<AppContainer> {
+    error("No AppContainer provided - the root composable provides the one the platform built")
+}

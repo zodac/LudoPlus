@@ -1,0 +1,85 @@
+package net.zodac.ludo.device
+
+import android.content.Context
+import android.media.AudioAttributes
+import android.media.SoundPool
+import androidx.annotation.VisibleForTesting
+import net.zodac.ludo.R
+import net.zodac.ludo.platform.SoundEffect
+import net.zodac.ludo.platform.SoundPlayer
+
+/**
+ * [SoundPlayer] on [SoundPool]: built for exactly this kind of one-shot clip, unlike
+ * [android.media.MediaPlayer] which carries far more setup overhead. Every clip is loaded once per
+ * instance, from the build's peak-normalised copies in res/raw (see NormalizeOggAudioTask in
+ * app/android/build.gradle.kts).
+ */
+internal class AndroidSoundPlayer(context: Context) : SoundPlayer {
+
+    @VisibleForTesting
+    internal val pool: SoundPool = SoundPool.Builder()
+        // Three at once: the Chicken cup's shake runs past the dice landing, where the mat and a golden egg's cluck both start.
+        .setMaxStreams(3)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build(),
+        )
+        .build()
+
+    // pool.load() below only kicks off an async decode - it does NOT mean the clip is ready to
+    // play yet, and pool.play() on a sample that isn't decoded yet is a silent no-op (no sound,
+    // no exception). That race is invisible for the short SFX, which never fire until well after
+    // this pool was constructed (a roll needs a tap; a hold needs the dice on the felt) - but
+    // celebration.ogg is played from GameOverScreen's very first frame, right as this whole
+    // instance is created, so it used to lose the race and play nothing. This listener plays it
+    // (or any sound requested too early) the instant its own decode actually finishes.
+    private val loadedSoundIds = mutableSetOf<Int>()
+    private val pendingVolumeById = mutableMapOf<Int, Float>()
+
+    // Registered before the first load: SoundPool drops a load's completion that comes while it has no listener, which
+    // left that clip silent for as long as this player lived.
+    init {
+        pool.setOnLoadCompleteListener { _, sampleId, status ->
+            if (status != 0) return@setOnLoadCompleteListener
+            loadedSoundIds += sampleId
+            pendingVolumeById.remove(sampleId)?.let { volume -> pool.play(sampleId, volume, volume, 0, 0, 1f) }
+        }
+    }
+
+    private val soundIds: Map<SoundEffect, Int> = SoundEffect.entries.associateWith { effect ->
+        val resId = when (effect) {
+            SoundEffect.CUP_SHAKE -> R.raw.cup_shake
+            SoundEffect.CUP_SHAKE_CHICKEN -> R.raw.cup_shake_chicken
+            SoundEffect.EMPTY_CUP_SHAKE -> R.raw.empty_cup_shake
+            SoundEffect.MAT_LANDING -> R.raw.mat_landing
+            SoundEffect.EGG_LAY -> R.raw.chicken_egg_lay
+            SoundEffect.HOLD -> R.raw.hold
+            SoundEffect.UNHOLD -> R.raw.unhold
+            SoundEffect.CELEBRATION -> R.raw.celebration
+        }
+        pool.load(context, resId, 1)
+    }
+
+    override fun play(effect: SoundEffect, volume: Float) {
+        val id = soundIds[effect] ?: return
+        if (id in loadedSoundIds) {
+            pool.play(id, volume, volume, 0, 0, 1f)
+        } else {
+            pendingVolumeById[id] = volume
+        }
+    }
+
+    override fun pause() {
+        pool.autoPause()
+    }
+
+    override fun resume() {
+        pool.autoResume()
+    }
+
+    override fun release() {
+        pool.release()
+    }
+}

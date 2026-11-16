@@ -1,0 +1,1713 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Every player-visible and spoken string in the shared UI, in British English (the base locale).
+    Conventions - key names, positional arguments, plurals, what stays out of here - are in
+    .claude/I18N.md. A translation goes in values-xx/strings.xml beside this file.
+
+    Signs and units beside a number ("=2", "+100", "50%", "x3", "12s", "1.") are part of the translation: put each
+    on the side, and with the spacing, the language reads it. In a right-to-left language the app is laid out right
+    to left, and a sign that is first in the string is drawn on the right.
+-->
+<resources>
+
+    <!--
+        The language of this file, as a BCP 47 tag. Not shown: it's what numbers, dates, plural forms and the
+        layout direction follow, so they always match the words around them - a French phone on an untranslated
+        app gets English text and "1st", not English text and "1er", and an Arabic phone gets English laid out
+        left to right. Every translation sets its own ("fr", "de", "ar-u-nu-arab"...). See .claude/I18N.md.
+    -->
+    <string name="common_locale">en-GB</string>
+
+    <!--
+        The BCP 47 tag whose style joins a list ("'Standard', 'Tricolour', and 'D20'"): its separators and last
+        "and". Usually the same as common_locale. English uses en-US for the Oxford comma before the last item, which
+        en-GB leaves out.
+    -->
+    <string name="common_list_locale">en-US</string>
+
+    <!-- The app's name, passed as %1$s to the strings that mention it (about_*_body, common_crash_body, common_database_failure_body, licences_intro, rules_how_to_play_title, rules_modes_1) and drawn on the main menu. A brand name: every language keeps it. The launcher label is app/android's own app_name. -->
+    <string name="app_name">Ludo Plus</string>
+
+    <!--
+        How a date and time is written ("28 Sep 2026 14:05"), as a CLDR date pattern: MMM is the short month name,
+        d the day, yyyy the year, HH:mm the 24-hour time. Reorder it the way the language writes dates; the month
+        names and digits follow common_locale.
+    -->
+    <string name="common_timestamp_pattern">d MMM yyyy HH:mm</string>
+
+    <!--
+        How two spoken clauses join, for a sentence whose pieces come and go ("Scored 12, would score
+        15"); several are joined one pair at a time. Keep both arguments.
+    -->
+    <string name="common_clauses_join">%1$s, %2$s</string>
+    <!-- How two spoken sentences join into running text. Keep both arguments. -->
+    <string name="common_sentences_join">%1$s %2$s</string>
+    <!-- A bonus added to a box's score, drawn under it ("+100"). The sign's side, and a space after it, are the language's to choose. -->
+    <string name="common_bonus_amount">+%1$d</string>
+
+    <!-- Leave game confirmation (ui/game/LeaveGameConfirmation.kt) -->
+    <string name="game_leave_title">Leave game?</string>
+    <string name="game_leave_message">Your progress is saved - you can continue this game later.</string>
+    <!-- The same dialog when leaving the tutorial before it ends: it asks whatever the "confirm before leaving" setting says, with its own title and message, and the same buttons. -->
+    <string name="game_leave_tutorial_title">Leave the tutorial?</string>
+    <string name="game_leave_tutorial_message">It isn't saved: you'll start again from the beginning next time.</string>
+    <string name="game_leave_confirm">Leave</string>
+
+    <!-- Dice cup (ui/game/DiceCupPanel.kt) -->
+    <!-- What TalkBack says for the cup, in place of the "x3" drawn beside it. -->
+    <plurals name="game_cup_cd">
+        <item quantity="one">Dice cup, %1$d roll left</item>
+        <item quantity="other">Dice cup, %1$d rolls left</item>
+    </plurals>
+    <!-- TalkBack's name for tapping the cup: "Double-tap to roll". -->
+    <string name="game_cup_roll_action">Roll</string>
+
+    <!-- What TalkBack says for the turn timer while it counts down (ui/game/GameScreen.kt, TurnTimerBadge). -->
+    <plurals name="game_timer_left_cd">
+        <item quantity="one">Time left: %1$d second</item>
+        <item quantity="other">Time left: %1$d seconds</item>
+    </plurals>
+
+    <!--
+        What TalkBack says for a Hit List target tile, after its name (ui/game/ScoreGrid.kt, targetProgress): how close the
+        dice are. %1$d numbers rolled / in place, out of %2$d the target calls.
+    -->
+    <string name="game_target_exact_hit_spoken">exact hit</string>
+    <!-- %1$d is how many of the %2$d numbers are in their places. -->
+    <string name="game_target_hit_spoken">hit, %1$d of %2$d in place</string>
+    <!-- %1$d of the %2$d numbers are rolled, %3$d of them in their places. -->
+    <string name="game_target_partial_hit_spoken">partial hit, %1$d of %2$d rolled, %3$d in place</string>
+    <string name="game_target_progress_spoken">%1$d of %2$d rolled, %3$d in place</string>
+
+    <!--
+        What TalkBack says for a box with several slots (Third Wind; ui/game/ScoreGrid.kt, stackedSpokenState). The
+        clauses that apply are joined with common_clauses_join, in this order, and the first letter is capitalised.
+    -->
+    <!-- %1$s is the scores so far, joined into a list: "Scored 12, 9". -->
+    <string name="game_slots_scored_spoken">Scored %1$s</string>
+    <string name="game_slots_would_score_spoken">would score %1$d</string>
+    <!-- Slots still open after the one the dice would fill. -->
+    <plurals name="game_slots_more_open_spoken">
+        <item quantity="one">%1$d more open</item>
+        <item quantity="other">%1$d more open</item>
+    </plurals>
+    <plurals name="game_slots_open_spoken">
+        <item quantity="one">%1$d open</item>
+        <item quantity="other">%1$d open</item>
+    </plurals>
+    <string name="game_slots_bonus_spoken">plus %1$d bonus</string>
+    <!-- Said after a score that includes the First Roll Bonus modifier's points: "Scored 30, with first roll bonus". -->
+    <string name="game_slots_first_roll_bonus_spoken">with first roll bonus</string>
+    <string name="game_slots_last_score_spoken">last turn's score %1$d</string>
+
+    <!-- A player's place, on their tab (ui/game/PlayerHeaderBar.kt). %1$s is an ordinal, "2nd". -->
+    <!-- Shown under the score when the place is shared with another player: the "=" marks the tie, on the side the language reads first. -->
+    <string name="game_standing_tied">=%1$s</string>
+    <!-- Spoken in place of the shown place ("=" would be read as "equals"). -->
+    <string name="game_standing_spoken">%1$s place</string>
+    <string name="game_standing_tied_spoken">tied %1$s place</string>
+
+    <!--
+        The longest an achievement's title may be, in characters, in this language: the unlock banner draws it on ONE
+        line, at 12sp or larger and never wrapped. 38 holds for English; a language whose letters are wider (full-width
+        scripts) needs a lower number and one with longer words may need a bigger one *and a banner render to check it
+        fits* (AchievementTextTest enforces whatever is set here, against every title of that language). A translation
+        that leaves this out gets the English figure.
+    -->
+    <string name="achievement_title_max_length">38</string>
+
+    <!-- Achievement categories: the section headers (model/Achievement.kt, AchievementCategory). -->
+    <string name="category_milestones">Milestones</string>
+    <string name="category_dice">Dice feats</string>
+    <string name="category_scoring">Scoring</string>
+    <string name="category_winning">Winning</string>
+    <string name="category_game_modes">Game Modes</string>
+    <string name="category_misfortune">Misfortune</string>
+    <string name="category_miscellaneous">Miscellaneous</string>
+    <string name="category_collection">Collection</string>
+    <string name="category_easter_eggs">Easter Eggs</string>
+
+    <!--
+        Achievements (model/Achievement.kt): the title is one line on the unlock banner, so at most 38
+        characters in any language (AchievementTextTest). The description gets two lines.
+    -->
+    <string name="achievement_the_journey_begins_title">The Journey Begins</string>
+    <string name="achievement_the_journey_begins_description">Start your first game</string>
+    <string name="achievement_practice_makes_perfect_title">Practice Makes Perfect</string>
+    <string name="achievement_practice_makes_perfect_description">Finish a solo game</string>
+    <string name="achievement_full_table_title">Full Table</string>
+    <string name="achievement_full_table_description">Play a four-player game</string>
+    <string name="achievement_lets_finish_this_title">Let's Finish This</string>
+    <string name="achievement_lets_finish_this_description">Leave a game then resume it</string>
+    <string name="achievement_one_more_time_title">One More Time</string>
+    <string name="achievement_one_more_time_description">Start a new game immediately after losing one</string>
+    <string name="achievement_getting_comfortable_title">Getting Comfortable</string>
+    <string name="achievement_getting_comfortable_description">Finish 10 games</string>
+    <string name="achievement_regular_title">Regular</string>
+    <string name="achievement_regular_description">Finish 50 games</string>
+    <string name="achievement_centurion_title">Centurion</string>
+    <string name="achievement_centurion_description">Finish 100 games</string>
+    <string name="achievement_hall_of_famer_title">Hall Of Famer</string>
+    <string name="achievement_hall_of_famer_description">Win 25 games</string>
+    <string name="achievement_well_rolled_title">Well Rolled</string>
+    <string name="achievement_well_rolled_description">Roll 50,000 dice</string>
+    <string name="achievement_on_a_roll_title">On A Roll</string>
+    <string name="achievement_on_a_roll_description">Win 3 games in a row</string>
+    <string name="achievement_untouchable_title">Untouchable</string>
+    <string name="achievement_untouchable_description">Win 10 games in a row</string>
+    <string name="achievement_professional_roller_title">Professional Roller</string>
+    <string name="achievement_professional_roller_description">Score 100,000 points across all your games</string>
+    <string name="achievement_bonus_round_title">Bonus Round</string>
+    <string name="achievement_bonus_round_description">Earn the 35-point upper section bonus</string>
+    <string name="achievement_five_x_title">5x!</string>
+    <string name="achievement_five_x_description">Score your first 5x</string>
+    <string name="achievement_spotless_title">Spotless</string>
+    <string name="achievement_spotless_description">Finish a game with no zeros and the upper section bonus</string>
+    <string name="achievement_straight_talker_title">Straight Talker</string>
+    <string name="achievement_straight_talker_description">Score both straights in the same game</string>
+    <string name="achievement_upper_class_title">Upper Class</string>
+    <string name="achievement_upper_class_description">Score 84 or more in the upper section</string>
+    <string name="achievement_lower_class_title">Lower Class</string>
+    <string name="achievement_lower_class_description">Score 150 or more in the lower section (excluding 5x scores)</string>
+    <string name="achievement_encore_title">Encore</string>
+    <string name="achievement_encore_description">Score a second 5x in a single game</string>
+    <string name="achievement_dice_whisperer_title">Dice Whisperer</string>
+    <string name="achievement_dice_whisperer_description">Score 5x ten times in total</string>
+    <string name="achievement_hat_trick_title">Hat Trick</string>
+    <string name="achievement_hat_trick_description">Score three or more 5x in a single game</string>
+    <string name="achievement_full_set_title">Full Set</string>
+    <string name="achievement_full_set_description">Score a 5x of every number from 1 to 6</string>
+    <string name="achievement_twice_in_a_lifetime_title">Twice In A Lifetime</string>
+    <string name="achievement_twice_in_a_lifetime_description">Score a 5x on two of your turns in a row</string>
+    <string name="achievement_natural_5x_title">Natural 5x</string>
+    <string name="achievement_natural_5x_description">Roll a 5x without holding any dice</string>
+    <string name="achievement_i_can_count_title">I Can Count!</string>
+    <string name="achievement_i_can_count_description">Score Chance with 1, 2, 3, 4, 5 in that order</string>
+    <string name="achievement_a_cunning_strategy_title">A Cunning Strategy</string>
+    <string name="achievement_a_cunning_strategy_description">Hold all five dice, then unhold every one of them</string>
+    <string name="achievement_exact_change_title">Exact Change</string>
+    <string name="achievement_exact_change_description">Score exactly 1 in Ones, 2 in Twos, and so on up to 6 in Sixes, all in the same game</string>
+    <string name="achievement_new_personal_best_title">New Personal Best</string>
+    <string name="achievement_new_personal_best_description">Beat your best score on the leaderboard</string>
+    <string name="achievement_ton_title">Ton!</string>
+    <string name="achievement_ton_description">Finish a game on exactly 100</string>
+    <string name="achievement_solid_round_title">Solid Round</string>
+    <string name="achievement_solid_round_description">Score 200 or more in a game of `Standard` or `Tricolour` mode</string>
+    <string name="achievement_sharpshooter_title">Sharpshooter</string>
+    <string name="achievement_sharpshooter_description">Score 300 or more in a game of `Standard` or `Tricolour` mode</string>
+    <string name="achievement_high_roller_title">High Roller</string>
+    <string name="achievement_high_roller_description">Score 400 or more in a game of `Standard` or `Tricolour` mode</string>
+    <string name="achievement_dice_deity_title">Dice Deity</string>
+    <string name="achievement_dice_deity_description">Score 500 or more in a game of `Standard` or `Tricolour` mode</string>
+    <string name="achievement_first_victory_title">First Victory</string>
+    <string name="achievement_first_victory_description">Win a game against at least one opponent</string>
+    <string name="achievement_landslide_title">Landslide</string>
+    <string name="achievement_landslide_description">Win by 100 points or more</string>
+    <string name="achievement_photo_finish_title">Photo Finish</string>
+    <string name="achievement_photo_finish_description">Win by a single point</string>
+    <string name="achievement_tie_break_title">Tie Break</string>
+    <string name="achievement_tie_break_description">Win a game on a tie-break, after matching another player's score exactly</string>
+    <string name="achievement_comeback_kid_title">Comeback Kid</string>
+    <string name="achievement_comeback_kid_description">Win after trailing at the start of the final round</string>
+    <string name="achievement_last_human_standing_title">Last Human Standing</string>
+    <string name="achievement_last_human_standing_description">Win a four-player game against three CPU players</string>
+    <string name="achievement_how_do_you_do_fellow_cpus_title">How Do You Do, Fellow CPUs?</string>
+    <string name="achievement_how_do_you_do_fellow_cpus_description">Win a four-player game against three Hard CPU players</string>
+    <string name="achievement_slow_start_title">Slow Start</string>
+    <string name="achievement_slow_start_description">Win a game after scoring zero in your first turn</string>
+    <string name="achievement_front_runner_title">Front-Runner</string>
+    <string name="achievement_front_runner_description">Win a game without ever being behind at the end of a round</string>
+    <string name="achievement_everything_everywhere_all_at_once_title">Everything Everywhere All At Once</string>
+    <string name="achievement_everything_everywhere_all_at_once_description">Win a non-`Standard` game with all modifiers enabled</string>
+    <string name="achievement_where_were_going_we_dont_need_rules_title">Where We're Going, We Don't Need Rules</string>
+    <string name="achievement_where_were_going_we_dont_need_rules_description">Start a non-`Standard` game mode</string>
+    <string name="achievement_tricolourful_title">Tricolourful</string>
+    <string name="achievement_tricolourful_description">Win a game of `Tricolour` mode</string>
+    <string name="achievement_tricolour_me_impressed_title">Tricolour Me Impressed</string>
+    <string name="achievement_tricolour_me_impressed_description">Score all `Tricolour` mode scores (red, yellow, blue, coloured house) in one game</string>
+    <string name="achievement_quick_on_the_draw_title">Quick On The Draw</string>
+    <string name="achievement_quick_on_the_draw_description">Win a game of `Quickfire` mode</string>
+    <string name="achievement_six_of_the_best_title">Six Of The Best</string>
+    <string name="achievement_six_of_the_best_description">Score 150 or more in a game of `Quickfire` mode</string>
+    <string name="achievement_rainy_day_fund_title">Rainy Day Fund</string>
+    <string name="achievement_rainy_day_fund_description">Start a turn with 100 or more rolls with `Stored Rolls` on</string>
+    <string name="achievement_bad_omen_title">Bad Omen</string>
+    <string name="achievement_bad_omen_description">Have every die locked in chains at once with `Unlucky Dice` on</string>
+    <string name="achievement_grand_tour_title">Grand Tour</string>
+    <string name="achievement_grand_tour_description">Finish a game in every game mode</string>
+    <string name="achievement_hold_em_title">Hold 'Em</string>
+    <string name="achievement_hold_em_description">Win a game of `7 Dice Stud` mode</string>
+    <string name="achievement_lucky_seven_title">Lucky Seven</string>
+    <string name="achievement_lucky_seven_description">Have all seven dice show the same number in `7 Dice Stud` mode</string>
+    <string name="achievement_gone_with_the_wind_title">Gone With The Wind</string>
+    <string name="achievement_gone_with_the_wind_description">Win a game of `Third Wind` mode</string>
+    <string name="achievement_chance_encounter_title">Chance Encounter</string>
+    <string name="achievement_chance_encounter_description">Score 25 or more in all three Chance slots in `Third Wind` mode</string>
+    <string name="achievement_nat_20_title">Nat 20</string>
+    <string name="achievement_nat_20_description">Win a game of `D20` mode</string>
+    <string name="achievement_critical_success_title">Critical Success</string>
+    <string name="achievement_critical_success_description">In `D20` mode, earn the bonus for both halves in one game</string>
+    <string name="achievement_contract_fulfilled_title">Contract Fulfilled</string>
+    <string name="achievement_contract_fulfilled_description">Win a game of `Hit List` mode</string>
+    <string name="achievement_right_on_target_title">Right On Target</string>
+    <string name="achievement_right_on_target_description">In `Hit List` mode, score a 5-number target for double points, with all dice in the matching position</string>
+    <string name="achievement_scratched_title">Scratched</string>
+    <string name="achievement_scratched_description">Take a zero in the 5x box</string>
+    <string name="achievement_the_dice_hate_me_title">The Dice Hate Me</string>
+    <string name="achievement_the_dice_hate_me_description">Have a scoring option after the 2nd roll, then leave yourself with none after the 3rd</string>
+    <string name="achievement_almost_famous_title">Almost Famous</string>
+    <string name="achievement_almost_famous_description">Hold a first-roll 4x all the way to the last roll, but never land the 5x</string>
+    <string name="achievement_i_robot_title">I, Robot</string>
+    <string name="achievement_i_robot_description">Lose a game to a CPU player</string>
+    <string name="achievement_pipped_to_the_post_title">Pipped To The Post</string>
+    <string name="achievement_pipped_to_the_post_description">Lose a game by a single point</string>
+    <string name="achievement_defeat_from_the_jaws_of_victory_title">Defeat From The Jaws Of Victory</string>
+    <string name="achievement_defeat_from_the_jaws_of_victory_description">Lead going into the final round, then lose</string>
+    <string name="achievement_cold_dice_title">Cold Dice</string>
+    <string name="achievement_cold_dice_description">Finish a game with under 100 points</string>
+    <string name="achievement_low_rolls_title">Low Rolls</string>
+    <string name="achievement_low_rolls_description">Finish a game with under 20 points</string>
+    <string name="achievement_probability_never_heard_of_her_title">Probability? Never Heard Of Her</string>
+    <string name="achievement_probability_never_heard_of_her_description">Enter your final turn needing a single die to score your bonus, but fail</string>
+    <string name="achievement_commitment_issues_title">Commitment Issues</string>
+    <string name="achievement_commitment_issues_description">Hold dice of one number, then change your mind and hold and score with another number</string>
+    <string name="achievement_decisions_decisions_title">Decisions, Decisions</string>
+    <string name="achievement_decisions_decisions_description">Hold and unhold the same die three times before rolling again</string>
+    <string name="achievement_time_to_let_it_go_title">Time To Let It Go</string>
+    <string name="achievement_time_to_let_it_go_description">Hold the same die after the 1st and 2nd roll, then score without using it</string>
+    <string name="achievement_time_wasting_title">Time Wasting</string>
+    <string name="achievement_time_wasting_description">Hold then unhold each die in sequence</string>
+    <string name="achievement_i_didnt_mean_that_title">I Didn't Mean That</string>
+    <string name="achievement_i_didnt_mean_that_description">Undo a score and score a different category</string>
+    <string name="achievement_no_more_rolls_title">No More Rolls</string>
+    <string name="achievement_no_more_rolls_description">Tap the dice cup three times after your last roll of a turn</string>
+    <string name="achievement_impatient_title">Impatient</string>
+    <string name="achievement_impatient_description">Finish a game never rolling more than once in any turn</string>
+    <string name="achievement_fresh_coat_of_paint_title">Fresh Coat Of Paint</string>
+    <string name="achievement_fresh_coat_of_paint_description">Play a game with any item using a non-default style</string>
+    <string name="achievement_my_favourite_number_title">My Favourite Number</string>
+    <string name="achievement_my_favourite_number_description">Score the same points in 4 different categories in a `Standard` game</string>
+    <string name="achievement_house_call_title">House Call</string>
+    <string name="achievement_house_call_description">Roll a full house on the first roll of a turn</string>
+    <string name="achievement_straight_away_title">Straight Away</string>
+    <string name="achievement_straight_away_description">Roll a large straight on the first roll of a turn</string>
+    <string name="achievement_six_appeal_title">Six Appeal</string>
+    <string name="achievement_six_appeal_description">Score the maximum 30 in Sixes</string>
+    <string name="achievement_taking_a_chance_title">Taking A Chance</string>
+    <string name="achievement_taking_a_chance_description">Score the maximum 30 in Chance</string>
+    <string name="achievement_deja_vu_title">Déjà Vu</string>
+    <string name="achievement_deja_vu_description">After holding some dice, have the rest come up exactly the same on both re-rolls</string>
+    <string name="achievement_product_placement_title">Product Placement</string>
+    <string name="achievement_product_placement_description">Have the dice show 2, 4, 5, 3, 6 in order, just like the main menu</string>
+    <string name="achievement_what_was_the_point_of_that_title">What Was The Point Of That?</string>
+    <string name="achievement_what_was_the_point_of_that_description">Hold all five dice, then roll anyway</string>
+    <string name="achievement_nice_title">Nice</string>
+    <string name="achievement_nice_description">Finish a game on exactly 69</string>
+    <string name="achievement_zero_to_hero_title">Zero To Hero</string>
+    <string name="achievement_zero_to_hero_description">Win a game after scoring zero at least three times</string>
+    <string name="achievement_wasted_fortune_title">Wasted Fortune</string>
+    <string name="achievement_wasted_fortune_description">Roll a 5x but score a zero with it anyway</string>
+    <string name="achievement_size_isnt_everything_title">Size Isn't Everything</string>
+    <string name="achievement_size_isnt_everything_description">Score the small straight when the large straight was also available</string>
+    <string name="achievement_how_do_you_play_this_game_title">How Do You Play This Game?</string>
+    <string name="achievement_how_do_you_play_this_game_description">Score zero in every category except Chance</string>
+    <string name="achievement_rock_bottom_title">Rock Bottom</string>
+    <string name="achievement_rock_bottom_description">Finish a game on exactly 5 - the lowest score the rules allow</string>
+    <string name="achievement_who_made_this_title">Who Made This?</string>
+    <string name="achievement_who_made_this_description">Open the `About` page</string>
+    <string name="achievement_full_houses_title">Full Houses</string>
+    <string name="achievement_full_houses_description">Score every possible Full House</string>
+    <string name="achievement_tally_title">Tally</string>
+    <string name="achievement_tally_description">Record every score from 5 to 50 on the `Standard` leaderboard</string>
+    <string name="achievement_bookkeeper_title">Bookkeeper</string>
+    <string name="achievement_bookkeeper_description">Record every score from 51 to 100 on the `Standard` leaderboard</string>
+    <string name="achievement_registrar_title">Registrar</string>
+    <string name="achievement_registrar_description">Record every score from 101 to 150 on the `Standard` leaderboard</string>
+    <string name="achievement_auditor_title">Auditor</string>
+    <string name="achievement_auditor_description">Record every score from 151 to 200 on the `Standard` leaderboard</string>
+    <string name="achievement_archivist_title">Archivist</string>
+    <string name="achievement_archivist_description">Record every score from 201 to 250 on the `Standard` leaderboard</string>
+    <string name="achievement_historian_title">Historian</string>
+    <string name="achievement_historian_description">Record every score from 251 to 300 on the `Standard` leaderboard</string>
+    <string name="achievement_completionist_title">Completionist</string>
+    <string name="achievement_completionist_description">Unlock every other achievement</string>
+    <string name="achievement_are_you_a_developer_title">Are You A Developer?</string>
+    <string name="achievement_are_you_a_developer_description">Tap the version number seven times</string>
+    <string name="achievement_big_fan_title">Big Fan</string>
+    <string name="achievement_big_fan_description">Play a 1v1 game against the creator</string>
+    <string name="achievement_greenfingers_title">Green Fingers</string>
+    <string name="achievement_greenfingers_description">Grow a sunflower</string>
+    <string name="achievement_luck_of_the_irish_title">Luck Of The Irish</string>
+    <string name="achievement_luck_of_the_irish_description">Play a game of `Tricolour` mode as Ireland/Éire</string>
+    <string name="achievement_not_those_dice_title">Not Those Dice!</string>
+    <string name="achievement_not_those_dice_description">Tap the dice on the main menu</string>
+    <string name="achievement_rolling_the_midnight_dice_title">Rolling The Midnight Dice</string>
+    <string name="achievement_rolling_the_midnight_dice_description">Start a game between midnight and 6am</string>
+    <string name="achievement_shaken_not_tapped_title">Shaken, Not Tapped</string>
+    <string name="achievement_shaken_not_tapped_description">Shake your phone to roll the dice</string>
+    <string name="achievement_eggcellent_discovery_title">Eggcellent Discovery</string>
+    <string name="achievement_eggcellent_discovery_description">Find the golden egg!</string>
+    <string name="achievement_the_magicians_secret_title">The Magician's Secret</string>
+    <string name="achievement_the_magicians_secret_description">Find where Luna is hiding</string>
+    <string name="achievement_the_solution_title">The Solution</string>
+    <string name="achievement_the_solution_description">Play a solo `Standard` game as 'Phil Woodward' and score exactly 255 points</string>
+
+    <!-- Game mode names and one-line descriptions, shown in the mode picker (model/GameMode.kt). -->
+    <string name="mode_standard">Standard</string>
+    <string name="mode_standard_description">The official rules</string>
+    <string name="mode_tricolour">Tricolour</string>
+    <string name="mode_tricolour_description">Dice also roll colours, with four new scores</string>
+    <string name="mode_quickfire">Quickfire</string>
+    <string name="mode_quickfire_description">5x and six random boxes are disabled</string>
+    <string name="mode_stud">7 Dice Stud</string>
+    <string name="mode_stud_description">Roll seven dice, but only five can score</string>
+    <string name="mode_third_wind">Third Wind</string>
+    <string name="mode_third_wind_description">Every category is scored three times</string>
+    <string name="mode_d20">D20</string>
+    <string name="mode_d20_description">Score the numbers 1 to 20 with twenty-sided dice</string>
+    <string name="mode_hit_list">Hit List</string>
+    <string name="mode_hit_list_description">Score by matching a list of dice sequences</string>
+
+    <!-- Player colour names, spoken by TalkBack in the colour picker (model/PlayerColour.kt). -->
+    <string name="player_colour_cyan">Cyan</string>
+    <string name="player_colour_green">Green</string>
+    <string name="player_colour_purple">Purple</string>
+    <string name="player_colour_amber">Amber</string>
+    <string name="player_colour_pink">Pink</string>
+    <string name="player_colour_red">Red</string>
+    <string name="player_colour_blue">Blue</string>
+    <string name="player_colour_lime">Lime</string>
+
+    <!-- Game setup's modifier steppers: the value as shown, and spoken after the stepper's label (ui/setup/GameSetupScreen.kt). -->
+    <plurals name="setup_rolls_per_turn_value">
+        <item quantity="one">%1$d roll</item>
+        <item quantity="other">%1$d rolls</item>
+    </plurals>
+    <!-- A percentage ("50%"): the sign, its side and spacing are the language's ("50 %", "%50"). -->
+    <string name="setup_unlucky_odds_value">%1$d%</string>
+    <plurals name="setup_unlucky_max_dice_value">
+        <item quantity="one">%1$d die</item>
+        <item quantity="other">%1$d dice</item>
+    </plurals>
+
+    <!-- Styles banner (ui/achievements/AchievementAnnouncements.kt). One line each; the banner has two lines for the description. -->
+    <!-- Both forms are used with the number of styles unlocked, which the text doesn't show. -->
+    <plurals name="achievements_styles_unlocked_title">
+        <item quantity="one">Style Unlocked</item>
+        <item quantity="other">Styles Unlocked</item>
+    </plurals>
+    <!-- One unlocked style as the banner names it: %1$s is its name ("Frosted"), %2$s what it is ("dice", "mat"). -->
+    <string name="achievements_styles_unlocked_named">'%1$s' %2$s</string>
+    <!-- %1$d is how many achievements are earned, %2$s the style as named above. -->
+    <string name="achievements_styles_unlocked_one">the %1$s style</string>
+    <!-- %2$s is the two styles, joined into a list. -->
+    <!-- Chosen by how many achievements are earned (%1$d), which the text shows. -->
+    <plurals name="achievements_styles_unlocked_earned">
+        <item quantity="one">Earned %1$d achievement</item>
+        <item quantity="other">Earned %1$d achievements</item>
+    </plurals>
+    <!-- What unlocked a style locked behind one achievement: %1$s is the achievement's title. -->
+    <string name="achievements_styles_unlocked_earned_achievement">Earned '%1$s'</string>
+    <!-- The same, as TalkBack says it, without the quote marks. -->
+    <string name="achievements_styles_unlocked_earned_achievement_spoken">Earned %1$s</string>
+    <!-- The banner's description: %1$s is the line above, %2$s the styles - the one style, the two styles, or the two and how many more. -->
+    <string name="achievements_styles_unlocked_with">%1$s: %2$s</string>
+    <!-- Chosen by how many more styles there are than the two named. %1$s is the two named, %2$d the rest. -->
+    <plurals name="achievements_styles_unlocked_more">
+        <item quantity="one">%1$s and %2$d more</item>
+        <item quantity="other">%1$s and %2$d more</item>
+    </plurals>
+    <!-- One unlocked style as TalkBack says it, without the quote marks the banner draws round it. -->
+    <string name="achievements_styles_unlocked_spoken_style">%1$s %2$s</string>
+    <!-- Chosen by how many styles were unlocked. %1$s is all of them, joined into a list. -->
+    <plurals name="achievements_styles_unlocked_announcement">
+        <item quantity="one">Style unlocked: %1$s</item>
+        <item quantity="other">Styles unlocked: %1$s</item>
+    </plurals>
+    <!-- The announcement's two sentences: %1$s the one above, %2$s the achievements earned. -->
+    <string name="achievements_styles_unlocked_announce_join">%1$s. %2$s</string>
+
+    <!-- What a locked style needs (ui/styles/StylesScreen.kt): the short tooltip, then the longer pop-up. Text in `backticks` is highlighted. -->
+    <string name="styles_requirement_free">Always available</string>
+    <plurals name="styles_requirement_count">
+        <item quantity="one">`%1$d` achievement needed</item>
+        <item quantity="other">`%1$d` achievements needed</item>
+    </plurals>
+    <!-- %1$s is an achievement's title. -->
+    <string name="styles_requirement_specific">`%1$s` achievement needed</string>
+    <string name="styles_requirement_any">`%1$s` or `%2$s` achievement needed</string>
+    <!-- %1$s is the style's name. -->
+    <string name="styles_unlock_free">%1$s is always available.</string>
+    <!-- Chosen by the number of achievements needed (%1$d). %2$s is the style's name, %3$d how many are earned so far. -->
+    <plurals name="styles_unlock_count">
+        <item quantity="one">Earn `%1$d` achievement to unlock %2$s. You've earned `%3$d` so far.</item>
+        <item quantity="other">Earn `%1$d` achievements to unlock %2$s. You've earned `%3$d` so far.</item>
+    </plurals>
+    <!-- %1$s is an achievement's title, %2$s the style's name. -->
+    <string name="styles_unlock_specific">Earn `%1$s` to unlock %2$s.</string>
+    <string name="styles_unlock_any">Earn `%1$s` or `%2$s` to unlock %3$s.</string>
+    <!-- %1$s is the style's name, %2$s its variant or colour name. -->
+    <string name="styles_name_with_variant">%1$s (%2$s)</string>
+
+    <!--
+        The Rules page's example rows, read aloud as one run of sentences (ui/rules/RulesScreen.kt, spokenDescription).
+        The sentences that apply are joined with common_sentences_join, in this order.
+    -->
+    <!-- A Hit List example's place that accepts any number. -->
+    <string name="rules_example_any_place_spoken">any</string>
+    <!-- A Tricolour example die, by its colour, inside a spoken list ("red 1, red 4, blue 2"): %1$d is its number. -->
+    <string name="rules_example_red_die_spoken">red %1$d</string>
+    <string name="rules_example_yellow_die_spoken">yellow %1$d</string>
+    <string name="rules_example_blue_die_spoken">blue %1$d</string>
+    <!-- %1$s is the dice, joined into a list. -->
+    <string name="rules_example_target_spoken">Example target: %1$s.</string>
+    <!-- %1$s is a score: "20 points". -->
+    <string name="rules_example_worth_spoken">Worth %1$s.</string>
+    <!-- %1$s is how close the dice are: "hit, 2 of 3 in place". -->
+    <string name="rules_example_tile_target_spoken">Its tile shows %1$s.</string>
+    <string name="rules_example_tile_alibi_spoken">The Alibi lights up.</string>
+    <string name="rules_example_roll_spoken">Example roll: %1$s.</string>
+    <string name="rules_example_nothing_held_spoken">Nothing held.</string>
+    <!-- %1$s is the held dice, joined into a list: "6, 6, and 6". -->
+    <string name="rules_example_held_spoken">Held: %1$s.</string>
+    <string name="rules_example_pressed_takes_spoken">Pressing the box takes: %1$s.</string>
+    <string name="rules_example_pressed_alternatives_spoken">Would score the same: %1$s.</string>
+    <string name="rules_example_spoken">Example: %1$s.</string>
+    <!-- Chosen by how many dice are locked; %1$s is those dice, joined into a list. The text doesn't show the count. -->
+    <plurals name="rules_example_locked_spoken">
+        <item quantity="one">The %1$s is locked in chains.</item>
+        <item quantity="other">The %1$s are locked in chains.</item>
+    </plurals>
+    <!-- Chosen by how many dice don't count; %1$s is those dice, joined into a list. -->
+    <plurals name="rules_example_ignored_spoken">
+        <item quantity="one">The %1$s doesn't count.</item>
+        <item quantity="other">The %1$s don't count.</item>
+    </plurals>
+    <!-- %1$s is a score: "23 points". -->
+    <string name="rules_example_scores_spoken">Scores %1$s.</string>
+
+    <!-- Shared chrome (ui/common/*) -->
+    <!-- TalkBack's name for the back arrow in every screen's title bar. -->
+    <string name="common_back_cd">Back</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_done">Done</string>
+    <!-- TalkBack's name for a long press on a row that has a tooltip ("Double-tap and hold to show details") and for tapping a Statistics card, and the crash page's button that opens and closes its details. -->
+    <string name="common_show_details">Show Details</string>
+    <string name="common_hide_details">Hide Details</string>
+    <!-- TalkBack's name for tapping a picker field. %1$s is the picker's title ("Game Mode"). -->
+    <string name="common_picker_choose_action">Choose %1$s</string>
+    <!-- A drop-down's spoken state, and the option it has picked. -->
+    <string name="common_dropdown_expanded">Expanded</string>
+    <string name="common_dropdown_collapsed">Collapsed</string>
+    <string name="common_dropdown_selected">Selected</string>
+    <!-- What TalkBack says for a picker field after its title: the current choice, then its description. -->
+    <string name="common_picker_state_spoken">%1$s. %2$s</string>
+    <!-- The modifiers field when no modifier is on. -->
+    <string name="common_modifiers_none">None</string>
+    <!-- The modifiers field when some are on: how many. -->
+    <plurals name="common_modifiers_enabled">
+        <item quantity="one">%1$d enabled</item>
+        <item quantity="other">%1$d enabled</item>
+    </plurals>
+    <!-- A modifier stepper's value as TalkBack says it: its label ("Rolls per turn"), then the value ("3 rolls"). -->
+    <string name="common_stepper_value_spoken">%1$s, %2$s</string>
+
+    <!-- About dialog (ui/settings/AboutDialog.kt). Text in `backticks` is highlighted as a name. -->
+    <string name="about_title">About</string>
+    <string name="about_author_heading">Author</string>
+    <string name="about_author_body">%1$s is created by `zodac`.</string>
+    <string name="about_author_link">Source code on GitHub</string>
+    <string name="about_inspiration_heading">Inspiration</string>
+    <string name="about_inspiration_body">%1$s was inspired by `Dice Me Online`, created by `Arturo Gutierrez`.</string>
+    <string name="about_inspiration_link">Dice Me Online on Google Play</string>
+    <string name="about_privacy_heading">Privacy</string>
+    <string name="about_privacy_body">%1$s holds no user data. Your games, scores, and settings stay on this device, and there are no ads, analytics, or tracking.</string>
+    <!-- about_privacy_body where the device has an online game service: %2$s is its name (Google Play Games). -->
+    <string name="about_privacy_body_online">%1$s holds no user data. Your games, scores, and settings stay on this device, unless you sign in to %2$s. There are no ads, analytics, or tracking.</string>
+    <string name="about_privacy_link">Full privacy policy</string>
+
+    <!-- Licences dialog (ui/settings/LicensesDialog.kt, ComposeLicenceDocument.kt, and Android's TextViewLicenceDocument via LicenceLabels). -->
+    <string name="licences_title">Licences</string>
+    <string name="licences_intro">%1$s is built with the open-source software, fonts, and sounds below, each used under the licence it's listed with.</string>
+    <string name="licences_show_text">Show Licence Text</string>
+    <string name="licences_hide_text">Hide Licence Text</string>
+    <string name="licences_notices_title">Notices</string>
+    <string name="licences_notices_subtitle">Attribution notices shipped with the libraries above</string>
+    <!-- The long-press menu on a link in the list. -->
+    <string name="licences_copy_link">Copy link</string>
+    <string name="licences_copy_text">Copy text</string>
+    <!-- What the clipboard calls what was copied. -->
+    <string name="licences_link">Link</string>
+    <string name="licences_text">Text</string>
+    <!-- Shown on Android 12 and older after a copy; newer versions confirm it themselves. -->
+    <string name="licences_link_copied">Link copied</string>
+    <string name="licences_text_copied">Text copied</string>
+    <!-- Under each licence's name. %1$s is a list of what it covers, from the four plurals below: "2 libraries, 1 font, and 1 sound". -->
+    <string name="licences_used_by">Used by %1$s</string>
+    <plurals name="licences_count_library">
+        <item quantity="one">%1$d library</item>
+        <item quantity="other">%1$d libraries</item>
+    </plurals>
+    <plurals name="licences_count_font">
+        <item quantity="one">%1$d font</item>
+        <item quantity="other">%1$d fonts</item>
+    </plurals>
+    <plurals name="licences_count_sound">
+        <item quantity="one">%1$d sound</item>
+        <item quantity="other">%1$d sounds</item>
+    </plurals>
+    <plurals name="licences_count_image">
+        <item quantity="one">%1$d image</item>
+        <item quantity="other">%1$d images</item>
+    </plurals>
+
+    <!-- Main menu (ui/menu/MenuScreen.kt) -->
+    <string name="menu_achievements">Achievements</string>
+    <string name="menu_styles">Styles</string>
+    <string name="menu_leaderboard">Leaderboard</string>
+    <string name="menu_statistics">Statistics</string>
+    <string name="menu_rules">Rules</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_play">Play</string>
+    <string name="menu_new_game">New Game</string>
+    <string name="menu_continue">Continue</string>
+
+    <!-- Score box and die names, spoken by TalkBack (ui/game/BoardSemantics.kt). 3x, 4x, 5x, and Alibi are the game's marks and stay in code. -->
+    <string name="score_ones">Ones</string>
+    <string name="score_twos">Twos</string>
+    <string name="score_threes">Threes</string>
+    <string name="score_fours">Fours</string>
+    <string name="score_fives">Fives</string>
+    <string name="score_sixes">Sixes</string>
+    <string name="score_full_house">Full House</string>
+    <string name="score_small_straight">Small Straight</string>
+    <string name="score_large_straight">Large Straight</string>
+    <string name="score_chance">Chance</string>
+    <string name="score_coloured_house">Coloured House</string>
+    <string name="score_two_pair">Two Pair</string>
+    <string name="score_evens">Evens</string>
+    <string name="score_odds">Odds</string>
+    <!-- Tricolour's boxes: every die of that colour counts. The Irish versions are used while the game is re-skinned for Luck Of The Irish. -->
+    <string name="score_reds">Reds</string>
+    <string name="score_yellows">Yellows</string>
+    <string name="score_blues">Blues</string>
+    <string name="score_reds_irish">Greens</string>
+    <string name="score_yellows_irish">Whites</string>
+    <string name="score_blues_irish">Oranges</string>
+    <!-- A Hit List target box, numbered from 1. -->
+    <string name="score_target">Target %1$d</string>
+    <string name="score_number">Number %1$d</string>
+    <string name="score_wildcard">Wildcard %1$d to %2$d</string>
+    <!-- A Tricolour die's colour, as TalkBack names it. -->
+    <string name="die_colour_red">Red</string>
+    <string name="die_colour_yellow">Yellow</string>
+    <string name="die_colour_blue">Blue</string>
+    <string name="die_colour_red_irish">Green</string>
+    <string name="die_colour_yellow_irish">White</string>
+    <string name="die_colour_blue_irish">Orange</string>
+
+    <!-- Game screen (ui/game/*, except the results page) -->
+    <!-- TalkBack's name for the chip icon beside a computer player's name. -->
+    <string name="common_cpu_cd">CPU</string>
+    <!-- Short for Evens, drawn on its box. Keep it to about two letters. -->
+    <string name="game_badge_evens">Ev</string>
+    <!-- Short for Odds, drawn on its box. Keep it to about two letters. -->
+    <string name="game_badge_odds">Od</string>
+    <!-- A D20 wildcard's tile: the range of numbers it takes its pick from, "1-10". Keep it short. -->
+    <string name="game_badge_range">%1$d-%2$d</string>
+    <string name="game_undo_cd">Undo</string>
+    <!-- Title of the page that shows each player's final scorecard. -->
+    <string name="game_review_title">Scorecards</string>
+    <!-- Drawn beside the dice cup: how many rolls are left ("x3"). The "x" is a multiplication sign: use the one the language writes ("×"), on the side it reads from - "×%1$d" or "%1$d×" - and the number comes in the language's own digits. -->
+    <string name="game_cup_rolls_left">x%1$d</string>
+    <!-- The turn timer: seconds left ("Time left: 12s"). Write the unit the way the language abbreviates seconds, with or without a space ("12 s", "12 с", "12秒") - or drop "Time left:" if it is too long for the one centred line. -->
+    <string name="game_timer_left">Time left: %1$ds</string>
+    <!-- Spoken once when the turn timer starts flashing. -->
+    <plurals name="game_timer_running_out_cd">
+        <item quantity="one">Time running out, %1$d second or less left</item>
+        <item quantity="other">Time running out, %1$d seconds or less left</item>
+    </plurals>
+    <!-- TalkBack's name for tapping a player's tab. -->
+    <string name="game_tab_view_action">View scorecard</string>
+    <!-- Said on the tab of the player whose turn it is, before their place ("Current turn, 2nd place"). -->
+    <string name="game_tab_current_turn_spoken">Current turn</string>
+    <!-- Said on a player's tab, and shown on a long press of the pill behind their score, while their total isn't on the game mode's own Leaderboard board yet. -->
+    <string name="game_tab_new_leaderboard_score">New Leaderboard score</string>
+    <!-- Lines of the totals tooltip: the upper section, its bonus, the lower section, and Hit List's targets. -->
+    <string name="game_totals_upper">Upper</string>
+    <string name="game_totals_bonus">Bonus</string>
+    <string name="game_totals_lower">Lower</string>
+    <string name="game_totals_targets">Targets</string>
+    <string name="game_totals_first_half">1st half</string>
+    <string name="game_totals_second_half">2nd half</string>
+    <!-- A half's points out of the target that earns its bonus, in the totals popup: "95 / 150". -->
+    <string name="game_totals_progress">%1$d / %2$d</string>
+    <!-- TalkBack's name for the totals button. -->
+    <string name="game_totals_cd">Totals</string>
+    <string name="game_totals_show_action">Show totals</string>
+    <!-- The totals read aloud, joined with common_clauses_join: "Upper 70, bonus 35 earned, lower 140". -->
+    <string name="game_totals_upper_spoken">Upper %1$d</string>
+    <string name="game_totals_upper_progress_spoken">Upper %1$d of %2$d</string>
+    <string name="game_totals_bonus_earned_spoken">bonus %1$d earned</string>
+    <string name="game_totals_no_bonus_spoken">no bonus yet</string>
+    <string name="game_totals_lower_spoken">lower %1$d</string>
+    <!-- Hit List's totals read aloud: "Targets 60, alibi 20". -->
+    <string name="game_totals_targets_spoken">Targets %1$d</string>
+    <string name="game_totals_first_half_spoken">1st half %1$d of %2$d</string>
+    <string name="game_totals_second_half_spoken">2nd half %1$d of %2$d</string>
+    <string name="game_totals_alibi_spoken">alibi %1$d</string>
+    <!-- A score box switched off for the whole game. -->
+    <string name="game_box_disabled_spoken">Disabled for this game, can't be scored</string>
+    <!-- Said of the box that took another player's last turn, after "Scored 25". -->
+    <string name="game_box_last_turn_spoken">last turn's score</string>
+    <string name="game_box_open_spoken">Open</string>
+    <!-- A Hit List box: its name ("Target 1"), then what it calls. -->
+    <string name="game_box_target_name_spoken">%1$s, %2$s</string>
+    <!-- While the first 5x of the game flashes. %1$s is what the box would otherwise say. -->
+    <string name="game_box_first_five_spoken">First 5x of the game, %1$s</string>
+    <!-- TalkBack's name for tapping a box to score it. -->
+    <string name="game_box_score_action">Score</string>
+    <!-- Drawn in a box switched off for the whole game. -->
+    <string name="game_box_off">Off</string>
+    <!-- A Hit List target place that takes any number. -->
+    <string name="game_target_any_place_spoken">any</string>
+    <!-- What a Hit List target calls, read aloud: its places ("4, 1, 3, 2, any"), then its points and exact-hit points. -->
+    <!-- Chosen by the points (%2$d). -->
+    <plurals name="game_target_name_spoken">
+        <item quantity="one">%1$s. %2$d point, %3$d exact</item>
+        <item quantity="other">%1$s. %2$d points, %3$d exact</item>
+    </plurals>
+    <!-- Each die's state: held, not held, or chained by Unlucky Dice. -->
+    <string name="game_die_held_spoken">Held</string>
+    <string name="game_die_not_held_spoken">Not held</string>
+    <string name="game_die_locked_spoken">Locked in chains, can't be held or scored</string>
+    <!-- TalkBack's names for tapping a die: to hold it, or to let it go. -->
+    <string name="game_die_hold_action">Hold</string>
+    <string name="game_die_release_action">Release</string>
+    <!-- A die's name: its position, then its face. -->
+    <string name="game_die_spoken">Die %1$d, %2$d</string>
+    <!-- A Tricolour die's name: position, colour, face. -->
+    <string name="game_die_coloured_spoken">Die %1$d, %2$s %3$d</string>
+    <!-- Seven-dice modes: the hold slots that dice are held in. -->
+    <string name="game_slot_spoken">Hold slot %1$d of %2$d</string>
+    <!-- %3$s is the die held in it. -->
+    <string name="game_slot_held_spoken">Hold slot %1$d of %2$d, %3$s</string>
+    <string name="game_slot_empty_spoken">Empty</string>
+    <string name="game_die_not_held_slots_full_spoken">Not held, hold slots full</string>
+
+    <!-- Game over page (ui/game/GameOverScreen.kt) -->
+    <string name="gameover_title">Game Over</string>
+    <string name="gameover_review">Review Scorecards</string>
+    <string name="gameover_main_menu">Main Menu</string>
+    <string name="gameover_play_again">Play Again</string>
+    <string name="gameover_tutorial_done">You've finished the tutorial! Start a game of your own whenever you're ready.</string>
+    <string name="gameover_tutorial_new_game">New Game</string>
+    <!-- The winner's card: the trophy icon's name for TalkBack, and the label under their name. -->
+    <string name="gameover_winner">Winner</string>
+    <!-- A place shared with another player ("=2"), on the results and Leaderboard pages. The "=" is read as "equals" if spoken, so it is only drawn. -->
+    <string name="common_tied_rank">=%1$d</string>
+
+    <!-- Tie-break reasons (game/TieBreak.kt): why a player ranks above another on the same score. Whole sentences. -->
+    <string name="tiebreak_five_of_a_kind_count">Won on fewer 5x</string>
+    <string name="tiebreak_zeroed_categories">Won on more zeroed categories</string>
+    <string name="tiebreak_tricolour_scored_count">Won on fewer tricolour scores</string>
+    <string name="tiebreak_upper_section_total">Won on a lower upper section</string>
+    <string name="tiebreak_chance">Won on a lower Chance score</string>
+    <string name="tiebreak_three_of_a_kind">Won on a lower 3x</string>
+    <string name="tiebreak_four_of_a_kind">Won on a lower 4x</string>
+
+    <!-- The tutorial's coach card (ui/game/CoachCard.kt): game_tutorial_<step>, one per TutorialMessage, in the order the guided game shows them. Markup as the Rules pages': `backticks` for a box's name (gold), **bold** for a number. The dice and scores they name are the script's (game/Tutorial.kt). The welcome's %1$s is the app's name. -->
+    <!-- Who the tutorial's card speaks as, above what it says. -->
+    <string name="game_tutorial_coach_name">Coach</string>
+    <!-- Beside game_tutorial_coach_name on the card: which of the tutorial's turns it is. -->
+    <string name="game_tutorial_turn">Turn %1$d of %2$d</string>
+    <!-- The coach card's back and forward, to the start of the previous or next turn - played as if the right moves were made. -->
+    <string name="game_tutorial_previous_turn_cd">Previous turn</string>
+    <string name="game_tutorial_next_turn_cd">Next turn</string>
+    <string name="game_tutorial_welcome">Welcome to %1$s! Roll the five dice up to **3** times a turn, then score them in one box of your scorecard. A game lasts **13** turns. Tap the cup to start.</string>
+    <string name="game_tutorial_hold_sixes">Three 6s! Tap each 6 to hold it. Held dice stay put when you roll again.</string>
+    <string name="game_tutorial_roll_again">Now tap the cup to roll the other two dice.</string>
+    <string name="game_tutorial_hold_fourth_six">Another 6! Hold it too.</string>
+    <string name="game_tutorial_roll_last">This is your last roll of the turn. Go for the fifth 6!</string>
+    <string name="game_tutorial_score_five_x">All five dice match: a `5x`, worth **50** points! Tap the `5x` box to score it.</string>
+    <string name="game_tutorial_roll_new_turn">A new turn. Tap the cup to roll.</string>
+    <string name="game_tutorial_roll_other_dice">Roll the other dice.</string>
+    <string name="game_tutorial_roll_last_try">Your last roll this turn.</string>
+    <string name="game_tutorial_hold_it_too">Another one! Hold it too.</string>
+    <string name="game_tutorial_hold_chase_straight">Wow, you've almost got a `Large Straight`, you just need a 5. Hold 2, 3, 4, and 6.</string>
+    <string name="game_tutorial_roll_for_five">Roll for the 5.</string>
+    <string name="game_tutorial_roll_for_five_again">No 5. You have one roll left, so try again.</string>
+    <string name="game_tutorial_score_chance">No `Large Straight` this time. Instead of taking a **0**, score in `Chance`. This is a 'freebie', which scores the total all your dice: **18** points.</string>
+    <string name="game_tutorial_hold_run">2, 3, and 4 are great to chase a `Large Straight` and a `Small Straight`. Hold one of each; the spare 4 and 2 don't help, so roll those.</string>
+    <string name="game_tutorial_hold_run_five">A 5! Hold it too. You've got enough for a `Small Straight`, but one more in the run makes a `Large Straight`.</string>
+    <string name="game_tutorial_roll_for_run_end">Your last roll: a 1 or a 6 finishes the run.</string>
+    <string name="game_tutorial_score_large_straight">A 6! Five dice in a row is a `Large Straight`, worth **40** points. Score it.</string>
+    <string name="game_tutorial_hold_threes">Each upper box scores for one dice number: Any rolled `Threes` adds up the 3s category. Hold the 3 and roll for more.</string>
+    <string name="game_tutorial_score_threes">Three 3s scores **9** in `Threes`. If you score **63** in the upper section you earn a **35**-point bonus - that's an average of three of each number.</string>
+    <string name="game_tutorial_hold_straight_again">2, 3, and 5: a 4 would make a `Small Straight`. Hold them; the 6s don't help, so roll those.</string>
+    <string name="game_tutorial_roll_for_four">Roll for the 4.</string>
+    <string name="game_tutorial_roll_for_four_again">No 4. You have one roll left.</string>
+    <string name="game_tutorial_score_zero">Still no straight, and `Chance` is used. Take a **0** in `Small Straight`. You could also have taken a **0** in the upper section, but let's target the bonus instead.</string>
+    <string name="game_tutorial_score_fours_early">Three 4s on the first roll. You don't have to use every roll: score `Fours` now for **12**.</string>
+    <string name="game_tutorial_hold_fives">Two 5s. Hold them.</string>
+    <string name="game_tutorial_score_fives_mistake">Four 5s and a 6. Tap `Fives` to score them there.</string>
+    <string name="game_tutorial_undo_mistake">Actually, there's a better box for these: `Fives` only counts the 5s, **20**, while `4x` scores all five dice. Tap Undo to take back your last score. Undo is only in solo games.</string>
+    <string name="game_tutorial_score_four_x">Four 5s! `4x` scores the total of all five dice, the 6 too: **26** points.</string>
+    <string name="game_tutorial_hold_twos">A 2. Hold it and roll for more.</string>
+    <string name="game_tutorial_score_twos">Three 2s make **6** in `Twos`. Score it.</string>
+    <string name="game_tutorial_hold_full_house_start">Two 3s. Let's try for a `Full House` - that's three of one number and two of another. Hold the 3s.</string>
+    <string name="game_tutorial_hold_full_house_pair">Three 3s! Hold the third, and the 2 and roll for a pair.</string>
+    <string name="game_tutorial_score_full_house">Three 3s and two 2s: a `Full House`, worth **25** points. Score it.</string>
+    <string name="game_tutorial_hold_five">A 5, and `Fives` is still open. Hold it and roll for more.</string>
+    <string name="game_tutorial_score_fives">Three 5s: score `Fives` for **15**. You could also score in `3x`, but `Fives` keeps your upper section on course for the bonus.</string>
+    <string name="game_tutorial_open_totals">Tap the totals button to see how your scorecard is doing.</string>
+    <string name="game_tutorial_upper_progress">Your upper section has **42** points. Reach **63** for a **35**-point bonus: that's **21** more, and three 1s and three 6s will get you to 63 exactly, so aim for those. Tap the cup to roll.</string>
+    <string name="game_tutorial_hold_ones">Two 1s. Hold them.</string>
+    <string name="game_tutorial_score_joker">Five 1s: a second `5x`! Each `5x` after the first earns a **100**-point bonus, and scores in its matching box, `Ones`: **5** points.</string>
+    <string name="game_tutorial_hold_six">A 6. Hold it and roll for `Sixes`.</string>
+    <string name="game_tutorial_score_sixes">Three 6s: score `Sixes` for **18**. That what you needed for the upper section to hit the bonus threshold!</string>
+    <string name="game_tutorial_open_totals_bonus">Tap the totals button again.</string>
+    <string name="game_tutorial_bonus_earned">You scored **65** in your upper section, which means you gain **35**-points! Tap the cup to roll.</string>
+    <string name="game_tutorial_hold_fours_three_x">Two 4s. Your last box is `3x`, which needs three of one number. Hold the 4s.</string>
+    <string name="game_tutorial_hold_high_dice">No third 4 yet, but `3x` adds up all five dice, so the 6 and 5 are worth keeping, if you like taking risks! Hold them and roll the 2.</string>
+    <string name="game_tutorial_score_three_x">Three 4s: `3x` scores the total of all five dice, **23** points. That's your last box.</string>
+
+    <!-- New Game setup (ui/setup/*) -->
+    <!-- The name a human player gets when they type none, and what the empty name field shows as a hint. %1$d is the seat, 1 to 4. Not used for names the player has typed. -->
+    <string name="common_default_player_name">Player %1$d</string>
+    <string name="setup_title">New Game</string>
+    <string name="setup_start">Start Game</string>
+    <string name="setup_players">Players</string>
+    <string name="setup_game_mode">Game Mode</string>
+    <string name="setup_modifiers">Modifiers</string>
+    <!-- Under the form, and said by TalkBack on each name field that clashes. -->
+    <string name="setup_names_unique">Names must be unique</string>
+    <!-- Shown in place of the Game Mode and the Modifiers pickers until a first game is finished. -->
+    <string name="setup_modes_locked">Finish a game to unlock game modes</string>
+    <string name="setup_modifiers_locked">Finish a game to unlock modifiers</string>
+    <!-- The button above Start Game, shown only while the modes are locked: opens the tutorial. -->
+    <string name="setup_tutorial_prompt">New to the game? Play the tutorial</string>
+    <!-- TalkBack's name for a player's name field. %1$d is the seat. -->
+    <string name="setup_player_name_cd">Player %1$d name</string>
+    <!-- The chip that switches a seat between a person ("Player") and the computer ("CPU", common_cpu_cd). -->
+    <string name="setup_type_user">Player</string>
+    <!-- A computer player's difficulty. If the three don't fit side by side their first letters are shown instead. -->
+    <string name="setup_difficulty_easy">Easy</string>
+    <string name="setup_difficulty_medium">Medium</string>
+    <string name="setup_difficulty_hard">Hard</string>
+    <string name="setup_modifiers_description">Optional extra rules for any game mode</string>
+    <!-- Replaces the description while a modifier is on. -->
+    <string name="setup_modifiers_active_note">Scores and most achievements won't count</string>
+    <string name="setup_timer_title">Turn Timer</string>
+    <string name="setup_timer_description">A time limit for each whole turn</string>
+    <string name="setup_timer_none">No timer</string>
+    <!-- A turn timer length: "30s", "60s", "120s". Seconds, abbreviated as the language does ("30 s", "30 с", "30秒"). -->
+    <string name="setup_timer_seconds">%1$ds</string>
+    <string name="setup_timer_custom_field">Custom turn time in seconds</string>
+    <string name="setup_timer_custom_min">At least %1$s seconds</string>
+    <!-- The unit after a typed turn time, abbreviated like the presets ("45s"). -->
+    <string name="setup_timer_unit">s</string>
+    <string name="setup_rolls_title">Number of Rolls</string>
+    <string name="setup_rolls_description">How many rolls each turn gets</string>
+    <!-- Names the stepper for TalkBack, before its value. -->
+    <string name="setup_rolls_stepper">Rolls per turn</string>
+    <!-- TalkBack's names for the stepper's - and + buttons. -->
+    <string name="setup_rolls_decrease_cd">Decrease rolls per turn</string>
+    <string name="setup_rolls_increase_cd">Increase rolls per turn</string>
+    <string name="setup_stored_title">Stored Rolls</string>
+    <string name="setup_stored_description">Unused rolls carry over</string>
+    <string name="setup_stored_field">Most rolls you can store</string>
+    <!-- Shown in the empty "most rolls you can store" field. -->
+    <string name="setup_stored_hint">No max</string>
+    <string name="setup_extended_title">Extended Scores</string>
+    <string name="setup_extended_description">Adds Two Pair, Evens, and Odds</string>
+    <!-- Shown instead of the description when the chosen game mode can't use Extended Scores. %1$s is the mode's name. -->
+    <string name="setup_extended_locked">Not used in %1$s mode</string>
+    <string name="setup_first_roll_bonus_title">First Roll Bonus</string>
+    <!-- %1$d is the points added, 5. -->
+    <string name="setup_first_roll_bonus_description">+%1$d to Lower Section on a first roll</string>
+    <!-- Shown instead of the description when the chosen game mode can't use First Roll Bonus. %1$s is the mode's name. -->
+    <string name="setup_first_roll_bonus_locked">Not used in %1$s mode</string>
+    <string name="setup_unlucky_title">Unlucky Dice</string>
+    <string name="setup_unlucky_description">Rolled dice can become locked</string>
+    <string name="setup_unlucky_odds">Odds a rolled die is locked</string>
+    <string name="setup_unlucky_odds_decrease_cd">Decrease odds a rolled die is locked</string>
+    <string name="setup_unlucky_odds_increase_cd">Increase odds a rolled die is locked</string>
+    <string name="setup_unlucky_max">Most dice locked per roll</string>
+    <string name="setup_unlucky_max_decrease_cd">Decrease most dice locked per roll</string>
+    <string name="setup_unlucky_max_increase_cd">Increase most dice locked per roll</string>
+    <!-- TalkBack's name for the colour circle: the seat, then its colour. -->
+    <string name="setup_colour_cd">Player %1$d colour, %2$s</string>
+    <string name="setup_colour_choose_action">Choose colour</string>
+    <string name="setup_colour_select_action">Select</string>
+    <!-- A colour in the pop-up that another seat already has: picking it swaps the two. -->
+    <string name="setup_colour_swaps_cd">%1$s, swaps with player %2$d</string>
+
+    <!-- Settings screen (ui/settings/SettingsScreen.kt) -->
+    <string name="settings_title">Settings</string>
+    <!-- The footer. %1$s is the app's version number. -->
+    <string name="settings_version">Version %1$s</string>
+    <!-- A toast when the version number is tapped again and again by a player who has already earned the achievement for it. -->
+    <string name="settings_already_developer">You're already a developer!</string>
+    <!-- A toast on each repeated tap of the version number before the achievement is earned. %1$d is how many more taps it needs. -->
+    <plurals name="settings_steps_from_developer">
+        <item quantity="one">You are now %1$d step away from being a developer</item>
+        <item quantity="other">You are now %1$d steps away from being a developer</item>
+    </plurals>
+    <!-- The online game service card on Settings (ui/settings/OnlineAccountCard.kt). %1$s is the service's own name, or the account's gamer name. -->
+    <string name="online_signed_out">Not signed in</string>
+    <string name="online_signing_in">Signing in...</string>
+    <string name="online_signed_in_cd">%1$s, signed in as %2$s</string>
+    <!-- Under the account, once its cloud save has matched this device. %1$s is the time, in common_timestamp_pattern. -->
+    <string name="online_last_saved">Saved %1$s</string>
+    <!-- The card read aloud once it has been saved: %1$s the service, %2$s the gamer name, %3$s the time of online_last_saved. -->
+    <string name="online_signed_in_saved_cd">%1$s, signed in as %2$s, saved %3$s</string>
+    <!-- Under the account while the service couldn't be reached for the last sync; it is tried again at the next sync (a finished game, launch, leaving or coming back to the app). %1$s is the service; the no-break space before the dash keeps the dash off the start of a line. -->
+    <string name="online_unreachable">Couldn't reach %1$s - will retry</string>
+    <!-- online_unreachable read aloud, as the last clause of the card (joined with common_clauses_join). -->
+    <string name="online_unreachable_cd">couldn't reach %1$s, will retry</string>
+    <!-- Under "Not signed in", in red, after a sign-in that didn't work. %1$s is the service's own reason, never translated (Google's status code, say), for the player to report. -->
+    <string name="online_sign_in_failed">Couldn't sign in: %1$s</string>
+    <!-- online_sign_in_failed read aloud, as the last clause of the card (joined with common_clauses_join). -->
+    <string name="online_sign_in_failed_cd">couldn't sign in: %1$s</string>
+    <!-- In place of online_last_saved while the account's data is being synced, after a spinner and above a progress bar: %1$s is the step (one of online_sync_step_*), %2$d which step it is and %3$d how many there are. -->
+    <string name="online_sync_progress">%1$s (%2$d/%3$d)</string>
+    <string name="online_sync_step_downloading">Downloading your progress</string>
+    <string name="online_sync_step_achievements">Merging achievements</string>
+    <string name="online_sync_step_scores">Merging scores</string>
+    <string name="online_sync_step_settings">Merging settings</string>
+    <string name="online_sync_step_game">Merging the game in progress</string>
+    <string name="online_sync_step_uploading">Uploading your progress</string>
+    <string name="online_sync_step_leaderboards">Sending leaderboard scores</string>
+    <!-- The card read aloud while syncing: %1$s the service, %2$s the gamer name, %3$s the step (online_sync_step_*), %4$d which step it is and %5$d how many there are. -->
+    <string name="online_signed_in_syncing_cd">%1$s, signed in as %2$s, %3$s, step %4$d of %5$d</string>
+    <string name="online_sign_in">Sign In</string>
+    <string name="online_sign_out">Sign Out</string>
+    <string name="settings_sound">Sound effects</string>
+    <string name="settings_vibration">Vibration</string>
+    <!-- The "Animations" setting: its label and each level's name. -->
+    <string name="settings_animations">Animations</string>
+    <string name="settings_animations_high">High</string>
+    <string name="settings_animations_medium">Medium</string>
+    <string name="settings_animations_low">Low</string>
+    <!-- Each level's initial, for a screen too narrow for the words (Off is drawn as a symbol). Initials must differ. -->
+    <string name="settings_animations_high_short">H</string>
+    <string name="settings_animations_medium_short">M</string>
+    <string name="settings_animations_low_short">L</string>
+    <string name="settings_animations_off">Off</string>
+    <!-- The "Orientation" setting: its label and each choice - turn with the device, or always portrait or landscape. -->
+    <string name="settings_orientation">Orientation</string>
+    <string name="settings_orientation_device">Device</string>
+    <string name="settings_orientation_portrait">Portrait</string>
+    <string name="settings_orientation_landscape">Landscape</string>
+    <!-- The Graphics page (ui/settings/GraphicsScreen.kt), opened from its row in Settings: its title, and that row's name. -->
+    <string name="settings_graphics">Graphics</string>
+    <!-- The card under Animations giving each part of the app's motion a frame rate of its own, and the parts' names (the styles' own decoration is named by styles_category_*). -->
+    <string name="settings_advanced">Advanced graphics settings</string>
+    <!-- The Advanced graphics settings' cards: Gameplay, what moves on the game screen, first; the styles' (styles_title); then Miscellaneous, the rest (menus and pages, banners, celebrations). -->
+    <string name="settings_advanced_gameplay">Gameplay</string>
+    <string name="settings_advanced_misc">Miscellaneous</string>
+    <!-- Everything that moves without a setting of its own: pages fading in, lists gliding, pickers opening, the turn timer's flash. -->
+    <string name="settings_motion_menus">Menus &amp; pages</string>
+    <!-- The achievement banners sliding in and out. -->
+    <string name="settings_motion_banners">Achievement banners</string>
+    <!-- The players' scores counting up to a new total. -->
+    <string name="settings_motion_scores">Scores</string>
+    <!-- The fireworks for a win. -->
+    <string name="settings_motion_celebrations">Celebrations</string>
+    <!-- The pulsing gold glow round a good box to score in. -->
+    <string name="settings_motion_score_glow">Score glow</string>
+    <!-- How the dice roll: not at all, the dice simply showing their results (Off, settings_animations_off), flicking through their faces where they lie (In place), or thrown out of the cup (Tossed). -->
+    <string name="settings_motion_dice_roll">Dice roll</string>
+    <!-- The cup's shake and pour, apart from the dice. -->
+    <string name="settings_motion_cup_shake">Cup shake</string>
+    <!-- How fast the dice's roll is drawn, under the Dice roll setting (settings_motion_dice_roll) itself. -->
+    <string name="settings_motion_dice_roll_rate">Dice roll frame rate</string>
+    <!-- In the Gameplay card: how long after the last touch everything that moves on its own (a style's decoration, the score glow) pauses where it is, until the next touch - or never (Off, settings_animations_off). -->
+    <string name="settings_idle_pause">Pause when idle</string>
+    <!-- A Pause when idle wait: "30s", "60s", "90s". Seconds, abbreviated as the language does ("30 s", "30 с", "30秒"). -->
+    <string name="settings_idle_seconds">%1$ds</string>
+    <!-- What a screen reader says for a Pause when idle wait: %1$d seconds. -->
+    <plurals name="settings_idle_seconds_spoken">
+        <item quantity="one">%1$d second</item>
+        <item quantity="other">%1$d seconds</item>
+    </plurals>
+    <string name="settings_roll_tossed">Tossed</string>
+    <string name="settings_roll_in_place">In place</string>
+    <!-- A frame rate's label: %1$d frames a second. The unit is the translation's. -->
+    <string name="settings_frame_rate">%1$dfps</string>
+    <!-- What a screen reader says for a frame rate: %1$d frames a second. -->
+    <plurals name="settings_frame_rate_spoken">
+        <item quantity="one">%1$d frame a second</item>
+        <item quantity="other">%1$d frames a second</item>
+    </plurals>
+    <!-- The fastest frame rate: as fast as the screen draws. Drawn, then spoken. -->
+    <string name="settings_frame_rate_max">Max</string>
+    <string name="settings_frame_rate_max_spoken">Maximum</string>
+    <string name="settings_confirm_leaving">Confirm leaving game</string>
+    <string name="settings_tricolour_marks">Tricolour shapes</string>
+    <string name="settings_reset_leaderboard">Reset leaderboard</string>
+    <string name="settings_reset_leaderboard_description">Delete all recorded scores</string>
+    <!-- What a screen reader says a tap on either reset row does (it opens the "are you sure" dialog), and the red button of both those dialogs. -->
+    <string name="settings_reset_action">Reset</string>
+    <string name="settings_reset_leaderboard_title">Reset leaderboard?</string>
+    <string name="settings_reset_leaderboard_message">Every recorded score will be deleted, clearing the Leaderboard screen - and Statistics with it, since it's calculated from the same scores. This can't be undone. Achievements and settings are not affected, though any achievement progress measured against the leaderboard will start over.</string>
+    <string name="settings_reset_leaderboard_online_note">Scores already sent to %1$s stay there.</string>
+    <!-- Progress files, in a build with no online game service (the GitHub APK): the player's own copy of their progress, to keep or carry to another device. -->
+    <string name="settings_export_progress">Export progress</string>
+    <!-- What a screen reader says a tap on the export row does (it opens the system's "save as" picker). -->
+    <string name="settings_export_progress_action">Export</string>
+    <string name="settings_import_progress">Import progress</string>
+    <!-- What a screen reader says a tap on the import row does (it opens the "are you sure" dialog). -->
+    <string name="settings_import_progress_action">Import</string>
+    <string name="settings_import_progress_title">Import progress?</string>
+    <!-- %1$s is the app's name. Importing merges: achievements and scores are added together; for each setting and the saved game, whichever was changed last wins. -->
+    <string name="settings_import_progress_message">Choose a file exported from %1$s. Its achievements and scores are added to this device's, and where both have a setting or a saved game, the newer one is kept. This can't be undone.</string>
+    <!-- The dialog's button that opens the system's file picker. -->
+    <string name="settings_import_progress_confirm">Choose File</string>
+    <!-- Under the card's rows once an export or import has finished, in red when it went wrong, until the next starts. %1$s is the app's name. -->
+    <string name="settings_progress_exported">Progress exported</string>
+    <string name="settings_progress_imported">Progress imported</string>
+    <string name="settings_progress_not_a_file">That isn't a %1$s progress file, or it has been changed</string>
+    <string name="settings_progress_newer">That file is from a newer version of %1$s. Update the app, then import it again.</string>
+    <string name="settings_progress_export_failed">Couldn't save the file</string>
+    <string name="settings_progress_import_failed">Couldn't read the file</string>
+    <!-- While an import runs, in place of those, after a spinner and above a progress bar: the step, as online_sync_progress shows it, with online_sync_step_settings, _game, _achievements and _scores for the merges. This is the first step's. -->
+    <string name="settings_progress_step_opening">Opening the file</string>
+    <!-- What a screen reader announces while an import runs, in place of each step. -->
+    <string name="settings_progress_importing_cd">Importing progress</string>
+
+    <!-- Style names (ui/style/StyleCatalog.kt): what each style, and each colour of it, is called on the Styles screen. Short: they sit under a small tile. -->
+    <string name="style_family_art_deco">Art Deco</string>
+    <string name="style_family_bestagon">Bestagon</string>
+    <string name="style_family_bestagons">Bestagons</string>
+    <string name="style_family_brick">Brick</string>
+    <string name="style_family_cake">Cake</string>
+    <string name="style_family_casino">Casino</string>
+    <string name="style_family_cauldron">Cauldron</string>
+    <string name="style_family_celtic">Celtic</string>
+    <string name="style_family_chalkboard">Chalkboard</string>
+    <string name="style_family_chicken">Chicken</string>
+    <string name="style_family_christmas">Christmas</string>
+    <string name="style_family_circuit">Circuit</string>
+    <string name="style_family_classic">Classic</string>
+    <string name="style_family_containers">Containers</string>
+    <string name="style_family_d20">D20</string>
+    <string name="style_family_devil">Devil</string>
+    <string name="style_family_egg">Egg</string>
+    <string name="style_family_faceted">Faceted</string>
+    <string name="style_family_fishbowl">Fishbowl</string>
+    <string name="style_family_floating_dice">Floating Dice</string>
+    <string name="style_family_floral">Floral</string>
+    <string name="style_family_flowerpot">Flowerpot</string>
+    <string name="style_family_frosted">Frosted</string>
+    <string name="style_family_games">Games</string>
+    <string name="style_family_garden">Garden</string>
+    <string name="style_family_gems">Gems</string>
+    <string name="style_family_gingham">Gingham</string>
+    <string name="style_family_glass">Glass</string>
+    <string name="style_family_glitch">Glitch</string>
+    <string name="style_family_glitter">Glitter</string>
+    <string name="style_family_googly">Googly</string>
+    <string name="style_family_greek">Greek</string>
+    <string name="style_family_lcd">LCD</string>
+    <string name="style_family_leather">Leather</string>
+    <string name="style_family_martini">Martini</string>
+    <string name="style_family_maths">Maths</string>
+    <string name="style_family_meadow">Meadow</string>
+    <string name="style_family_metal">Metal</string>
+    <string name="style_family_misprint">Misprint</string>
+    <string name="style_family_multicolour">Multicolour</string>
+    <string name="style_family_neon">Neon</string>
+    <string name="style_family_nautical">Nautical</string>
+    <string name="style_family_marquee">Marquee</string>
+    <string name="style_family_ocean">Ocean</string>
+    <string name="style_family_paper">Paper</string>
+    <string name="style_family_world">World</string>
+    <string name="style_family_numeral">Numeral</string>
+    <string name="style_family_obsidian">Obsidian</string>
+    <string name="style_family_picnic">Picnic</string>
+    <string name="style_family_pinstripe">Pinstripe</string>
+    <string name="style_family_pixel">Pixel</string>
+    <string name="style_family_planks">Planks</string>
+    <string name="style_family_retro">Retro</string>
+    <string name="style_family_rgb">RGB</string>
+    <string name="style_family_ribbon">Ribbon</string>
+    <string name="style_family_spotlight">Spotlight</string>
+    <string name="style_family_starry">Starry</string>
+    <string name="style_family_stone">Stone</string>
+    <string name="style_family_sunburst">Sunburst</string>
+    <string name="style_family_takeaway">Takeaway</string>
+    <string name="style_family_tally">Tally</string>
+    <string name="style_family_text">Text</string>
+    <string name="style_family_top_hat">Top Hat</string>
+    <string name="style_family_treasure">Treasure</string>
+    <string name="style_family_tribal">Tribal</string>
+    <string name="style_family_urn">Urn</string>
+    <string name="style_family_volcano">Volcano</string>
+    <string name="style_family_wireframe">Wireframe</string>
+    <string name="style_family_wood">Wood</string>
+    <string name="style_family_wreath">Wreath</string>
+    <string name="style_colour_amber">Amber</string>
+    <string name="style_colour_amethyst">Amethyst</string>
+    <string name="style_colour_arabic">Arabic</string>
+    <string name="style_colour_arabic_green">Arabic Green</string>
+    <string name="style_colour_arcade">Arcade</string>
+    <string name="style_colour_barrel">Barrel</string>
+    <string name="style_colour_clownfish">Clownfish</string>
+    <string name="style_colour_deep">Deep</string>
+    <string name="style_colour_graph">Graph</string>
+    <string name="style_colour_lagoon">Lagoon</string>
+    <string name="style_colour_notepad">Notepad</string>
+    <string name="style_colour_rope">Rope</string>
+    <string name="style_colour_chain">Chain</string>
+    <string name="style_colour_bulbs">Bulbs</string>
+    <string name="style_colour_diamonds">Diamonds</string>
+    <string name="style_colour_ruby">Ruby</string>
+    <string name="style_colour_sapphire">Sapphire</string>
+    <string name="style_colour_stars">Stars</string>
+    <string name="style_colour_sparkles">Sparkles</string>
+    <string name="style_colour_constellation">Constellation</string>
+    <string name="style_colour_beaker_blue">Beaker Blue</string>
+    <string name="style_colour_beaker_green">Beaker Green</string>
+    <string name="style_colour_basalt">Basalt</string>
+    <string name="style_colour_baubles">Baubles</string>
+    <string name="style_colour_black">Black</string>
+    <string name="style_colour_black_marble">Black Marble</string>
+    <string name="style_colour_blue">Blue</string>
+    <string name="style_colour_blueprint">Blueprint</string>
+    <string name="style_colour_bronze">Bronze</string>
+    <string name="style_colour_brown">Brown</string>
+    <string name="style_colour_bud">Bud</string>
+    <string name="style_colour_charcoal">Charcoal</string>
+    <string name="style_colour_chinese">Chinese</string>
+    <string name="style_colour_chocolate">Chocolate</string>
+    <string name="style_colour_classic">Classic</string>
+    <string name="style_colour_clear">Clear</string>
+    <string name="style_colour_crimson">Crimson</string>
+    <string name="style_colour_cyan">Cyan</string>
+    <string name="style_colour_daisy">Daisy</string>
+    <string name="style_colour_digits">Digits</string>
+    <string name="style_colour_double">Double</string>
+    <string name="style_colour_emerald">Emerald</string>
+    <string name="style_colour_fan">Fan</string>
+    <string name="style_colour_flame">Flame</string>
+    <string name="style_colour_forestry">Forestry</string>
+    <string name="style_colour_gift">Gift</string>
+    <string name="style_colour_gold">Gold</string>
+    <string name="style_colour_granite">Granite</string>
+    <string name="style_colour_green">Green</string>
+    <string name="style_colour_green_and_purple">Green &amp; Purple</string>
+    <string name="style_colour_green_mono">Green Mono</string>
+    <string name="style_colour_grey">Grey</string>
+    <string name="style_colour_halo_rainbow">Halo Rainbow</string>
+    <string name="style_colour_halo_wave">Halo Wave</string>
+    <string name="style_colour_honey">Honey</string>
+    <string name="style_colour_honeycomb">Honeycomb</string>
+    <string name="style_colour_ice">Ice</string>
+    <string name="style_colour_indigo">Indigo</string>
+    <string name="style_colour_irish">Irish</string>
+    <string name="style_colour_ivory">Ivory</string>
+    <string name="style_colour_ivory_serif">Ivory Serif</string>
+    <string name="style_colour_japanese">Japanese</string>
+    <string name="style_colour_japanese_black">Japanese Black</string>
+    <string name="style_colour_key">Key</string>
+    <string name="style_colour_knot">Knot</string>
+    <string name="style_colour_kraft">Kraft</string>
+    <string name="style_colour_lantern_rainbow">Lantern Rainbow</string>
+    <string name="style_colour_lantern_wave">Lantern Wave</string>
+    <string name="style_colour_latin_american">Latin American</string>
+    <string name="style_colour_laurel">Laurel</string>
+    <string name="style_colour_lava">Lava</string>
+    <string name="style_colour_limestone">Limestone</string>
+    <string name="style_colour_manzu">Manzu</string>
+    <string name="style_colour_maple">Maple</string>
+    <string name="style_colour_menu">Menu</string>
+    <string name="style_colour_midnight">Midnight</string>
+    <string name="style_colour_mixed">Mixed</string>
+    <string name="style_colour_navy">Navy</string>
+    <string name="style_colour_neon">Neon</string>
+    <string name="style_colour_night">Night</string>
+    <string name="style_colour_oak">Oak</string>
+    <string name="style_colour_oil_drum">Oil Drum</string>
+    <string name="style_colour_olive">Olive</string>
+    <string name="style_colour_opening">Opening</string>
+    <string name="style_colour_orange_and_teal">Orange &amp; Teal</string>
+    <string name="style_colour_oxblood">Oxblood</string>
+    <string name="style_colour_pencil">Pencil</string>
+    <string name="style_colour_pink">Pink</string>
+    <string name="style_colour_pink_and_blue">Pink &amp; Blue</string>
+    <string name="style_colour_pinzu">Pinzu</string>
+    <string name="style_colour_poker">Poker</string>
+    <string name="style_colour_purple">Purple</string>
+    <string name="style_colour_purple_script">Purple Script</string>
+    <string name="style_colour_rabbit">Rabbit</string>
+    <string name="style_colour_rainbow">Rainbow</string>
+    <string name="style_colour_red">Red</string>
+    <string name="style_colour_red_block">Red Block</string>
+    <string name="style_colour_retro">Retro</string>
+    <string name="style_colour_ring">Ring</string>
+    <string name="style_colour_ripple">Ripple</string>
+    <string name="style_colour_roman">Roman</string>
+    <string name="style_colour_roman_blue">Roman Blue</string>
+    <string name="style_colour_rose">Rose</string>
+    <string name="style_colour_rose_gold">Rose Gold</string>
+    <string name="style_colour_sandstone">Sandstone</string>
+    <string name="style_colour_screen">Screen</string>
+    <string name="style_colour_seedling">Seedling</string>
+    <string name="style_colour_shipping">Shipping</string>
+    <string name="style_colour_silver">Silver</string>
+    <string name="style_colour_single">Single</string>
+    <string name="style_colour_slate">Slate</string>
+    <string name="style_colour_snowcap">Snowcap</string>
+    <string name="style_colour_soil">Soil</string>
+    <string name="style_colour_sozu">Sozu</string>
+    <string name="style_colour_starlight">Starlight</string>
+    <string name="style_colour_stepped">Stepped</string>
+    <string name="style_colour_strawberry">Strawberry</string>
+    <string name="style_colour_sunflower">Sunflower</string>
+    <string name="style_colour_swirl">Swirl</string>
+    <string name="style_colour_tan">Tan</string>
+    <string name="style_colour_teal">Teal</string>
+    <string name="style_colour_teal_plain">Teal Plain</string>
+    <string name="style_colour_terracotta">Terracotta</string>
+    <string name="style_colour_tricolour">Tricolour</string>
+    <string name="style_colour_vanilla">Vanilla</string>
+    <string name="style_colour_vine">Vine</string>
+    <string name="style_colour_walnut">Walnut</string>
+    <string name="style_colour_wave">Wave</string>
+    <string name="style_colour_waves">Waves</string>
+    <string name="style_colour_western">Western</string>
+    <string name="style_colour_white">White</string>
+    <string name="style_colour_white_halo_rainbow">White Halo Rainbow</string>
+    <string name="style_colour_white_halo_wave">White Halo Wave</string>
+    <string name="style_colour_white_lantern_rainbow">White Lantern Rainbow</string>
+    <string name="style_colour_white_lantern_wave">White Lantern Wave</string>
+    <string name="style_colour_white_marble">White Marble</string>
+    <string name="style_colour_white_rainbow">White Rainbow</string>
+    <string name="style_colour_white_wave">White Wave</string>
+    <string name="style_colour_wicker">Wicker</string>
+    <string name="style_colour_yellow">Yellow</string>
+
+    <!-- What one style of a category is called in a sentence ("the 'Frosted' dice style"), and what a family's variants are called (ui/style/StyleCatalog.kt). -->
+    <string name="style_noun_dice">dice</string>
+    <string name="style_noun_dice_cup">dice cup</string>
+    <string name="style_noun_background">background</string>
+    <string name="style_noun_mat">mat</string>
+    <string name="style_noun_frame">frame</string>
+    <string name="style_noun_box">box</string>
+    <!-- "Choose Frosted colour": most families vary by colour... -->
+    <string name="style_variant_colour">colour</string>
+    <!-- ...but the frames differ in shape. -->
+    <string name="style_variant_design">design</string>
+
+    <!-- Style rewards (ui/style/StyleUnlock.kt, ui/achievements) -->
+    <!-- What an achievement unlocks, in a sentence: "the 'Irish' dice style". %1$s is the style, %2$s its category (dice, mat...). -->
+    <string name="styles_reward_style">the '%1$s' %2$s style</string>
+    <!-- Chosen by how many hidden colours the achievement unlocks (the count isn't shown). -->
+    <plurals name="styles_reward_hidden_colours">
+        <item quantity="one">the hidden '%1$s' %2$s colour</item>
+        <item quantity="other">the hidden '%1$s' %2$s colours</item>
+    </plurals>
+    <!-- The tooltip on an unlocked achievement's star. %1$s is what it unlocked, from styles_reward_*. -->
+    <string name="achievements_reward_unlocked">You've unlocked %1$s!</string>
+    <string name="achievements_reward_locked">Earn this to unlock %1$s</string>
+    <!-- The heading over the list of styles an achievement unlocks, one to a line, in its pop-up when it unlocks several. -->
+    <string name="achievements_reward_unlocked_list">You've unlocked:</string>
+    <string name="achievements_reward_locked_list">Earn this to unlock:</string>
+    <!-- One line of that list, after its bullet: %1$s is the style's name, %2$s its category's noun (style_noun_*). -->
+    <string name="achievements_reward_item">'%1$s' %2$s style</string>
+    <!-- The same, for a style's hidden colours (chosen by how many, which isn't shown). -->
+    <plurals name="achievements_reward_item_hidden_colours">
+        <item quantity="one">Hidden '%1$s' %2$s colour</item>
+        <item quantity="other">Hidden '%1$s' %2$s colours</item>
+    </plurals>
+    <!-- TalkBack's name for tapping the star on an achievement. -->
+    <string name="achievements_reward_show_action">Show which style this unlocks</string>
+    <!-- The tip on tapping an achievement that only some game modes can earn, naming those modes. %1$s is the list of
+         them, each from achievements_mode_quoted; the count of modes chooses the form. -->
+    <plurals name="achievements_mode_tooltip_only">
+        <item quantity="one">Can only be earned in %1$s mode</item>
+        <item quantity="other">Can only be earned in the %1$s modes</item>
+    </plurals>
+    <!-- One game mode's name (mode_*) in achievements_mode_tooltip_only's list. -->
+    <string name="achievements_mode_quoted">'%1$s'</string>
+    <!-- TalkBack's name for tapping an achievement only some game modes can earn. -->
+    <string name="achievements_mode_show_action">Show which modes can earn this</string>
+    <string name="achievements_missing_message">Scores not yet on the leaderboard (%1$s left):</string>
+    <!-- TalkBack's name for tapping a score-collection achievement. -->
+    <string name="achievements_missing_action">Show the missing scores</string>
+    <!-- The short tip on tapping a collection achievement; a long press opens the full list. %1$s is how many are missing. -->
+    <string name="achievements_missing_tooltip">Scores not yet on the leaderboard: %1$s left</string>
+    <!-- TalkBack: a score already on the leaderboard, drawn struck through. -->
+    <string name="achievements_score_recorded">%1$s, recorded</string>
+    <!-- Full Set's pop-up: the die numbers (1-6) it still needs a 5x of. -->
+    <string name="achievements_missing_numbers_message">Numbers with no 5x scored yet (%1$s left):</string>
+    <!-- TalkBack's name for tapping Full Set. -->
+    <string name="achievements_missing_numbers_action">Show the missing numbers</string>
+    <!-- The short tip on tapping a collection achievement; a long press opens the full list. %1$s is how many are missing. -->
+    <string name="achievements_missing_numbers_tooltip">Numbers with no 5x scored yet: %1$s left</string>
+    <!-- Full Houses' pop-up: the hands (Achievement.FULL_HOUSES_HANDS, as "1-1-1-2-2") it still needs a Full House scored with. -->
+    <string name="achievements_missing_hands_message">Full Houses not yet scored (%1$s left):</string>
+    <!-- TalkBack's name for tapping Full Houses. -->
+    <string name="achievements_missing_hands_action">Show the missing Full Houses</string>
+    <!-- The short tip on tapping a collection achievement; a long press opens the full list. %1$s is how many are missing. -->
+    <string name="achievements_missing_hands_tooltip">Full Houses not yet scored: %1$s left</string>
+    <!-- TalkBack: a die number already scored as a 5x, drawn struck through and faded. -->
+    <string name="achievements_number_scored">%1$s, scored</string>
+    <!-- Full Set's pop-up: one die number, as in "1s" (a 5x of 1s). %1$s is the number. -->
+    <string name="achievements_number_label">%1$ss</string>
+    <!-- Grand Tour's pop-up: the game modes it still needs a finished game in. -->
+    <string name="achievements_missing_modes_message">Modes with no game finished yet (%1$s left):</string>
+    <!-- TalkBack's name for tapping Grand Tour. -->
+    <string name="achievements_missing_modes_action">Show the missing modes</string>
+    <!-- The short tip on tapping a collection achievement; a long press opens the full list. %1$s is how many are missing. -->
+    <string name="achievements_missing_modes_tooltip">Modes with no game finished yet: %1$s left</string>
+    <!-- TalkBack: a game mode already finished, drawn struck through and faded. %1$s is the mode's name. -->
+    <string name="achievements_mode_finished">%1$s, finished</string>
+
+    <!-- Styles screen (ui/styles/StylesScreen.kt) -->
+    <string name="styles_title">Styles</string>
+    <!-- The six categories of table art: the titles of the cards, and what a gallery switch is called. -->
+    <string name="styles_category_dice">Dice</string>
+    <string name="styles_category_dice_cup">Dice Cup</string>
+    <string name="styles_category_mat">Mat</string>
+    <string name="styles_category_background">Background</string>
+    <string name="styles_category_frame">Frame</string>
+    <string name="styles_category_box">Boxes</string>
+    <!-- The name on the sample player tab each frame is shown on. -->
+    <string name="styles_frame_preview_name">You</string>
+    <string name="styles_unlocked_count">%1$d of %2$d unlocked</string>
+    <!-- The count when "unlocked" doesn't fit the card, then the percentage when even this doesn't. %1$d, %2$d: the count and the total. -->
+    <string name="styles_unlocked_count_short">%1$d of %2$d</string>
+    <string name="styles_unlocked_percent">%1$d%</string>
+    <string name="styles_category_count">%1$d/%2$d</string>
+    <string name="filter_all">All</string>
+    <string name="styles_unlocked_only">Unlocked</string>
+    <!-- The "Unlock all styles" purchase, in the Styles page's app bar (ui/styles/StylesScreen.kt). The price is Play's, on its own purchase sheet. -->
+    <!-- The button's label, beside the purchase's icon (a palette with an open padlock). -->
+    <string name="styles_unlock_all">Unlock All</string>
+    <!-- What a screen reader says for the button. -->
+    <string name="styles_unlock_all_spoken">Unlock all styles</string>
+    <!-- The button while the player's payment hasn't gone through yet (cash, a slow payment method). -->
+    <string name="styles_payment_pending">Payment pending</string>
+    <!-- Shown for a moment once the purchase completes. -->
+    <string name="styles_all_unlocked">All styles unlocked</string>
+    <!-- The dialog Unlock All opens, before the store's own purchase sheet (which shows the price). Two paragraphs; %1$s is the app's name. -->
+    <string name="styles_unlock_all_dialog_title">Unlock All</string>
+    <string name="styles_unlock_all_dialog_message">Unlock every style instantly, without needing to earn achievements. Includes all dice, dice cups, mats, backgrounds, frames, and even secret colours.\n\nAll styles can also be earned for free through gameplay, and this app will never lock anything behind a purchase. This is purely an optional shortcut and a way to support %1$s!</string>
+    <!-- Goes on to the store's purchase sheet: nothing is bought yet. -->
+    <string name="styles_unlock_all_continue">Continue</string>
+    <!-- A toast: the store's purchase sheet couldn't be opened after Continue, so nothing was bought. -->
+    <string name="styles_unlock_all_failed">Couldn't open the store. Please try again later.</string>
+    <!-- TalkBack's name for tapping a style, or one of its colours. -->
+    <string name="styles_select_action">Select</string>
+    <!-- TalkBack's name for a long press on a style with several colours: "Choose Frosted colour". %2$s is style_variant_colour or style_variant_design. -->
+    <string name="styles_choose_variant_action">Choose %1$s %2$s</string>
+    <!-- A style and its colour: "Frosted, Ice". -->
+    <string name="styles_family_colour_cd">%1$s, %2$s</string>
+    <string name="styles_locked_spoken">Locked</string>
+    <!-- %1$s is the style's name. -->
+    <string name="styles_show_unlock_action">Show how to unlock %1$s</string>
+    <string name="common_ok">OK</string>
+    <!-- The Leaderboard's and Statistics' entry for every game mode's games together, last in their drop-downs. -->
+    <string name="common_combined">Combined</string>
+
+    <!-- Leaderboard (ui/scores/*) -->
+    <string name="scores_title">Leaderboard</string>
+    <!-- The board's drop-down, at the top: a board for each game mode. -->
+    <string name="scores_board_label">Leaderboard</string>
+    <string name="scores_board_empty">No scores in %1$s yet</string>
+    <string name="scores_global">Global</string>
+    <string name="scores_global_cd">Global leaderboard for %1$s on %2$s</string>
+    <!-- Column headings of the table ("#", "5x" and the score). -->
+    <string name="scores_header_player">Player</string>
+    <string name="scores_header_score">Score</string>
+    <string name="scores_previous">Previous</string>
+    <string name="scores_next">Next</string>
+    <string name="scores_page_top_cd">Go to the top of the page</string>
+    <string name="scores_page_bottom_cd">Go to the bottom of the page</string>
+    <!-- Spoken (and drawn) page counts: "Page 2 of 5". -->
+    <string name="common_page_of">Page %1$d of %2$d</string>
+
+    <!-- Statistics (ui/statistics/*) -->
+    <string name="stats_title">Statistics</string>
+    <string name="stats_play_time">Time played: %1$s</string>
+    <string name="stats_play_time_seconds">%1$ds</string>
+    <string name="stats_play_time_days_hours_minutes">%1$sd %2$dh %3$dm</string>
+    <string name="stats_play_time_hours_minutes">%1$dh %2$dm</string>
+    <string name="stats_play_time_minutes">%1$dm</string>
+    <plurals name="stats_play_time_seconds_spoken">
+        <item quantity="one">%1$d second</item>
+        <item quantity="other">%1$d seconds</item>
+    </plurals>
+    <plurals name="stats_play_time_days_spoken">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="stats_play_time_hours_spoken">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
+    <plurals name="stats_play_time_minutes_spoken">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+    <!-- TalkBack's name for the button that opens the sort menu on the Statistics screen. -->
+    <string name="stats_sort_action">Sort players</string>
+    <string name="stats_sort_name">Name</string>
+    <string name="stats_sort_first_played">First played</string>
+    <string name="stats_sort_highest_score">Highest score</string>
+    <string name="stats_sort_highest_average">Highest average</string>
+    <string name="stats_sort_most_games">Most games</string>
+    <!-- Spoken state of the sort option in use: ascending is A to Z, oldest first, fewest first. -->
+    <string name="stats_sort_ascending">Selected, ascending</string>
+    <string name="stats_sort_descending">Selected, descending</string>
+    <!-- TalkBack's name for tapping the sort option already in use. -->
+    <string name="stats_sort_reverse_action">Reverse order</string>
+    <string name="stats_empty">No statistics yet - play a game!</string>
+    <!-- The page's drop-down, at the top: a page for each game mode, then every mode's games together (common_combined). -->
+    <string name="stats_page_label">Statistics</string>
+    <string name="stats_page_empty">No statistics in %1$s yet</string>
+    <string name="stats_delete_title">Delete statistics?</string>
+    <!-- %1$s is the player's name. -->
+    <string name="stats_delete_message">Would you like to delete %1$s's statistics in every game mode? Their leaderboard scores will not be affected.</string>
+    <string name="stats_delete_confirm">Delete</string>
+    <!-- TalkBack's name for a long press on a player's card. -->
+    <string name="stats_delete_action">Delete %1$s's statistics</string>
+    <string name="stats_expanded_spoken">Expanded</string>
+    <string name="stats_collapsed_spoken">Collapsed</string>
+    <!-- A player's card read aloud: sentences joined with common_sentences_join. Collapsed it is just this one. -->
+    <string name="stats_spoken_best">%1$s. Best score %2$s.</string>
+    <!-- %1$s is a date and time. -->
+    <string name="stats_spoken_first_played">First played %1$s.</string>
+    <string name="stats_spoken_record">Played %1$d, won %2$d, lost %3$d.</string>
+    <string name="stats_spoken_streaks">Win streak %1$d, best win streak %2$d.</string>
+    <!-- %1$s is the player's points across every game, thousands-separated. -->
+    <string name="stats_spoken_total_points">Total points scored: %1$s.</string>
+    <plurals name="stats_spoken_fives">
+        <item quantity="one">%1$d 5x scored.</item>
+        <item quantity="other">%1$d 5x scored.</item>
+    </plurals>
+    <!-- Spoken after stats_spoken_fives; chosen by the number of dice (%1$d). -->
+    <plurals name="stats_spoken_dice_rolled">
+        <item quantity="one">%1$d die rolled.</item>
+        <item quantity="other">%1$d dice rolled.</item>
+    </plurals>
+    <!-- Chosen by the number of solo games (%1$d). -->
+    <plurals name="stats_spoken_solo">
+        <item quantity="one">%1$d solo game played.</item>
+        <item quantity="other">%1$d solo games played.</item>
+    </plurals>
+    <string name="stats_first_played">First played</string>
+    <string name="stats_best">Best</string>
+    <!-- A score with its unit, as the card's best score and its average show it: %1$s is the number, thousands-separated ("1,287pts"). The same short form as rules_points_short. -->
+    <string name="stats_points">%1$spts</string>
+    <string name="stats_average">Average</string>
+    <string name="stats_solo">Solo</string>
+    <!-- Labels under the three big numbers on an opened card. -->
+    <string name="stats_games">Games</string>
+    <string name="stats_win_rate">Win rate</string>
+    <!-- A win rate: %1$d is a whole percentage of the games against someone that were won. -->
+    <string name="stats_win_rate_value">%1$d%</string>
+    <!-- Shown for a win rate when every game was solo, and for a win streak before a first win: there is none. -->
+    <string name="stats_no_win_rate">-</string>
+    <!-- The key under an opened card's won/lost/solo bar: one each, chosen by its count (%1$d). -->
+    <plurals name="stats_record_won">
+        <item quantity="one">%1$d won</item>
+        <item quantity="other">%1$d won</item>
+    </plurals>
+    <plurals name="stats_record_lost">
+        <item quantity="one">%1$d lost</item>
+        <item quantity="other">%1$d lost</item>
+    </plurals>
+    <plurals name="stats_record_solo">
+        <item quantity="one">%1$d solo</item>
+        <item quantity="other">%1$d solo</item>
+    </plurals>
+    <!-- An opened card's detail lines: a label, then its value. -->
+    <string name="stats_win_streak">Win streak</string>
+    <!-- %1$d is the current win streak, %2$d the longest. -->
+    <string name="stats_win_streak_value">%1$d (best %2$d)</string>
+    <string name="stats_fives_scored">5x scored</string>
+    <string name="stats_dice_rolled">Dice rolled</string>
+    <string name="stats_total_points">Total points</string>
+    <!-- The Combined page's mode table's column headings; the rows under Win are win rates, under Best each mode's best score. -->
+    <string name="stats_mode">Mode</string>
+    <string name="stats_win">Win</string>
+    <!-- Spoken, after stats_spoken_record: %1$d is a whole percentage. -->
+    <string name="stats_spoken_win_rate">Win rate %1$d%.</string>
+    <string name="stats_spoken_average">Average score %1$s.</string>
+    <!-- A mode table row read aloud, after stats_spoken_best with the mode's name: chosen by the games in it (%1$d). -->
+    <plurals name="stats_spoken_games">
+        <item quantity="one">%1$d game played.</item>
+        <item quantity="other">%1$d games played.</item>
+    </plurals>
+
+    <!-- Achievements (ui/achievements/*) -->
+    <string name="achievements_title">Achievements</string>
+    <!-- The card at the top: achievements earned, of all there are. -->
+    <!-- What a screen reader says a tap on the count banner does while signed in: %1$s is the online service ("Google Play Games"). -->
+    <string name="achievements_online_action">Open %1$s</string>
+    <string name="achievements_earned_count">%1$d of %2$d earned</string>
+    <!-- The count when "earned" doesn't fit the card, then the percentage when even this doesn't. -->
+    <string name="achievements_earned_count_short">%1$d of %2$d</string>
+    <string name="achievements_earned_percent">%1$d%</string>
+    <string name="achievements_category_count">%1$d/%2$d</string>
+    <string name="achievements_all_unlocked">Everything's earned. Nothing left to chase!</string>
+    <string name="achievements_unearned_only">Unearned</string>
+    <!-- The arrows on a category's header, which jump to the neighbouring one. -->
+    <string name="achievements_previous_category_cd">Previous category</string>
+    <string name="achievements_next_category_cd">Next category</string>
+    <!-- Stands in for the description of a hidden achievement until it is earned. -->
+    <string name="achievements_hidden_description">???</string>
+    <!-- %1$s is a date and time. -->
+    <string name="achievements_unlocked_at">Earned %1$s</string>
+    <!-- Progress towards an achievement: "250 of 1,000". Numbers come grouped. -->
+    <string name="achievements_progress">%1$s of %2$s</string>
+    <!-- TalkBack's names for tapping an achievement banner, which holds it on screen or lets it go. -->
+    <string name="achievements_banner_pause_action">Pause countdown</string>
+    <string name="achievements_banner_resume_action">Resume countdown</string>
+    <!-- Said when the tap holds a banner or lets it go again. -->
+    <string name="achievements_banner_paused_spoken">Paused</string>
+    <string name="achievements_banner_resumed_spoken">Resumed</string>
+    <!-- An unlock banner read aloud: its title, then its description. -->
+    <string name="achievements_banner_unlocked_spoken">Achievement earned: %1$s. %2$s</string>
+    <!-- The same, for an achievement that also unlocks a style. -->
+    <string name="achievements_banner_unlocked_style_spoken">Achievement earned: %1$s. %2$s. Unlocks a style</string>
+    <!-- A progress banner read aloud: the title, then how far along. -->
+    <string name="achievements_banner_progress_spoken">%1$s: %2$s of %3$s</string>
+
+    <!-- Rules pages (ui/rules/RulesScreen.kt): one page per idea, in order, in three groups (rules_group_*): the rules, the game modes, then the modifiers. Body text may use markup: `backticks` for the name of a scoring category (gold, monospace), *italics* for the name of a section, mode or setting, **bold** for a number of points or a count. "Npts" is the short form of points (see rules_points_short). -->
+    <string name="rules_how_to_play_title">How to Play %1$s</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_how_to_play_tab">How to Play</string>
+    <string name="rules_how_to_play_1">Score as many points as possible by rolling five dice, with three rolls per round.</string>
+    <string name="rules_how_to_play_2">You may hold any dice you want after a roll, then roll the remaining dice.</string>
+    <string name="rules_how_to_play_3">Once you're happy with the roll (or you've rolled three times), score it in any open category on your scorecard.</string>
+    <string name="rules_how_to_play_4">The game ends once every category is filled.</string>
+    <string name="rules_how_to_play_tutorial">Want to see it played? The tutorial takes you through a whole game, one step at a time. Nothing in it counts: no scores, achievements, or saved game.</string>
+    <!-- The button under rules_how_to_play_tutorial that starts it. -->
+    <string name="rules_tutorial_start">Play the Tutorial</string>
+    <string name="rules_upper_section_title">Scoring: Upper Section</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_upper_section_tab">Upper Section</string>
+    <string name="rules_upper_section_1">Each *Upper Section* category, from `Ones` to `Sixes`, scores the total of the dice showing that number. For example:</string>
+    <string name="rules_upper_section_2">Total of the dice showing 5</string>
+    <string name="rules_upper_section_3">Score **63pts** or more across the whole section and you earn a bonus **35pts**! That's an average of three of each number.</string>
+    <string name="rules_lower_section_title">Scoring: Lower Section</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_lower_section_tab">Lower Section</string>
+    <string name="rules_lower_section_1">The *Lower Section* awards points for specific dice combinations:</string>
+    <string name="rules_lower_section_2">Total of all five dice, if at least three dice are the same</string>
+    <string name="rules_lower_section_3">Total of all five dice, if at least four dice are the same</string>
+    <string name="rules_lower_section_4">Three of one number and two of another</string>
+    <string name="rules_lower_section_5">Four numbers in a row</string>
+    <string name="rules_lower_section_6">Five numbers in a row</string>
+    <string name="rules_lower_section_7">All five dice are the same</string>
+    <string name="rules_lower_section_8">The sum of all five dice</string>
+    <string name="rules_5x_and_joker_title">5x and the Joker Rule</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_5x_and_joker_tab">5x &amp; Joker</string>
+    <string name="rules_5x_and_joker_1">If you roll five matching dice, you can score a `5x` worth **50pts**.</string>
+    <string name="rules_5x_and_joker_2">Roll another five matching dice after already scoring a `5x`? It earns a **100pts** bonus, on top of whatever category you then score those dice in.</string>
+    <string name="rules_5x_and_joker_3">When you score a repeat `5x`, the Joker rule decides where it can go:</string>
+    <string name="rules_5x_and_joker_4">The matching *Upper Section* category, if it's still open. Five 4s must go in `Fours`, scored for **20pts**, in addition to the bonus.</string>
+    <string name="rules_5x_and_joker_5">Otherwise, any unscored category outside the *Upper Section*, in addition to the bonus. `Full House`, `Small Straight` and `Large Straight` score their full fixed amount.</string>
+    <string name="rules_5x_and_joker_6">If every category outside the *Upper Section* is already filled, you must score it in an unscored *Upper Section* category for **0pts**, but you still get the **100pts** bonus.</string>
+    <string name="rules_tie_breaks_title">Tie Breaks</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_tie_breaks_tab">Tie Breaks</string>
+    <string name="rules_tie_breaks_1">If multiple players end the game with the same score, the following checks are made in order. The first difference decides who wins the tie:</string>
+    <string name="rules_tie_breaks_2">Fewest `5x`</string>
+    <string name="rules_tie_breaks_3">Most categories scored **0pts**</string>
+    <string name="rules_tie_breaks_4">Lower *Upper Section* total</string>
+    <string name="rules_tie_breaks_5">Lower `Chance`</string>
+    <string name="rules_tie_breaks_6">Lower `3x`</string>
+    <string name="rules_tie_breaks_7">Lower `4x`</string>
+    <string name="rules_tie_breaks_8">If all of these are equal, then it is a true tie.</string>
+    <string name="rules_modes_title">Game Modes</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_modes_tab">Overview</string>
+    <string name="rules_modes_1">A *Game Mode* changes the rules for a whole game. Choose one on the new game screen for a new way to play %1$s.</string>
+    <string name="rules_modes_2">*Standard* is the default, and plays by the rules on the *Gameplay* pages. Every other mode starts from those rules and changes some of them: more dice, different categories, etc.</string>
+    <string name="rules_modes_3">Scores from *Standard* and *Tricolour* go on the *Leaderboard*. The other modes' scores don't, since they can't be compared with a normal game, but every mode counts towards your *Statistics*.</string>
+    <string name="rules_modes_4">Any mode can also be played with *Modifiers*, which have pages of their own.</string>
+    <string name="rules_tricolour_title">Tricolour</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_tricolour_tab">Tricolour</string>
+    <string name="rules_tricolour_1">Similar to *Standard*, but every die also rolls a colour (red, yellow, or blue) alongside its number.</string>
+    <string name="rules_tricolour_2">There are four extra scoring categories:</string>
+    <string name="rules_tricolour_3">All five dice are red</string>
+    <string name="rules_tricolour_4">All five dice are yellow</string>
+    <string name="rules_tricolour_5">All five dice are blue</string>
+    <string name="rules_tricolour_6">Three of one colour and two of another</string>
+    <string name="rules_tricolour_7">Under the Joker rule, a repeat `5x` also scores `Coloured House` at its full **25pts**. Everything else plays exactly the same as the *Standard* rules, just with more opportunities to score.</string>
+    <string name="rules_tricolour_8">See if you can find the Easter Egg in this mode!</string>
+    <string name="rules_quickfire_title">Quickfire</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_quickfire_tab">Quickfire</string>
+    <string name="rules_quickfire_1">A limited version of *Standard*. Every game starts with the `5x` category and **six** others, picked at random, disabled. That leaves just **six** categories to score, so a game lasts only **six** turns.</string>
+    <string name="rules_quickfire_2">A disabled category has a slash through it. There will be three categories enabled from the upper section, and three from the lower section.</string>
+    <string name="rules_quickfire_3">With `5x` disabled, there is no Joker rule and no bonus for repeat 5x.</string>
+    <string name="rules_quickfire_4">The *Upper Section* bonus scales based on the disabled categories. It still earns **35pts**, but the target is reduced. With `Threes` disabled you need **54pts**, which is **9pts** less.</string>
+    <string name="rules_quickfire_5">The *Extended Scores* modifier categories are never disabled, if the modifier is enabled.</string>
+    <string name="rules_quickfire_6">Scores from this mode don't go on the *Leaderboard*, since every game has a different scorecard, but they still count towards your *Statistics*.</string>
+    <string name="rules_stud_title">7 Dice Stud</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_stud_tab">7 Dice Stud</string>
+    <string name="rules_stud_1">A custom mode extending the *Standard* game mode. Every roll is **seven** dice instead of five.</string>
+    <string name="rules_stud_2">Like in *Standard*, you may only score with **five** held dice.</string>
+    <string name="rules_stud_3">Your scorecard shows what your selection of seven dice would score, highlighting the best combination. In `4x`, these dice take the four 6s and the 5:</string>
+    <string name="rules_stud_4">If multiple dice give the same highest score, the leftmost ones are chosen. Here, `Large Straight` is worth **40pts** with the 1 to 5 or the 2 to 6:</string>
+    <string name="rules_stud_5">To override this, hold the dice you want first. Holding the 6 makes it the 2 to 6:</string>
+    <string name="rules_stud_6">If the *Turn Timer* runs out, the first box that can still be scored is chosen.</string>
+    <string name="rules_stud_7">Scoring, bonuses, and the Joker rule are exactly the same as the *Standard* rules. You just get more dice to choose your hand from!</string>
+    <string name="rules_stud_8">Since you choose your best hand from seven dice, totals here don't compare with other modes, so the achievements for a high score, a scorecard with no zeroes, rolling 5x or a straight, or filling a section, can't be earned in it. Scores from this mode don't go on the *Leaderboard*, but they still count towards your *Statistics*.</string>
+    <string name="rules_stud_9">Press and hold a box to see which dice it would take: a solid gold outline for the dice that score, a dashed one for any that would have scored the same, and the rest fade back. Here, holding `Large Straight`:</string>
+    <string name="rules_third_wind_title">Third Wind</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_third_wind_tab">Third Wind</string>
+    <string name="rules_third_wind_1">A triple variant of *Standard*. Every category is scored **three** times instead of once, so a game lasts **39** turns.</string>
+    <string name="rules_third_wind_2">Each category can be scored up to three times, and the category is worth all of its slots added up. It stays open until all **three** are filled.</string>
+    <string name="rules_third_wind_3">There's still just one *Upper Section* bonus, but it's tripled too: score **189pts** or more across the section to earn **105pts**.</string>
+    <string name="rules_third_wind_4">Each of the `5x` slots takes a `5x` for **50pts**. The **100pts** bonus and the Joker rule only begin once all **three** are filled, with at least one of them scoring **50pts**.</string>
+    <string name="rules_third_wind_5">Here's an example turn, with `Fives` already holding **15pts** and **10pts**:</string>
+    <string name="rules_third_wind_6">The first roll lands three 5s. Hold them, and roll the other **two** dice again.</string>
+    <string name="rules_third_wind_7">Another 5! Hold it too, and roll the last die.</string>
+    <string name="rules_third_wind_8">The last roll is a 6. That's worth **26pts** in `4x`, or **20pts** in `Fives`.</string>
+    <string name="rules_third_wind_9">Score it in `Fives`. It fills the last of its **three** slots, so `Fives` is closed for the rest of the game, worth **45pts** in total.</string>
+    <string name="rules_third_wind_10">In a tie break, every slot that scored **0pts** counts as a category scored **0pts**.</string>
+    <string name="rules_third_wind_11">Scores from this mode don't go on the *Leaderboard*, but they still count towards your *Statistics*.</string>
+    <string name="rules_third_wind_12">Everything else plays exactly the same as the *Standard* rules, just three times over!</string>
+    <string name="rules_d20_title">D20</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_d20_tab">D20</string>
+    <string name="rules_d20_1">A custom mode with **5** dice and **5** rolls, but the dice have **20** sides. The scorecard is the numbers `1` to `20`, with no *Lower Section* and no `5x`.</string>
+    <string name="rules_d20_2">Each category adds up the dice showing its number, like the *Upper Section*. This roll is worth **51pts** in `17`:</string>
+    <string name="rules_d20_7">Each half also has a wildcard, `1-10` and `11-20`. It adds up every die showing a number from its half, whichever numbers they are. This roll is worth **43pts** in the `11-20` wildcard:</string>
+    <string name="rules_d20_8">A wildcard's points count towards its half, and so towards that half's bonus.</string>
+    <string name="rules_d20_3">The numbers are split into two halves, `1` to `10` and `11` to `20`. Add up **150pts** in the *1st half* for a bonus of **75pts**, and **400pts** in the *2nd half* for another **75pts**. Both can be earned in the same game. Those are a little over two and a half dice of each number.</string>
+    <string name="rules_d20_4">With no `5x` category there is no Joker rule and no bonus for a repeat 5x. The *Totals* button shows each half and the bonuses.</string>
+    <string name="rules_d20_5">The *Extended Scores* and *First Roll Bonus* modifiers can't be used in this mode. The *Number of Rolls* modifier changes the **5** rolls.</string>
+    <string name="rules_d20_6">Totals here don't compare with other modes, so the achievements for a high or low score, a scorecard with no zeroes, or for winning from behind after scoring three zeroes, can't be earned in it. Scores from this mode don't go on the *Leaderboard*, but they still count towards your *Statistics*.</string>
+    <string name="rules_hit_list_title">Hit List</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_hit_list_tab">Hit List</string>
+    <string name="rules_hit_list_1">A custom mode with **5** dice and **3** rolls, but none of the *Standard* categories. Instead, every game deals a list of **12** targets, plus the `Alibi`.</string>
+    <string name="rules_hit_list_2">A target names a number for the die in each place, left to right. Up to **two** places are left open, and any die fills those. This target is worth **20pts**:</string>
+    <string name="rules_hit_list_3">Every number the target names is among your dice, in any order. Scores the target's points</string>
+    <string name="rules_hit_list_4">Every number the target names is on the die in its own place. Scores double</string>
+    <string name="rules_hit_list_5">At least **two** of the numbers the target names are among your dice, but not all of them. Scores half the target's points, times the share of its numbers you rolled, rounded to the nearest **5pts**</string>
+    <string name="rules_hit_list_7">Harder targets are worth more, and each target's tile shows its points. Naming **three** numbers is worth **10pts** or **15pts**, **four** numbers **20pts** to **30pts**, and all **five** **40pts** to **75pts**. An open place makes a target easier to hit, so it's worth less.</string>
+    <string name="rules_hit_list_8">As you roll, each target's tile has bars to show what you've successfully matched, and highlights in gold once a die is in the correct position.</string>
+    <string name="rules_hit_list_9">Score a valid hit here instead of a matching category. It's worth the points of your best hit, but never doubled</string>
+    <string name="rules_hit_list_10">Held dice stay where they are, so a die in the wrong place stays there until you roll it again. If nothing scores, cross off a target or the `Alibi` for **0pts**.</string>
+    <string name="rules_hit_list_11">Here's an example turn, chasing the target above:</string>
+    <string name="rules_hit_list_12">The first roll has the 4 and the 1 in their places, and a 2 in the open place. Hold all **three**: the 2 counts towards a hit wherever it is.</string>
+    <string name="rules_hit_list_13">A 3 lands in its place. That's a hit for **20pts**, but the 2 is in the open place, not the fourth. Hold the 3 too.</string>
+    <string name="rules_hit_list_14">Roll the fourth die on its own. A 2 there is an exact hit, and if it misses, the hit is safe: the last die is still a 2.</string>
+    <string name="rules_hit_list_15">It's a 2! Score the exact hit for **40pts**. Had it missed, you could take the hit for **20pts**, or score it in the `Alibi` and keep this target for another try.</string>
+    <string name="rules_hit_list_16">The *Extended Scores* and *First Roll Bonus* modifiers can't be used in this mode. With *Unlucky Dice*, a locked die can't count towards a target, and a roll with one locked can't be an exact hit.</string>
+    <string name="rules_hit_list_17">Totals here don't compare with other modes, so the achievements for a high or low score, a scorecard with no zeroes, or for winning from behind after scoring three zeroes, can't be earned in it. Scores from this mode don't go on the *Leaderboard*, since every game has a different list, but they still count towards your *Statistics*.</string>
+    <string name="rules_modifiers_title">Modifiers</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_modifiers_tab">Overview</string>
+    <string name="rules_modifiers_1">*Modifiers* are optional extras you can add to any game mode. Choose them on the new game screen: each can be switched on or off, and some also have a value to set.</string>
+    <string name="rules_modifiers_2">*Modifiers* are just for fun. A game with any modifier switched on doesn't go on the *Leaderboard* or count towards your *Statistics*, and earns no achievements but the modifiers' own: *Rainy Day Fund*, *Bad Omen*, and *Everything Everywhere All At Once*.</string>
+    <string name="rules_turn_timer_title">Turn Timer</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_turn_timer_tab">Turn Timer</string>
+    <string name="rules_turn_timer_1">*Turn Timer* sets a limit on how long each player has to finish their turn (not each roll). Choose **30**, **60**, or **120** seconds. Optionally, you may select your own value between **5**s and **999**s. The remaining time will begin to flash red when there are 5 seconds remaining.</string>
+    <string name="rules_turn_timer_2">If a player's time runs out, their turn is scored for them in the first open category on the scorecard: with their dice as they lie, or as a zero if they hadn't rolled yet.</string>
+    <string name="rules_turn_timer_3">As with every modifier, no achievements can be earned with *Turn Timer* on, except the modifiers' own.</string>
+    <string name="rules_number_of_rolls_title">Number of Rolls</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_number_of_rolls_tab">Number of Rolls</string>
+    <string name="rules_number_of_rolls_1">*Number of Rolls* sets how many times a player may roll each turn, from **1** to **9**. This overrides the mode's usual number, which is **3** in most.</string>
+    <string name="rules_number_of_rolls_2">As with every modifier, no achievements can be earned with *Number of Rolls* on, except the modifiers' own.</string>
+    <string name="rules_stored_rolls_title">Stored Rolls</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_stored_rolls_tab">Stored Rolls</string>
+    <string name="rules_stored_rolls_1">With *Stored Rolls*, any rolls a player doesn't use before scoring are kept for their next turn, on top of that turn's usual rolls, and so on. The dice cup shows the current total.</string>
+    <string name="rules_stored_rolls_2">*Stored Rolls* can have a max configured. Leave it empty for no limit.</string>
+    <string name="rules_stored_rolls_3">As with every modifier, no achievements can be earned with *Stored Rolls* on, except the modifiers' own, like *Rainy Day Fund*.</string>
+    <string name="rules_extended_scores_title">Extended Scores</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_extended_scores_tab">Extended Scores</string>
+    <string name="rules_extended_scores_1">*Extended Scores* adds three more scoring categories to every player's scorecard, after the others. It works in every game mode, so the game lasts three turns longer.</string>
+    <string name="rules_extended_scores_2">Total of the four dice making two pairs of different numbers. A fifth die is never counted, even if it matches a pair</string>
+    <string name="rules_extended_scores_3">Total of the dice showing 2, 4, or 6</string>
+    <string name="rules_extended_scores_4">Total of the dice showing 1, 3, or 5</string>
+    <string name="rules_extended_scores_5">The extra categories have their own section, so they don't count towards the upper bonus or the lower section's total. As with every modifier, no achievements can be earned with *Extended Scores* on, except the modifiers' own.</string>
+    <string name="rules_first_roll_bonus_title">First Roll Bonus</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_first_roll_bonus_tab">First Roll Bonus</string>
+    <string name="rules_first_roll_bonus_1">With *First Roll Bonus*, a category in the *Lower Section* scored on the first roll of a turn earns **5pts** more. It works in every game mode with a *Lower Section*, so not in *D20* or *Hit List*.</string>
+    <string name="rules_first_roll_bonus_2">Here a `Full House` came up on the first roll and was scored straight away, so it's worth **30pts**: its usual **25pts**, plus the **5pts** bonus. The bonus is part of the category's score on the scorecard.</string>
+    <string name="rules_first_roll_bonus_3">`5x` never earns the bonus, and nor does a category scored as **0**. Once the dice are rolled a second time, the bonus is gone for that turn.</string>
+    <string name="rules_first_roll_bonus_4">As with every modifier, no achievements can be earned with *First Roll Bonus* on, except the modifiers' own.</string>
+    <string name="rules_unlucky_dice_title">Unlucky Dice</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_unlucky_dice_tab">Unlucky Dice</string>
+    <string name="rules_unlucky_dice_1">With *Unlucky Dice*, each time the dice are rolled, every die that was rolled has a chance of landing locked in a red cross of chains. A locked die can't be held and doesn't score, and a category that needs all five dice, like *5x* or the *Large Straight*, can't be scored. Dice you are holding are never locked, and a locked die can be rolled again.</string>
+    <string name="rules_unlucky_dice_2">Here the last **5** is locked, so it can't be held or scored. Only the other three **5**s score in *Fives*; with the locked one it would have been **20pts**. The **2** doesn't count, as usual.</string>
+    <string name="rules_unlucky_dice_3">You may configure the percentage chance each rolled die has of being locked, from **10%** to **50%**, and the maximum number of dice that can be locked on one roll, from **1** to **5**.</string>
+    <string name="rules_unlucky_dice_4">As with every modifier, no achievements can be earned with *Unlucky Dice* on, except the modifiers' own, like *Bad Omen*.</string>
+
+    <!-- Rules screen: everything else (ui/rules/RulesScreen.kt) -->
+    <string name="rules_title">Rules</string>
+    <!-- The pill at the foot: which page of its group (rules_group_*) is showing. Spoken as rules_page_in_group_spoken. -->
+    <string name="rules_page_count">%1$d of %2$d</string>
+    <!-- The three groups of pages, in the top tab row: the rules themselves, the game modes, and the modifiers. Keep them short. -->
+    <string name="rules_group_gameplay">Gameplay</string>
+    <string name="rules_group_modes">Modes</string>
+    <string name="rules_group_modifiers">Modifiers</string>
+    <!-- The footer read aloud: the group of pages (rules_group_*), then which of its pages is showing. -->
+    <string name="rules_page_in_group_spoken">%1$s, page %2$d of %3$d</string>
+    <!-- The number of a step in a list. -->
+    <string name="rules_step_number">%1$d.</string>
+    <!-- What an example roll scores, after its dice: "= 25pts". -->
+    <string name="rules_example_equals">= %1$s</string>
+    <!-- An amount of points as it is drawn ("25pts"), and as it is written in the pages' text. A spoken page says it in full (rules_points_spoken): this is how those are found. -->
+    <string name="rules_points_short">%1$dpts</string>
+    <!-- Two amounts added together: "20pts + 100pts". Keep the " + " (with its spaces): the spoken page reads it as rules_plus_spoken. -->
+    <string name="rules_points_sum">%1$s + %2$s</string>
+    <!-- Said for the "+" between two amounts. -->
+    <string name="rules_plus_spoken">plus</string>
+    <!-- An amount of points in a page read aloud. -->
+    <plurals name="rules_points_spoken">
+        <item quantity="one">%1$d point</item>
+        <item quantity="other">%1$d points</item>
+    </plurals>
+    <!-- The example turn timer on the Modifiers page. -->
+    <plurals name="rules_timer_example_cd">
+        <item quantity="one">Example: the turn timer, turning red with %1$d second left</item>
+        <item quantity="other">Example: the turn timer, turning red with %1$d seconds left</item>
+    </plurals>
+    <!-- Headings of the Hit List page's three kinds of hit. -->
+    <string name="rules_name_exact_hit">Exact Hit</string>
+    <string name="rules_name_hit">Hit</string>
+    <string name="rules_name_partial_hit">Partial Hit</string>
+
+    <!-- Shown in place of the whole app when the file holding the scores can't be opened, typically after an update whose database change failed (ui/common/DatabaseFailurePage.kt). %1$s is the app's name. -->
+    <string name="common_database_failure_title">Your scores can't be opened</string>
+    <string name="common_database_failure_body">%1$s couldn't open the file that holds your Leaderboard and Statistics, so it has stopped here rather than risk changing it.</string>
+    <string name="common_database_failure_advice">Nothing has been deleted. Updating the app to its latest version usually puts this right.</string>
+    <!-- Above the technical error message on this page and the crash page, shown untranslated so it can be copied into a report (ui/common/FailurePage.kt). -->
+    <string name="common_failure_details">If it keeps happening, these details will help when you report it:</string>
+
+    <!-- Shown in place of the whole app after an error it couldn't recover from stopped it (ui/common/CrashPage.kt), above the same details as the page above. %1$s is the app's name. -->
+    <string name="common_crash_title">Something went wrong</string>
+    <string name="common_crash_body">%1$s ran into a problem it couldn't recover from, so it has stopped here.</string>
+    <string name="common_crash_advice">Your scores, achievements, and settings are kept, but a game in progress may have lost its last move.</string>
+    <string name="common_crash_advice_game_removed">Your scores, achievements, and settings are kept, but the game in progress can't be resumed and will be removed.</string>
+    <!-- The button that starts the app again, beside Report on GitHub. -->
+    <string name="common_crash_restart">Restart</string>
+    <!-- In the details section, above them: copies them, then says it has. -->
+    <string name="common_crash_copy">Copy Details</string>
+    <string name="common_crash_copied">Copied</string>
+    <!-- Opens a new issue on the app's GitHub page with the details filled in, for the player to post. GitHub is a brand name. -->
+    <string name="common_crash_report">Report on GitHub</string>
+
+</resources>

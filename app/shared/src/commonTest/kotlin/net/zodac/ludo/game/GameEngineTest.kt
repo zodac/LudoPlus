@@ -1,0 +1,819 @@
+package net.zodac.ludo.game
+
+import kotlin.random.Random
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
+import kotlin.uuid.Uuid
+import net.zodac.ludo.model.Achievement
+import net.zodac.ludo.model.Die
+import net.zodac.ludo.model.DieColour
+import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.GameState
+import net.zodac.ludo.model.PlayerColour
+import net.zodac.ludo.model.PlayerConfig
+import net.zodac.ludo.model.PlayerState
+import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.RollModifiers
+import net.zodac.ludo.model.ScoreCategory
+import net.zodac.ludo.model.TurnPhase
+import net.zodac.ludo.model.TurnTimer
+import net.zodac.ludo.model.UnluckyDice
+import net.zodac.ludo.oneScoreEach
+
+class GameEngineTest {
+
+    private val onePlayer = listOf(PlayerConfig(slot = 1, type = PlayerType.HUMAN, name = "Player 1"))
+    private val twoPlayers = listOf(
+        PlayerConfig(slot = 1, type = PlayerType.HUMAN, name = "Player 1"),
+        PlayerConfig(slot = 2, type = PlayerType.AI, name = "Bot"),
+    )
+
+    private fun scoreNow(state: GameState, category: ScoreCategory = ScoreCategory.CHANCE) =
+        GameEngine.commitScore(state, category)
+
+    @Test
+    fun `newGame - seats a Human first - distinct colours - and Human names that differ`() {
+        val bot = PlayerConfig(slot = 2, type = PlayerType.AI, name = "Bot")
+        assertFailsWith<IllegalArgumentException> { GameEngine.newGame(listOf(bot.copy(slot = 1), onePlayer.single().copy(slot = 2))) }
+        // A table of CPUs alone has no "You" to seat.
+        assertEquals(2, GameEngine.newGame(listOf(bot.copy(slot = 1, colour = PlayerColour.defaultFor(0)), bot.copy(name = "Robo"))).players.size)
+
+        assertFailsWith<IllegalArgumentException> { GameEngine.newGame(listOf(onePlayer.single(), bot.copy(colour = onePlayer.single().colour))) }
+
+        val alex = PlayerConfig(slot = 1, type = PlayerType.HUMAN, name = "Alex")
+        assertFailsWith<IllegalArgumentException> { GameEngine.newGame(listOf(alex, PlayerConfig(slot = 2, type = PlayerType.HUMAN, name = " ALEX "))) }
+        assertEquals(listOf("Alex", "Alexa"), GameEngine.newGame(listOf(alex, PlayerConfig(slot = 2, type = PlayerType.HUMAN, name = "Alexa"))).players.map { it.name })
+        // A CPU's name is never recorded, so it can share a Human's.
+        assertEquals(listOf("Alex", "Alex"), GameEngine.newGame(listOf(alex, bot.copy(name = "Alex"))).players.map { it.name })
+    }
+
+    @Test
+    fun `newGame - each game its own id - and rollsMade counts every player's rolls - which an undone score doesn't take back`() {
+        assertNotEquals(GameEngine.newGame(onePlayer).id, GameEngine.newGame(onePlayer).id)
+        val id = Uuid.parse("00000000-0000-0000-0000-000000000001")
+        val game = GameEngine.newGame(twoPlayers, id = id)
+        assertEquals(id, game.id)
+        assertEquals(0, game.rollsMade)
+        val rolled = GameEngine.rollDice(GameEngine.rollDice(game))
+        val scored = scoreNow(rolled)
+        val nextRolled = GameEngine.rollDice(scored)
+        assertEquals(listOf(2, 2, 3), listOf(rolled, scored, nextRolled).map { it.rollsMade })
+        assertEquals(id, nextRolled.id)
+    }
+
+    @Test
+    fun `each roll counts the dice it rolled for the player rolling - held dice not - and scoring keeps them`() {
+        val game = GameEngine.newGame(twoPlayers)
+        val rolled = GameEngine.rollDice(game)
+        val held = GameEngine.toggleHold(GameEngine.toggleHold(rolled, dieIndex = 0), dieIndex = 1)
+        val rerolled = GameEngine.rollDice(held)
+        assertEquals(listOf(5, 8), listOf(rolled, rerolled).map { it.players[0].diceRolled })
+        assertEquals(0, rerolled.players[1].diceRolled)
+        // Every held: nothing rolls, so nothing counts.
+        val allHeld = (2 until rerolled.dice.size).fold(rerolled) { state, index -> GameEngine.toggleHold(state, dieIndex = index) }
+        assertEquals(8, GameEngine.rollDice(allHeld).players[0].diceRolled)
+
+        val scored = scoreNow(rerolled)
+        assertEquals(listOf(8, 0), scored.players.map { it.diceRolled })
+        // The next player's own count; 7 Dice Stud's turn rolls all seven.
+        assertEquals(listOf(8, 5), GameEngine.rollDice(scored).players.map { it.diceRolled })
+        assertEquals(7, GameEngine.rollDice(GameEngine.newGame(onePlayer, GameMode.STUD)).players[0].diceRolled)
+    }
+
+    @Test
+    fun `newGame - its players - mode and timer and every modifier taking it off the Leaderboard`() {
+        assertFailsWith<IllegalArgumentException> { GameEngine.newGame(emptyList()) }
+        val fourPlayers = (1..GameState.MAX_PLAYERS).map { PlayerConfig(slot = it, type = PlayerType.HUMAN, name = "Player $it") }
+        assertEquals(GameState.MAX_PLAYERS, GameEngine.newGame(fourPlayers).players.size)
+        assertFailsWith<IllegalArgumentException> { GameEngine.newGame(fourPlayers + PlayerConfig(slot = 5, type = PlayerType.HUMAN, name = "Player 5")) }
+
+        // The chosen mode goes to the game and every player's scorecard.
+        val tricolour = GameEngine.newGame(twoPlayers, GameMode.TRICOLOUR)
+        assertEquals(GameMode.TRICOLOUR, tricolour.gameMode)
+        assertTrue(tricolour.players.all { it.gameMode == GameMode.TRICOLOUR })
+        assertTrue(tricolour.players.all { it.scorecard.keys.toList() == GameMode.TRICOLOUR.categories })
+        assertEquals(GameMode.TRICOLOUR.diceCount, tricolour.dice.size)
+        assertEquals(GameMode.TRICOLOUR.rollsPerTurn, tricolour.rollsRemaining)
+
+        // No turn timer by default, but a chosen one is carried.
+        assertEquals(TurnTimer.NONE, GameEngine.newGame(onePlayer).turnTimer)
+        assertEquals(TurnTimer.SECONDS_30, GameEngine.newGame(onePlayer, turnTimer = TurnTimer.SECONDS_30).turnTimer)
+
+        assertTrue(GameEngine.newGame(onePlayer).countsOnLeaderboard)
+        assertTrue(GameEngine.newGame(onePlayer, rollModifiers = RollModifiers()).countsOnLeaderboard)
+        assertFalse(GameEngine.newGame(onePlayer, turnTimer = TurnTimer.SECONDS_30).countsOnLeaderboard)
+        assertFalse(GameEngine.newGame(onePlayer, rollModifiers = RollModifiers(rollsPerTurn = 3)).countsOnLeaderboard)
+        assertFalse(GameEngine.newGame(onePlayer, rollModifiers = RollModifiers(storedRolls = true)).countsOnLeaderboard)
+        assertFalse(GameEngine.newGame(onePlayer, extendedScores = true).countsOnLeaderboard)
+        assertFalse(GameEngine.newGame(onePlayer, unluckyDice = UnluckyDice()).countsOnLeaderboard)
+        assertFalse(GameEngine.newGame(onePlayer, firstRollBonus = true).countsOnLeaderboard)
+        assertTrue(GameEngine.newGame(onePlayer).unluckyDice == null)
+
+        // A roll modifier is set on every player.
+        assertTrue(GameEngine.newGame(twoPlayers, rollModifiers = RollModifiers(storedRolls = true)).players.all { it.rollsModified })
+        assertTrue(GameEngine.newGame(twoPlayers).players.none { it.rollsModified })
+    }
+
+    @Test
+    fun `a modifier's settings must be in range - Number of Rolls 1 to 9 - Unlucky Dice odds and cap`() {
+        assertFailsWith<IllegalArgumentException> { RollModifiers(rollsPerTurn = 0) }
+        assertFailsWith<IllegalArgumentException> { RollModifiers(rollsPerTurn = 10) }
+        assertFailsWith<IllegalArgumentException> { RollModifiers(storedRollsMax = -1) }
+        assertFailsWith<IllegalArgumentException> { UnluckyDice(oddsPercent = 0) }
+        assertFailsWith<IllegalArgumentException> { UnluckyDice(oddsPercent = 60) }
+        assertFailsWith<IllegalArgumentException> { UnluckyDice(maxDice = 0) }
+        assertFailsWith<IllegalArgumentException> { UnluckyDice(maxDice = 6) }
+    }
+
+    @Test
+    fun `rolling and holding - rolls run out - a held die keeps its value and no hold before the first roll`() {
+        val rolled = GameEngine.rollDice(GameEngine.newGame(onePlayer))
+        assertEquals(2, rolled.rollsRemaining)
+        assertEquals(TurnPhase.ROLLED, rolled.phase)
+
+        var spent = GameEngine.newGame(onePlayer)
+        repeat(3) { spent = GameEngine.rollDice(spent) }
+        assertFailsWith<IllegalStateException> { GameEngine.rollDice(spent) }
+        // Holding has no effect on a roll that won't happen after the last one, but there's no reason to actually forbid
+        // it - see the comment on GameEngine.toggleHold.
+        assertTrue(GameEngine.toggleHold(spent, dieIndex = 0).dice[0].isHeld)
+
+        assertFailsWith<IllegalStateException> { GameEngine.toggleHold(GameEngine.newGame(onePlayer), dieIndex = 0) }
+
+        val held = GameEngine.toggleHold(rolled, dieIndex = 0)
+        val rerolled = GameEngine.rollDice(held)
+        assertEquals(held.dice[0].value, rerolled.dice[0].value)
+        assertTrue(rerolled.dice[0].isHeld)
+    }
+
+    @Test
+    fun `a player's first turn score is kept for the game - not replaced by a later turn, and not set by a turn forfeited before a roll`() {
+        val first = GameEngine.commitScore(GameEngine.rollDice(GameEngine.newGame(twoPlayers)), ScoreCategory.CHANCE)
+        val chance = first.players[0].scoresIn(ScoreCategory.CHANCE).single()
+        assertEquals(listOf<Int?>(chance, null), first.players.map { it.firstTurnScore })
+
+        // Player 2's turn, then player 1's second: the first turn's score stays.
+        val second = GameEngine.commitScore(GameEngine.rollDice(first), ScoreCategory.CHANCE)
+        val again = GameEngine.commitScore(GameEngine.rollDice(second), ScoreCategory.ONES)
+        assertEquals(listOf<Int?>(chance, second.players[1].scoresIn(ScoreCategory.CHANCE).single()), again.players.map { it.firstTurnScore })
+
+        // A first turn the timer ran out on before a roll is a zero for nothing: no score kept, and no later turn takes its place.
+        val forfeited = GameEngine.forfeitTurn(GameEngine.newGame(twoPlayers))
+        assertEquals(listOf<Int?>(null, null), forfeited.players.map { it.firstTurnScore })
+        val afterForfeit = GameEngine.commitScore(GameEngine.rollDice(GameEngine.commitScore(GameEngine.rollDice(forfeited), ScoreCategory.CHANCE)), ScoreCategory.CHANCE)
+        assertEquals(null, afterForfeit.players[0].firstTurnScore)
+    }
+
+    @Test
+    fun `a round ending with a player behind another's total is remembered for them - a tie is not behind - and it lasts the game`() {
+        // Player 2 is about to score Chance with five 4s (20) in the last turn of the round.
+        fun roundEnding(playerOneChance: Int): GameState {
+            val start = GameEngine.newGame(twoPlayers)
+            val first = start.players[0]
+            return start.copy(
+                players = listOf(first.copy(scorecard = first.scorecard + (ScoreCategory.CHANCE to listOf(playerOneChance))), start.players[1]),
+                currentPlayerIndex = 1,
+                dice = List(5) { Die(value = 4) },
+                rollsRemaining = 1,
+                phase = TurnPhase.ROLLED,
+            )
+        }
+        fun behind(state: GameState) = GameEngine.commitScore(state, ScoreCategory.CHANCE).players.map { it.wasBehindAfterARound }
+
+        assertEquals(listOf(true, false), behind(roundEnding(playerOneChance = 10)))
+        assertEquals(listOf(false, true), behind(roundEnding(playerOneChance = 30)))
+        assertEquals(listOf(false, false), behind(roundEnding(playerOneChance = 20)))
+
+        // Not at the end of a turn that leaves the round going: player 1 scoring below player 2's 0 isn't a round's end.
+        val midRound = GameEngine.newGame(twoPlayers).let { it.copy(dice = List(5) { Die(value = 4) }, rollsRemaining = 1, phase = TurnPhase.ROLLED) }
+        assertEquals(listOf(false, false), GameEngine.commitScore(midRound, ScoreCategory.CHANCE).players.map { it.wasBehindAfterARound })
+
+        // Once behind, a later round in front doesn't clear it.
+        val behindOnce = GameEngine.commitScore(roundEnding(playerOneChance = 10), ScoreCategory.CHANCE)
+        val laterRound = behindOnce.copy(
+            players = behindOnce.players.map { it.copy(scorecard = it.scorecard + (ScoreCategory.ONES to listOf(if (it.wasBehindAfterARound) 20 else 0))) },
+            currentPlayerIndex = 1,
+            dice = List(5) { Die(value = 1) },
+            phase = TurnPhase.ROLLED,
+        )
+        // Player 1 now leads (30 to 20), and stays remembered; player 2 is the one behind now.
+        assertEquals(listOf(true, true), GameEngine.commitScore(laterRound, ScoreCategory.TWOS).players.map { it.wasBehindAfterARound })
+    }
+
+    @Test
+    fun `committing a score - after a roll - in an open box - records the hand - moves the turn on and ends the game when full`() {
+        assertFailsWith<IllegalStateException> { GameEngine.commitScore(GameEngine.newGame(onePlayer), ScoreCategory.CHANCE) }
+        // There is only one player, so it's back to the same one - with Chance already filled.
+        val chanceFilled = GameEngine.rollDice(GameEngine.commitScore(GameEngine.rollDice(GameEngine.newGame(onePlayer)), ScoreCategory.CHANCE))
+        assertFailsWith<IllegalStateException> { GameEngine.commitScore(chanceFilled, ScoreCategory.CHANCE) }
+
+        // It advances to the next player and resets the turn, recording the dice and box player 1 scored with - the next
+        // player's own, not having finished a turn, still null.
+        val held = GameEngine.toggleHold(GameEngine.rollDice(GameEngine.newGame(twoPlayers)), dieIndex = 0)
+        var state = GameEngine.commitScore(held, ScoreCategory.CHANCE)
+        assertEquals(1, state.currentPlayerIndex)
+        assertEquals(3, state.rollsRemaining)
+        assertEquals(TurnPhase.AWAITING_ROLL, state.phase)
+        assertTrue(state.dice.none { it.isHeld })
+        assertEquals(held.dice, state.players[0].lastRoll)
+        assertEquals(null, state.players[1].lastRoll)
+        assertEquals(ScoreCategory.CHANCE, state.players[0].lastScoredCategory)
+        assertEquals(null, state.players[1].lastScoredCategory)
+        // Each turn replaces the last.
+        state = GameEngine.commitScore(GameEngine.rollDice(state), ScoreCategory.CHANCE)
+        state = GameEngine.commitScore(GameEngine.rollDice(state), ScoreCategory.FOUR_OF_A_KIND)
+        assertEquals(ScoreCategory.FOUR_OF_A_KIND, state.players[0].lastScoredCategory)
+
+        // Each roll counts towards the rolling player only - across turns.
+        var counted = GameEngine.rollDice(GameEngine.rollDice(GameEngine.newGame(twoPlayers)))
+        counted = GameEngine.rollDice(GameEngine.commitScore(counted, ScoreCategory.CHANCE))
+        assertEquals(listOf(2, 1), counted.players.map { it.rollCount })
+        counted = GameEngine.rollDice(GameEngine.commitScore(counted, ScoreCategory.CHANCE))
+        assertEquals(listOf(3, 1), counted.players.map { it.rollCount })
+
+        // The game ends once every player's scorecard is full.
+        val almostFull = GameState(
+            players = listOf(
+                PlayerState(
+                    name = "Player 1",
+                    type = PlayerType.HUMAN,
+                    scorecard = oneScoreEach(GameMode.STANDARD.categories.associateWith { if (it == ScoreCategory.CHANCE) null else 0 }),
+                ),
+            ),
+            dice = List(5) { Die(value = 4) },
+            rollsRemaining = 1,
+            phase = TurnPhase.ROLLED,
+        )
+        assertTrue(GameEngine.commitScore(almostFull, ScoreCategory.CHANCE).isGameOver)
+    }
+
+    @Test
+    fun `superuser cycling moves one die to its next face - 6 back to 1 - in Tricolour through each colour - whatever rolls are left`() {
+        val rolled = GameEngine.toggleHold(GameEngine.rollDice(GameEngine.newGame(onePlayer)), dieIndex = 0)
+        val three = rolled.copy(dice = rolled.dice.mapIndexed { i, die -> if (i == 0) die.copy(value = 3) else die })
+        val cycled = GameEngine.cycleDieValue(three, dieIndex = 0)
+        assertEquals(4, cycled.dice[0].value)
+        assertTrue(cycled.dice[0].isHeld)
+        assertEquals(three.dice.drop(1), cycled.dice.drop(1))
+        assertEquals(three.rollsRemaining, cycled.rollsRemaining)
+        assertEquals(three.phase, cycled.phase)
+
+        val six = rolled.copy(dice = rolled.dice.mapIndexed { i, die -> if (i == 0) die.copy(value = 6) else die })
+        assertEquals(1, GameEngine.cycleDieValue(six, dieIndex = 0).dice[0].value)
+
+        // It ignores the normal rolls-remaining rule.
+        var spent = GameEngine.newGame(onePlayer)
+        repeat(3) { spent = GameEngine.rollDice(spent) }
+        val before = spent.dice[0].value
+        assertEquals(if (before >= 6) 1 else before + 1, GameEngine.cycleDieValue(spent, dieIndex = 0).dice[0].value)
+
+        // Tricolour runs 1 to 6 within a colour - then on to the next colour.
+        var state = GameEngine.newGame(onePlayer, GameMode.TRICOLOUR).copy(
+            dice = List(5) { Die(value = 1, colour = DieColour.RED, isHeld = true) },
+            phase = TurnPhase.ROLLED,
+        )
+        val seen = mutableListOf(state.dice[0].value to state.dice[0].colour)
+        repeat(18) {
+            state = GameEngine.cycleDieValue(state, dieIndex = 0)
+            seen += state.dice[0].value to state.dice[0].colour
+        }
+        val expected = listOf(DieColour.RED, DieColour.YELLOW, DieColour.BLUE).flatMap { colour -> (1..6).map { it to colour } } + (1 to DieColour.RED)
+        assertEquals<List<Pair<Int, DieColour?>>>(expected, seen)
+        assertTrue(state.dice.drop(1).all { it == Die(value = 1, colour = DieColour.RED, isHeld = true) })
+    }
+
+    @Test
+    fun `Tricolour - every rolled die has a colour a hold keeps and the game ends once its 17 boxes are filled`() {
+        val random = Random(42)
+        repeat(20) {
+            val tricolour = GameEngine.rollDice(GameEngine.newGame(onePlayer, GameMode.TRICOLOUR), random)
+            val standard = GameEngine.rollDice(GameEngine.newGame(onePlayer, GameMode.STANDARD), random)
+            assertTrue(tricolour.dice.all { it.colour in GameMode.TRICOLOUR.dieColours && it.value in 1..6 })
+            assertTrue(standard.dice.all { it.colour == null })
+        }
+
+        val held = GameEngine.newGame(onePlayer, GameMode.TRICOLOUR).copy(
+            dice = List(5) { Die(value = 2, colour = DieColour.BLUE, isHeld = it == 0) },
+            phase = TurnPhase.ROLLED,
+        )
+        assertEquals(Die(value = 2, colour = DieColour.BLUE, isHeld = true), GameEngine.rollDice(held, Random(7)).dice[0])
+
+        val mode = GameMode.TRICOLOUR
+        val almostFull = mode.categories.associateWith { category -> if (category == ScoreCategory.COLOURED_HOUSE) null else 0 }
+        val lastTurn = GameEngine.newGame(onePlayer, mode).let {
+            it.copy(
+                players = listOf(it.players.single().copy(scorecard = oneScoreEach(almostFull))),
+                dice = List(5) { index -> Die(value = index + 1, colour = DieColour.RED) },
+                phase = TurnPhase.ROLLED,
+            )
+        }
+        assertTrue(GameEngine.commitScore(lastTurn, ScoreCategory.COLOURED_HOUSE).isGameOver)
+    }
+
+    /** Player 1 having rolled [values] in a game of [mode], with [scored] already on their card. */
+    private fun rolled(vararg values: Int, mode: GameMode = GameMode.STANDARD, scored: Map<ScoreCategory, Int> = emptyMap()): GameState {
+        val game = GameEngine.newGame(onePlayer, mode)
+        val player = game.players.single().let { it.copy(scorecard = it.scorecard + scored.mapValues { (_, score) -> listOf(score) }) }
+        return game.copy(players = listOf(player), dice = values.map { Die(value = it) }, phase = TurnPhase.ROLLED, rollsRemaining = 2)
+    }
+
+    @Test
+    fun `every Full House is kept on the player by its hand - in any order - only in the Full House box`() {
+        assertEquals(setOf(1), scoreNow(rolled(2, 1, 2, 1, 1), ScoreCategory.FULL_HOUSE).players.single().fullHouseHands)
+        assertEquals(setOf(2), scoreNow(rolled(6, 5, 6, 6, 5), ScoreCategory.FULL_HOUSE).players.single().fullHouseHands)
+        val twosAndThrees = Achievement.FULL_HOUSES_HANDS.indexOf(listOf(2, 2, 3, 3, 3)) + 1
+        assertEquals(setOf(twosAndThrees), scoreNow(rolled(3, 3, 3, 2, 2), ScoreCategory.FULL_HOUSE).players.single().fullHouseHands)
+        assertEquals(emptySet(), scoreNow(rolled(1, 2, 3, 4, 5), ScoreCategory.FULL_HOUSE).players.single().fullHouseHands)
+        assertEquals(emptySet(), scoreNow(rolled(1, 1, 1, 2, 2), ScoreCategory.CHANCE).players.single().fullHouseHands)
+        // Kept with the hands already scored.
+        val both = rolled(5, 5, 6, 6, 6).let { it.copy(players = listOf(it.players.single().copy(fullHouseHands = setOf(1)))) }
+        assertEquals(setOf(1, 2), scoreNow(both, ScoreCategory.FULL_HOUSE).players.single().fullHouseHands)
+    }
+
+    @Test
+    fun `a 5x scored in its box or as a bonus chip is kept by its number - not one scored elsewhere - nor Stud's`() {
+        assertEquals(setOf(3), scoreNow(rolled(3, 3, 3, 3, 3), ScoreCategory.FIVE_OF_A_KIND).players.single().fiveOfAKindNumbers)
+        // Its upper box, with the 5x box still open: no 5x scored, and no chip.
+        assertEquals(emptySet(), scoreNow(rolled(3, 3, 3, 3, 3), ScoreCategory.THREES).players.single().fiveOfAKindNumbers)
+        // Nor in Chance, with the 5x box open or scratched (a zero is no 5x, so no joker either).
+        assertEquals(emptySet(), scoreNow(rolled(6, 6, 6, 6, 6), ScoreCategory.CHANCE).players.single().fiveOfAKindNumbers)
+        val scratched = scoreNow(rolled(6, 6, 6, 6, 6, scored = mapOf(ScoreCategory.FIVE_OF_A_KIND to 0)), ScoreCategory.CHANCE)
+        assertEquals(emptySet(), scratched.players.single().fiveOfAKindNumbers)
+        assertEquals(0, scratched.players.single().fiveOfAKindBonusCount)
+        // With 50 already in the 5x box, another 5x anywhere is a bonus chip.
+        val chip = scoreNow(rolled(4, 4, 4, 4, 4, scored = mapOf(ScoreCategory.FIVE_OF_A_KIND to 50)), ScoreCategory.FOURS)
+        assertEquals(1, chip.players.single().fiveOfAKindBonusCount)
+        assertEquals(setOf(4), chip.players.single().fiveOfAKindNumbers)
+        // Where only five held dice of seven score, a 5x is no feat.
+        val stud = (0 until 5).fold(rolledStud(6, 6, 6, 6, 6, 1, 2)) { state, index -> GameEngine.toggleHold(state, index) }
+        assertEquals(emptySet(), scoreNow(stud, ScoreCategory.FIVE_OF_A_KIND).players.single().fiveOfAKindNumbers)
+    }
+
+    // ---- Stud: seven dice, five hold slots, only the held dice score ----------------------------
+
+    private fun rolledStud(vararg values: Int): GameState =
+        GameEngine.newGame(onePlayer, GameMode.STUD).copy(dice = values.map { Die(value = it) }, phase = TurnPhase.ROLLED, rollsRemaining = 2)
+
+    @Test
+    fun `a Stud die held goes to the free slot nearest its column - keeping column order and stays there - at most five`() {
+        var state = rolledStud(1, 2, 3, 4, 5, 6, 6)
+        state = GameEngine.toggleHold(state, 4)
+        state = GameEngine.toggleHold(state, 1)
+        state = GameEngine.toggleHold(state, 6)
+        assertEquals(listOf(null, 1, null, null, 3, null, 4), state.dice.map { it.heldSlot })
+        state = GameEngine.toggleHold(state, 4)
+        assertEquals(null, state.dice[4].heldSlot)
+        assertEquals(false, state.dice[4].isHeld)
+        // The others stay where they are.
+        state = GameEngine.toggleHold(state, 0)
+        assertEquals(listOf(0, 1, null, null, null, null, 4), state.dice.map { it.heldSlot })
+
+        // Where its slot is taken, a die goes to the nearest free one - and the held dice never move.
+        state = rolledStud(1, 2, 3, 4, 5, 6, 6)
+        for (index in listOf(3, 2, 1)) state = GameEngine.toggleHold(state, index)
+        assertEquals(listOf(null, 0, 1, 2, null, null, null), state.dice.map { it.heldSlot })
+        // Die 1's slot is taken, so it goes in the leftmost free one.
+        state = GameEngine.toggleHold(state, 0)
+        assertEquals(listOf(3, 0, 1, 2, null, null, null), state.dice.map { it.heldSlot })
+        state = GameEngine.toggleHold(state, 6)
+        assertEquals(listOf(3, 0, 1, 2, null, null, 4), state.dice.map { it.heldSlot })
+
+        // Between two free slots equally near: die 4 sits under the middle slot, which die 3 has; slots 2 and 4 are as
+        // near, but only slot 4 is right of die 3.
+        state = rolledStud(1, 2, 3, 4, 5, 6, 6)
+        state = GameEngine.toggleHold(GameEngine.toggleHold(GameEngine.toggleHold(state, 1), 2), 1)
+        assertEquals(listOf(null, null, 2, null, null, null, null), state.dice.map { it.heldSlot })
+        state = GameEngine.toggleHold(state, 3)
+        assertEquals(3, state.dice[3].heldSlot)
+
+        // No die can be held once all five slots are full; letting one go frees its slot for another.
+        state = rolledStud(1, 2, 3, 4, 5, 6, 6)
+        for (index in 0 until 5) state = GameEngine.toggleHold(state, index)
+        assertEquals(false, GameEngine.canHold(state))
+        assertEquals(state, GameEngine.toggleHold(state, 5))
+        state = GameEngine.toggleHold(GameEngine.toggleHold(state, 2), 5)
+        assertEquals(listOf(0, 1, null, 3, 4, 2, null), state.dice.map { it.heldSlot })
+    }
+
+    @Test
+    fun `Stud scores only the held dice in slot order once the hand is full - fillHand completes it - over seven dice a turn`() {
+        var state = rolledStud(6, 1, 6, 6, 1, 6, 6)
+        for (index in listOf(0, 2, 3, 5)) state = GameEngine.toggleHold(state, index)
+        assertEquals(4, state.scoringDice.size)
+        assertFailsWith<IllegalStateException> { GameEngine.commitScore(state, ScoreCategory.SIXES) }
+        state = GameEngine.toggleHold(state, 1)
+        val scored = GameEngine.commitScore(state, ScoreCategory.SIXES).players.single()
+        // Four 6s and the held 1 - the last 6 on the mat doesn't count.
+        assertEquals(24, scored.scoresIn(ScoreCategory.SIXES).singleOrNull())
+        assertEquals(7, scored.lastRoll?.size)
+
+        // The hand is in slot order whichever dice the slots hold.
+        var slotted = rolledStud(1, 2, 3, 4, 5, 6, 6)
+        for (index in listOf(3, 2, 1, 0)) slotted = GameEngine.toggleHold(slotted, index)
+        assertEquals(listOf(2, 3, 4, 1), slotted.scoringDice.map { it.value })
+
+        // fillHand holds the leftmost unheld dice until the hand is full - and leaves other modes alone.
+        val filled = GameEngine.fillHand(GameEngine.toggleHold(rolledStud(1, 2, 3, 4, 5, 6, 6), 5))
+        assertTrue(filled.hasFullHand)
+        assertEquals(listOf(true, true, true, true, false, true, false), filled.dice.map { it.isHeld })
+        val standard = GameEngine.rollDice(GameEngine.newGame(onePlayer))
+        assertEquals(standard, GameEngine.fillHand(standard))
+
+        // A turn rolls seven dice and the next starts with seven unheld.
+        var turn = GameEngine.rollDice(GameEngine.newGame(onePlayer, GameMode.STUD))
+        assertEquals(7, turn.dice.size)
+        turn = GameEngine.commitScore(GameEngine.fillHand(turn), ScoreCategory.CHANCE)
+        assertEquals(7, turn.dice.size)
+        assertTrue(turn.dice.none { it.isHeld || it.heldSlot != null })
+    }
+
+    @Test
+    fun `in Third Wind scoring a box fills its next slot until all three are used - and the game ends after 39 turns`() {
+        var state = GameEngine.newGame(onePlayer, GameMode.THIRD_WIND)
+        for (value in 1..3) {
+            state = GameEngine.commitScore(state.copy(dice = List(5) { Die(value = value) }, phase = TurnPhase.ROLLED), ScoreCategory.CHANCE)
+        }
+        val player = state.players.single()
+        assertEquals(listOf(5, 10, 15), player.scoresIn(ScoreCategory.CHANCE))
+        assertEquals(30, player.totalScore)
+        assertEquals(36, player.turnsLeft)
+        assertFalse(state.isGameOver)
+        // A fourth time is one too many.
+        assertFailsWith<IllegalStateException> {
+            GameEngine.commitScore(state.copy(dice = List(5) { Die(value = 6) }, phase = TurnPhase.ROLLED), ScoreCategory.CHANCE)
+        }
+
+        var whole = GameEngine.newGame(onePlayer, GameMode.THIRD_WIND)
+        var turns = 0
+        while (!whole.isGameOver) {
+            val open = GameMode.THIRD_WIND.categories.first { whole.players.single().isOpen(it) }
+            whole = GameEngine.commitScore(whole.copy(dice = List(5) { Die(value = 1) }, phase = TurnPhase.ROLLED), open)
+            turns++
+        }
+        assertEquals(39, turns)
+        assertTrue(whole.players.single().scorecard.values.all { it.size == 3 })
+    }
+
+    // ---- Roll modifiers ---------------------------------------------------------------------------
+
+    @Test
+    fun `Number of Rolls replaces the mode's rolls every turn - that many and no more`() {
+        var state = GameEngine.newGame(twoPlayers, rollModifiers = RollModifiers(rollsPerTurn = 7))
+        assertEquals(7, state.rollsRemaining)
+        assertEquals(7, state.turnRolls)
+        state = scoreNow(GameEngine.rollDice(state))
+        assertEquals(7, state.rollsRemaining)
+        assertEquals(7, state.turnRolls)
+
+        var nine = GameEngine.newGame(onePlayer, rollModifiers = RollModifiers(rollsPerTurn = 9))
+        repeat(9) { nine = GameEngine.rollDice(nine) }
+        assertEquals(0, nine.rollsRemaining)
+        assertFailsWith<IllegalStateException> { GameEngine.rollDice(nine) }
+    }
+
+    @Test
+    fun `a turn forfeited before its first roll is a zero in the first open box - no roll shown - nothing stored - and the turn moves on`() {
+        val rolled = GameEngine.rollDice(GameEngine.newGame(twoPlayers))
+        assertFailsWith<IllegalStateException> { GameEngine.forfeitTurn(rolled) }
+
+        // Player 1's roll is on show until their next turn - forfeited, which has no roll to show.
+        var state = GameEngine.commitScore(rolled, ScoreCategory.CHANCE)
+        state = GameEngine.commitScore(GameEngine.rollDice(state), ScoreCategory.CHANCE)
+        assertEquals(0, state.currentPlayerIndex)
+        state = GameEngine.forfeitTurn(state)
+        val player = state.players[0]
+        assertEquals(listOf(0), player.scoresIn(ScoreCategory.ONES))
+        assertEquals(ScoreCategory.ONES, player.lastScoredCategory)
+        assertEquals(null, player.lastRoll)
+        assertEquals(1, state.currentPlayerIndex)
+        assertEquals(TurnPhase.AWAITING_ROLL, state.phase)
+
+        // The first open box in scorecard order, skipping those filled: Ones gone, Twos next.
+        state = GameEngine.forfeitTurn(GameEngine.forfeitTurn(state))
+        assertEquals(listOf(0), state.players[0].scoresIn(ScoreCategory.TWOS))
+
+        // With Stored Rolls on, the forfeited turn's rolls aren't kept for the next.
+        val stored = GameEngine.forfeitTurn(GameEngine.newGame(onePlayer, rollModifiers = RollModifiers(storedRolls = true)))
+        assertEquals(0, stored.players.single().storedRolls)
+        assertEquals(3, stored.rollsRemaining)
+
+        // It can end the game, like any score.
+        var timedOut = GameEngine.newGame(onePlayer)
+        repeat(GameMode.STANDARD.categories.size) { timedOut = GameEngine.forfeitTurn(timedOut) }
+        assertTrue(timedOut.isGameOver)
+        assertEquals(0, timedOut.players.single().totalScore)
+    }
+
+    @Test
+    fun `Stored Rolls carries a player's unused rolls into their own next turn - up to its cap - on top of Number of Rolls`() {
+        // Without it, unused rolls are lost.
+        val plain = scoreNow(GameEngine.rollDice(GameEngine.newGame(onePlayer)))
+        assertEquals(3, plain.rollsRemaining)
+        assertEquals(0, plain.players.single().storedRolls)
+
+        var state = scoreNow(GameEngine.rollDice(GameEngine.newGame(onePlayer, rollModifiers = RollModifiers(storedRolls = true)))) // 1 of 3 used, 2 kept
+        assertEquals(2, state.players.single().storedRolls)
+        assertEquals(5, state.rollsRemaining)
+        assertEquals(5, state.turnRolls)
+        state = scoreNow(GameEngine.rollDice(state), ScoreCategory.ONES) // 1 of 5 used, 4 kept
+        assertEquals(4, state.players.single().storedRolls)
+        assertEquals(7, state.rollsRemaining)
+
+        // It waits for each player's own turn: player 2 has nothing stored, so gets the plain 3.
+        var two = scoreNow(GameEngine.rollDice(GameEngine.newGame(twoPlayers, rollModifiers = RollModifiers(storedRolls = true)))) // player 1 keeps 2
+        assertEquals(1, two.currentPlayerIndex)
+        assertEquals(3, two.rollsRemaining)
+        two = scoreNow(GameEngine.rollDice(GameEngine.rollDice(GameEngine.rollDice(two)))) // player 2 uses all 3
+        assertEquals(0, two.players[1].storedRolls)
+        // Back to player 1, who gets their 2 on top of 3.
+        assertEquals(0, two.currentPlayerIndex)
+        assertEquals(5, two.rollsRemaining)
+
+        // A cap limits what is kept and the rest are lost; a cap of zero keeps nothing.
+        val capped = scoreNow(GameEngine.rollDice(GameEngine.newGame(onePlayer, rollModifiers = RollModifiers(storedRolls = true, storedRollsMax = 1))))
+        assertEquals(1, capped.players.single().storedRolls)
+        assertEquals(4, capped.rollsRemaining)
+        assertEquals(3, scoreNow(GameEngine.rollDice(GameEngine.newGame(onePlayer, rollModifiers = RollModifiers(storedRolls = true, storedRollsMax = 0)))).rollsRemaining)
+
+        // It adds to a changed Number of Rolls: 1 of 2 used, 1 kept.
+        val added = scoreNow(GameEngine.rollDice(GameEngine.newGame(onePlayer, rollModifiers = RollModifiers(rollsPerTurn = 2, storedRolls = true))))
+        assertEquals(3, added.rollsRemaining)
+        assertEquals(3, added.turnRolls)
+
+        // Stored rolls can run to several digits: nothing rolled for 11 turns, 9 kept each time on top of 9.
+        var hoarded = GameEngine.newGame(onePlayer, rollModifiers = RollModifiers(rollsPerTurn = 9, storedRolls = true))
+        repeat(11) { hoarded = scoreNow(hoarded.copy(phase = TurnPhase.ROLLED), ScoreCategory.entries.first { hoarded.players.single().isOpen(it) }) }
+        assertEquals(9 + 9 * 11, hoarded.rollsRemaining)
+    }
+
+    @Test
+    fun `Extended Scores puts its boxes on every card - scores a roll in them and ends the game only once all 16 are scored`() {
+        val game = GameEngine.newGame(twoPlayers, extendedScores = true)
+        assertTrue(game.extendedScores)
+        assertEquals(GameMode.STANDARD.categories + ScoreCategory.EXTENDED, game.categories)
+        assertTrue(game.players.all { it.extendedScores && it.categories == game.categories })
+
+        val twoPair = GameEngine.commitScore(
+            GameEngine.newGame(onePlayer, extendedScores = true).copy(phase = TurnPhase.ROLLED, dice = listOf(6, 6, 5, 5, 2).map { Die(value = it) }),
+            ScoreCategory.TWO_PAIR,
+        )
+        assertEquals(listOf(22), twoPair.players.single().scoresIn(ScoreCategory.TWO_PAIR))
+        assertEquals(22, twoPair.players.single().totalScore)
+
+        var state = GameEngine.newGame(onePlayer, extendedScores = true)
+        repeat(15) {
+            state = scoreNow(state.copy(phase = TurnPhase.ROLLED), state.categories.first { state.players.single().isOpen(it) })
+            assertFalse(state.isGameOver)
+        }
+        state = scoreNow(state.copy(phase = TurnPhase.ROLLED), state.categories.first { state.players.single().isOpen(it) })
+        assertTrue(state.isGameOver)
+        assertTrue(state.players.single().isScorecardComplete)
+    }
+
+    // ---- First Roll Bonus --------------------------------------------------------------------------
+
+    /** [state] on its turn's first roll ([firstRoll]) or its second, showing [faces]. */
+    private fun rolled(state: GameState, vararg faces: Int, firstRoll: Boolean = true) = state.copy(
+        phase = TurnPhase.ROLLED,
+        rollsRemaining = state.turnRolls - if (firstRoll) 1 else 2,
+        dice = faces.map { Die(value = it) },
+    )
+
+    private fun scoredWithFirstRollBonus(category: ScoreCategory, vararg faces: Int, firstRoll: Boolean = true, mode: GameMode = GameMode.STANDARD): Int =
+        GameEngine.commitScore(rolled(GameEngine.newGame(onePlayer, mode, firstRollBonus = true), *faces, firstRoll = firstRoll), category)
+            .players.single().scoresIn(category).single()
+
+    @Test
+    fun `First Roll Bonus - a lower box but 5x scored above zero on the first roll takes 5 more - in the box and the total`() {
+        assertEquals(5, ScoreCalculator.FIRST_ROLL_BONUS)
+        assertEquals(30, scoredWithFirstRollBonus(ScoreCategory.FULL_HOUSE, 3, 3, 3, 6, 6))
+        assertEquals(26, scoredWithFirstRollBonus(ScoreCategory.CHANCE, 3, 3, 3, 6, 6))
+        assertEquals(26, scoredWithFirstRollBonus(ScoreCategory.THREE_OF_A_KIND, 3, 3, 3, 6, 6))
+        assertEquals(22, scoredWithFirstRollBonus(ScoreCategory.FOUR_OF_A_KIND, 4, 4, 4, 4, 1))
+        assertEquals(35, scoredWithFirstRollBonus(ScoreCategory.SMALL_STRAIGHT, 1, 2, 3, 4, 6))
+        assertEquals(45, scoredWithFirstRollBonus(ScoreCategory.LARGE_STRAIGHT, 2, 3, 4, 5, 6))
+        val house = GameEngine.commitScore(rolled(GameEngine.newGame(onePlayer, firstRollBonus = true), 3, 3, 3, 6, 6), ScoreCategory.FULL_HOUSE)
+        assertEquals(30, house.players.single().totalScore)
+        // The slot that took it is marked - and only that one.
+        assertEquals(mapOf(ScoreCategory.FULL_HOUSE to setOf(0)), house.players.single().firstRollBonusSlots)
+        assertTrue(house.players.single().hasFirstRollBonus(ScoreCategory.FULL_HOUSE))
+        assertEquals(30, house.players.single().lowerSectionTotal)
+        // Stud's held hand, Third Wind's slots and Tricolour's card earn it the same way.
+        assertEquals(30, scoredWithFirstRollBonus(ScoreCategory.FULL_HOUSE, 3, 3, 3, 6, 6, mode = GameMode.TRICOLOUR))
+        assertEquals(30, scoredWithFirstRollBonus(ScoreCategory.FULL_HOUSE, 3, 3, 3, 6, 6, mode = GameMode.THIRD_WIND))
+    }
+
+    @Test
+    fun `First Roll Bonus - never for 5x - an upper box - a zero - a later roll - or with the modifier off`() {
+        assertEquals(50, scoredWithFirstRollBonus(ScoreCategory.FIVE_OF_A_KIND, 6, 6, 6, 6, 6))
+        assertEquals(9, scoredWithFirstRollBonus(ScoreCategory.THREES, 3, 3, 3, 6, 6))
+        assertEquals(0, scoredWithFirstRollBonus(ScoreCategory.LARGE_STRAIGHT, 3, 3, 3, 6, 6))
+        assertEquals(25, scoredWithFirstRollBonus(ScoreCategory.FULL_HOUSE, 3, 3, 3, 6, 6, firstRoll = false))
+        val off = GameEngine.commitScore(rolled(GameEngine.newGame(onePlayer), 3, 3, 3, 6, 6), ScoreCategory.FULL_HOUSE)
+        assertEquals(listOf(25), off.players.single().scoresIn(ScoreCategory.FULL_HOUSE))
+        assertEquals(emptyMap(), off.players.single().firstRollBonusSlots)
+        val later = GameEngine.commitScore(rolled(GameEngine.newGame(onePlayer, firstRollBonus = true), 3, 3, 3, 6, 6, firstRoll = false), ScoreCategory.FULL_HOUSE)
+        assertEquals(emptyMap(), later.players.single().firstRollBonusSlots)
+
+        // In Third Wind, each slot is marked by its own turn: the second Full House on a first roll, not the first.
+        val thirdWind = GameEngine.newGame(onePlayer, GameMode.THIRD_WIND, firstRollBonus = true)
+        val firstHouse = GameEngine.commitScore(rolled(thirdWind, 3, 3, 3, 6, 6, firstRoll = false), ScoreCategory.FULL_HOUSE)
+        val secondHouse = GameEngine.commitScore(rolled(firstHouse, 3, 3, 3, 6, 6), ScoreCategory.FULL_HOUSE).players.single()
+        assertEquals(listOf(25, 30), secondHouse.scoresIn(ScoreCategory.FULL_HOUSE))
+        assertEquals(mapOf(ScoreCategory.FULL_HOUSE to setOf(1)), secondHouse.firstRollBonusSlots)
+    }
+
+    @Test
+    fun `First Roll Bonus - counts from the turn's own rolls - so a real first roll earns it - stored rolls too - and the second doesn't`() {
+        val game = GameEngine.newGame(onePlayer, firstRollBonus = true)
+        val first = GameEngine.rollDice(game, Random(3))
+        assertTrue(first.isFirstRoll && first.rollEarnsFirstRollBonus)
+        val chance = first.dice.sumOf { it.value }
+        assertEquals(chance + 5, GameEngine.commitScore(first, ScoreCategory.CHANCE).players.single().scoresIn(ScoreCategory.CHANCE).single())
+        val second = GameEngine.rollDice(first, Random(4))
+        assertFalse(second.isFirstRoll || second.rollEarnsFirstRollBonus)
+        assertEquals(second.dice.sumOf { it.value }, GameEngine.commitScore(second, ScoreCategory.CHANCE).players.single().scoresIn(ScoreCategory.CHANCE).single())
+        // Not yet rolled: no first roll to speak of.
+        assertFalse(game.isFirstRoll)
+
+        // A turn started with stored rolls: the first of them still earns it, whatever the count.
+        val stored = GameEngine.newGame(onePlayer, rollModifiers = RollModifiers(storedRolls = true), firstRollBonus = true).copy(rollsRemaining = 7, turnRolls = 7)
+        assertTrue(GameEngine.rollDice(stored, Random(3)).rollEarnsFirstRollBonus)
+    }
+
+    @Test
+    fun `First Roll Bonus - off in a mode with no box to earn it - and on - in every other - takes the game off the Leaderboard`() {
+        assertFalse(GameEngine.newGame(onePlayer, GameMode.D20, firstRollBonus = true).firstRollBonus)
+        assertFalse(GameEngine.newGame(onePlayer, GameMode.HIT_LIST, firstRollBonus = true).firstRollBonus)
+        for (mode in GameMode.entries.filter { it.allowsFirstRollBonus }) {
+            val game = GameEngine.newGame(onePlayer, mode, firstRollBonus = true)
+            assertTrue(game.firstRollBonus, "$mode")
+            assertTrue(game.hasModifiers, "$mode")
+            assertFalse(game.countsOnLeaderboard, "$mode")
+        }
+        assertFalse(GameEngine.newGame(onePlayer).firstRollBonus)
+    }
+
+    // ---- Unlucky Dice -----------------------------------------------------------------------------
+
+    @Test
+    fun `golden dice roll at the odds given - a held one keeps its gold - and without odds nothing is drawn`() {
+        // Without odds the dice come out exactly as they always have, none golden.
+        val plain = GameEngine.rollDice(GameEngine.newGame(onePlayer), Random(7))
+        assertTrue(plain.dice.none { it.isGolden })
+        assertEquals(Random(7).let { random -> List(5) { random.nextInt(1, 7) } }, plain.dice.map { it.value })
+
+        val random = Random(3)
+        var golden = 0
+        repeat(4_000) { golden += GameEngine.rollDice(GameEngine.newGame(onePlayer), random, goldenOneIn = 100).dice.count { it.isGolden } }
+        assertEquals(0.01, golden / (4_000 * 5.0), 0.004)
+
+        // A held die isn't rolled again, so it stays as it was; a rerolled one is drawn afresh.
+        val start = GameEngine.newGame(onePlayer).let { it.copy(dice = it.dice.mapIndexed { i, die -> if (i == 0) die.copy(isHeld = true, isGolden = true) else die.copy(isGolden = true) }) }
+        val rerolled = GameEngine.rollDice(start, Random(1))
+        assertTrue(rerolled.dice[0].isGolden)
+        assertTrue(rerolled.dice.drop(1).none { it.isGolden })
+    }
+
+    private fun unluckyGame(odds: Int = 50, maxDice: Int = 5, mode: GameMode = GameMode.STANDARD) =
+        GameEngine.newGame(onePlayer, mode, unluckyDice = UnluckyDice(odds, maxDice))
+
+    @Test
+    fun `Unlucky Dice locks unheld dice at its odds and never past its cap - and without it - rolls are as they always were`() {
+        repeat(200) { seed -> assertTrue(GameEngine.rollDice(GameEngine.newGame(onePlayer), Random(seed)).dice.none { it.isUnlucky }) }
+        // A game without it rolls exactly the dice it always has.
+        val plain = GameEngine.rollDice(GameEngine.newGame(onePlayer), Random(7)).dice.map { it.value }
+        assertEquals(Random(7).let { random -> List(5) { random.nextInt(1, 7) } }, plain)
+
+        for (cap in 1..5) repeat(300) { seed ->
+            assertTrue(GameEngine.rollDice(unluckyGame(odds = 50, maxDice = cap), Random(seed)).dice.count { it.isUnlucky } <= cap, "cap $cap seed $seed")
+        }
+
+        fun lockedShare(odds: Int): Double {
+            val random = Random(odds)
+            var locked = 0
+            repeat(2_000) { locked += GameEngine.rollDice(unluckyGame(odds), random).dice.count { it.isUnlucky } }
+            return locked / (2_000 * 5.0)
+        }
+        assertEquals(0.1, lockedShare(10), 0.03)
+        assertEquals(0.3, lockedShare(30), 0.03)
+        assertEquals(0.5, lockedShare(50), 0.03)
+
+        // At 50% over five dice a cap of one is hit often, and the die picked varies roll to roll.
+        val picked = (0 until 300).mapNotNull { seed ->
+            GameEngine.rollDice(unluckyGame(odds = 50, maxDice = 1), Random(seed)).dice.indexOfFirst { it.isUnlucky }.takeIf { it >= 0 }
+        }.toSet()
+        assertEquals(setOf(0, 1, 2, 3, 4), picked)
+
+        // A held die is never locked.
+        repeat(300) { seed ->
+            val held = unluckyGame().copy(phase = TurnPhase.ROLLED, rollsRemaining = 2, dice = List(5) { Die(value = 3, isHeld = it < 2) })
+            val rolled = GameEngine.rollDice(held, Random(seed))
+            assertTrue(rolled.dice.take(2).none { it.isUnlucky }, "seed $seed")
+            assertTrue(rolled.dice.take(2).all { it.isHeld && it.value == 3 })
+        }
+
+        // A locked die is rolled again and starts clear: odds of 10% leave most rolls clear, so it can't stay locked by itself.
+        val locked = unluckyGame(odds = 10, maxDice = 1).copy(phase = TurnPhase.ROLLED, rollsRemaining = 2, dice = List(5) { Die(value = 2, isUnlucky = it == 0) })
+        assertTrue((0 until 50).count { seed -> !GameEngine.rollDice(locked, Random(seed)).dice[0].isUnlucky } > 25)
+    }
+
+    @Test
+    fun `a locked die can't be held and isn't in the hand scored - so the hand shrinks and five matching with one locked are no 5x`() {
+        val one = unluckyGame().copy(phase = TurnPhase.ROLLED, dice = List(5) { Die(value = it + 1, isUnlucky = it == 2) })
+        assertFalse(GameEngine.canHold(one, 2))
+        assertTrue(GameEngine.canHold(one, 1))
+        assertEquals(one, GameEngine.toggleHold(one, 2))
+        assertTrue(GameEngine.toggleHold(one, 1).dice[1].isHeld)
+
+        val sixes = unluckyGame().copy(phase = TurnPhase.ROLLED, dice = List(5) { Die(value = 6, isUnlucky = it == 4) })
+        assertEquals(4, sixes.scoringDice.size)
+        assertEquals(4, sixes.handSize)
+        assertTrue(sixes.hasFullHand)
+        assertEquals(listOf(24), GameEngine.commitScore(sixes, ScoreCategory.SIXES).players.single().scoresIn(ScoreCategory.SIXES))
+
+        val fours = unluckyGame().copy(phase = TurnPhase.ROLLED, dice = List(5) { Die(value = 4, isUnlucky = it == 0) })
+        assertEquals(0, ScoreCalculator.scoreFor(fours.players.single(), ScoreCategory.FIVE_OF_A_KIND, fours.scoringDice))
+        assertEquals(0, ScoreCalculator.scoreFor(fours.players.single(), ScoreCategory.LARGE_STRAIGHT, fours.scoringDice))
+
+        // Every die locked leaves a hand of nothing that scores zero.
+        val all = unluckyGame().copy(phase = TurnPhase.ROLLED, dice = List(5) { Die(value = 6, isUnlucky = true) })
+        assertTrue(all.scoringDice.isEmpty())
+        assertTrue(all.hasFullHand)
+        assertEquals(listOf(0), GameEngine.commitScore(all, ScoreCategory.CHANCE).players.single().scoresIn(ScoreCategory.CHANCE))
+
+        // With seven dice and five slots, locked dice shrink the hand to the dice left.
+        val stud = GameEngine.newGame(onePlayer, GameMode.STUD, unluckyDice = UnluckyDice())
+            .copy(phase = TurnPhase.ROLLED, dice = List(7) { Die(value = it % 6 + 1, isUnlucky = it >= 4) })
+        assertEquals(4, stud.handSize)
+        val filled = GameEngine.fillHand(stud)
+        assertEquals(listOf(0, 1, 2, 3), filled.dice.withIndex().filter { it.value.isHeld }.map { it.index })
+        assertTrue(filled.hasFullHand)
+        assertEquals(4, filled.scoringDice.size)
+    }
+
+    @Test
+    fun `a joker's bonus is written on the slot it scored in - one slot a box in Standard - three in Third Wind`() {
+        val sixes = List(5) { Die(value = 6) }
+        fun rolled(game: GameState, withPlayer: (PlayerState) -> PlayerState) =
+            game.copy(phase = TurnPhase.ROLLED, dice = sixes, players = game.players.map(withPlayer))
+
+        // Standard: a 5x already on the card, then five 6s go in the 6s - the joker's forced box - and carry the chip.
+        val standard = rolled(GameEngine.newGame(onePlayer)) {
+            it.copy(scorecard = it.scorecard + (ScoreCategory.FIVE_OF_A_KIND to listOf(50)))
+        }
+        val afterSixes = GameEngine.commitScore(standard, ScoreCategory.SIXES).players.single()
+        assertEquals(mapOf(ScoreCategory.SIXES to setOf(0)), afterSixes.jokerBonusSlots)
+        assertEquals(1, afterSixes.fiveOfAKindBonusCount)
+        assertEquals(100, afterSixes.jokerBonusIn(ScoreCategory.SIXES))
+
+        // With the 6s full, the next joker goes in a lower box: it carries its chip, and the 6s keep theirs.
+        val afterHouse = GameEngine.commitScore(rolled(standard) { afterSixes }, ScoreCategory.FULL_HOUSE).players.single()
+        assertEquals(mapOf(ScoreCategory.SIXES to setOf(0), ScoreCategory.FULL_HOUSE to setOf(0)), afterHouse.jokerBonusSlots)
+        assertEquals(2, afterHouse.fiveOfAKindBonusCount)
+
+        // A roll that isn't a joker adds none.
+        val plain = GameEngine.newGame(onePlayer).copy(phase = TurnPhase.ROLLED, dice = listOf(1, 2, 3, 4, 6).map { Die(it) })
+        assertTrue(GameEngine.commitScore(plain, ScoreCategory.CHANCE).players.single().jokerBonusSlots.isEmpty())
+
+        // Third Wind: all three slots of the 6s can carry one - the joker forces the 6s while any slot is open.
+        val thirdWind = rolled(GameEngine.newGame(onePlayer, GameMode.THIRD_WIND)) {
+            it.copy(scorecard = it.scorecard + (ScoreCategory.FIVE_OF_A_KIND to listOf(50, 0, 0)))
+        }
+        var player = thirdWind.players.single()
+        repeat(3) {
+            assertEquals(listOf(ScoreCategory.SIXES), ScoreCalculator.availableCategories(player, sixes))
+            player = GameEngine.commitScore(rolled(thirdWind) { player }, ScoreCategory.SIXES).players.single()
+        }
+        assertEquals(setOf(0, 1, 2), player.jokerBonusSlots[ScoreCategory.SIXES])
+        assertEquals(3, player.fiveOfAKindBonusCount)
+        assertEquals(300, player.jokerBonusIn(ScoreCategory.SIXES))
+        assertTrue(player.hasJokerBonus(ScoreCategory.SIXES, 2))
+        assertFalse(player.hasJokerBonus(ScoreCategory.SIXES, 3))
+        // The 6s full, the next one is free to go in 3x - scored as the dice's total - and its first slot takes the chip.
+        assertTrue(ScoreCategory.THREE_OF_A_KIND in ScoreCalculator.availableCategories(player, sixes))
+        assertEquals(30, ScoreCalculator.scoreFor(player, ScoreCategory.THREE_OF_A_KIND, sixes))
+        val threeX = GameEngine.commitScore(rolled(thirdWind) { player }, ScoreCategory.THREE_OF_A_KIND).players.single()
+        assertEquals(setOf(0), threeX.jokerBonusSlots[ScoreCategory.THREE_OF_A_KIND])
+    }
+
+    @Test
+    fun `a turn timing out forfeits an unrolled turn - and scores a rolled one in its first box that takes the dice - as they lie`() {
+        val unrolled = GameEngine.newGame(onePlayer)
+        assertEquals(GameEngine.forfeitTurn(unrolled), GameEngine.timeOut(unrolled))
+
+        // Three 2s and two 5s would score 6 in Twos, but Ones comes first: a forced miss, not the best box.
+        val rolled = unrolled.copy(dice = listOf(2, 2, 2, 5, 5).map { Die(value = it) }, phase = TurnPhase.ROLLED)
+        val missed = GameEngine.timeOut(rolled)!!.players.single()
+        assertEquals(listOf(0), missed.scoresIn(ScoreCategory.ONES))
+        assertEquals(listOf(2, 2, 2, 5, 5), missed.lastRoll?.map { it.value })
+
+        // Where only held dice score, the hand is completed for that box: the Ones it can take.
+        val stud = GameEngine.newGame(onePlayer, GameMode.STUD).copy(dice = listOf(6, 1, 6, 1, 6, 6, 6).map { Die(value = it) }, phase = TurnPhase.ROLLED)
+        assertEquals(listOf(2), GameEngine.timeOut(stud)!!.players.single().scoresIn(ScoreCategory.ONES))
+    }
+}

@@ -1,0 +1,1010 @@
+package net.zodac.ludo.ui.game
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlin.concurrent.Volatile
+import kotlin.random.Random
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import net.zodac.ludo.app.AchievementUnlocker
+import net.zodac.ludo.app.AppContainer
+import net.zodac.ludo.app.Breadcrumbs
+import net.zodac.ludo.data.achievements.AchievementStore
+import net.zodac.ludo.data.game.InProgressGameRepository
+import net.zodac.ludo.data.orNullOnFailure
+import net.zodac.ludo.data.scores.PlayerResult
+import net.zodac.ludo.data.scores.ScoreRepository
+import net.zodac.ludo.data.settings.SettingsRepository
+import net.zodac.ludo.data.settings.savedStylesFlow
+import net.zodac.ludo.game.AchievementEngine
+import net.zodac.ludo.game.AchievementTracker
+import net.zodac.ludo.game.AiTurnPlayer
+import net.zodac.ludo.game.GameEngine
+import net.zodac.ludo.game.GameStartContext
+import net.zodac.ludo.game.HandCompletion
+import net.zodac.ludo.game.HoldSequence
+import net.zodac.ludo.game.LeaderboardTotals
+import net.zodac.ludo.game.StandardPerfectPlayTable
+import net.zodac.ludo.game.TutorialDice
+import net.zodac.ludo.game.TutorialScript
+import net.zodac.ludo.game.TutorialStep
+import net.zodac.ludo.game.isPlayerOneTurn
+import net.zodac.ludo.game.localHourOfDay
+import net.zodac.ludo.game.nowEpochMillis
+import net.zodac.ludo.game.style.hasNonDefaultStyle
+import net.zodac.ludo.game.toTieBreakStats
+import net.zodac.ludo.game.wonBy
+import net.zodac.ludo.model.Achievement
+import net.zodac.ludo.model.Die
+import net.zodac.ludo.model.Difficulty
+import net.zodac.ludo.model.GameState
+import net.zodac.ludo.model.PlayerConfig
+import net.zodac.ludo.model.PlayerState
+import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.ScoreCategory
+import net.zodac.ludo.model.TurnPhase
+import net.zodac.ludo.model.earnableIn
+import net.zodac.ludo.model.hasGrownSunflower
+import net.zodac.ludo.model.maxPlayerNameLength
+import net.zodac.ludo.model.resolvePlayerName
+import net.zodac.ludo.model.takeNameWidth
+import net.zodac.ludo.online.OnlineSyncRequests
+import net.zodac.ludo.ui.style.PIP_FACES
+import net.zodac.ludo.ui.style.visualTheme
+
+/**
+ * Owns both the pre-game setup form ([setupForm]) and the live [GameState] once started,
+ * scoped to the "play" nav graph so [net.zodac.ludo.ui.setup.GameSetupScreen]
+ * and [GameScreen] share one instance across navigation.
+ *
+ * [factory] supplies the real repositories; tests pass in-memory ones. [tutorialFactory] builds one for the guided game.
+ */
+class GameViewModel(
+    private val scoreRepository: ScoreRepository,
+    private val settingsRepository: SettingsRepository,
+    private val inProgressGameRepository: InProgressGameRepository,
+    private val achievementsRepository: AchievementStore,
+    /** The dice. Injectable for the same reason [GameEngine.rollDice] takes one: so a test can deal a known hand. */
+    private val random: Random = Random.Default,
+    /** Where [AiTurnPlayer]'s (Hard, specifically) exhaustive-search hold/category choices run -
+     * off [viewModelScope]'s own Main.immediate by default, since they're expensive enough to
+     * visibly stall Compose's frame rendering otherwise. Injectable so a test using a virtual-time
+     * [kotlinx.coroutines.test.TestDispatcher] for `Dispatchers.Main` can pass that same dispatcher
+     * here too - Default's real thread pool isn't advanced by that test's `advanceUntilIdle()`. */
+    private val aiDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    /** Whether this is a debug build - superuser mode never activates without it. */
+    private val isDebugBuild: Boolean = false,
+    /** Standard's perfect-play table, for Hard CPUs in Standard (see [StandardPerfectPlayTable]) - without it, they estimate. */
+    private val standardPerfectPlay: (suspend () -> StandardPerfectPlayTable?)? = null,
+    /** The hour (0-23) on the phone's clock now. Injectable so a test can start a game at any time of day. */
+    private val localHour: () -> Int = { localHourOfDay(nowEpochMillis()) },
+    /**
+     * Set for the guided game ([startTutorial]), played solo: every roll and move is the script's, and nothing is kept -
+     * no saved game, scores, achievements or settings.
+     */
+    private val tutorial: TutorialScript? = null,
+    /** Whether the purchase unlocks every style ([AppContainer.ownsAllStyles]). */
+    private val ownsAllStyles: Flow<Boolean> = flowOf(false),
+    /** Where its achievements are earned: the app's one ([AppContainer.achievementUnlocker]); a test's own otherwise. */
+    private val achievementUnlocker: AchievementUnlocker = AchievementUnlocker(achievementsRepository, ownsAllStyles),
+) : ViewModel() {
+
+    /** The New Game form, filled from the settings as this is built. */
+    val setupForm = GameSetupForm()
+
+    private val _game = MutableStateFlow<GameState?>(null)
+    val game: StateFlow<GameState?> = _game.asStateFlow()
+
+    private val _leaderboardScores = MutableStateFlow<Set<Int>?>(null)
+
+    /** Every score on the Leaderboard as this game began (null until read, or if it can't be): see [newLeaderboardScoreSeats]. */
+    val leaderboardScores: StateFlow<Set<Int>?> = _leaderboardScores.asStateFlow()
+
+    /** The read of [leaderboardScores] under way: a new game's cancels the last's, which can't then land over it. */
+    private var leaderboardScoresRead: Job? = null
+
+    /**
+     * The waits a CPU's turn keeps for the screen's animations - see [GamePacing]. Set by the screen; read by
+     * the game loop on another thread, hence volatile.
+     */
+    @Volatile
+    private var pacing = GamePacing()
+
+    /** Replaces the CPU's waits with [pacing], as the screen's motion and sound settings change. */
+    fun setPacing(pacing: GamePacing) {
+        this.pacing = pacing
+    }
+
+    /** Whether the game is in front of the player - see [setForeground]. */
+    private val foreground = MutableStateFlow(true)
+
+    /**
+     * Freezes the game's own clocks while the game isn't on screen (`GameScreen` is backgrounded, or
+     * covered by another screen such as Achievements): the turn timer stops counting, and a CPU turn
+     * stops where it is and carries on when the player is back - neither runs down or plays out
+     * behind their back. Every wait in those two goes through [pausableDelay]; a wait already under
+     * way when the game goes away starts again on return. Nothing else in the game runs on a timer.
+     */
+    fun setForeground(value: Boolean) {
+        onScreen = value
+        updateForeground()
+    }
+
+    /**
+     * Holds the game's clocks while a dialog over it (the leave-game confirmation) is up, or the page cover
+     * while a page opens, exactly as if the game were off screen - see [setForeground]. Released when the
+     * dialog closes or the cover clears.
+     */
+    fun setHeld(value: Boolean) {
+        held = value
+        updateForeground()
+    }
+
+    private fun updateForeground() {
+        val running = onScreen && !held
+        foreground.value = running
+        if (!running) saveTurnTimerProgress()
+    }
+
+    /** Saves the game with the turn timer's seconds left, so Continue resumes the countdown rather than
+     * restarting it. Only when the game stops running: the live state never carries it, and saving it
+     * every second would rewrite the game on every tick. */
+    private fun saveTurnTimerProgress() {
+        val state = _game.value ?: return
+        val remaining = _turnSecondsRemaining.value ?: return
+        if (state.isGameOver || tutorial != null) return
+        inProgressGameRepository.save(savedCopy(state).copy(turnSecondsLeft = remaining))
+    }
+
+    /** Seconds [resumeGame] found left on the saved turn, for the next timer start to use. */
+    private var resumedSecondsLeft: Int? = null
+
+    private var onScreen = true
+    private var held = false
+
+    /** [delay] that doesn't run while [foreground] is false - see [setForeground]. */
+    private suspend fun pausableDelay(millis: Long) {
+        while (true) {
+            foreground.first { it }
+            if (withTimeoutOrNull(millis) { foreground.first { !it } } == null) return
+        }
+    }
+
+    /** The CPUs' turns, played on this table. */
+    private val cpuTurns = CpuTurns(
+        viewModelScope,
+        aiDispatcher,
+        object : CpuTurns.Host {
+            override val pacing: GamePacing get() = this@GameViewModel.pacing
+
+            override suspend fun pause(millis: Long) = pausableDelay(millis)
+
+            override fun roll(state: GameState): GameState {
+                Breadcrumbs.record("CPU rolled, player ${state.currentPlayerIndex + 1}") // i18n: not translated - a crash report's breadcrumb
+                return performRoll(state, checkForAiTurn = false)
+            }
+
+            override fun publish(state: GameState) {
+                setUndoSnapshot(null)
+                applyGameState(state, checkForAiTurn = false)
+            }
+
+            override suspend fun perfectPlayFor(state: GameState): StandardPerfectPlayTable? = this@GameViewModel.perfectPlayFor(state)
+        },
+    )
+
+    /** Whether a CPU's cup is shaking for its roll - see [CpuTurns]. */
+    val aiRolling: StateFlow<Boolean> = cpuTurns.rolling
+
+    /** Whether a human's cup is shaking for the roll they asked for - see [shakeAndRoll]. */
+    private val _tapRolling = MutableStateFlow(false)
+    val tapRolling: StateFlow<Boolean> = _tapRolling.asStateFlow()
+
+    private var tapRollJob: Job? = null
+
+    /** Seconds left on the current turn's timer - human or AI alike, so the badge's space in the
+     * layout never shifts between turns - or null when [GameState.turnSeconds] is (no timer from
+     * either the setup form or the mode) or the game is over - see [syncTurnTimer]. */
+    private val _turnSecondsRemaining = MutableStateFlow<Int?>(null)
+    val turnSecondsRemaining: StateFlow<Int?> = _turnSecondsRemaining.asStateFlow()
+
+    /** The state to restore if [undo] is called - the pre-commit snapshot of the most recent
+     * scoring action only. Rolling and holding/unholding dice are pure exploration/selection with
+     * no result of their own to undo; only commitScore actually changes the scorecard. */
+    private var undoSnapshot: GameState? = null
+    private val _canUndo = MutableStateFlow(false)
+    val canUndo: StateFlow<Boolean> = _canUndo.asStateFlow()
+
+    // The tutorial keeps nothing, so there's nothing to lose by leaving it.
+    val confirmBeforeLeavingGame: StateFlow<Boolean> = if (tutorial != null) {
+        MutableStateFlow(false)
+    } else {
+        settingsRepository.confirmBeforeLeavingGame.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+    }
+
+    /** Whether this is the guided game - see [tutorial]. */
+    val isTutorial: Boolean
+        get() = tutorial != null
+
+    /** Every step of [tutorial]'s guided game - none outside one. */
+    val tutorialSteps: List<TutorialStep>
+        get() = tutorial?.steps.orEmpty()
+
+    /** How far through [tutorial]'s guided game the player is - null outside one. */
+    private val tutorialProgress: TutorialProgress? = tutorial?.let { TutorialProgress(it, viewModelScope, ::pausableDelay) }
+
+    /** Which of [tutorial]'s turns [tutorialStep] is part of, from 1 - see [TutorialProgress.turn]. */
+    val tutorialTurn: StateFlow<Int> = tutorialProgress?.turn ?: MutableStateFlow(1)
+
+    /** How many turns [tutorial] has. */
+    val tutorialTurns: Int
+        get() = tutorial?.turns ?: 0
+
+    /** The guided game's step, for the coach card and the board - see [TutorialProgress.shown]. Null outside a tutorial. */
+    val tutorialStep: StateFlow<TutorialStep?> = tutorialProgress?.shown ?: MutableStateFlow(null)
+
+    private val currentTutorialStep: TutorialStep?
+        get() = tutorialProgress?.current
+
+    /**
+     * The coach card's back (-1) and forward (+1) - see [TutorialProgress.jump]. A roll still shaking or landing is
+     * dropped.
+     */
+    fun jumpToTutorialTurn(direction: Int) {
+        val replayed = tutorialProgress?.jump(direction) ?: return
+        tapRollJob?.cancel()
+        _tapRolling.value = false
+        setUndoSnapshot(null)
+        applyGameState(replayed, checkForAiTurn = false)
+    }
+
+    /** Whether [jumpToTutorialTurn] can go back: anywhere but the very start. */
+    val canJumpBack: Boolean
+        get() = tutorialProgress?.canJumpBack == true
+
+    /** Whether [jumpToTutorialTurn] can go forward: before the last turn. */
+    val canJumpForward: Boolean
+        get() = tutorialProgress?.canJumpForward == true
+
+    /** On to the tutorial's next step, shown after [shownAfterMillis]. */
+    private fun advanceTutorial(shownAfterMillis: Long = 0L) {
+        tutorialProgress?.advance(shownAfterMillis)
+    }
+
+    /** The totals were opened: moves on from a step that asked for them. */
+    fun tutorialTotalsOpened() {
+        if (currentTutorialStep is TutorialStep.OpenTotals) advanceTutorial()
+    }
+
+    /** Starts [tutorial]'s guided game from its first step: player 1 alone, under their saved name ([defaultName] without one). */
+    fun startTutorial(defaultName: String) {
+        val script = tutorial ?: return
+        viewModelScope.launch {
+            val name = resolvePlayerName(settingsRepository.snapshot().playerNameFor(1).orEmpty(), defaultName).takeNameWidth(maxPlayerNameLength(1))
+            val start = GameEngine.newGame(listOf(PlayerConfig(slot = 1, type = PlayerType.HUMAN, name = name)), script.gameMode)
+            tutorialProgress?.begin(start)
+            beginGame(start)
+        }
+    }
+
+    /**
+     * The table's art - each saved Styles pick resolved through its catalog's unlockedById, so an
+     * id nothing recognises, or a style still locked, draws that category's default - and its
+     * sound, vibration and roll settings. Null until they've all loaded, so the board is never
+     * drawn in the defaults for a frame before switching to the player's own; this view model is
+     * scoped to the whole "play" graph and loads them eagerly, so by the time the board shows
+     * they're normally long since in.
+     */
+    val tableSettings: StateFlow<TableSettings?> = run {
+        val visualTheme = savedStylesFlow(settingsRepository, achievementsRepository, ownsAllStyles).map { it.visualTheme }.distinctUntilChanged()
+        combine(
+            visualTheme,
+            settingsRepository.soundEnabled,
+            settingsRepository.vibrationEnabled,
+        ) { theme, sound, vibration -> TableSettings(theme, sound, vibration) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    }
+
+    // A hidden cheat: hold, then unhold, all five dice in strict order (die 0's pair, then die
+    // 1's, ... through die 4's) - on any turn, any player's. Once active for the rest of this
+    // game, holding a finger on an already-held die cycles its face once a second - see
+    // DiceTray's onCycleValue wiring and GameEngine.cycleDieValue.
+    // holdSequence tracks progress toward unlocking it.
+    private val _superuserModeActive = MutableStateFlow(false)
+    val superuserModeActive: StateFlow<Boolean> = _superuserModeActive.asStateFlow()
+    // A Channel, not a SharedFlow: a SharedFlow only buffers for collectors already subscribed at
+    // emission time, so a message sent before the UI's LaunchedEffect attaches (a real possibility
+    // right after process restart) would be silently dropped. A Channel queues it regardless of
+    // when the collector shows up, and delivers each message exactly once - the right semantics
+    // for a one-shot toast rather than state to replay.
+    private val _toastMessages = Channel<String>(Channel.BUFFERED)
+    val toastMessages: Flow<String> = _toastMessages.receiveAsFlow()
+    private val holdSequence = HoldSequence()
+
+    /** Player 1's achievement progress through the game that its final state can't show - see [AchievementTracker]. */
+    private val tracker = AchievementTracker()
+
+
+    /**
+     * Whether this is the first 5x the player in [playerIndex]'s seat has had this game: true once per seat, then false.
+     * Kept on the player ([PlayerState.fiveOfAKindFlashed]) and saved with the game, so a resume doesn't flash it again.
+     * Stored without going through [applyGameState]: nothing about the turn changes, so the AI and timer have no reason to react.
+     */
+    fun claimFiveOfAKindFlash(playerIndex: Int): Boolean {
+        val state = _game.value ?: return false
+        val player = state.players.getOrNull(playerIndex) ?: return false
+        if (player.fiveOfAKindFlashed) return false
+        val updated = state.copy(players = state.players.toMutableList().also { it[playerIndex] = player.copy(fiveOfAKindFlashed = true) })
+        _game.value = updated
+        persistInProgressGame(updated)
+        return true
+    }
+
+    init {
+        viewModelScope.launch { setupForm.restore(settingsRepository.snapshot()) }
+    }
+
+    /**
+     * Builds the initial [GameState] from the current setup form, generating AI names now. A Human seat
+     * with no name typed gets [defaultName] for its slot ("Player 2", in the player's language - the
+     * screen passes it; the English here is for tests, which have no screen).
+     *
+     * Returns whether the game started: not while two Human names clash ([GameSetupState.duplicateNameSlots]).
+     */
+    fun startGame(defaultName: (slot: Int) -> String = { "Player $it" }): Boolean { // i18n: not translated - for tests, the screen always passes the translated one
+        // Read before anything below overwrites it: "One More Time" is about the game THIS call is
+        // replacing, not the one it's about to create.
+        val previousGame = _game.value
+
+        val setupState = setupForm.setup.value
+        if (setupState.duplicateNameSlots(defaultName).isNotEmpty()) return false
+        val playerConfigs = setupForm.playerConfigs(defaultName)
+        viewModelScope.launch { setupState.saveTo(settingsRepository) }
+        // GameEngine.newGame leaves Extended Scores and First Roll Bonus off in a mode that doesn't allow them, whatever the
+        // switch says - the switch keeps the player's pick for the next mode.
+        beginGame(
+            GameEngine.newGame(
+                playerConfigs,
+                setupState.gameMode,
+                setupState.turnTimer,
+                setupState.rollModifiers,
+                setupState.extendedScores,
+                setupState.activeUnluckyDice,
+                setupState.firstRollBonus,
+            ),
+            startedAtLocalHour = localHour(),
+            previousGame = previousGame,
+        )
+
+        return true
+    }
+
+    /**
+     * The game [startGame] would start from the form now, its players unnamed - for [GameWarmUp] to draw. Starts,
+     * saves and unlocks nothing.
+     */
+    fun previewGame(): GameState {
+        val setupState = setupForm.setup.value
+        return GameEngine.newGame(
+            setupForm.unnamedPlayerConfigs(),
+            setupState.gameMode,
+            setupState.turnTimer,
+            setupState.rollModifiers,
+            setupState.extendedScores,
+            setupState.activeUnluckyDice,
+            setupState.firstRollBonus,
+        )
+    }
+
+    /**
+     * Loads a previously in-progress game, if any. Returns whether one was found and resumed.
+     *
+     * @throws net.zodac.ludo.data.game.UnresumableGameException if there's one that can't be read
+     */
+    suspend fun resumeGame(): Boolean {
+        val loaded = inProgressGameRepository.loadToResume() ?: return false
+        beginGame(
+            loaded.copy(turnSecondsLeft = null, undoneCategory = null, undoSnapshot = null),
+            resumedSecondsLeft = loaded.turnSecondsLeft,
+            resumedUndo = loaded.undoneCategory,
+            resumedUndoSnapshot = loaded.undoSnapshot,
+        )
+        unlockAchievements(setOf(Achievement.LETS_FINISH_THIS))
+        return true
+    }
+
+    /**
+     * Puts [state] on the table as a game starting or resuming, with no cheat active and nothing tracked towards an
+     * achievement yet - [resumedSecondsLeft] is what a resumed turn's timer starts from, [resumedUndo] the box an undo
+     * in it took back, [resumedUndoSnapshot] what its Undo goes back to (nothing to undo otherwise), and
+     * [startedAtLocalHour] the hour on the phone's clock a new game started at (null for one resumed). A new game's
+     * achievements are checked straight away: "Full Table" is settled the moment four seats are taken.
+     */
+    private fun beginGame(
+        state: GameState,
+        resumedSecondsLeft: Int? = null,
+        resumedUndo: ScoreCategory? = null,
+        resumedUndoSnapshot: GameState? = null,
+        startedAtLocalHour: Int? = null,
+        previousGame: GameState? = null,
+    ) {
+        val seats = state.players.joinToString { if (it.type == PlayerType.HUMAN) it.type.id else "${it.type.id} ${it.difficulty.id}" } // i18n: not translated - a crash report's breadcrumb
+        Breadcrumbs.record("${if (startedAtLocalHour == null) "Resumed" else "Started"} ${state.gameMode.id}: $seats") // i18n: not translated - a crash report's breadcrumb
+        // Before the state goes on the table, which saves it with whatever there is to undo.
+        setUndoSnapshot(resumedUndoSnapshot)
+        resetSuperuserMode()
+        // Nothing is recorded during a game, so one read serves it. The tutorial keeps nothing, so marks nothing.
+        leaderboardScoresRead?.cancel()
+        _leaderboardScores.value = null
+        if (tutorial == null) {
+            leaderboardScoresRead = viewModelScope.launch { _leaderboardScores.value = orNullOnFailure { scoreRepository.distinctScores(state.gameMode) } }
+        }
+        // The box an undo would take back is the one the last score went in.
+        tracker.startGame(resumedUndo, resumedLastCommitted = resumedUndoSnapshot?.let { state.players.getOrNull(it.currentPlayerIndex)?.lastScoredCategory })
+        this.resumedSecondsLeft = resumedSecondsLeft
+        applyGameState(GameEngine.markFiveOfAKindsCounted(state))
+        this.resumedSecondsLeft = null
+        prepareHardCpus()
+        checkInProgressAchievements(state)
+        checkGameStartAchievements(startedAtLocalHour, previousGame)
+    }
+
+    /**
+     * A human's cup tap or phone shake: the cup shakes for [GamePacing.cupShakeMillis] - the same wait a CPU's roll takes, and
+     * paused the same way (see [setForeground]) - then [rollDice]. Ignored unless it's a human's turn with a roll left
+     * and no shake already under way. The shake belongs to the turn it started in: one whose turn is scored first (the
+     * turn timer, an undo) is dropped rather than rolling for the next player.
+     */
+    fun shakeAndRoll() {
+        val state = _game.value ?: return
+        if (state.currentPlayer?.type != PlayerType.HUMAN || state.rollsRemaining <= 0 || tapRollJob?.isActive == true) return
+        if (tutorial != null && currentTutorialStep !is TutorialStep.Roll) return
+        tapRollJob = viewModelScope.launch {
+            _tapRolling.value = true
+            try {
+                pausableDelay(pacing.cupShakeMillis)
+                rollDice()
+            } finally {
+                _tapRolling.value = false
+            }
+        }
+    }
+
+    // Not undoable: rolling has no scoring consequence of its own to undo - only a committed
+    // score does (see commitScore below).
+    fun rollDice() {
+        val state = _game.value ?: return
+        if (state.currentPlayer?.type != PlayerType.HUMAN) return
+        // A roll can arrive after the turn it was tapped for has gone: the cup shakes before the
+        // roll lands, and Undo in that window restores the previous turn - with no rolls left when
+        // a turn has only one.
+        if (state.rollsRemaining <= 0) return
+        Breadcrumbs.record("Rolled, player ${state.currentPlayerIndex + 1}") // i18n: not translated - a crash report's breadcrumb
+
+        // Only player 1 - "You" - earns achievements; another human seat still plays normally
+        // below, it just doesn't feed any of the tracking that leads to one.
+        val isPlayerOneTurn = state.isPlayerOneTurn
+        // Everything this roll earns is held back until the dice have landed - see heldBackRollUnlocks.
+        if (isPlayerOneTurn) heldBackRollUnlocks = mutableSetOf()
+
+        val rolled = performRoll(state)
+        if (isPlayerOneTurn) {
+            unlockAchievements(tracker.onRoll(state, rolled))
+            announceRollAchievementsOnceLanded(
+                // Green Fingers blooms on a roll, not a score: on the game's very last roll, before its last box is filled.
+                bloomed = growsFlowerpot() && _game.value?.players?.firstOrNull()?.hasGrownSunflower == true,
+            )
+        }
+    }
+
+    /**
+     * Unlocks from the roll being processed in [rollDice], held back instead of announced - null
+     * outside it. The checks run the instant the roll is published, while the dice are still
+     * tossing onto the mat, so a banner for "Roll a 5x on the first roll" would pop up before the
+     * player has seen the 5x. The checks themselves (and all their per-turn tracking) still run
+     * immediately, against the state as it was rolled; only the announcement waits.
+     */
+    private var heldBackRollUnlocks: MutableSet<Achievement>? = null
+
+    /** Announces what [heldBackRollUnlocks] collected once the toss has finished (immediately with no toss). */
+    private fun announceRollAchievementsOnceLanded(bloomed: Boolean) {
+        val earned = heldBackRollUnlocks.orEmpty().toSet()
+        heldBackRollUnlocks = null
+        if (earned.isEmpty() && !bloomed) return
+        viewModelScope.launch {
+            pausableDelay(pacing.diceTossMillis)
+            unlockAchievements(earned)
+            if (bloomed) checkInProgressAchievements()
+        }
+    }
+
+    // Not undoable, same reasoning as rollDice: holding/unholding just selects what a future roll
+    // will touch, it doesn't itself score anything.
+    fun toggleHold(dieIndex: Int) {
+        // A tap that lands after its turn has moved on - the timer ran out, or a box was scored, in the same frame - holds
+        // nothing: the dice can only be held once rolled.
+        if (_game.value?.phase != TurnPhase.ROLLED) return
+        // A die locked by Unlucky Dice can't be held, and a tap on it is no hold-or-release to track.
+        if (_game.value?.dice?.getOrNull(dieIndex)?.isUnlucky == true) return
+        if (tutorial != null) {
+            holdForTutorial(dieIndex)
+            return
+        }
+        trackSuperuserSequence(dieIndex)
+        val state = _game.value
+        val wasHeld = state?.dice?.getOrNull(dieIndex)?.isHeld == true
+        // Only player 1 - "You" - earns achievements; another human seat can still toggle holds,
+        // it just doesn't feed Achievement tracking.
+        val isPlayerOneTurn = state?.isPlayerOneTurn == true
+
+        onHumanAction(undoable = false) { GameEngine.toggleHold(it, dieIndex) }
+        Breadcrumbs.record("${if (wasHeld) "Released" else "Held"} die ${dieIndex + 1}") // i18n: not translated - a crash report's breadcrumb
+
+        if (isPlayerOneTurn) _game.value?.let { unlockAchievements(tracker.onHold(dieIndex, wasHeld, it)) }
+    }
+
+    /** A hold in the tutorial: only one of the step's dice, never a release, and on once they're all held. */
+    private fun holdForTutorial(dieIndex: Int) {
+        val step = currentTutorialStep as? TutorialStep.Hold ?: return
+        if (dieIndex !in step.dice || _game.value?.dice?.getOrNull(dieIndex)?.isHeld != false) return
+        onHumanAction(undoable = false) { GameEngine.toggleHold(it, dieIndex) }
+        if (step.dice.all { _game.value?.dice?.getOrNull(it)?.isHeld == true }) advanceTutorial()
+    }
+
+    /** One cycle step (see [GameEngine.cycleDieValue]), called once per second while a held die is
+     * pressed in superuser mode. Superuser-mode-only; a no-op otherwise (also guards the die
+     * actually being held and it being the human's turn, in case a stale call lands after either
+     * stops being true - e.g. the turn ended mid-press). */
+    fun cycleHeldDieValue(dieIndex: Int) {
+        if (!isDebugBuild || !_superuserModeActive.value) return
+        val state = _game.value ?: return
+        if (state.currentPlayer?.type != PlayerType.HUMAN) return
+        if (state.dice.getOrNull(dieIndex)?.isHeld != true) return
+        applyGameState(GameEngine.cycleDieValue(state, dieIndex), checkForAiTurn = false)
+    }
+
+    // The only undoable action: committing a category is the only one of the three human actions
+    // that actually records a score. Committing always ends the current player's turn (advanceTurn
+    // in GameEngine), so this snapshot is still live when the NEXT player's turn opens: until that
+    // player rolls (performRoll clears it), "Undo" reaches back into the previous player's
+    // already-finished turn.
+    fun commitScore(category: ScoreCategory) {
+        val state = _game.value ?: return
+        // A tap that lands after its turn has moved on - the timer ran out, or another box was scored, in the same frame -
+        // scores nothing: not before a roll, and not in a box the dice can't go in.
+        if (state.phase != TurnPhase.ROLLED) return
+        val ready = HandCompletion.readyToScore(state, category) ?: return
+        if (tutorial != null) {
+            if ((currentTutorialStep as? TutorialStep.Score)?.category != category || state.currentPlayer?.type != PlayerType.HUMAN) return
+            advanceTutorial()
+        }
+        if (ready === state) {
+            finishCommit(category, undoTo = state)
+            return
+        }
+        // A hand completed for the box (see HandCompletion.readyToScore) is shown as held, and scored in the same tap.
+        if (state.currentPlayer?.type != PlayerType.HUMAN) return
+        applyGameState(ready, checkForAiTurn = false)
+        finishCommit(category, undoTo = state)
+    }
+
+    private fun finishCommit(category: ScoreCategory, undoTo: GameState) {
+        // Only player 1 - "You" - earns achievements; another human seat can still commit a score
+        // normally, it just doesn't feed any Achievement tracking. Read before the commit below,
+        // which ends this player's turn and advances currentPlayerIndex to the next seat.
+        val isPlayerOneTurn = _game.value?.isPlayerOneTurn == true
+
+        if (isPlayerOneTurn) _game.value?.let { unlockAchievements(tracker.onCommit(it, category)) }
+
+        // Undo returns to the turn as it was before any hand was completed for the player.
+        val committing = _game.value ?: return
+        if (committing.currentPlayer?.type != PlayerType.HUMAN) return
+        // Noted before the commit is applied: a commit that ends the game clears the tracker's undo memory (see
+        // AchievementTracker.onGameOver), and an undo into the game's last box still counts. Announced after, as before.
+        val committedUnlocks = tracker.onCommitted(category, byPlayerOne = isPlayerOneTurn)
+        Breadcrumbs.record("Scored ${category.id}, player ${committing.currentPlayerIndex + 1}") // i18n: not translated - a crash report's breadcrumb
+        setUndoSnapshot(undoTo)
+        val committed = GameEngine.commitScore(committing, category)
+        applyGameState(GameEngine.markFiveOfAKindsCounted(committed))
+
+        unlockAchievements(committedUnlocks)
+        // Only player 1's own commits are checked: every mid-game achievement reads player 1's
+        // scorecard, which nobody else's turn can change.
+        if (isPlayerOneTurn) checkInProgressAchievements(committed)
+    }
+
+    /** Reverts just the most recent human move, if there is one to undo. Cancels any pending AI turn it would have triggered. */
+    fun undo() {
+        val snapshot = undoSnapshot ?: return
+        val undoing = _game.value ?: return
+        if (tutorial != null) {
+            if (currentTutorialStep !is TutorialStep.Undo) return
+            advanceTutorial()
+        }
+        Breadcrumbs.record("Undid") // i18n: not translated - a crash report's breadcrumb
+        tracker.onUndo()
+        cpuTurns.cancel()
+        cancelTurnTimer()
+        setUndoSnapshot(null)
+        applyGameState(GameEngine.keepFiveOfAKindsCounted(snapshot, undoing), checkForAiTurn = false)
+    }
+
+    /** A tap on the dice cup once a turn's last roll is already spent - it does nothing for the
+     * game, but it's counted anyway for [Achievement.NO_MORE_ROLLS]. */
+    fun tapCupWithNoRollsLeft() {
+        unlockAchievements(tracker.onCupTapWithNoRollsLeft(_game.value ?: return))
+    }
+
+    /** A phone-shake roll actually happened - see [ShakeDetectorEffect]/[Achievement
+     * .SHAKEN_NOT_TAPPED]. Only the achievement lives here: the roll itself is still driven
+     * through the same [rollDice] call a cup tap uses, so this is purely a one-shot unlock,
+     * same shape as [tapCupWithNoRollsLeft]. */
+    fun onShakeRollDetected() {
+        unlockAchievements(setOf(Achievement.SHAKEN_NOT_TAPPED))
+    }
+
+    /** The Top Hat cup's rabbit just peeked out - see [AchievementTracker.onRabbitSeen]. */
+    fun onRabbitSeen() {
+        unlockAchievements(tracker.onRabbitSeen(_game.value ?: return))
+    }
+
+    /**
+     * Every roll in the game - a human's via [rollDice],
+     * and an AI's via [CpuTurns] - so they all land the same way. Not undoable, like
+     * rolling always has been: only a committed score is. Returns the rolled state for the AI loop,
+     * which carries its own copy of it.
+     */
+    private fun performRoll(state: GameState, checkForAiTurn: Boolean = true): GameState {
+        // The golden egg: a human's roll only, with the Egg dice and the Chicken cup both in use.
+        val goldenOneIn = GameEngine.GOLDEN_EGG_ONE_IN.takeIf { state.currentPlayer?.type == PlayerType.HUMAN && showsGoldenEggs(state) && tutorial == null }
+        val step = currentTutorialStep
+        val scripted = (step as? TutorialStep.Roll)?.let { TutorialDice(it.dice, state.dice.map(Die::isHeld)) }
+        val rolled = GameEngine.rollDice(state, scripted ?: random, goldenOneIn)
+        if (step is TutorialStep.Roll) advanceTutorial(shownAfterMillis = pacing.diceTossMillis)
+        setUndoSnapshot(null)
+        applyGameState(rolled, checkForAiTurn)
+        return rolled
+    }
+
+    /**
+     * Whether the table is set up for [Achievement.EGGCELLENT_DISCOVERY]: the Egg dice in any colour but gold, and the
+     * Chicken cup, picked. Earned or not, so the golden egg keeps turning up after it. Any mode or modifier, except one
+     * whose dice have more faces than the Egg art (D20's), where the table draws a D20 instead.
+     */
+    private fun showsGoldenEggs(state: GameState): Boolean {
+        val theme = tableSettings.value?.visualTheme ?: return false
+        return theme.diceStyle.rollsGoldenEggs && theme.diceCupStyle.laysGoldenEggs && state.gameMode.dieValues.last <= PIP_FACES
+    }
+
+    /** Whether the cup picked is the Flowerpot that grows its plant, not one of its fixed-stage pots - [Achievement.GREENFINGERS]'s cup. */
+    private fun growsFlowerpot(): Boolean = tableSettings.value?.visualTheme?.diceCupStyle?.growsPlant == true
+
+    private fun onHumanAction(undoable: Boolean = true, transform: (GameState) -> GameState) {
+        val state = _game.value ?: return
+        if (state.currentPlayer?.type != PlayerType.HUMAN) return
+        setUndoSnapshot(if (undoable) state else null)
+        applyGameState(transform(state))
+    }
+
+    private fun setUndoSnapshot(snapshot: GameState?) {
+        // In the tutorial, only a score its next step takes back with Undo.
+        undoSnapshot = snapshot.takeIf { tutorial == null || currentTutorialStep is TutorialStep.Undo }
+        _canUndo.value = undoSnapshot != null
+    }
+
+    /**
+     * Reports every hold/release, before it's applied, to [holdSequence] - piggybacking on ordinary play rather than a
+     * separate input mode, so the cheat stays hidden until it triggers. Tracked in every build, on any seat's turn: the
+     * sequence earns [Achievement.TIME_WASTING] for player 1 ([AchievementTracker.onHoldSequenceDone]) whether or not it
+     * goes on to do anything. Only the cheat itself - [_superuserModeActive] and the toast - stays behind [isDebugBuild],
+     * the only gate it needs: [cycleHeldDieValue] already requires [_superuserModeActive], and every UI entry point
+     * (DiceTray's onCycleValue wiring) is itself conditional on that same flag.
+     */
+    private fun trackSuperuserSequence(dieIndex: Int) {
+        if (_superuserModeActive.value) return
+        val state = _game.value ?: return
+        val holding = state.dice.getOrNull(dieIndex)?.isHeld == false
+        if (!holdSequence.onToggle(dieIndex, holding, state.dice.size)) return
+        unlockAchievements(tracker.onHoldSequenceDone(state))
+        if (isDebugBuild) {
+            _superuserModeActive.value = true
+            _toastMessages.trySend("Superuser mode activated!") // i18n: not translated - a debug-build developer toast
+        }
+    }
+
+    private fun resetSuperuserMode() {
+        _superuserModeActive.value = false
+        holdSequence.reset()
+    }
+
+    private fun applyGameState(newState: GameState, checkForAiTurn: Boolean = true) {
+        val wasGameOver = _game.value?.isGameOver ?: false
+        // A shake still under way belongs to a turn that's now been scored (or undone): it's dropped - see shakeAndRoll.
+        if (newState.scoresEntered != _game.value?.scoresEntered) tapRollJob?.cancel()
+        _game.value = newState
+        persistInProgressGame(newState)
+        tracker.onState(newState)
+        if (!wasGameOver && newState.isGameOver) {
+            tracker.onGameOver()
+            finishGame(newState)
+        }
+        syncTurnTimer(newState)
+        if (checkForAiTurn) cpuTurns.startIfDue(newState)
+    }
+
+    private var turnTimerJob: Job? = null
+
+    /** The total number of turns scored across every player as of the turn [turnTimerJob] is
+     * currently counting down for - a turn always ends by scoring exactly one slot, so this
+     * strictly increases by one turn to turn and uniquely identifies "a new turn started" even in
+     * a single-player game, where [GameState.currentPlayerIndex] alone would stay 0 forever. A
+     * state update that doesn't actually change whose turn it is (e.g. a superuser die cycle,
+     * rolling, holding) leaves it unchanged, so the countdown isn't restarted mid-turn. */
+    private var turnTimerTurnSequence: Int? = null
+
+    /**
+     * Starts, restarts or cancels the per-turn countdown so it always matches [newState]: running
+     * on any seat's turn - human or AI - only while [GameState.turnSeconds] allows one, and reset to
+     * the full duration whenever the turn it's counting down for changes (a new turn starting, or
+     * the previous turn reappearing after [undo]). An AI is expected to finish well within the
+     * limit - [autoScoreOnTimeout] forfeits its turn the same as a human's if it doesn't.
+     */
+    private fun syncTurnTimer(newState: GameState) {
+        val seconds = newState.turnSeconds
+        if (newState.isGameOver || seconds == null) {
+            cancelTurnTimer()
+            return
+        }
+        val turnSequence = newState.players.sumOf { it.turnsTaken }
+        if (turnTimerTurnSequence == turnSequence && turnTimerJob?.isActive == true) return
+        turnTimerTurnSequence = turnSequence
+        startTurnTimer(seconds, resumedSecondsLeft?.coerceIn(1, seconds) ?: seconds)
+    }
+
+    private fun startTurnTimer(totalSeconds: Int, startSeconds: Int = totalSeconds) {
+        turnTimerJob?.cancel()
+        _turnSecondsRemaining.value = startSeconds
+        turnTimerJob = viewModelScope.launch {
+            var remaining = startSeconds
+            while (remaining > 0) {
+                pausableDelay(1_000L)
+                remaining--
+                _turnSecondsRemaining.value = remaining
+            }
+            autoScoreOnTimeout()
+        }
+    }
+
+    private fun cancelTurnTimer() {
+        turnTimerJob?.cancel()
+        turnTimerJob = null
+        turnTimerTurnSequence = null
+        _turnSecondsRemaining.value = null
+    }
+
+    /**
+     * The turn timer running out ([GameEngine.timeOut]). Applies equally to an AI
+     * seat that's taken too long to decide - Hard's exhaustive search is the only realistic way
+     * this fires for one - cancelling its in-flight turn job first so it can't keep acting after
+     * being timed out from under it.
+     */
+    private fun autoScoreOnTimeout() {
+        val state = _game.value ?: return
+        if (state.currentPlayer?.type == PlayerType.AI) {
+            cpuTurns.cancel()
+        }
+        // Only player 1 - "You" - earns achievements; another human seat can still be timed out,
+        // it just doesn't feed Achievement tracking.
+        val isPlayerOneTurn = state.isPlayerOneTurn
+
+        val scored = GameEngine.timeOut(state) ?: return
+        // Counted before the state goes out: a timeout on the game's last turn ends it, and the results' achievements read these.
+        if (isPlayerOneTurn) tracker.onTimeout(scored)
+        setUndoSnapshot(null)
+        applyGameState(scored)
+    }
+
+    /**
+     * The one place a finished game's side effects happen, in order: the leaderboard's previous
+     * high score is read *first*, because "New Personal Best" compares against the board as it was
+     * before this game's own rows were added to it.
+     */
+    private fun finishGame(state: GameState) {
+        // The tutorial is played for practice: it records nothing, and doesn't count as a first game.
+        if (tutorial != null) return
+        // Written once: every game after the first finds the modes already unlocked.
+        if (setupForm.unlockModes()) viewModelScope.launch { settingsRepository.setFirstGameCompleted() }
+        viewModelScope.launch {
+            // Guarded so a leaderboard problem costs only the leaderboard: before this, a throw
+            // from either call took the achievement evaluation down with it, silently.
+            // Both reads happen BEFORE the insert - "New Personal Best" compares against the board
+            // as it was, and the score-collection bands need the before state to measure progress
+            // against (the engine adds this game's own scores itself).
+            // By name, and only player 1's: someone else's high score at the same table must not
+            // count as beating YOUR best, now that achievements are player 1's alone.
+            val playerOneName = state.players.firstOrNull()?.takeIf { it.type == PlayerType.HUMAN }?.name
+            val previousBestScore = playerOneName?.let { name ->
+                orNullOnFailure { scoreRepository.bestScoreForPlayer(name) }
+            }
+            val previousLeaderboard = orNullOnFailure { scoreRepository.leaderboardTotals() }
+                ?: LeaderboardTotals()
+            orNullOnFailure { persistHumanScores(state) }
+            recordEndOfGameAchievements(state, previousBestScore, previousLeaderboard)
+            // The online sync that posts this game's score, and saves its rows - after the rows above are written.
+            OnlineSyncRequests.request()
+        }
+    }
+
+    /**
+     * Everything decided the moment a game begins - checked from [startGame]/[resumeGame], not the
+     * end: whatever's true here was already true before a single die was rolled, so there's no
+     * reason to make the player finish a game to hear about it. Delegates the actual "what counts
+     * as earned" decision to [AchievementEngine.evaluateAtGameStart], same as [checkInProgressAchievements]/
+     * [recordEndOfGameAchievements] do for their own moments - this is only responsible for
+     * gathering [GameStartContext]'s inputs (async, since the style ids live in
+     * [SettingsRepository]'s DataStore, not [_game]) and persisting/announcing the result. A future
+     * game-start achievement is a new field on [GameStartContext] and a line in that engine
+     * function, not a new method here.
+     */
+    private fun checkGameStartAchievements(startedAtLocalHour: Int?, previousGame: GameState?) {
+        if (tutorial != null) return
+        val game = _game.value ?: return
+        viewModelScope.launch {
+            // A pick whose style is still locked can't count, since the default is drawn in its place.
+            val playedNonDefaultStyle = savedStylesFlow(settingsRepository, achievementsRepository, ownsAllStyles).first().hasNonDefaultStyle
+            val context = GameStartContext(
+                playedNonDefaultStyle = playedNonDefaultStyle,
+                game = game,
+                previousGame = previousGame,
+                startedAtLocalHour = startedAtLocalHour,
+            )
+            achievementUnlocker.apply { state -> AchievementEngine.evaluateAtGameStart(context, state, nowEpochMillis()) }
+        }
+    }
+
+    /**
+     * Checks what the game has earned **so far**, after every scored category - a maxed-out Sixes
+     * box or a second 5x is worth saying so at the moment it happens, not on the results
+     * screen twenty minutes later.
+     *
+     * Skipped once the game is over, where [finishGame] evaluates the same things (and more) -
+     * running both would race to unlock the same achievement and pop it twice.
+     *
+     * A caller that has just marked a game's 5x as counted ([GameEngine.markFiveOfAKindsCounted]) passes the [state] from
+     * before it, which is what says how many to add.
+     */
+    private fun checkInProgressAchievements(state: GameState? = _game.value) {
+        if (state == null || state.isGameOver || tutorial != null) return
+
+        viewModelScope.launch {
+            achievementUnlocker.apply { stored -> AchievementEngine.evaluateInProgress(state, stored, nowEpochMillis(), tracker.timedOutZeroes, growsFlowerpot()) }
+        }
+    }
+
+    private suspend fun recordEndOfGameAchievements(
+        state: GameState,
+        previousBestScore: Int?,
+        previousLeaderboard: LeaderboardTotals,
+    ) {
+        val context = tracker.endOfGameContext(previousBestScore, previousLeaderboard).copy(growingFlowerpotInPlay = growsFlowerpot())
+        achievementUnlocker.apply { stored -> AchievementEngine.evaluate(state, context, stored, nowEpochMillis()) }
+    }
+
+    private fun unlockAchievements(achievements: Set<Achievement>) {
+        // Nothing in the tutorial earns an achievement: the dice are the script's.
+        if (achievements.isEmpty() || tutorial != null) return
+        // Only what this game can earn: its mode's, and with a modifier on, only the modifiers' own.
+        val earnable = _game.value?.let { achievements.earnableIn(it) } ?: achievements
+        if (earnable.isEmpty()) return
+        heldBackRollUnlocks?.let {
+            it += earnable
+            return
+        }
+        viewModelScope.launch { achievementUnlocker.unlock(earnable) }
+    }
+
+    // Suspending rather than launching its own coroutine: finishGame sequences this against the
+    // leaderboard read that has to happen before it.
+    private suspend fun persistHumanScores(state: GameState) {
+        val results = state.players.withIndex().filter { (_, player) -> player.type == PlayerType.HUMAN }.map { (index, player) ->
+            PlayerResult(
+                playerName = player.name,
+                // Feeds the leaderboard's own tie-break ordering (see TieBreak.kt).
+                stats = player.toTieBreakStats(),
+                // Null for a solo game: nobody to beat.
+                won = state.wonBy(index),
+                // Index 0 is always the primary player ("You") - see AchievementEngine's class doc.
+                isPrimaryPlayer = index == 0,
+                diceRolled = player.diceRolled,
+            )
+        }
+        // Every human's row in one write.
+        scoreRepository.recordGame(
+            results,
+            gameMode = state.gameMode,
+            playedUnmodified = !state.hasModifiers,
+        )
+    }
+
+    // Queued and conflated by the repository - see InProgressGameRepository.
+    private fun persistInProgressGame(state: GameState) {
+        // The tutorial is never saved: Continue stays on the player's own game.
+        if (tutorial != null) return
+        if (state.isGameOver) inProgressGameRepository.clear(finished = state) else inProgressGameRepository.save(savedCopy(state))
+    }
+
+    /** [state] as it's saved: with the box an undo took back and what Undo goes back to, which the live game doesn't carry -
+     * see [GameState.undoneCategory] and [GameState.undoSnapshot]. */
+    private fun savedCopy(state: GameState): GameState = state.copy(undoneCategory = tracker.undoneCategory, undoSnapshot = undoSnapshot)
+
+    /**
+     * Gets a Hard CPU's first decision ready while the humans before it play: its mode's hands scored
+     * (most of a second for Tricolour's coloured dice - see [AiTurnPlayer.prepareHard]) and, in
+     * Standard, the perfect-play table read. Off the main thread, like the decisions themselves.
+     */
+    private fun prepareHardCpus() {
+        val state = _game.value ?: return
+        if (state.players.none { it.type == PlayerType.AI && it.difficulty == Difficulty.HARD }) return
+        viewModelScope.launch(aiDispatcher) {
+            AiTurnPlayer.prepareHard(state.gameMode, state.extendedScores)
+            if (state.gameMode.playsByPerfectPlayTable(state.extendedScores)) standardPerfectPlay?.invoke()
+        }
+    }
+
+    /** The perfect-play table if [state]'s current player is a Hard CPU playing Standard - see [standardPerfectPlay]. */
+    private suspend fun perfectPlayFor(state: GameState): StandardPerfectPlayTable? =
+        if (AiTurnPlayer.usesPerfectPlayTable(state)) standardPerfectPlay?.invoke() else null
+
+    companion object {
+        /** Builds a [GameViewModel] backed by real Room/DataStore persistence. */
+        fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                GameViewModel(
+                    scoreRepository = container.scoreRepository,
+                    settingsRepository = container.settingsRepository,
+                    inProgressGameRepository = container.inProgressGameRepository,
+                    achievementsRepository = container.achievementsRepository,
+                    ownsAllStyles = container.ownsAllStyles,
+                    achievementUnlocker = container.achievementUnlocker,
+                    random = container.diceRandom,
+                    isDebugBuild = container.buildInfo.isDebug,
+                    standardPerfectPlay = container::standardPerfectPlayTable,
+                )
+            }
+        }
+
+        /** Builds a [GameViewModel] for [script]'s guided game: it reads the player's name and table, and writes nothing. */
+        fun tutorialFactory(container: AppContainer, script: TutorialScript): ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                GameViewModel(
+                    scoreRepository = container.scoreRepository,
+                    settingsRepository = container.settingsRepository,
+                    inProgressGameRepository = container.inProgressGameRepository,
+                    achievementsRepository = container.achievementsRepository,
+                    ownsAllStyles = container.ownsAllStyles,
+                    achievementUnlocker = container.achievementUnlocker,
+                    tutorial = script,
+                )
+            }
+        }
+    }
+}

@@ -1,0 +1,96 @@
+package net.zodac.ludo
+
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performSemanticsAction
+import java.util.concurrent.TimeUnit
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.ScoreCategory
+import net.zodac.ludo.model.TurnPhase
+import net.zodac.ludo.platform.HapticEffect
+import net.zodac.ludo.platform.HapticsPlayer
+import net.zodac.ludo.platform.LocalPlatformServices
+import net.zodac.ludo.platform.PlatformServices
+import net.zodac.ludo.platform.SilentPlatformServices
+import net.zodac.ludo.ui.game.GameScreen
+import net.zodac.ludo.ui.game.GameViewModel
+import net.zodac.ludo.ui.theme.LudoPlusTheme
+import org.robolectric.shadows.ShadowLooper
+
+/** The phone buzzes for the player's own roll, and stays still for a CPU's - whose roll is still heard, but not felt. */
+class GameScreenHapticsTest : UiTest() {
+
+    private val showcase = Showcase { compose }
+
+    private val felt = mutableListOf<HapticEffect>()
+
+    private val recordingServices = object : PlatformServices by SilentPlatformServices {
+        override fun createHapticsPlayer(): HapticsPlayer = object : HapticsPlayer {
+            override fun play(effect: HapticEffect) {
+                felt += effect
+            }
+        }
+    }
+
+    private fun show(viewModel: GameViewModel) {
+        // Off, so each step moves the clock only as far as advance() says.
+        compose.mainClock.autoAdvance = false
+        viewModel.setupForm.setGameMode(GameMode.STANDARD)
+        viewModel.startGame()
+        showcase.show {
+            CompositionLocalProvider(LocalPlatformServices provides recordingServices) {
+                LudoPlusTheme { GameScreen(viewModel = viewModel) }
+            }
+        }
+    }
+
+    private fun waitFor(what: String, condition: () -> Boolean) {
+        repeat(600) {
+            if (condition()) return
+            ShadowLooper.idleMainLooper(STEP_MILLIS, TimeUnit.MILLISECONDS)
+            compose.mainClock.advanceTimeBy(STEP_MILLIS)
+            compose.waitForIdle()
+        }
+        error("Timed out waiting for $what")
+    }
+
+    private fun tapCup() {
+        compose.onNodeWithContentDescription("Dice cup", substring = true).performSemanticsAction(SemanticsActions.OnClick)
+    }
+
+    @Test
+    fun `the player's own roll buzzes the phone once`() = uiTest {
+        val viewModel = gameViewModel()
+        viewModel.setupForm.setPlayerCount(1)
+        show(viewModel)
+        tapCup()
+        waitFor("the roll to land") { viewModel.game.value!!.phase == TurnPhase.ROLLED }
+        assertEquals(listOf(HapticEffect.SHAKE_BUZZ), felt)
+    }
+
+    @Test
+    fun `a CPU's roll does not buzz the phone - only the player's own did`() = uiTest {
+        val viewModel = gameViewModel()
+        viewModel.setupForm.setPlayerCount(2)
+        viewModel.setupForm.setPlayerType(2, PlayerType.AI)
+        show(viewModel)
+        tapCup()
+        waitFor("the player's roll to land") { viewModel.game.value!!.phase == TurnPhase.ROLLED }
+        viewModel.commitScore(ScoreCategory.CHANCE)
+
+        // The CPU is up, and rolls: its dice land, and the phone has buzzed only for the first roll.
+        waitFor("the CPU's roll to land") {
+            val game = viewModel.game.value!!
+            game.players[game.currentPlayerIndex].type == PlayerType.AI && game.phase == TurnPhase.ROLLED
+        }
+        assertEquals(listOf(HapticEffect.SHAKE_BUZZ), felt)
+    }
+
+    private companion object {
+        const val STEP_MILLIS = 50L
+    }
+}

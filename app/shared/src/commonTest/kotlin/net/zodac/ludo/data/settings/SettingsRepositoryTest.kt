@@ -1,0 +1,164 @@
+package net.zodac.ludo.data.settings
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import net.zodac.ludo.data.InMemoryPreferences
+import net.zodac.ludo.data.achievements.AchievementsRepository
+import net.zodac.ludo.data.game.InProgressGameRepository
+import net.zodac.ludo.model.Achievement
+import net.zodac.ludo.model.AchievementCounter
+import net.zodac.ludo.model.Difficulty
+import net.zodac.ludo.model.Die
+import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.GameState
+import net.zodac.ludo.model.PlayerColour
+import net.zodac.ludo.model.PlayerState
+import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.RollModifiers
+import net.zodac.ludo.model.TurnTimer
+import net.zodac.ludo.model.UnluckyDice
+
+/** Every value [flow] emits from now on, collected in the background. */
+private fun <T> TestScope.emissions(flow: Flow<T>): List<T> =
+    mutableListOf<T>().also { seen -> backgroundScope.launch { flow.collect { seen += it } } }
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class SettingsRepositoryTest {
+
+    @Test
+    fun `a retired setting an older version left is removed at launch - and the others are kept`() = runTest {
+        val store = InMemoryPreferences()
+        store.edit { it[stringPreferencesKey("styles_page_fit")] = "1080x2400:2.9375:1.0=0.757" }
+        val repository = SettingsRepository(store)
+        repository.setDiceStyleId("marble")
+        repository.forgetRetired()
+        assertEquals(null, store.data.first()[stringPreferencesKey("styles_page_fit")])
+        assertEquals("marble", repository.diceStyleId.first())
+        // Nothing left to remove: run again, nothing changes.
+        val before = store.data.first()
+        repository.forgetRetired()
+        assertEquals(before, store.data.first())
+    }
+
+    @Test
+    fun `a snapshot reads every setting as its flow does - the defaults with nothing saved`() = runTest {
+        val repository = SettingsRepository(InMemoryPreferences())
+        val empty = repository.snapshot()
+        assertEquals(null, empty.playerCount)
+        assertEquals(null, empty.playerNameFor(1))
+        assertEquals(TurnTimer.NONE, empty.turnTimer)
+        assertEquals(TurnTimer.SECONDS_60, empty.turnTimerLength)
+        assertEquals(RollModifiers.DEFAULT_ROLLS, empty.rollsPerTurnLength)
+        assertEquals(GameMode.default, empty.gameMode)
+        assertEquals(UnluckyDice(UnluckyDice.DEFAULT_ODDS_PERCENT, UnluckyDice.DEFAULT_MAX_DICE), empty.unluckyDice)
+
+        repository.setPlayerCount(3)
+        repository.setPlayerName(2, "Bea")
+        repository.setPlayerType(2, PlayerType.AI)
+        repository.setPlayerDifficulty(2, Difficulty.HARD)
+        repository.setPlayerColour(2, PlayerColour.entries.last())
+        repository.setTurnTimer(TurnTimer.SECONDS_60)
+        repository.setRollModifiers(RollModifiers(rollsPerTurn = RollModifiers.ROLLS.last, storedRolls = true), rollsPerTurnLength = RollModifiers.ROLLS.last)
+        repository.setExtendedScores(true)
+        repository.setFirstRollBonus(true)
+        repository.setUnluckyDice(true, UnluckyDice(UnluckyDice.ODDS_PERCENT.last, UnluckyDice.MAX_DICE.last))
+        repository.setGameMode(GameMode.TRICOLOUR)
+
+        val saved = repository.snapshot()
+        assertEquals(repository.playerCount.first(), saved.playerCount)
+        assertEquals(repository.playerNameFor(2).first(), saved.playerNameFor(2))
+        assertEquals(repository.playerTypeFor(2).first(), saved.playerTypeFor(2))
+        assertEquals(repository.playerDifficultyFor(2).first(), saved.playerDifficultyFor(2))
+        assertEquals(repository.playerColourFor(2).first(), saved.playerColourFor(2))
+        assertEquals(repository.turnTimer.first(), saved.turnTimer)
+        assertEquals(repository.turnTimerLength.first(), saved.turnTimerLength)
+        assertEquals(repository.rollModifiers.first(), saved.rollModifiers)
+        assertEquals(repository.rollsPerTurnLength.first(), saved.rollsPerTurnLength)
+        assertEquals(repository.extendedScores.first(), saved.extendedScores)
+        assertEquals(repository.firstRollBonus.first(), saved.firstRollBonus)
+        assertTrue(saved.firstRollBonus)
+        assertEquals(repository.unluckyDiceEnabled.first(), saved.unluckyDiceEnabled)
+        assertEquals(repository.unluckyDice.first(), saved.unluckyDice)
+        assertEquals(repository.gameMode.first(), saved.gameMode)
+        assertEquals(3, saved.playerCount)
+        assertEquals("Bea", saved.playerNameFor(2))
+        assertEquals(GameMode.TRICOLOUR, saved.gameMode)
+    }
+
+    @Test
+    fun `a setting's flow emits when that setting changes - not on a write to another`() = runTest {
+        val repository = SettingsRepository(InMemoryPreferences())
+        val sound = emissions(repository.soundEnabled)
+        val diceStyle = emissions(repository.diceStyleId)
+        runCurrent()
+
+        repository.setPlayerName(1, "Alice")
+        repository.setVibrationEnabled(false)
+        runCurrent()
+        assertEquals(listOf(true), sound)
+        assertEquals(listOf("classic_ivory"), diceStyle)
+
+        repository.setSoundEnabled(false)
+        repository.setDiceStyleId("marble")
+        runCurrent()
+        assertEquals(listOf(true, false), sound)
+        assertEquals(listOf("classic_ivory", "marble"), diceStyle)
+    }
+
+    @Test
+    fun `the achievements emit when an unlock or a counter changes - not on any other write to their file`() = runTest {
+        val store = InMemoryPreferences()
+        val repository = AchievementsRepository(store)
+        val states = emissions(repository.state)
+        runCurrent()
+
+        store.edit { it[stringPreferencesKey("unrelated")] = "x" }
+        runCurrent()
+        assertEquals(1, states.size)
+
+        val achievement = Achievement.entries.first()
+        val counter = AchievementCounter.entries.first()
+        repository.record(mapOf(achievement to 5L), mapOf(counter to 2))
+        runCurrent()
+        assertEquals(2, states.size)
+        assertEquals(5L, states.last().unlockedAt[achievement])
+        assertEquals(2, states.last().counters[counter])
+    }
+
+    @Test
+    fun `whether a game is saved emits when that changes - not on every move saved`() = runTest {
+        val repository = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
+        val saved = emissions(repository.hasInProgressGame)
+        runCurrent()
+
+        for (value in 1..3) {
+            repository.save(GameState(players = listOf(PlayerState(name = "P1", type = PlayerType.HUMAN)), dice = List(5) { Die(value = value) }))
+            runCurrent()
+        }
+        repository.clear()
+        runCurrent()
+        assertEquals(listOf(false, true, false), saved)
+    }
+
+    @Test
+    fun `the Tricolour shapes setting is off until it's turned on - and keeps what it's set to`() = runTest {
+        val repository = SettingsRepository(InMemoryPreferences())
+        assertFalse(repository.tricolourMarksEnabled.first())
+        repository.setTricolourMarksEnabled(true)
+        assertTrue(repository.tricolourMarksEnabled.first())
+        assertEquals(setOf("tricolour_marks"), repository.cloudSettings().keys.filter { it == "tricolour_marks" }.toSet(), "it syncs")
+        repository.setTricolourMarksEnabled(false)
+        assertFalse(repository.tricolourMarksEnabled.first())
+    }
+}

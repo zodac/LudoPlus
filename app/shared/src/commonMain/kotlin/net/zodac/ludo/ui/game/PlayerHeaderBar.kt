@@ -1,0 +1,439 @@
+package net.zodac.ludo.ui.game
+
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
+import net.zodac.ludo.data.settings.MotionGroup
+import net.zodac.ludo.game.Standing
+import net.zodac.ludo.game.standings
+import net.zodac.ludo.model.PlayerState
+import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.resources.Res
+import net.zodac.ludo.resources.game_standing_spoken
+import net.zodac.ludo.resources.game_standing_tied
+import net.zodac.ludo.resources.game_standing_tied_spoken
+import net.zodac.ludo.resources.game_tab_current_turn_spoken
+import net.zodac.ludo.resources.game_tab_new_leaderboard_score
+import net.zodac.ludo.resources.game_tab_view_action
+import net.zodac.ludo.ui.common.AppTooltip
+import net.zodac.ludo.ui.common.FontFit
+import net.zodac.ludo.ui.common.LocalFramePaces
+import net.zodac.ludo.ui.common.MIN_READABLE_FONT_SIZE
+import net.zodac.ludo.ui.common.ShrinkThenWrapText
+import net.zodac.ludo.ui.common.SoraFontFamily
+import net.zodac.ludo.ui.common.fitFontSize
+import net.zodac.ludo.ui.common.grouped
+import net.zodac.ludo.ui.common.joinClauses
+import net.zodac.ludo.ui.common.ordinal
+import net.zodac.ludo.ui.common.stringResource
+import net.zodac.ludo.ui.common.dpToSp
+import net.zodac.ludo.ui.common.groupReduceMotion
+import net.zodac.ludo.ui.common.isLargeFont
+import net.zodac.ludo.ui.common.sizeAtNormalFont
+import net.zodac.ludo.ui.common.textScale
+import net.zodac.ludo.ui.style.LocalGameVisualTheme
+import net.zodac.ludo.ui.theme.color
+
+/** How long a score takes to count up: most turns' points rise in [SCORE_RISE_MIN_MILLIS], a bigger
+ * jump gets [SCORE_RISE_MILLIS_PER_POINT] each, and past [SCORE_RISE_MAX_MILLIS] it just counts faster. */
+private const val SCORE_RISE_MIN_MILLIS = 1000
+private const val SCORE_RISE_MAX_MILLIS = 2000
+private const val SCORE_RISE_MILLIS_PER_POINT = 40
+
+/** How much of the player's colour the tab's panel takes on, over `surfaceContainer` - see `UI.md`'s "Player colours". */
+private const val PANEL_TINT = 0.08f
+
+/** How much of the player's colour the pill behind a score the Leaderboard doesn't hold yet takes. */
+private const val NEW_SCORE_PILL_ALPHA = 0.20f
+
+/** How far below the tab's top padding its name sits - see `UI.md`'s "Player colours". */
+private val NAME_TOP_DROP = 3.dp
+
+internal fun scoreRiseMillis(pointsGained: Int): Int =
+    (pointsGained * SCORE_RISE_MILLIS_PER_POINT).coerceIn(SCORE_RISE_MIN_MILLIS, SCORE_RISE_MAX_MILLIS)
+
+/**
+ * The top row of player tabs, each on a plain surface panel: name, running total, place in the game so far (see [standings] - none
+ * in a solo game, or before anyone has scored a turn), and (for the active player) a frame in their
+ * colour - the ring of the Classic frame, or whichever [ScoreFrame][net.zodac.ludo.ui.style.ScoreFrame]
+ * they've picked on the Styles screen - plus a small dot underneath: the only "whose turn is it" indicator, since the scoring grid
+ * below always shows just the active player's own card. Tapping a tab shows that player's
+ * scorecard read-only in place of the live board (see [PlayerHeaderBar]'s `onPlayerTap`) - the
+ * active player's own frame never moves for this, but the tab being viewed gets a dashed outline
+ * so it's clear the board on screen isn't the current turn's.
+ *
+ * Tabs are only tappable when [enabled] - an AI's turn plays out on its own with nobody to ask it
+ * to pause, so switching away from the live board mid-turn would just hide it running rather than
+ * let anyone actually study another scorecard.
+ *
+ * [singleLine] puts each tab's dot, name, score and place in one row, for a landscape screen's height.
+ */
+@Composable
+fun PlayerHeaderBar(
+    players: List<PlayerState>,
+    currentPlayerIndex: Int,
+    viewedPlayerIndex: Int?,
+    enabled: Boolean,
+    onPlayerTap: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = false,
+    newScoreSeats: Set<Int> = emptySet(),
+) {
+    // Three or four tabs leave roughly a quarter of the screen each, which a name at labelLarge
+    // can outgrow even at the setup screen's length cap - so the name (not the score) steps down
+    // a size, rather than every full-length name arriving pre-ellipsised.
+    val compactNames = players.size > 2
+    val places = standings(players)
+
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+        players.forEachIndexed { index, player ->
+            PlayerTab(
+                name = player.name,
+                cpu = player.type == PlayerType.AI,
+                score = player.totalScore,
+                color = player.colour.color,
+                active = index == currentPlayerIndex,
+                viewed = index == viewedPlayerIndex,
+                newScore = index in newScoreSeats,
+                compactName = compactNames,
+                standing = places?.get(index),
+                enabled = enabled,
+                onClick = { onPlayerTap(index) },
+                singleLine = singleLine,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerTab(
+    name: String,
+    cpu: Boolean,
+    score: Int,
+    color: Color,
+    active: Boolean,
+    viewed: Boolean,
+    newScore: Boolean,
+    compactName: Boolean,
+    standing: Standing?,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    singleLine: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(10.dp)
+    val frame = LocalGameVisualTheme.current.frame
+    // Resolved here, in composition: the semantics block below can't read resources itself.
+    val spokenStanding = standing?.spoken()
+    val currentTurn = stringResource(Res.string.game_tab_current_turn_spoken)
+    val newScoreText = stringResource(Res.string.game_tab_new_leaderboard_score)
+    val spokenState = joinClauses(listOfNotNull(currentTurn.takeIf { active }, spokenStanding, newScoreText.takeIf { newScore }))
+    val viewScorecardLabel = stringResource(Res.string.game_tab_view_action)
+    // Larger text fills more of the tab, so a frame's sides and corners need more room to stay off it.
+    val sidePadding = (BASE_SIDE_PADDING_DP + (LocalDensity.current.textScale - 1f).coerceAtLeast(0f) * SIDE_PADDING_DP_PER_FONT_SCALE).coerceAtMost(MAX_SIDE_PADDING_DP).dp
+    val tabModifier = modifier
+        .padding(horizontal = 3.dp)
+        // Every tab sits on its own panel rather than straight on the page; the frame draws over it.
+        // Tinted a touch with the player's colour - any more and Purple's name drops below 4.5:1.
+        .background(color.copy(alpha = PANEL_TINT).compositeOver(MaterialTheme.colorScheme.surfaceContainer), shape)
+        // Whose turn it is: the player's chosen frame, behind the name and score. Ahead of the clip,
+        // so a frame's glow or ornaments can spread a little past the tab, into the gap beside it.
+        .then(if (active) Modifier.drawBehind { with(frame) { drawFrame(color) } } else Modifier)
+        .clip(shape)
+        .then(if (viewed) Modifier.dashedBorder(1.5.dp, color.copy(alpha = 0.85f), 10.dp) else Modifier)
+        .clickable(enabled = enabled, role = Role.Tab, onClickLabel = viewScorecardLabel, onClick = onClick)
+        // Selected is the scorecard on view; the border's other meaning - whose turn it is - is said
+        // instead, with the player's place (the visible "=2nd" is cleared below: read as "equals").
+        .semantics {
+            selected = viewed
+            if (spokenState.isNotEmpty()) stateDescription = spokenState
+        }
+        .padding(vertical = 6.dp, horizontal = sidePadding)
+    val nameStyle = if (compactName) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge
+    val density = LocalDensity.current
+    val largeFont = density.isLargeFont
+    val nameRow = @Composable { nameModifier: Modifier ->
+        Row(
+            modifier = nameModifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
+        ) {
+            if (cpu) {
+                // Measured first, so the name gets whatever width is left after it.
+                CpuPlayerIcon(size = if (compactName) 12.dp else 14.dp, tint = color)
+            }
+            // Shrinks a little for a name that doesn't fit its tab (a full-length CPU name beside its chip
+            // icon, at four players on a narrow phone), but never below MIN_READABLE_FONT_SIZE: past
+            // that it wraps to a second line rather than getting smaller - only reached at a large
+            // system font, or by a very wide name, since the caps on name length (see
+            // maxPlayerNameLength) are sized to fit one line at that size.
+            // At a large font the floor is LARGE_FONT_NAME_FLOOR, and a name that doesn't fit even then is cut short: it never wraps.
+            ShrinkThenWrapText(
+                text = name,
+                style = nameStyle,
+                color = color,
+                fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                minFontSize = if (largeFont) density.dpToSp(LARGE_FONT_NAME_FLOOR) else MIN_READABLE_FONT_SIZE,
+                wrappedMaxLines = if (largeFont) 1 else NORMAL_FONT_NAME_LINES,
+            )
+        }
+    }
+    val finalScore = score.grouped()
+    val shownScore = rememberRisingScore(score)
+    val scoreText = @Composable { style: TextStyle ->
+        val digits = @Composable { modifier: Modifier ->
+            // On one line, stepped down to fit the tab when the total is too wide for it (four tabs, a four-digit total
+            // with its separator, a large font); wrapped only when even MIN_READABLE_FONT_SIZE doesn't fit (four tabs at
+            // 200%). Sized by the total the score is rising to, not each frame of the rise: a lower number on the way up
+            // is no wider, and the size is measured once, not every frame.
+            BoxWithConstraints(modifier = modifier) {
+                val base = style.copy(fontFamily = SoraFontFamily, fontWeight = FontWeight.Bold)
+                val measurer = rememberTextMeasurer()
+                val available = constraints.maxWidth
+                val density = LocalDensity.current
+                val fit = remember(finalScore, base, available, density) {
+                    if (available == Constraints.Infinity) {
+                        FontFit(base.fontSize, wraps = false)
+                    } else {
+                        fitFontSize(base.fontSize, MIN_READABLE_FONT_SIZE, SCORE_FONT_STEP) { size ->
+                            measurer.measure(finalScore, base.copy(fontSize = size), maxLines = 1, softWrap = false).size.width <= available
+                        }
+                    }
+                }
+                Text(
+                    text = shownScore.value.grouped(),
+                    color = color,
+                    style = base.copy(fontSize = fit.size),
+                    textAlign = TextAlign.Center,
+                    maxLines = if (fit.wraps) Int.MAX_VALUE else 1,
+                    softWrap = fit.wraps,
+                )
+            }
+        }
+        if (newScore) {
+            // A score the Leaderboard doesn't hold yet: a pill of the player's colour behind it, explained on a long
+            // press (and spoken with the tab's state, above). The pill's padding is drawn inside the tab's own.
+            AppTooltip(message = newScoreText) {
+                digits(Modifier.background(color.copy(alpha = NEW_SCORE_PILL_ALPHA), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp))
+            }
+        } else {
+            digits(Modifier)
+        }
+    }
+    val dot = @Composable {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(if (active) color else Color.Transparent),
+        )
+    }
+    val place = @Composable { placeModifier: Modifier ->
+        if (standing != null && largeFont && !singleLine) {
+            // One line, however large the font: shrunk to fit the tab, no smaller than at 100%, rather than cut off.
+            val placeStyle = if (compactName) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium
+            ShrinkThenWrapText(
+                text = standing.label(),
+                style = placeStyle,
+                color = color,
+                fontWeight = FontWeight.Medium,
+                minFontSize = density.sizeAtNormalFont(placeStyle.fontSize),
+                wrappedMaxLines = 1,
+                modifier = placeModifier.clearAndSetSemantics {},
+            )
+        } else if (standing != null) {
+            Text(
+                text = standing.label(),
+                color = color,
+                fontWeight = FontWeight.Medium,
+                style = if (compactName) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                modifier = Modifier.clearAndSetSemantics {},
+            )
+        }
+    }
+    if (singleLine) {
+        Row(
+            modifier = tabModifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        ) {
+            dot()
+            nameRow(Modifier.weight(1f, fill = false))
+            scoreText(MaterialTheme.typography.titleLarge)
+            place(Modifier)
+        }
+        return
+    }
+    // A compact name's line is shorter than a full-size one's; the row keeps the height this name would take at full
+    // size, so the tabs (and the board under them) sit at the same height whatever the number of players. The place row
+    // keeps a place label's height at either size, so a tab doesn't grow the moment the first score puts someone ahead.
+    // Measured rather than taken from the styles' line heights, which a line of text can outgrow.
+    val measurer = rememberTextMeasurer()
+    val type = MaterialTheme.typography
+    val nameRowHeight = remember(name, type, density) {
+        with(density) { measurer.measure(name, type.labelLarge.copy(fontWeight = FontWeight.Bold), maxLines = 1).size.height.toDp() }
+    }
+    val placeRowHeight = remember(type, density) {
+        with(density) { listOf(type.labelMedium, type.labelSmall).maxOf { measurer.measure("0", it, maxLines = 1).size.height }.toDp() }
+    }
+    Column(modifier = tabModifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        // Dropped a little below the tab's top, out of the way of the corner ornaments most frames draw there.
+        // A long name or place at a large font takes back the side padding the larger score needs, as far as a frame leaves it room.
+        val textRoom = if (largeFont && compactName) Modifier.widerBy((sidePadding - LARGE_FONT_TEXT_INSET).coerceAtLeast(0.dp)) else Modifier
+        nameRow(textRoom.padding(top = NAME_TOP_DROP).heightIn(min = nameRowHeight))
+        scoreText(MaterialTheme.typography.headlineSmall)
+        // Whose turn it is (the dot) and the player's place. Its height is always kept (also solo, so a border clears the dot).
+        Row(
+            modifier = textRoom.padding(top = 2.dp).heightIn(min = placeRowHeight),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            dot()
+            if (standing != null) {
+                place(if (largeFont) Modifier.weight(1f, fill = false) else Modifier)
+                // Balances the dot, so the place sits centred under the score.
+                Box(modifier = Modifier.size(6.dp))
+            }
+        }
+    }
+}
+
+private const val BASE_SIDE_PADDING_DP = 2f
+
+/** The smallest a name in a tab shrinks to at a large font, a little under its 100% size: the longest names need it to stay on one line. */
+private val LARGE_FONT_NAME_FLOOR = 10.dp
+
+/** How many lines a name that doesn't fit its tab may wrap to at a 100% font. At a large font it never wraps. */
+private const val NORMAL_FONT_NAME_LINES = 2
+
+/** How far a long name or place stays from a tab's side at a large font, clear of the frames that spread furthest into it (`ScoreFrameClearanceTest`). */
+private val LARGE_FONT_TEXT_INSET = 7.dp
+private val SCORE_FONT_STEP = 0.5.sp
+private const val SIDE_PADDING_DP_PER_FONT_SCALE = 25f
+private const val MAX_SIDE_PADDING_DP = 10f
+
+/** Offers the content [extra] more width each side than its parent has, centred, and takes up no more than the parent's width. */
+private fun Modifier.widerBy(extra: Dp): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints.copy(maxWidth = constraints.maxWidth + extra.roundToPx() * 2))
+    val width = minOf(placeable.width, constraints.maxWidth)
+    layout(width, placeable.height) { placeable.place((width - placeable.width) / 2, 0) }
+}
+
+/** Compose's built-in `Modifier.border` has no dash-pattern option, so the "viewed player" ring
+ * draws its own rounded-rect stroke instead of reusing the active player's solid one. */
+private fun Modifier.dashedBorder(width: Dp, color: Color, cornerRadius: Dp): Modifier = drawWithContent {
+    drawContent()
+    val strokeWidthPx = width.toPx()
+    val inset = strokeWidthPx / 2
+    drawRoundRect(
+        color = color,
+        topLeft = Offset(inset, inset),
+        size = Size(size.width - strokeWidthPx, size.height - strokeWidthPx),
+        cornerRadius = CornerRadius(cornerRadius.toPx()),
+        style = Stroke(
+            width = strokeWidthPx,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f)),
+        ),
+    )
+}
+
+/**
+ * [score] as it should read right now: counting up to a new total over [scoreRiseMillis] instead
+ * of jumping straight there. A score that lands while the previous one is still rising (a quick
+ * solo player can roll and score again inside a second) skips that one to its end first, so each
+ * rise starts from the total it was actually built on rather than from wherever the last one had
+ * got to. A total that goes down (an undo) just snaps - there's nothing to celebrate.
+ *
+ * A state rather than a number, so the tab can hold the rise above anything that changes what the score is drawn in (the
+ * new-score pill, which usually comes or goes with the same score), and only what reads it recomposes each frame.
+ */
+@Composable
+private fun rememberRisingScore(score: Int): State<Int> {
+    val shown = remember { Animatable(score.toFloat()) }
+    // The Scores group's, not Menus & pages'.
+    val reduceMotion = groupReduceMotion(MotionGroup.SCORES)
+    val pace = LocalFramePaces.current.of(MotionGroup.SCORES)
+    // The last total this tab was told about - where an interrupted rise was heading.
+    var lastTarget by remember { mutableIntStateOf(score) }
+    // Keyed on score, so a new total cancels the rise still running before this starts.
+    LaunchedEffect(score) {
+        val from = lastTarget
+        lastTarget = score
+        shown.snapTo(from.toFloat())
+        // Reduced motion: the new total appears at once instead of counting up.
+        if (score <= from || reduceMotion) {
+            shown.snapTo(score.toFloat())
+            return@LaunchedEffect
+        }
+        pace.run {
+            shown.animateTo(
+                targetValue = score.toFloat(),
+                animationSpec = tween(durationMillis = scoreRiseMillis(score - from), easing = LinearOutSlowInEasing),
+            )
+        }
+    }
+    return remember(shown) { derivedStateOf { shown.value.roundToInt() } }
+}
+
+/** As the tab shows it: "1st", "2nd", "=3rd" - an "=" for a shared place, as the results screen marks one. */
+@Composable
+internal fun Standing.label(): String =
+    if (tied) stringResource(Res.string.game_standing_tied, ordinal(place)) else ordinal(place)
+
+/** As a screen reader says it: "1st place", "tied 2nd place" - the "=" would be read as "equals". */
+@Composable
+internal fun Standing.spoken(): String =
+    stringResource(if (tied) Res.string.game_standing_tied_spoken else Res.string.game_standing_spoken, ordinal(place))

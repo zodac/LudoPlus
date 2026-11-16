@@ -1,0 +1,11 @@
+# Ludo Plus's own Baseline Profile rules, merged at build time with the ones every Compose/AndroidX
+# library already ships (installed by androidx.profileinstaller, which Compose brings in).
+#
+# Hand-written: these wildcards mark every class and method in the app's package as hot, used at
+# startup and post-startup (H S P). The app's own code is small enough (a few hundred classes) that
+# compiling all of it ahead of time costs little. The generated profile
+# (src/release/generated/baselineProfiles/, from :app:baselineprofile) is merged with this file, not
+# a replacement for it; whether this one can go is DESIGN.md Phase 19's open step 3, which needs a
+# benchmark on a phone.
+HSPLnet/zodac/ludo/**->**(**)**
+Lnet/zodac/ludo/**;

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- appCategory "game": on a large screen Android 16+ ignores an app's orientation lock (the Orientation setting),
+         except in a game. appLabel is the launcher's name: app_name, or "Ludo Plus Debug" in a debug build
+         (build.gradle.kts). -->
+    <application
+        android:name=".LudoPlusApplication"
+        android:allowBackup="true"
+        android:appCategory="game"
+        android:icon="@mipmap/ic_launcher"
+        android:label="${appLabel}"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.LudoPlus">
+
+        <!-- configChanges: a turn, a fold, a resize or a uiMode change is laid out again by Compose rather than
+             rebuilding the Activity, which would reload the sound clips and cancel an online sync under way. Not the
+             language (locale, layoutDirection): MainActivity.attachBaseContext applies the strings' language, so a
+             change of it rebuilds the Activity. -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|density|keyboard|keyboardHidden|navigation|uiMode"
+            android:exported="true"
+            android:theme="@style/Theme.LudoPlus">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- The page an error nothing caught shows (CrashHandler), in a process of its own: the app's own is on its way
+             down. -->
+        <activity
+            android:name=".CrashActivity"
+            android:exported="false"
+            android:process=":crash"
+            android:theme="@style/Theme.LudoPlus" />
+    </application>
+
+</manifest>

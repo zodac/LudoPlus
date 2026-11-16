@@ -1,0 +1,5 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- The launcher's name in a release build (the manifest's appLabel). A debug build's is "Ludo Plus Debug", so lint
+         sees this unused there. -->
+    <string name="app_name" tools:ignore="UnusedResources">Ludo Plus</string>
+</resources>

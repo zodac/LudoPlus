@@ -1,0 +1,44 @@
+package net.zodac.ludo.data.settings
+
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
+import net.zodac.ludo.data.achievements.AchievementStore
+import net.zodac.ludo.data.achievements.AchievementsState
+
+/**
+ * The six saved Styles picks, as ids, with the achievements and the purchase that decide which of them are unlocked -
+ * everything the menu's logo and the Styles screen need to draw a player's picks. Ids rather than
+ * the styles themselves, as in [SettingsRepository]: resolving them is the UI's job.
+ */
+data class SavedStyles(
+    val diceStyleId: String,
+    val diceCupStyleId: String,
+    val tableBackgroundId: String,
+    val diceMatId: String,
+    val achievements: AchievementsState,
+    // Last, with the default frame's id, as it came after the other four.
+    val scoreFrameId: String = DefaultStyleIds.SCORE_FRAME,
+    // After the frame, with the default box style's id, as it came after the other five.
+    val scoreBoxId: String = DefaultStyleIds.SCORE_BOX,
+    /** Whether the "Unlock all styles" purchase unlocks every style ([net.zodac.ludo.app.AppContainer.ownsAllStyles]). */
+    val ownsAllStyles: Boolean = false,
+)
+
+/**
+ * [SavedStyles] as it changes. The app holds one of these open for its whole life
+ * ([net.zodac.ludo.app.AppContainer.savedStyles]), so a screen opened later has the picks the
+ * moment it's composed rather than a frame or two after.
+ */
+fun savedStylesFlow(settings: SettingsRepository, achievements: AchievementStore?, ownsAllStyles: Flow<Boolean>): Flow<SavedStyles> =
+    combine(
+        settings.diceStyleId,
+        settings.diceCupStyleId,
+        settings.tableBackgroundId,
+        settings.diceMatId,
+        achievements?.state ?: flowOf(AchievementsState()),
+    ) { diceId, cupId, backgroundId, matId, achievementsState ->
+        SavedStyles(diceId, cupId, backgroundId, matId, achievementsState)
+    }.combine(settings.scoreFrameId) { styles, frameId -> styles.copy(scoreFrameId = frameId) }
+        .combine(settings.scoreBoxId) { styles, boxId -> styles.copy(scoreBoxId = boxId) }
+        .combine(ownsAllStyles) { styles, owns -> styles.copy(ownsAllStyles = owns) }
