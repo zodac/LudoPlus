@@ -9,7 +9,7 @@ reorders them.
 
 | Phase | What | Status |
 | --- | --- | --- |
-| 0 | Gut the dice game, rebrand the chrome | Done but for renders |
+| 0 | Gut the dice game, rebrand the chrome | Done |
 | 1 | The Ludo rules engine (pure, tested) | Not started |
 | 2 | The board and game screen | Not started |
 | 3 | CPU opponents | Not started |
@@ -143,8 +143,9 @@ removed feature is restored from it in its phase (`git show 5423b6c:<path>`), no
     upgrade check runs only from the second release on.
 - [x] Docs that still describe DiceFive say so at their top; `UI.md`'s colour, player-colour, mode-colour, and icon
     notes rewritten.
-- [ ] Renders of the menu, setup, and settings in the new colours, for the maintainer's approval (`render` skill).
-- [ ] The full gate green (the `test` skill), and the debug APK sent.
+- [x] Renders of the menu, setup, and settings in the new colours, for the maintainer's approval (`render` skill).
+    Approved 2026-11-17, with the menu's drifting dice to become a Ludo motif (Phase 2).
+- [x] The full gate green (the `test` skill), and the debug APK sent.
 
 ## Phase 1: The Ludo rules engine
 
@@ -180,6 +181,8 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     pawn 2 by 4, captures green"), plus a "Roll" action. TalkBack must be able to play a whole game (`UI.md`, the
     checklist).
 - [ ] Leave-game confirmation (restored from `5423b6c`), with back asking before it leaves.
+- [ ] The menu backdrop: DiceFive's drifting dice become a Ludo motif (pawns, or the die among pawns), as the
+    maintainer asked when approving Phase 0's renders (2026-11-17).
 
 ## Phase 3: CPU opponents
 
