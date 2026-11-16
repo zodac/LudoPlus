@@ -1,0 +1,168 @@
+# Ludo Plus
+
+@../ai-sandbox/rules/CLAUDE.md
+
+## The project
+
+A Ludo race game for Android: roll a die, bring your four pawns out of base, race them a lap of the board, and get
+them all home first. In development, pre-1.0.0.
+
+- **Where it came from.** The repo was copied whole from DiceFive (`github.com/zodac/DiceFive`, the maintainer's
+    five-dice scorecard game) and renamed. Its build, CI, scripts, sandbox, Claude set-up and app chrome are kept; its
+    dice game is being gutted and replaced with Ludo. **`.claude/IMPLEMENTATION.md` is the plan**: read it before any
+    gameplay work, and keep its phase status current.
+- **Inherited code and docs.** Until Phase 0 of `IMPLEMENTATION.md` is done, the dice game's code (scorecard, cup,
+    dice modes, its achievements and styles) is still in the tree, and the dice-specific reference docs (`DESIGN.md`,
+    `UI_BOARD.md`, `GAME_MODES.md`, `GAME_MODES_AUDIT.md`, `TUTORIAL.md`, `STYLE_ART.md`, `STORE_ASSETS.md`) still
+    describe it. The infrastructure they describe (persistence, errors, the release pipeline, the style framework,
+    accessibility) still holds. A doc section is rewritten for Ludo when the code it describes is.
+- **Players.** 4 per game to start (any mix of pass-and-play and CPU opponents); 2-8 later.
+- **Planned content.** Custom game modes, house-rule modifiers, netplay, achievements, styles for the board, pawns
+    and die, and in-app purchases (`IMPLEMENTATION.md`).
+- **Aims.**
+    - A polished, offline-first game for the Play Store: no account, no network, data stays on the device.
+    - Accessible: TalkBack and large fonts are first-class.
+    - Smooth: 60fps minimum unless the player picks a lower Animations level.
+    - Small APK.
+    - Android-only (decided 2026-11-03). Kotlin/Compose Multiplatform is kept for segregation, so another target can
+        be added back: shared code in `app/shared` (Android its one target), Android's platform code apart from it
+        (`MULTIPLATFORM.md`).
+- **Google Play Games Services** (`PLAY_GAMES.md`) and the "Unlock all styles" purchase (`PURCHASES.md`) came over from
+    DiceFive. There is no Play Console project yet (2026-11-16), so neither is wired to one. **Never ads** (inherited
+    from DiceFive's decision of 2026-10-23).
+- **Audience.** `README.md` is the public, player-facing description; keep it true to the app.
+
+## Repo metadata
+
+| | |
+| --- | --- |
+| Repo | `github.com/zodac/LudoPlus`, default branch `main`. Every push to `main` that changes what an app ships runs the checks; from VERSION 1.0.0 it also cuts a GitHub release (`android-v*`; `DESIGN.md`, "Release pipeline"). Below 1.0.0 the `apk` and `release` jobs are skipped |
+| Package | `net.zodac.ludo` (Kotlin root package; the play app's `applicationId`; the github APK is `net.zodac.ludo.github`). Code identifiers use `LudoPlus` (`LudoPlusTheme`); player text says "Ludo Plus" |
+| Version | `VERSION` at the repo root (0.1.0 in development; releases start at 1.0.0). Never hand-edit for a debug install |
+| Platforms | Android minSdk 26, targetSdk/compileSdk 37 (`gradle/android-sdk.properties`). Android only |
+| Stack | Kotlin Multiplatform, Compose Multiplatform, Material 3 (dark only), Navigation Compose, MVVM (`ViewModel` + `StateFlow`), Room (scores), DataStore (everything else) |
+| Versions | `gradle/libs.versions.toml`, bumped monthly by CI (an entry tied to another is marked `# @update`); sandbox pins in `ai-sandbox-configuration/Dockerfile` |
+| Languages | English (`en-GB` base, British spelling) only for now: all player text in Compose resources (`I18N.md`), so translations can follow. The Spanish and Arabic folders inherited from DiceFive go in Phase 0 |
+| Licence | Proprietary, all rights reserved (`LICENSE`), source public read-only; no outside contributions. Third-party parts keep their own licences (the Sora font stays OFL) |
+| Sandbox | Claude runs in the Docker sandbox (`ai-sandbox/README.md`); an emulator boots on demand |
+| Sandbox tools | git, gh, jq, python3, node, curl, sqlite3, adb, `emulator.sh`, taskset, `ps`/`pgrep`/`pkill`, `magick`, ffmpeg, and docker (the linters run in it). Not there: `file`, `tree`, `wget`, `zip`, `xmllint`, and `strace`. CI's logs and artifacts need `gh` logged in: ask the maintainer to run `! gh auth login -h github.com -p https -w`, then `gh run view <id> --log-failed` and `gh run download` |
+
+## Code standards
+
+- **Layout.**
+    - `app/shared` holds the game, UI and persistence. `commonMain` stays platform-neutral: no Android or JVM APIs,
+        resources through `Res.*`, devices through `platform/PlatformServices`. The compiler allows both there (Android
+        is the one target); `CommonCodeIsPlatformNeutralTest` catches them.
+    - `app/android` is the APK shell and Android's platform code (`device/`). Two flavours (`DESIGN.md`,
+        "Distribution"): `play` (Google Play, Play Games in `src/play`) and `github` (the GitHub APK, progress files in
+        `src/github`).
+    - `app/baselineprofile` is the profile journey; `app/licensing` holds the licence records.
+    - `build-logic/` holds the convention plugins (SDK levels, Java version, the strict rules) and the custom tasks.
+    - The package map is in `MULTIPLATFORM.md`, "Layout".
+- **Warnings are errors** throughout: Kotlin `allWarningsAsErrors`, lint `warningsAsErrors`, deprecations included.
+- **Linter rules** (Android lint, actionlint, ShellCheck, hadolint, and markdownlint) come from the
+    `code-quality-config` submodule (`github.com/zodac/code-quality-config`, pinned to a release tag; the monthly update
+    moves it to the newest). Never edit them here: a rule change goes to that repo. Workflows, shell scripts,
+    Dockerfiles, and Markdown (all but `RELEASE_NOTES.md`) have their own linters (`.github/scripts/lint_*.sh`, CI's
+    `lint.yml`).
+- **Pure core.** The game logic (`model/`, `game/`) is pure and unit-tested. Every per-mode rule is a `GameMode`
+    field, never `if (mode == X)`.
+- **Behaviour comes with tests.** A change comes with tests of its behaviour, and spoken text is asserted word for
+    word.
+- **Dependencies.** Keep them lean (APK size matters; `kotlinx.serialization` and `kotlinx-datetime` were dropped for
+    it). Any new library the APK ships must pass the build's licence guard; one that isn't in the APK (test, build-only)
+    isn't checked.
+- **Style.**
+    - Match the surrounding code's comment density and idiom.
+    - Doc comments state rules, not guessed rationale.
+    - British spelling in player text.
+    - **Oxford comma** in every English list of three or more: player text, the store listing, `README.md`, docs,
+        comments, and reports ("scores, styles, and settings"). Lists the app joins go through `spokenList`, whose
+        `common_list_locale` is en-US for it.
+
+## Rules that always apply
+
+- **Banned words.** Other companies' trademarked names for Ludo-family games never appear in anything a player sees
+    (the app, the store listing, `README.md`), and never in identifiers or filenames: Frustration, Trouble, Sorry!,
+    Parcheesi, Mensch ärgere dich nicht, Ludo King, Ludo Club, and Ludo Star. "Frustration" was the working title and
+    was dropped for this reason (2026-11-16). "Ludo", "Pachisi", and "Uckers" are generic and fine. Say "Ludo" or "the
+    classic rules" generically. Phase 0 moves `StringChecks` (`app/shared/src/androidHostTest/…/i18n/`) to guard these;
+    until then it still guards DiceFive's own banned trademark, which stays out of everything too.
+- **Fix every build warning and error**: compiler, lint, tests, Gradle. That includes ones that were there before you
+    started.
+    - If one truly shouldn't be fixed (a deliberate choice, a false positive), suppress it at the narrowest scope with a
+        comment saying why, and say so in the report.
+    - If the fix is large or changes behaviour beyond the task, ask rather than skip.
+- **Accessibility is part of done.** Every new or changed UI element goes through the checklist in `.claude/UI.md`.
+    The report says what TalkBack does with it. Don't add that it wasn't heard on a device: the maintainer knows
+    speech is never heard here.
+- **Achievement titles fit ONE line of the unlock banner at 11sp or larger.**
+    - English titles are at most `MAX_ACHIEVEMENT_TITLE_LENGTH` (38) characters (`AchievementTextTest`). A translation
+        may set its own `achievement_title_max_length`.
+    - Shorten a title that doesn't fit; never wrap or shrink it. A description gets exactly two lines.
+- **Stored ids are permanent once released**: achievement, style, game mode and preference key ids, and
+    `onlineLeaderboardKey`. Rename what players see, never the id.
+- **`RELEASE_NOTES.md` belongs to the maintainer.** Never create, edit, empty or tidy it without their explicit
+    agreement in this conversation. Once they agree, use Edit/Write, not the shell.
+    - `.claude/hooks/guard-release-notes.sh` backs this up: an edit waits for a permission prompt, and a shell change is
+        undone. The prompt is a backstop, not permission.
+    - The hook can't tell who changed the file during a shell command, so the maintainer's own edit made meanwhile is
+        undone too. It keeps an approved Edit/Write from any session, and saves whatever it replaces in
+        `.git/release-notes-guard/`. When it says it put the file back, tell the maintainer where the replaced version is.
+    - Only the release workflow empties it. Hook tests: `.claude/hooks/tests/run-hook-tests.sh`.
+    - It's blank between releases; all of it becomes the Android release's notes (`DESIGN.md`, "Release pipeline").
+- **Edit files with the Edit/Write tools first.** Use a shell or Python script only for a change across many files or
+    a bulk pattern-based edit, and make the script fail when a pattern doesn't match rather than write the file
+    unchanged.
+- **Ask the user questions with the AskUserQuestion tool**, never as a question at the end of a message. That includes
+    offers ("Do you want me to...?") and choices between options.
+- **Notify the maintainer when a prompt is finished.** They drive sessions from their phone over Remote Control, so
+    end every prompt with the PushNotification tool: one line under 200 characters, leading with the outcome or what
+    needs their action ("Sandbox cleanup done, lint clean, not committed"). Skip it when the prompt ends in
+    AskUserQuestion, which already notifies.
+    - The notification is the **last** thing in the prompt: send it only once every action is complete and the full
+        written summary or report is out, never before the summary and never mid-work. Nothing follows it but, at most,
+        a closing line.
+- **Commits**: the subject is `[Category] Short description` (`.githooks/commit-msg`). Use the `commit` skill; the
+    category list lives there.
+- **After a requested code change is verified** (it compiles and the relevant tests pass), build and send the debug
+    APK with the `debug-apk` skill.
+    - Visual work goes through the `render` skill first. The APK follows once the look is agreed.
+
+## Skills (procedures, loaded when invoked)
+
+| Skill | For |
+| --- | --- |
+| `test` | Running tests, lint and the full gate; one class; reading failures; test traps |
+| `debug-apk` | Building and sending the debug APK |
+| `commit` | Commit format, category list, what never to commit |
+| `render` | PNG renders of screens and art via Robolectric, animation sheets, close-ups, gap finding |
+| `benchmark` | Measuring frame cost without a device |
+| `emulator` | Sandbox emulator: seeing the real app, the Baseline Profile journey |
+| `store-assets` | Generating and reviewing the Play Store graphics and video |
+
+## Reference docs (read the one for an area before changing it)
+
+Most are long. List a doc's headings first (`grep -n '^#' <doc>`), then read the sections that apply with an offset
+and limit; read a whole doc only when the change spans it.
+
+| Doc | Read when |
+| --- | --- |
+| `.claude/IMPLEMENTATION.md` | **Any gameplay or feature work**: the Ludo rules this app implements, the phased plan, each phase's status and exit criteria |
+| `.claude/DESIGN.md` | Rules of play, modes and modifiers in brief, the CPU, persistence, errors and the crash page, Leaderboard/Statistics, achievements, table art, sound, settings, the play and github apps (progress files), release pipeline |
+| `.claude/UI.md` | Any visual change: colour, the brand font, shared chrome, insets, component rules, **the accessibility checklist**, motion and reduced motion, scrollbars, player colours, gotchas |
+| `.claude/UI_BOARD.md` | The game screen: scorecard grid per mode, tiles, tray, cup, totals and undo, tablets and landscape, name caps |
+| `.claude/UI_SCREENS.md` | Achievements list and banners, Styles screen and locks, Leaderboard views, menu logo and backdrop |
+| `.claude/GAME_MODES.md` | Adding or changing a game mode or modifier: the mode-is-data rule, field map, checklist, turn flow, tests |
+| `.claude/GAME_MODES_AUDIT.md` | Which achievements each mode or modifier blocks or guards, and how to audit a new one |
+| `.claude/TUTORIAL.md` | The guided tutorial: its script, steps, coach card, gates and tests, and how to add one for another mode |
+| `.claude/I18N.md` | Adding or moving any player-visible or spoken string, or a formatter or platform text API |
+| `.claude/I18N_LANGUAGES.md` | Translating: shipped languages, glossaries, adding a language |
+| `.claude/STYLE_ART.md` | Creating or reworking dice, cups, mats, backgrounds or frames |
+| `.claude/BENCHMARKS.md` | Performance: patterns that keep frames cheap, current costs, open items |
+| `.claude/EMULATOR.md` | Emulator internals, CI's twin, troubleshooting a dying emulator, versions |
+| `.claude/STORE_ASSETS.md` | Changing store screenshots, scenes, captions or the video, and the generator traps |
+| `.claude/PUBLISHING.md` | Play Store submission checklist, the app's licence and third-party licence scope |
+| `.claude/PLAY_GAMES.md` | Anything touching Google Play Games Services: sign-in, achievement mirror, leaderboards, cloud save, Sidekick |
+| `.claude/PURCHASES.md` | The "Unlock all styles" purchase: Play Billing, the entitlement, the Styles button, the maintainer's Play Console steps, in phases |
+| `.claude/MULTIPLATFORM.md` | Module layout and platform seams, KMP gotchas |

@@ -1,0 +1,639 @@
+# Ludo Plus: UI reference
+
+How the interface is built, and the decisions that are easy to undo by accident. Two companion files hold the detail
+for particular screens:
+
+- `UI_BOARD.md`: the game screen. The scorecard grid per mode, tiles, tray, cup, totals and undo, tablets and
+    landscape, player-name caps ("Player names and the header"), the one roll path, a disabled scorecard box.
+- `UI_SCREENS.md`: "The achievements list", "Achievement banners", "Style locks", "The Styles screen", "The
+    Leaderboard's boards", and "The menu's backdrop and logo".
+
+Code comments that cite one of those sections under `UI.md` now find it in the companion file.
+
+All UI is shared Compose Multiplatform code in `app/shared/src/commonMain/kotlin/net/zodac/ludo/ui/`; the paths
+below are relative to it. It must stay platform-neutral: no Android or JVM API (`CommonCodeIsPlatformNeutralTest`; `MULTIPLATFORM.md`), resources
+through `Res.*`, and device work through `PlatformServices`.
+
+**In one line**: everything outside the game board is stock Material 3 wearing a brand-seeded palette. The board owns
+its own art and doesn't use colour roles.
+
+## Two visual systems, deliberately separate
+
+|              | App chrome                           | Game board (`ui/game/`)                       |
+| ------------ | ------------------------------------ | --------------------------------------------- |
+| Colours from | `MaterialTheme.colorScheme` roles    | fixed values in `Color.kt`'s game-table block |
+| Swapped by   | nothing: one dark scheme, `Theme.kt` | `ui/style/GameVisualTheme`                    |
+
+- **Keep them apart.** Don't move the board onto colour roles, and don't hardcode chrome colours to match the board.
+- **Where fixed colours live.** Classic styles' colours are named constants in `Color.kt`. Every other style's palette
+    is a literal beside its entry in `StyleCatalog.kt`; each is used once, and hundreds of names would bury the shared
+    ones.
+
+## Colour
+
+`ui/theme/Color.kt` holds M3 tonal palettes: one hue at fixed chroma per palette, and each role one tone from one
+palette per M3's mapping. That's what makes `primary`/`onPrimary` and the other pairs reliable.
+
+| Role                      | Seed                        | What it is                    |
+|---------------------------|-----------------------------|-------------------------------|
+| primary                   | `#FFC14D`                   | the board's "press this" gold |
+| secondary                 | `#1E4B86`                   | the table's felt blue         |
+| tertiary                  | `#1B5E20`                   | the original brand green      |
+| neutral / neutral variant | the blue at very low chroma | cool greys                    |
+| error                     | M3 baseline red             |                               |
+
+- **Never nudge single values by hand.** Change a seed and regenerate the whole set (Material Theme Builder or the M3
+    tonal maths).
+- **Dark only.** `LudoPlusTheme` takes no arguments and ignores system dark mode. Two things outside Compose depend on
+    this:
+    - The window theme in `themes.xml` is dark `Theme.Material.NoActionBar`, so the first frame isn't white and
+        light-mode phones keep light status icons.
+    - Its versioned copies (`values-v28`, `-v29`, `-v30`) hold the bars' transparency, contrast, and cutout mode. Never
+        use androidx's `enableEdgeToEdge()` or `Window`'s bar colour setters: Play flags them as deprecated.
+- **No dynamic colour.** The navy-and-gold table is the identity. `dynamicDarkColorScheme` is a two-line change if
+    it's ever wanted (deferred).
+- **No typography or shape overrides**, and no `Type.kt`. Make per-use changes at the call site
+    (`style = MaterialTheme.typography.titleMedium`). The one exception is the gold titles: `pageTitleStyle` and
+    `dialogTitleStyle` (`AppLogo.kt`) are the page and dialog title styles.
+- **Sora (`SoraFontFamily`, `AppLogo.kt`) is for brand marks, never body text.**
+    - It's used on:
+        - the wordmark, and page and dialog titles;
+        - Rules headings, Leaderboard board titles, and unlock-banner titles;
+        - the Achievements and Styles category headers and their counts (`categoryHeaderStyle`), as written, not in
+            capitals;
+        - totals-tooltip labels, the New Game player count (`SegmentedChoiceRow(brandFont = true)`) and the User/CPU chips;
+        - mode and modifier names and values (pickers, timer lengths, steppers, the stored-rolls cap), and New Game field
+            headlines;
+        - the game's marks: tile labels ("3x", "2+2", "Alibi"), Hit List targets, corner badges, rolls left, and scores on
+            tabs and Game Over.
+    - Everything else uses the system font. That includes the descriptions under Sora names (bold Sora wrapped them).
+    - **Columns of numbers stay in the system font.** Sora's digits are proportional; the maintainer declined `tnum`.
+    - **The font file is weight 700 only**: ask for `FontWeight.Bold`.
+    - **ASCII and Latin-1 only.** Never put a player's name or other free text in Sora. The stored-rolls cap is the one
+        typed field in Sora, because it takes only 0-9. A new fixed Sora string must stay in U+0020-007E / U+00A0-00FF, or
+        the font must be re-cut (the recipe is on `SoraFontFamily`).
+- **`primary` is the one brand accent and means "gold".** Examples: the Statistics max, the scrollbar thumbs, the
+    backdrop spotlight, page titles. Use it as a text or icon tint for emphasis, not `primaryContainer` as a fill, which
+    would be a second accent. For gold as a background, copy an existing use (a filled button, the unlock banner).
+- **Fixed non-role colours only where M3 has no role**: the board palette, `PlayerColour`, the mode colours ("Mode
+    colours"), and the Leaderboard's `Silver` and `Bronze` (1st reuses `primary`). Never use one to dodge picking the right existing role.
+- **M3 Expressive is deferred.** `MaterialExpressiveTheme` is internal in material3 1.4.x. The public API (with
+    `MotionScheme` and `ButtonGroup`) is only in the 1.5.0 pre-releases, and alpha libraries stay out of releases.
+    Revisit when 1.5.0 is stable.
+
+## Shared chrome (`ui/common/`)
+
+| File                                    | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BrandBackdrop.kt`                      | The app's one scenery, built from colour roles: a surface gradient, a `primary` spotlight and a faint dice watermark. `showDice = false` drops the dice (the game screen).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `ScreenScaffold.kt`                     | The frame for every non-menu page: backdrop plus a transparent M3 top app bar with a back arrow and a bold `primary` title. Its content fades in over `PAGE_CONTENT_FADE_IN_MILLIS` (100ms), so late-arriving content eases in. Takes `horizontalPadding` (24dp default; the scorecard review uses 16), `wide` (see "Landscape pages") and app bar `startActions` (after the arrow) and `actions` (at the end); `onTitleCrowded` says when the actions push the title off-centre or onto two lines (the Styles page's Unlock All then drops its words). `PageTopBar` is its bar on its own (the results page), 48dp tall in landscape. `BackArrow` is every page's back arrow, the game screen's included. |
+| `LudoPlusDialog.kt`                     | The one dialog shape. Its title is Sora, bold, `primary`, `headlineSmall`, as are `PickerDialog`, About and Licences. New dialogs match. Its words scroll when they can't fit (a large font; M3 doesn't scroll them). An icon drawn in code (the purchase's mark) goes in the overload taking a composable, at `DIALOG_ICON_SIZE`.                                                                                                                                                                                                                                                                                                                                                                         |
+| `LargeDialog.kt`                        | The raised reading surface for a lot of text (About, Licences): its content above a filled OK at its bottom end, where a `LudoPlusDialog`'s one button sits.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `AppLogo.kt`                            | The wordmark under a fan of dice and a cup, drawn live in the player's picks.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `FooterPill.kt`                         | The gold pill: over Rules' pages ("2 of 6"), and the last thing on the Settings page (its version). Spoken forms and live regions go on its `modifier`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `UpDownButtons.kt`                      | The up and down arrows that move a long list: Achievements' category headers (their own colour) and a Leaderboard page that scrolls (gold). An arrow with nowhere to go is faded and disabled.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `Scrollbar.kt`                          | `LazyListScrollbar` (over a `LazyColumn`), `VerticalScrollbar` (a draggable bar in a page margin) and `HorizontalScrollbar` (under a `Row` or `LazyRow`). See "Scrollbars".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `SegmentedChoiceRow.kt`                 | The one segmented row, generic over the option type. No checkmark icon (`icon = {}`; it crowded labels out). Takes `enabled` and optional per-option glyphs (the timer's "None" is a crossed-out timer, spoken "No timer").                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `DropdownChoiceField.kt`                | A drop-down for one of many options, generic over the type: a field with the picked one and a menu as wide as it, the picked one ticked, an optional divider under the first. One drop-down, one radio button per option for TalkBack. The Leaderboard's board picker. The menu's first and last options reach its edges.                                                                                                                                                                                                                                                                                                                                                                                  |
+| `ChoicePicker.kt`                       | `ChoicePicker` and `ModifierPicker`. All styling lives in `PickerField`, `PickerDialog` and `PickerRowText`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `AppTooltip.kt`                         | Every tooltip (`AppTooltip`, `OnDemandTooltip`). See the gotchas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `ShrinkThenWrapText.kt`                 | Shrinks a label to 12sp at most, then wraps it. Used for tab names, banner titles, Achievements row titles and Settings labels.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `ForegroundDelay.kt`, `ReduceMotion.kt` | See "Nothing runs in the background" and "Reduced motion".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+
+### PageColumn, insets, page actions
+
+- **`PageColumn`** fills the screen but scrolls when the content can't fit. The inner column is held to at least the
+    viewport height, so `weight` spacers work.
+    - **The trap**: a `weight` inside an unbounded scroll collapses to nothing without `heightIn(min = ...)`.
+- **Edge-to-edge** (`setDecorFitsSystemWindows(window, false)` and the window theme). **Exactly one** inset source
+    applies per page:
+    - inside `ScreenScaffold`, pass its `innerPadding` to `PageColumn` as `contentPadding`;
+    - a standalone page (the menu, the results) uses `PageColumn`'s system-bar default.
+
+    Both insets the page twice; neither puts content under the clock.
+- **No pinned bottom bar for a main action.** Achievement banners land there. Start Game follows the form instead: the
+    form scrolls in `Modifier.weight(1f, fill = false)` with the button after it.
+- **An added element must not move or re-space existing ones.**
+
+## Component conventions
+
+- **Collect flows** with `collectAsStateWithLifecycle`, never `collectAsState`. A `Flow` needs `initialValue =`.
+- **Use stock M3 components**, themed by the scheme. No hand-built buttons.
+- **Button labels are Title Case** ("Start Game", "Sign In"); Settings rows and dialog titles are sentence case. English only:
+    a translation keeps its language's own convention.
+- **Full-width main actions stand `MAIN_ACTION_HEIGHT` (56dp)**, on every page: the menu, New Game, Rules, Game Over, and a
+    picker's closing button.
+- **One filled button per screen**, tonal for the rest (the menu: filled Play, tonal destinations; New Game: filled Start
+    Game, tonal tutorial).
+    - Game Over is the one exception: filled Play Again, with outlined Main Menu and Review Scorecards. They are exits
+        from a results screen over the table art, not destinations, and the outline keeps them quieter than the tonal fill.
+- **The menu's Play button splits when a game is saved** (`MenuScreen.PlayButton`).
+    - It becomes New Game | Continue: the same 56dp pill cut by a 2dp gap, each half a stock `Button` with straight
+        inner edges. Both halves stay filled `primary`, because neither is destructive.
+    - It is not a "Resume?" dialog. It isn't M3's split button (an action plus a menu) or segmented buttons (choices).
+        It's closest to Expressive's connected button group, whose press morph waits for `ButtonGroup` (1.5.0).
+- **Segmented buttons** are for small exclusive sets on one line: player count, AI difficulty, turn timer, the
+    Animations level, and the Advanced settings' frame rates.
+    - The end segments' labels are inset `SEGMENT_CAP_INSET` (4dp) on the outer side, because those ends are half
+        circles.
+    - `FittedSegmentedChoiceRow` shrinks the labels together, then switches to `_short` initials.
+- **Pickers** (`ChoicePicker`, `ModifierPicker`) are for long options or ones needing descriptions.
+    - Closed, a picker is one outlined field: headline, supporting line and a gold arrow pointing onward (mirrored right
+        to left), as it opens a page, not a menu.
+    - Tapped, it opens a full-screen page: a `Dialog` around `ScreenScaffold`, with `LazyListScrollbar`.
+    - `ChoicePicker` (game mode) uses radio rows; picking one closes it, and its Cancel is tonal, as a dialog's is.
+    - In `ModifierPicker`, each modifier is a card with a switch row, plus a segmented row, a `ModifierStepper` or a
+        `ModifierNumberField`. These show only while the modifier is on, opening beneath the switch over 220ms (none under
+        reduced motion). The switch never moves.
+    - Changes apply live; Done closes it.
+    - **To add a modifier**: a `ModifierSetting` in the setup list, plus a Rules page at the end of the Modifiers group.
+    - TalkBack: the field is a button named by its title, as it opens a page, with its value as state; rows are radio buttons or
+        switches with collection positions (`ChoicePickerTest`).
+- **An option the form overrides is locked, not hidden** (`ModifierSetting.lockedNote`, `SegmentedChoiceRow`'s
+    `enabled`). The layout stays still, and the player's pick is kept for when it applies again.
+- **Settings' switch and reset cards use compact rows** (`SettingRow`, the maintainer's choice): a `ListItem`'s
+    layout at 48dp for one line and about 52dp for two, under M3's 56dp and 72dp, with 4dp above and below the rows.
+    48dp is the touch-target minimum, so a row never goes below it, and it grows with a large font.
+- **Cards group sections.** A `ListItem` in a Card needs `ListItemDefaults.colors(containerColor = Color.Transparent)`,
+    or it paints a second surface.
+- **`CONTENT_MAX_WIDTH` (460dp)** caps page width for tablets.
+- **Back navigation is on screen** (the top app bar) for sub-screens.
+    - The menu has **no `BackHandler`**, and gets no quit button or exit confirmation; Android guidance discourages both.
+    - The one exception is `GameScreen`'s `BackHandler`, which confirms before leaving a game in progress.
+- **Opening a page goes through the page cover** (`PageCover`, `ui/common/PageCover.kt`), never the `NavHost`'s own
+    transitions (all `None`). The page in front fades out over 150ms to the bare backdrop, its drifting dice still moving.
+    The next page is built behind it, and the cover fades away over 200ms once that page has settled.
+    - Settled means: nothing holds the cover, at least two frames have passed, and two frames in a row came at the
+        screen's own pace (measured during the fade-out, so a 30fps Animations level counts) or steadily (Styles' costly
+        frames). It waits at most 400ms after the last hold, 3s in all, with a spinner after 500ms.
+    - A page that shows only its title bar until its data loads composes `HoldPageCover()` there (Leaderboard,
+        Statistics, Achievements, Settings, Styles, New Game, and the game until its state and table load). A warm-up's
+        hidden copy of a page is under `LocalPageCover provides null`, so it never holds the cover.
+    - While it's up the cover takes every touch, says nothing to TalkBack (the spinner is cleared too: it's a merge
+        boundary `clearAndSetSemantics` doesn't reach), and holds the game's clocks (`GameViewModel.setHeld`).
+    - A change asked for while one runs is ignored. One asked for from a page that a back press has left in the
+        meantime is dropped.
+    - A page in a window of its own (the crash page) has nothing before it to fade out: `RevealedPage` starts it under
+        the cover, which comes down the same way.
+    - Every page is opened this way: the menu's buttons, Start Game, the tutorial, and a banner's long press.
+    - **Going back is never covered**: the system's back, a page's back arrow, leaving a game and Back to Menu show the
+        page they return to at once (the maintainer's choice). Back to a game is a couple of frames' work: its state is in
+        the view model and its art is already painted.
+    - Continue opens `play/game` directly, with no setup page between. The game screen loads the saved game, as it
+        does after the process is ended in the background, and goes back to the menu if there's none.
+
+### Open M3 departures
+
+Where the chrome still differs from M3 without a decision behind it. Each is a change to agree with the maintainer
+first, not a convention to copy.
+
+- **Transient messages are Android Toasts** (`AndroidPlatformServices.showTransientMessage`: the Achievements screen,
+    the game, the Settings version taps). M3's in-app feedback is a `Snackbar`, which stays in the app, takes the theme
+    and can carry an action. A Snackbar would land where achievement banners do, so the two would need to queue or sit
+    apart.
+- **Dialog messages are centred** (`LudoPlusDialog`). M3 centres a dialog's icon and title, but starts its supporting
+    text at the start edge; centred text reads worse past two lines, and at large font sizes.
+- **Dialog actions are filled and tonal buttons** (`LudoPlusDialog`), where M3 uses text buttons. Every dialog is thus
+    a second filled button over its screen, outside "One filled button per screen".
+
+## Accessibility
+
+**Mandatory for every new or changed UI element.** A change isn't done until it has been through this checklist, and
+the report says what TalkBack does. Stock components are not assumed to be enough: M3 tabs, for example, never say
+how many tabs there are.
+
+### The checklist
+
+1. **Check what a stock component actually sets.** Read its source, or `javap` it from the Gradle cache, then fill in
+   what's missing.
+2. **What does TalkBack say on landing?** A name, a role, and any state ("held", "3 rolls left"). Action icons get a
+   `contentDescription` naming the action, without the word "button". Decorative icons get `null`.
+3. **Any visual-only meaning needs a spoken twin**: colour, an edge fade, a badge, a position, an animation.
+4. **One of a set not all in view?** Give the container `CollectionInfo` and each item `CollectionItemInfo`.
+5. **Every action must be reachable by TalkBack.** Drags, swipes, long presses and raw `pointerInput` are invisible to
+   it. Expose them as semantics actions (`onClick` with a label, `customActions`).
+6. **One control, one target, one announcement.** Merge a label with its control, or make the row the control
+   (`SwitchSetting`: `toggleable(role = Role.Switch)`).
+7. **Titles are headings** (`semantics { heading() }`).
+8. **Things that appear and go by themselves** are polite live regions with a fixed summary, not their animated text.
+9. **Text must read well aloud.** Give `5-5-5-2-1`, `15pts` or a "- " bullet a spoken form where it matters.
+10. **Sizes.** Keep the 48dp minimum touch target. Large system fonts must scroll, not clip.
+
+**Verifying**: add a Robolectric test asserting the semantics (`BoardSemanticsTest` and `RulesScreenAccessibilityTest`
+are the patterns). Real TalkBack speech can't be checked here; the maintainer knows, so the report doesn't say so.
+
+### Patterns in place (reuse them)
+
+- **All semantics are added, never drawn differently.** `ui/game/BoardSemantics.kt` holds the board's spoken names.
+    The board itself is in `UI_BOARD.md`.
+- **A tap plus a long press is `Modifier.accessibleCombinedClickable`** (`ui/common`), never a hand-wired
+    `combinedClickable` with its own semantics. It names both actions for TalkBack, takes `screenReaderClick` where
+    TalkBack's activate differs from a tap, and `clearSemantics` for a tile that speaks for itself
+    (`AccessibleCombinedClickableTest`).
+- **`clearAndSetSemantics` only overrides what's inside it**, so put it *before* `clickable`/`combinedClickable` in
+    the chain. Otherwise the clickable's `onClick` leaks through (`ScreenReaderSemanticsTest`). The helper above does.
+- **"Why is this locked?" is one rule everywhere**: a tap shows a short tooltip, a long press opens the full dialog,
+    and TalkBack's one action opens that dialog (a tooltip isn't announced). Styles and Achievements both do this.
+- **Raw gestures that shouldn't be buttons** use `detectTapGestures`, so TalkBack isn't handed an unnamed button. The
+    superuser counter and the logo dice do this.
+- **A field with no visible label** gets an accessibility-only label, and its error as `error(...)`.
+- **A pager announces where it lands.** The Rules footer is spoken "Modes, page 2 of 6" as a polite live region.
+- **A scrolling tab row says its count.** Each row sets `CollectionInfo` ("Tab, 1 of 6"), and its edge chevrons are
+    cleared from semantics.
+- **Anything floated over scrolling content** needs matching padding at the content's end. Bring-into-view
+    (`performScrollTo`, TalkBack focus) still scrolls under the float.
+- **The turn timer** speaks its seconds in words. Once it flashes, it's a polite live region announced once.
+- **Headings**: page titles, Styles categories, achievement category headers, Rules pages, About sections.
+
+### Known gaps (say so rather than claim coverage)
+
+- **Rules notation.** "3x"/"5x" are read as written. "pts" is spoken "points", and the example dice are read in full.
+- **System reduced motion** has been seen on the emulator (2026-11-04, animator scale 0: the menu's dice stop and a roll
+    still works), not on a phone.
+- **Large fonts** have been checked on the emulator (2026-11-04, 360x800dp), not on a phone. `ShrinkThenWrapTextTest`
+    and `LargeFontFitTest` pin the sizes chosen. **Text that fits a large font is gated on `isLargeFont`, so 100% draws
+    exactly as if the fit weren't there, and it shrinks no further than its size at 100% (`sizeAtNormalFont`; a tab's
+    name alone goes a little under, `UI_BOARD.md`).** So: a tab's name and place, Play's two halves and Achievements'
+    headers (`WholeWordsText`), Styles tile names, and banner descriptions (`ShrinkToLinesText`). Rules' pages stop above
+    their pill at a large font. Still wrong:
+    - at 100%, left as it is: a name of wide letters wraps in a 4-player tab ("SamSamS/a");
+    - at 150%: the group tabs' chevron sits over "Modifiers" as it scrolls off.
+    - What adapts:
+        - other `maxLines = 1` sites allow two lines;
+        - the Scores columns re-split above 1.15x;
+        - the New Game player row stacks above 1.05x.
+    - Gaps: `ScoreGrid` numbers stay on one line by design, and 11sp `labelSmall` captions remain.
+    - On a device, try 130% and 200% with: a 4-player game with 8-character names, the longest banners, Settings, New
+        Game, the Leaderboard and Statistics.
+- **Contrast** (dark theme; WCAG 3:1 for graphics, 4.5:1 for text). Only these pairs have been computed:
+    - Fine:
+        - tile icon on teal: 8.5-12.7:1;
+        - gold on a highlighted tile: 7.3:1;
+        - `onSurfaceVariant` on the surface: 10.9:1;
+        - the selected style's border: 10.9:1;
+        - an unselected style tile's `outline` border on its card: 3.9:1 (it was `outlineVariant`, 1.3:1).
+    - Borderline, but exempt or spoken:
+        - a scored tile's icon: 3.2-3.5:1;
+        - disabled Undo: 2.4-2.9:1;
+        - a scored tile against the page: 1.4:1 (its state is spoken).
+    - Below 3:1:
+        - the locked padlock over light art: ~2.1:1 (it's spoken "Locked");
+        - Tricolour's red and blue in the fixed-colour achievement icons (Tricolourful, Tricolour Me Impressed) on the
+            list row and banner: 2.2-2.6:1, and Tricolourful's charcoal housing lower still. Decorative: the row's title
+            and description are what's spoken.
+- **Not looked at**: whether a title-less dialog announces anything (the locked-style dialog passes `title = null`),
+    and the Achievements rows' locked state beyond the icon.
+
+## Motion
+
+- **A looping animation must not run while there's nothing to show.** A `rememberInfiniteTransition` requests every
+    frame while it's composed, and reading it with `by` recomposes every frame.
+    - Compose the clock only while it's needed: a highlighted tile's `GlowBorder`, `rememberShakeWobble` while rolling,
+        the timer's last seconds.
+    - Read the value in the draw phase (`graphicsLayer { }`, `drawBehind { }`).
+- **Anything new that loops while nothing is happening** must read `ambientMotion` (see "Reduced motion").
+- **Nothing flashes more than three times a second.** The turn timer's colour fade takes
+    `TURN_TIMER_FLASH_PERIOD_MILLIS` (300ms) each way, so it flashes about 1.7 times a second.
+
+## Nothing runs in the background
+
+The process and its coroutines stay alive when the app is in the background. **No shared code uses a plain `delay`**
+(`NoBackgroundTimersTest` enforces this). The one exception, listed in that test: `ResilientDataStore` retries a failed
+file read three times (after 1s, 3s and 5s) and then stops, which nothing a player sees waits on.
+
+- **Turn timer and CPU loop**: `GameViewModel`'s `pausableDelay`, driven by `setForeground`. `GameScreen` calls it from
+    lifecycle callbacks, not from composition (a backgrounded app draws nothing), and also when another screen opens
+    over the game.
+- **Every other wait**: `Lifecycle.delayWhileResumed` (`ui/common/ForegroundDelay.kt`). This covers banners, the
+    shake and settle, face flicker, the rabbit, the flowerpot, row flashes, warm-ups and superuser ticks. A wait cut off
+    by backgrounding restarts in full on return.
+- **Also stopped in the background**:
+    - sounds (`SoundPlayer.pause`/`resume`, `SoundPool.autoPause`) and vibration (`HapticsPlayer.cancel`), through
+        lifecycle observers;
+    - the shake sensor and the logo's pupil sensor;
+    - the reduced-motion observer.
+- The app has no services, receivers or background work.
+
+## Reduced motion
+
+**The player's Animations level** (`AnimationLevel`, `SettingsRepository.animationLevel`) is on the **Graphics** page
+(Settings' Graphics row), under its title and below the Orientation, in one card (`GraphicsScreen.TitledChoice`).
+
+- It runs Off to High from the start edge, so it's mirrored in Arabic. It uses `FittedSegmentedChoiceRow`, with Off as
+    a crossed-out motion icon.
+- It has no description, by the maintainer's choice. While the Advanced graphics settings match none of its levels
+    (`AnimationLevel.matching`), no level is picked, and nothing says "Custom" (the maintainer's choice).
+- It isn't inside a `ListItem`, whose intrinsic measuring throws on `BoxWithConstraints`.
+
+**The Advanced graphics settings** (`MotionSettings`, `SettingsRepository.motionSettings`) are below it: their own heading
+("Advanced graphics settings", in the page's text colour, not gold), then three cards (`CollapsibleCard`), each closed each time
+the page opens. A card's title row (also in the text colour), an arrow at its end, is its full width and runs to its top edge, so the press ripple
+fills it; it opens and closes the card over 220ms (at once under reduced motion), and TalkBack hears "Gameplay,
+Collapsed, heading", a button. Off, 30fps, 60fps or Max (spoken "Off", "30 frames a second", "60 frames a second",
+"Maximum") for each `MotionGroup`.
+Gameplay's and Miscellaneous' rows are in their names' English alphabetical order (a translation keeps it, so the Dice
+roll frame rate stays under the Dice roll), Styles' in the Styles page's:
+
+- **Gameplay**, what moves on the game screen: Cup shake (the cup's shake and pour; Off, it stands still, then is
+    simply tipped); the Dice roll (Off, In place, or Tossed; Off, the dice snap to their results), and under it the
+    Dice roll frame rate, which has no Off (the roll's own is its off) and is locked, its pick kept, while the roll is
+    off; Pause when idle (30s, 60s, 90s, or Off, spoken "30 seconds" and so on; least motion to most, so Off is last
+    and a word, not the crossed-out glyph; "The idle screen" below, not a `MotionGroup`); Score glow; and Scores;
+- **Styles**: each style's own decoration (`MotionGroup.decoration`), named as the Styles page names them: Dice, Dice
+    Cup, Mat, Background (the menu's drift too), and Boxes. Score frames have no moving art, so no row;
+- **Miscellaneous**: Achievement banners (the unlock, style, and progress banners, on every screen), Celebrations (the
+    results page), and Menus & pages.
+
+- Each level is a preset of them (the table below). They're the level's until one is changed; that saves them all
+    (`motion_<MotionGroup.key>` and `motion_roll_style`, beside `animation_level`), and picking a level clears them
+    back to its preset. While they match no level, no level is picked.
+- Menus & pages Off is the app's reduced motion (`LocalReduceMotion`) everywhere but the other groups, which each follow
+    their own setting: `GroupMotion(group)` provides a group's own reduced motion (`groupReduceMotion`) as
+    `LocalReduceMotion`, and its pace, round the dice (`DiceTray`), the cup (`DiceCup`), the banners
+    (`AchievementBannerHost`), and the fireworks (`GameOverScreen`); a player tab's count-up reads the Scores group's
+    directly.
+- **What each covers.** Achievement banners: the banners (their slide, fade, and progress count). Scores: the player
+    tabs' count-up. Celebrations: the Game Over fireworks. Menus & pages: everything else that moves without a row of its
+    own - a page's content fade-in, a list gliding to a spot, a picker opening, the turn timer's flash, the tutorial's
+    outline pulse, and the sync progress bar. The totals' bonus pop is Score glow's (Low has always dropped it while
+    counting scores up), and the locked chains' slam the dice's.
+
+| Level              | Each style's decoration | The game's own            | Score glow   | Cup shake | Dice roll                                            | Pause when idle | Window frames     |
+|--------------------|-------------------------|---------------------------|--------------|-----------|------------------------------------------------------|-----------------|-------------------|
+| **High** (default) | Max (moves)             | Max                       | Max (pulses) | Max       | Max, tossed                                          | 60s             | the screen's rate |
+| **Medium**         | Off (still)             | 60                        | 60           | 60        | 60, tossed                                           | 60s             | ≤60               |
+| **Low**            | Off (still)             | 30                        | Off (steady) | 30        | 30, in place (flick through faces, `simpleDiceRoll`) | 30s             | ≤30               |
+| **Off**            | Off (still)             | Off (`LocalReduceMotion`) | Off (steady) | Off       | Off (snap to the result)                             | 30s             | ≤30               |
+
+**Ambient decoration** is anything that keeps an idle screen redrawing:
+
+- the menu's drift, `FloatingDiceBackground`, `TwinkleClock`/`rememberArtSeconds` art (RGB and Neon boxes included), the RGB Halo's rings,
+    `rememberAmbientCycle` cups, and googly pupils;
+- each reads `ambientMotion(group)` (`ui/common/ReduceMotion.kt`) for its style's group (`TwinkleClock` and
+    `rememberArtSeconds` are handed it), true only while that group moves (at High, of the levels). Otherwise it holds
+    its reduced-motion pose, so no new art is needed. **New moving art** names its style's group, and runs at its pace
+    (`LocalFramePaces.current.of(group)`);
+- a cup whose ambient art travels (the Fishbowl's fish) holds where it was when its cycle stops, the cup spent, and
+    sets off from there next turn (`HeldLap`), rather than snapping to its resting pose;
+- the score tile reads `scorePulse`;
+- both are false under `LocalHoldStill` (how an off-screen Styles tile is held still, beside a `LocalReduceMotion` of
+    its own), and under a `LocalReduceMotion` provided further down while Menus & pages moves (a test's). Menus &
+    pages' own Off doesn't touch them.
+
+**The idle screen.** After **Pause when idle** (`MotionSettings.idleTimeout`, `IdleTimeout`: 30s, 60s, 90s, or Off)
+without a touch, every infinite animation freezes mid-motion, so an untouched screen asks for no frames for it
+(`ScreenIdle`, `ScreenIdleTest`, `ScreenIdleUiTest`). Off, nothing ever freezes.
+
+- Each level presets it (High and Medium 60s, Low and Off 30s), and it's a row in the Advanced graphics settings'
+    Gameplay card like the rest: changing it leaves no level picked (`IdleTimeoutSettingTest`).
+
+- `ScreenIdle` is the `InfiniteAnimationPolicy` on the window's recomposer (`MainActivity`): an `InfiniteTransition` or a
+    `withInfiniteAnimationFrameNanos` loop waits there before its next frame. So a new one freezes with no code of its own.
+    A plain `withFrameNanos` loop doesn't ask it, so one that never ends must use the infinite frame.
+- It doesn't touch `ambientMotion` or `scorePulse`: art stays as it was drawn, not in its still pose. On waking, a clock
+    that runs on frame time resumes at the time it has reached, so a cycle can jump to a new phase; the drift caps its step.
+- Any touch in the main window restarts the wait and sets them off (`wakesScreen`, on the root, taking nothing from
+    what's touched), as do a page opening and the app coming back. Time in the background doesn't count.
+- A touch in a dialog's own window isn't seen, and TalkBack's gestures send no touches, so its users wake it by opening a
+    page. Nothing is lost: the art is decoration, and a good pick's tile stays gold.
+- **What the game does is never frozen.** Finite animations (a toss, a score's flourish) don't ask the policy. `HoldScreenAwake`
+    keeps everything running while a loop the game needs is composed: `cup.rolling` in `DiceCupPanel`, so a CPU's turn plays
+    on, and the turn timer's flash. Any new loop like those needs one.
+- The menu logo's pupils also stop reading the accelerometer (`DevicePullEffect`).
+
+**Frames.**
+
+- `MainActivity` builds the recomposer on `CappedFrameClock` (app/android), which `PlatformServices.capFrameRate` sets
+    to the fastest moving group's rate (`MotionSettings.maxFramesPerSecond`: uncapped if one is at Max, 30 with all Off).
+- **Each group runs at its own rate** below that: `FramePace` (`ui/common/FramePace.kt`), one per group
+    (`LocalFramePaces`), hands on only its rate's frames to what runs inside `FramePace.run` - so a group at 30 skips whole
+    refreshes of a window at 60 or more.
+    - `LocalFramePace` is the Menus & pages group's at the root, and a group's own inside its `GroupMotion`.
+    - `PacedEffect` is a `LaunchedEffect` at `LocalFramePace`; `rememberPacedLoop` stands in for an
+        `InfiniteTransition`'s `animateFloat` (which can't be paced). Decoration and Score glow pass their pace
+        explicitly (`LocalFramePaces.current.of(group)`, `.scoreGlow`).
+    - **A new animation** runs in one of these, at its group's pace. What can't be paced runs at the window's rate:
+        `animate*AsState` (a shake's fade-in, the cup's slosh), Compose's own transitions, and the page cover, whose
+        settling is measured on the window's frames.
+- The cap skips whole refreshes: a 60 cap gives 45 on 90Hz. So a capped level also asks the window for the lowest
+    refresh rate of at least 60Hz (`preferRefreshRateFor`, `RefreshRateTest`). Never below 60Hz, so touch stays
+    responsive.
+- Only the player's settings cap frames. The one exception, agreed by the maintainer: the menu's drift skips a 120Hz
+    screen's every other refresh, never going under 60 (`UI_SCREENS.md`).
+- **The 60fps floor holds for High and Medium**; 30fps happens only when the player picks Low or Off, or 30fps for a
+    group.
+
+**Two sources, one switch.** `LocalReduceMotion` (provided once in `LudoPlusApp`, beside `LocalMotionSettings`) is
+true when the system asks for less motion **or** Menus & pages is Off (the level Off, or the Advanced settings). The system's
+setting turns every group off (`LocalMotionSettings` is then the Off preset). Inside a `GroupMotion` it's that group's
+own (`groupReduceMotion`).
+
+- The system setting also sets Compose's `MotionDurationScale`, which the app's Off can't. Under the app's Off,
+    ripples, switch thumbs and flings still run, at the 30fps cap.
+
+**Two layers.**
+
+- **What Compose handles.** On Android, Compose follows the system animation scale by itself, so every `tween`,
+    `animate*AsState` and `Animatable` started from composition finishes instantly.
+    - An `InfiniteTransition` is not safe: it ends at its **target**, which may not be a resting pose. That's why the
+        cup wobble, timer flash and tile glow are gated explicitly.
+- **What needs `LocalReduceMotion`**: `withFrameNanos` loops, `delay`-driven sequences and physics, and decoration that
+    should stop outright.
+
+**The rule when it's true: decoration stops, the outcome still happens, instantly and at rest. What the game does
+never changes.** Every cup, die, mat and background follows it (`CupReducedMotionTest` checks that every cup snaps).
+Examples:
+
+- no tile glow (a steady gold border), and a steady red timer;
+- no drift, twinkle, sparkle, neon pulse or glitch;
+- a button's own scroll of a list or tab row (the Achievements arrows, a banner's jump to its row, the Rules chevrons)
+    jumps there rather than gliding;
+- cup lids, doors and baskets snap open, and spills and lava simply appear;
+- the rabbit appears without a rise;
+- the dice aren't tossed: they stay put through the shake and snap to their results. The board cup stands while the
+    roll is in it, then is simply tipped;
+- page and banner fades are off: the page cover goes up and comes down without fading, a banner burst is all there at
+    once, and a progress count doesn't climb;
+- scores appear rather than count up, and there are no fireworks;
+- **game pacing**: scoring doesn't wait for a toss, and neither does the CPU (`GamePacing.diceAnimated`), which also
+    drops `RELEASE_GAP_MS`;
+- **loading**: a Styles category's page builds every tile in its first frame, and a page that's slow to load shows the
+    still page cover (a spinner after `PageCover.SPINNER_DELAY_MILLIS`).
+
+**Audio and haptics are not motion, and stay.** The shake sound (~400ms), the shake buzz (336ms) and the landing sound
+(~490ms) are timed to the `CUP_SHAKE_MILLIS` window, and for a TalkBack user they *are* the roll.
+
+- `cupShakeMillis` (`ui/game/CupShake.kt`) keeps the full window whenever sound or vibration is on. With both off it
+    shrinks to 100ms (not 0, so `isRolling` is seen changing), but only while neither the cup nor the dice move in it.
+- **Never shorten the window without re-checking the clips and `HapticEffect.SHAKE_BUZZ.millis`.**
+- The CPU's following pauses (`ROLL_GAP_MS`, `AI_STEP_DELAY_MS`, `AI_REACTION_DELAY_MS`) never change. Only its
+    animation waits go: `GamePacing.diceTossMillis`, `RELEASE_GAP_MS`, and the one-die-at-a-time hold steps (`AI_HOLD_STEP_MS`,
+    `AI_RELEASE_TO_HOLD_GAP_MS`; holds then land together via `changeHolds`).
+- The Game Over fanfare and hold ticks follow their own settings.
+
+## Landscape pages
+
+- **`LocalLandscapePage`** says a page is wider than it's tall: `ScreenScaffold` provides it for the whole page (app bar
+    included), `PageColumn` for its content, `LandscapePage` for anything else (the results page).
+- **Opt-in width.** A `wide` page's column may take `wideColumnMaxWidth` in landscape; any other keeps
+    `CONTENT_MAX_WIDTH`, a readable line. Portrait is never changed.
+    - That's `WIDE_CONTENT_MAX_WIDTH` (two 460dp panes), or wider where a Standard game's content is drawn wider on the
+        screen (`landscapeGameContentWidth`, tablets), so the pages and the game share one width there.
+    - A phone on its side draws the game smaller, bound by its height. Pages keep their own width there.
+- **The back arrow lines up with the content's start edge**, its 48dp target reaching `BACK_ARROW_OUTSET` (12dp) past
+    it: the game screen's beside the board, and a landscape app bar's, which spans the page's content column
+    (`ContentColumn`), not the screen. Its title centres on that column and its `actions` end level with the content.
+    Portrait app bars span the screen.
+- **`TwoPanes`** lays two groups side by side in landscape and stacks them in portrait, in the same reading order.
+- What each page does in landscape:
+    - Menu: the logo beside the buttons, Play then the rest two to a row.
+    - New Game: players on the left, mode, modifiers and Start on the right, each side scrolling; its cards are tighter.
+    - Settings: switches, resets and About on the left; Animations and Orientation, then Licences, on the right. The
+        version is the last thing on the page in either orientation, at its foot (not pinned).
+    - Achievements: two cards to a row (a tooltip row's card sized by the `Box` around it), the count after the back arrow
+        and the Unearned switch at the app bar's end. Positions count rows of two (`flatIndexOf`, `indexOfKey`), and the
+        scroll position is remembered by key.
+    - Leaderboard: the drop-down and the board's page controls share a row over a 640dp table, whichever board is picked.
+    - Statistics: two cards to a row.
+    - Styles: two rows of three fields, the count after the back arrow. A category's page puts its count there too, and
+        its Unlocked switch at the app bar's end, as Achievements' Unearned switch.
+    - Rules: the group and page tabs share a row, text at most 640dp wide.
+    - Game Over: the results beside the buttons.
+
+## Scrollbars
+
+- **Anything that can't show all its content shows a scrollbar**, only while there's more to see: `PageColumn` pages
+    in their right margin, `ScrollingColumn` (a column with its bar in the gutter beside it) for New Game's form and
+    `LudoPlusDialog`'s content, the game screen at its edge, Achievements' list in the page margin, and the missing-numbers list in an achievement's
+    details. The tiny score stacks in Third Wind's tiles are the exception: they fade at the edge instead.
+- **Every scrolling thing uses the app's own bars**, never a styled platform scrollbar.
+    - Plain scrolling pages (Styles, each Rules page) and the About dialog put a `VerticalScrollbar` in the right margin. The Rules pages share
+        one beside the pager.
+    - The Licences list on Android passes pixel position, max and `scrollBy` (`LicenceScroll`), with the platform
+        scrollbar off.
+- **Key a scrollbar's "anything to scroll?" check on the state it's handed.** Unkeyed, it keeps the first page's answer.
+- **`LazyListScrollbar`** goes over any `LazyColumn` that can outgrow the screen: a `primary` thumb on a
+    `surfaceContainerHighest` track. Its rules, each fixing a real bug on lists with mixed heights:
+    - Show or hide from `canScrollForward`/`canScrollBackward`, never `visibleItemsInfo.size` vs `totalItemsCount`.
+        Prefetching breaks that comparison.
+    - New content that fits is only known not to scroll once it's laid out, a frame after the bar was composed. So the
+        draw asks again, and the bar takes its `Box`'s size (`matchParentSize`) without giving it one, or that frame shows
+        the old bar on a card still at the old height (`LeaderboardPageFlashTest`). Anything else shown only while the list
+        scrolls, like the Leaderboard's arrows, checks in its draw too.
+    - Size and position are pixel-based (each visible item's `size`/`offset`), not counts of items.
+    - Item sizes are remembered per index in a map that only grows, never re-averaged each frame.
+    - The size estimate is frozen at the very first layout, for the thumb's size.
+    - The position is measured from the second visible item in list order (`anchorItem`): the first can be a sticky
+        header drawn pinned rather than where it lies (`ScrollbarTopItemTest`).
+    - The position is what's scrolled past against that plus what's left below (known sizes, then estimates), so a wrong
+        estimate only changes the pace a little and the thumb meets the end with the list instead of jumping.
+    - `contentTypeOf` lets a list of very different items (Achievements' cards and headers) estimate unseen ones by
+        kind, and `sizeOf` gives sizes known in advance (its tail spacer).
+    - Without those two, a draw walks only the measured items (`measuredOrAverageSize`), never the whole list: the
+        Leaderboard's pages run to 1,000 rows. With either, it walks every item, so keep those lists short.
+    - The thumb can always be held and pulled, and thickens from 4dp to 8dp while held. Only the thumb takes the touch, in
+        a handle at least 48dp each way, placed from where the thumb was last drawn; a full-height strip would block the
+        list and Achievements' header arrows. Silent to TalkBack, which scrolls the list by its own actions.
+- **Every bar's thumb can be held and pulled from a press**, in a handle at least 48dp each way, and thickens while held.
+    `VerticalScrollbar` and `HorizontalScrollbar(ScrollState)` report no size for the handle, so it reaches over what's around
+    the bar without moving it. `VerticalScrollbar`'s whole strip also takes a drag.
+    - Remembered state resets when `totalItemsCount` changes. This is checked in the `Canvas` draw phase
+        (`ScrollbarMemory.totalItemsAtLastCheck`), not by keying a `remember`.
+    - The endpoints are pinned to `canScrollForward`/`canScrollBackward`, which are exact.
+
+## Player colours
+
+**A player's colour is chosen on New Game and read from `PlayerState.colour`.**
+
+- It's a `PlayerColour` (eight of them), turned into a `Color` only in `PlayerColour.color` (`ui/theme/Color.kt`).
+- Tab, name, score and the last-scored box outline all use it. Never use a seat index.
+- **The active tab's frame** is the player's `ScoreFrame` in their colour. It's decoration only; the "Current turn"
+    state is unchanged.
+- **Every tab sits on a panel**: `surfaceContainer` in the tab's 10dp shape, tinted 8% with the player's colour
+    (`PANEL_TINT`).
+    - The tint is capped by contrast: at 8% the lowest is Purple at 4.63:1, and at 10% Purple fails (4.49:1).
+    - Re-check all eight colours before raising it.
+- **Frames stay off the tab's text.**
+    - The name sits `NAME_TOP_DROP` (3dp) down.
+    - Every frame keeps 1.5dp clear of name, score, place and dot, at 360dp with 1-4 players, the widest names and 1.3x
+        font (`ScoreFrameClearanceTest`).
+    - Side padding grows with the font scale (2 to 10dp).
+    - The dot row keeps its height even solo.
+    - A frame that fails is drawn smaller or further out, never given more room.
+- **Setup.** A 28dp circle (48dp target) opens a 4x2 `DropdownMenu` of the eight colours (`ui/setup/PlayerColourPicker.kt`).
+    - It's a curated set, not a free picker: M3 has no colour picker, and a free choice could clash or be unreadable.
+        Add a colour only if it's light enough for the dark page and distinct from the others.
+- **Always four distinct.** `setPlayerColour` swaps with whichever slot holds the colour, across all four slots. The
+    defaults (`PlayerColour.defaultFor`) are cyan, green, purple and amber.
+- **Persisted** per slot (`player_colour_N`, falling back to the defaults if not distinct) and in a saved game.
+- **TalkBack**: "Player 2 colour, Pink", action "Choose colour". Choices are radio buttons, and a taken one says
+    "swaps with player 1" (`PlayerColourPickerTest`).
+
+## Mode colours
+
+**Every game mode has one expected colour**, turned into a `Color` only in `GameMode.color` (`ui/theme/Color.kt`).
+Anything that marks a mode by colour uses it: the Statistics Combined page's mode table, and each name on the
+Leaderboard's Combined board.
+
+| Mode        | Colour                   |
+|-------------|--------------------------|
+| Standard    | `primary` (brand gold)   |
+| Tricolour   | `#94D78F` green          |
+| Third Wind  | `#B6C6F2` periwinkle     |
+| 7 Dice Stud | `#E8A0BF` pink           |
+| D20         | `#7FD1D9` cyan           |
+| Hit List    | `#D4E157` lime           |
+| Quickfire   | `#C9A0F0` violet         |
+
+- Standard is the main mode, so it takes the brand gold.
+- The rest are light tones that read on the dark page. Each stays clear of the others, of the gold and of red
+    (`error`, a loss on the Statistics card).
+- A new mode needs one: the `when` won't compile without it. `GameModeColourTest` checks they're distinct, Standard's
+    is `Primary` and none is `Error`.
+- Colour is never the only signal: the mode's name is always beside it.
+
+## Gotchas
+
+- **A scrolling container eats a tap made while it scrolls.** Anything that scrolls itself after a tap, such as M3's
+    scrollable tab rows re-centring, loses the next tap.
+    - The Rules rows never re-centre (`KeepTabInView` moves them only when the tab is hidden).
+    - A row that fits must not be scrollable even by a pixel.
+    - Test with real touches a few frames apart (`performTouchInput { click() }`, `autoAdvance = false`); semantics
+        clicks skip the problem.
+- **An edge fade isn't a "there's more" hint on its own**, because it only shows when content happens to be under it.
+    Pair it with something always there (the Rules chevrons).
+- **`ScoreGrid.overflowFade` and `Rules.fadeOffscreenEdges` stay separate.** One is a vertical edge fade, the other a
+    horizontal mask with a clear zone and easing; a shared helper would only add switches.
+- **`Modifier.align` needs the Box to be the actual parent.** In a `Scaffold` body it's accepted and silently ignored.
+    Use a real `Box(contentAlignment = ...)`.
+- **`padding` before `size` shrinks the node.** Use `offset` to move without resizing.
+- **Every tooltip is `AppTooltip`**, never `TooltipBox` directly.
+    - `rememberAppTooltipState()` lets a tap show one.
+    - Pass `message`, or `body` for a custom layout.
+    - The deprecated `rememberPlainTooltipPositionProvider` (no replacement until 1.5.0) is suppressed once, there.
+    - `TooltipBox`'s anchor merges its content and drops the role, so put `Role.Button` on the tooltip's modifier too.
+    - For long lists of rarely-pressed rows, use `OnDemandTooltip`: a plain gesture plus a "Show Details" action until
+        first use.
+- **No `@Preview`s that build a view model.** Every view model but `ScoresViewModel` takes its repositories as
+    required, and the app ships no fakes, so a preview can't make one. Use the `render` skill instead.
+- **The launcher icon's safe zone is a floor, not a guarantee.** The spec's 66dp circle passed on paper, but a device
+    still cropped the dice.
+    - Keep the baked-in margin (everything inside one `<group scaleX="0.8" scaleY="0.8" pivotX="54" pivotY="54">`), and
+        get an on-device look for icon work.
+    - `ic_launcher_monochrome.xml` (the themed icon) is a flat silhouette: pips and band are even-odd cut-outs, and its
+        geometry is copied from the foreground. Change the two together.
+    - `ic_launcher.xml` is the only wrapper (`roundIcon` too).
+    - The icon's depth lives in its layers. `ic_launcher_background.xml` is the table (lit felt, the blue mat and its
+        gold ring), opaque to every edge of the canvas. Its felt and the mat's edge are the default background's and
+        mat's own colours (`FeltNavy*`, `TrayBlue*`), and the store art's `TableBackdrop` and
+        `scripts/generate-store-assets.sh` copy them: change them together. The foreground's cup is shaded by one light from the top left, and
+        its dice are projected cubes, drawn as flat paths, each tilted 20 degrees away from the cup's mouth with its value
+        facing the screen. The themed icon keeps the cubes as flat faces. `scripts/generate-launcher-dice.py` generates
+        the dice in both layers, so change a pose there, never in the XML.
+
+## Verifying UI work
+
+Run the `test` skill's gate. Render screens with the `render` skill: real screens at given sizes and fonts. A
+behaviour a screen drives is tested with the real screen and view model (`GameScreenCupGateTest`). The `emulator`
+skill shows the real app. A device is still needed for TalkBack's speech, frame times, haptics and the accelerometer.
+Report what was and wasn't seen, and prefer layouts that degrade safely on screens you can't check.
