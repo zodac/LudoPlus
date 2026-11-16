@@ -44,16 +44,10 @@ class MainActivityLanguageTest {
 
     @Test
     @Config(qualifiers = "ar")
-    fun `on an Arabic phone the Activity stays Arabic and right to left`() {
-        assertEquals("ar", configuration.locales[0].language)
-        assertEquals(View.LAYOUT_DIRECTION_RTL, configuration.layoutDirection)
-    }
-
-    @Test
-    @Config(qualifiers = "es")
-    fun `on a Spanish phone the Activity stays Spanish`() {
-        assertEquals("es", configuration.locales[0].language)
-        assertEquals("Copiar", systemCopy)
+    fun `on an Arabic phone - no translation yet - the whole Activity is in English and left to right`() {
+        assertEquals(Locale.forLanguageTag("en-GB"), configuration.locales[0])
+        assertEquals(View.LAYOUT_DIRECTION_LTR, configuration.layoutDirection)
+        assertEquals("Copy", systemCopy)
     }
 
     @Test

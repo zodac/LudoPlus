@@ -1,11 +1,9 @@
 package net.zodac.ludo.device
 
 import android.content.Context
-import androidx.room.Room
 import net.zodac.ludo.BuildConfig
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.app.BuildInfo
-import net.zodac.ludo.data.scores.AppDatabase
 
 /**
  * The process-wide [AppContainer] on Android - built on first use, from the application context.
@@ -23,12 +21,6 @@ object AndroidAppContainer {
     private fun create(appContext: Context): AppContainer = AppContainer.create(
         // One file per PreferencesFile, in filesDir/datastore.
         dataDir = appContext.filesDir.resolve("datastore").absolutePath,
-        // No driver set: on Android, Room opens it on the framework's own SQLite.
-        databaseBuilder = Room.databaseBuilder<AppDatabase>(
-            context = appContext,
-            name = appContext.getDatabasePath(AppDatabase.FILE_NAME).absolutePath,
-        ),
         buildInfo = BuildInfo(versionName = BuildConfig.VERSION_NAME, isDebug = BuildConfig.DEBUG),
-        savedGameDiscard = SavedGameDiscardFile(appContext),
     )
 }

@@ -83,9 +83,8 @@ class FramePaces(motion: MotionSettings) {
     fun of(group: MotionGroup): FramePace = paces.getValue(group)
 
     val menus: FramePace get() = of(MotionGroup.MENUS)
-    val scoreGlow: FramePace get() = of(MotionGroup.SCORE_GLOW)
-    val cupShake: FramePace get() = of(MotionGroup.CUP_SHAKE)
-    val diceRoll: FramePace get() = of(MotionGroup.DICE_ROLL)
+    val dieRoll: FramePace get() = of(MotionGroup.DIE_ROLL)
+    val pawnMove: FramePace get() = of(MotionGroup.PAWN_MOVE)
 }
 
 /** Each group's [FramePace], from [LocalMotionSettings]. Provided once at the root, beside it. */

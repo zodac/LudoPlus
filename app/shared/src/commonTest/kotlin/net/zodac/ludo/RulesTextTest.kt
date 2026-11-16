@@ -1,79 +1,56 @@
 package net.zodac.ludo
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import kotlin.test.Test
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.platform.SilentPlatformServices
 import net.zodac.ludo.ui.rules.RulesScreen
-import net.zodac.ludo.ui.rules.resetRulesPageMemory
 import net.zodac.ludo.ui.theme.LudoPlusTheme
 
-/** The Rules screen's words: its title, its groups and every page's tab, what a page and its examples say and draw, and its page count. */
+/** The Rules screen's words: its title, its heading, and each card's heading and points, word for word. */
 class RulesTextTest : UiTest() {
 
-    private fun showRules() {
-        resetRulesPageMemory()
+    @Test
+    fun `the Rules screen's words - its title and heading - and every card's heading and points`() = uiTest {
         compose.setContent {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
                 LudoPlusTheme { RulesScreen(onBack = {}) }
             }
         }
-    }
+        compose.onAllNodesWithText("Rules").assertCountEquals(1)
+        compose.onNodeWithText("How to Play Ludo Plus").assert(isHeading())
 
-    @Test
-    fun `the Rules screen's words - its title - every group's tabs and overview - the pages' marks and examples - and its page count`() = uiTest {
-        showRules()
-        // Titled Rules, and the first page is how to play.
-        compose.onNodeWithText("Rules").assertExists()
-        compose.onNodeWithText("How to Play Ludo Plus").assertExists()
-        compose.onNodeWithText("Score as many points as possible by rolling five dice, with three rolls per round.").assertExists()
-        // The footer counts the pages of the group showing.
-        compose.onNodeWithText("1 of 5").assertExists()
-        compose.onNode(hasContentDescription("Gameplay, page 1 of 5")).assertExists()
-
-        // The lower section's boxes are headed by their names and marks - and each example says what it scores.
-        compose.onNodeWithText("Lower Section").performScrollTo().performClick()
-        compose.waitForIdle()
-        listOf("3x", "4x", "Full House", "Small Straight", "Large Straight", "5x", "Chance").forEach { compose.onNodeWithText(it).assertExists() }
-        compose.onNodeWithText("= 25pts", useUnmergedTree = true).assertExists()
-        compose.onNode(hasContentDescription("Example: 3, 3, 3, 6, 6. Scores 25 points.")).assertExists()
-
-        // A list's steps are numbered - and the joker's two amounts are added.
-        compose.onNodeWithText("5x & Joker").performScrollTo().performClick()
-        compose.waitForIdle()
-        listOf("1.", "2.", "3.").forEach { compose.onAllNodesWithText(it).assertCountEquals(1) }
-        compose.onNodeWithText("= 20pts + 100pts", useUnmergedTree = true).assertExists()
-
-        // Every page has a tab in its group - and the modes and the modifiers each open on an overview.
-        listOf("Gameplay", "Modes", "Modifiers").forEach { compose.onNodeWithText(it).assertExists() }
-        mapOf(
-            "Gameplay" to listOf("How to Play", "Upper Section", "Lower Section", "5x & Joker", "Tie Breaks"),
-            "Modes" to listOf("Overview", "Tricolour", "Third Wind", "7 Dice Stud", "Hit List", "Quickfire"),
-            "Modifiers" to listOf("Overview", "Turn Timer", "Number of Rolls", "Stored Rolls", "Extended Scores", "First Roll Bonus", "Unlucky Dice"),
-        ).forEach { (group, pages) ->
-            compose.onNodeWithText(group).performClick()
-            compose.waitForIdle()
-            pages.forEach { compose.onNodeWithText(it).assertExists() }
-            when (group) {
-                "Modes" -> compose.onNodeWithText("Game Modes").assertExists()
-                "Modifiers" -> {
-                    compose.onNodeWithText("Modifiers are just for fun", substring = true).assertExists()
-                    compose.onNodeWithText("1 of 7").assertExists()
-                    compose.onNode(hasContentDescription("Modifiers, page 1 of 7")).assertExists()
-                }
-            }
+        val cards = mapOf(
+            "The board" to listOf(
+                "Each player has four pawns, waiting in their own coloured yard.",
+                "The track runs all the way round the board, and everyone shares it. Each colour joins it at its own start square.",
+                "After a full lap, a pawn turns into its own home column and races to home, in the middle of the board.",
+            ),
+            "Your turn" to listOf(
+                "Roll the die, then move one of your pawns that many squares.",
+                "Only a 6 brings a pawn out of the yard, onto its start square.",
+                "Roll a 6 and you roll again. Roll three 6s in a row and your turn ends.",
+                "If none of your pawns can move, your turn passes.",
+            ),
+            "Captures" to listOf(
+                "Land on a single rival pawn to send it back to its yard.",
+                "Start squares and star squares are safe: nobody can be captured there.",
+                "Your own pawns can share a square, and any pawn can pass any other.",
+            ),
+            "Winning" to listOf(
+                "A pawn needs the exact roll to reach home.",
+                "The first player to bring all four pawns home wins, and everyone else plays on for the places.",
+            ),
+        )
+        for ((heading, points) in cards) {
+            compose.onNodeWithText(heading).performScrollTo().assert(isHeading())
+            points.forEach { compose.onNodeWithText(it).performScrollTo() }
         }
-
-        // First Roll Bonus's example: the Full House and the bonus, added.
-        compose.onNodeWithText("First Roll Bonus").performScrollTo().performClick()
-        compose.waitForIdle()
-        compose.onNode(hasContentDescription("Example: 3, 3, 3, 6, 6. Scores 25 points plus 5 points.")).performScrollTo()
-        compose.onNodeWithText("= 25pts + 5pts", useUnmergedTree = true).assertExists()
     }
 }

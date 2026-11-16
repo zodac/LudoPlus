@@ -17,7 +17,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -35,95 +34,40 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import net.zodac.ludo.game.ScoreCalculator
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
-import net.zodac.ludo.model.GameState
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
-import net.zodac.ludo.model.RollModifiers
-import net.zodac.ludo.model.TurnTimer
-import net.zodac.ludo.model.UnluckyDice
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.common_cpu_cd
 import net.zodac.ludo.resources.common_default_player_name
 import net.zodac.ludo.resources.setup_difficulty_easy
 import net.zodac.ludo.resources.setup_difficulty_hard
 import net.zodac.ludo.resources.setup_difficulty_medium
-import net.zodac.ludo.resources.setup_extended_description
-import net.zodac.ludo.resources.setup_extended_locked
-import net.zodac.ludo.resources.setup_extended_title
-import net.zodac.ludo.resources.setup_first_roll_bonus_description
-import net.zodac.ludo.resources.setup_first_roll_bonus_locked
-import net.zodac.ludo.resources.setup_first_roll_bonus_title
 import net.zodac.ludo.resources.setup_game_mode
-import net.zodac.ludo.resources.setup_modes_locked
-import net.zodac.ludo.resources.setup_modifiers
-import net.zodac.ludo.resources.setup_modifiers_active_note
-import net.zodac.ludo.resources.setup_modifiers_description
-import net.zodac.ludo.resources.setup_modifiers_locked
 import net.zodac.ludo.resources.setup_names_unique
 import net.zodac.ludo.resources.setup_player_name_cd
-import net.zodac.ludo.resources.setup_players
-import net.zodac.ludo.resources.setup_rolls_decrease_cd
-import net.zodac.ludo.resources.setup_rolls_description
-import net.zodac.ludo.resources.setup_rolls_increase_cd
-import net.zodac.ludo.resources.setup_rolls_per_turn_value
-import net.zodac.ludo.resources.setup_rolls_stepper
-import net.zodac.ludo.resources.setup_rolls_title
 import net.zodac.ludo.resources.setup_start
-import net.zodac.ludo.resources.setup_stored_description
-import net.zodac.ludo.resources.setup_stored_field
-import net.zodac.ludo.resources.setup_stored_hint
-import net.zodac.ludo.resources.setup_stored_title
-import net.zodac.ludo.resources.setup_timer_custom_field
-import net.zodac.ludo.resources.setup_timer_custom_min
-import net.zodac.ludo.resources.setup_timer_description
-import net.zodac.ludo.resources.setup_timer_none
-import net.zodac.ludo.resources.setup_timer_seconds
-import net.zodac.ludo.resources.setup_timer_title
-import net.zodac.ludo.resources.setup_timer_unit
 import net.zodac.ludo.resources.setup_title
-import net.zodac.ludo.resources.setup_tutorial_prompt
 import net.zodac.ludo.resources.setup_type_user
-import net.zodac.ludo.resources.setup_unlucky_description
-import net.zodac.ludo.resources.setup_unlucky_max
-import net.zodac.ludo.resources.setup_unlucky_max_decrease_cd
-import net.zodac.ludo.resources.setup_unlucky_max_dice_value
-import net.zodac.ludo.resources.setup_unlucky_max_increase_cd
-import net.zodac.ludo.resources.setup_unlucky_odds
-import net.zodac.ludo.resources.setup_unlucky_odds_decrease_cd
-import net.zodac.ludo.resources.setup_unlucky_odds_increase_cd
-import net.zodac.ludo.resources.setup_unlucky_odds_value
-import net.zodac.ludo.resources.setup_unlucky_title
 import net.zodac.ludo.ui.common.ChoicePicker
 import net.zodac.ludo.ui.common.FittedSegmentedChoiceRow
 import net.zodac.ludo.ui.common.HoldPageCover
 import net.zodac.ludo.ui.common.LocalLandscapePage
 import net.zodac.ludo.ui.common.MAIN_ACTION_HEIGHT
 import net.zodac.ludo.ui.common.MIN_READABLE_FONT_SIZE
-import net.zodac.ludo.ui.common.ModifierCustomValue
-import net.zodac.ludo.ui.common.ModifierNumberField
-import net.zodac.ludo.ui.common.ModifierPicker
-import net.zodac.ludo.ui.common.ModifierSetting
-import net.zodac.ludo.ui.common.ModifierStepper
 import net.zodac.ludo.ui.common.ScreenScaffold
 import net.zodac.ludo.ui.common.ScrollingColumn
-import net.zodac.ludo.ui.common.SegmentedChoiceRow
 import net.zodac.ludo.ui.common.SoraFontFamily
-import net.zodac.ludo.ui.common.localised
-import net.zodac.ludo.ui.common.pluralStringResource
 import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.common.textScale
 import net.zodac.ludo.ui.game.GameSetupForm
@@ -149,29 +93,28 @@ private const val STACKED_PLAYER_ROW_FONT_SCALE = 1.05f
 fun GameSetupScreen(
     viewModel: GameViewModel,
     onStartGame: () -> Unit,
-    onTutorial: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val setup by viewModel.setupForm.setup.collectAsStateWithLifecycle()
     val setupRestored by viewModel.setupForm.setupRestored.collectAsStateWithLifecycle()
-    val activeSlots = setup.playerSlots.take(setup.playerCount)
+    val activeSlots = setup.playerSlots
     val focusManager = LocalFocusManager.current
 
-    val defaultNames = (1..GameState.MAX_PLAYERS).map { stringResource(Res.string.common_default_player_name, it) }
+    val defaultNames = (1..GameMode.PLAYER_COUNT).map { stringResource(Res.string.common_default_player_name, it) }
     val defaultName: (Int) -> String = { defaultNames[it - 1] }
     val duplicateNameSlots = setup.duplicateNameSlots(defaultName)
     val namesMustBeUnique = stringResource(Res.string.setup_names_unique)
 
     ScreenScaffold(title = stringResource(Res.string.setup_title), onBack = onBack, modifier = modifier, wide = true) {
         // Nothing but the title bar until the saved choices are back: drawing the form any sooner
-        // shows the defaults (Standard mode, 2 players) for a few frames before they switch to
+        // shows the defaults for a few frames before they switch to
         // the last game's - and a Start Game tapped in that window would play the defaults. The page
         // cover is kept up over it meanwhile.
         if (!setupRestored) return@ScreenScaffold HoldPageCover()
 
         val playerCards = @Composable {
-            PlayerCards(setup = setup, activeSlots = activeSlots, duplicateNameSlots = duplicateNameSlots, namesMustBeUnique = namesMustBeUnique, defaultName = defaultName, form = viewModel.setupForm)
+            PlayerCards(activeSlots = activeSlots, duplicateNameSlots = duplicateNameSlots, namesMustBeUnique = namesMustBeUnique, defaultName = defaultName, form = viewModel.setupForm)
         }
         val actions = @Composable {
             if (duplicateNameSlots.isNotEmpty()) {
@@ -180,19 +123,6 @@ fun GameSetupScreen(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.error,
                 )
-            }
-
-            // Offered, never required, and only until a first game is finished.
-            if (!setup.modesUnlocked) {
-                FilledTonalButton(
-                    onClick = {
-                        focusManager.clearFocus()
-                        onTutorial()
-                    },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = MAIN_ACTION_HEIGHT),
-                ) {
-                    Text(text = stringResource(Res.string.setup_tutorial_prompt), style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-                }
             }
 
             Button(
@@ -244,20 +174,15 @@ fun GameSetupScreen(
     }
 }
 
-/** The form's first half: how many players, and each one's colour, name and type. */
+/** The form's first half: each player's colour, name and type. */
 @Composable
 private fun PlayerCards(
-    setup: GameSetupState,
     activeSlots: List<PlayerSetupSlot>,
     duplicateNameSlots: Set<Int>,
     namesMustBeUnique: String,
     defaultName: (Int) -> String,
     form: GameSetupForm,
 ) {
-    SetupCard(title = stringResource(Res.string.setup_players)) {
-        PlayerCountSelector(count = setup.playerCount, onCountChange = form::setPlayerCount)
-    }
-
     // Every active seat gets a row, including player 1 (always Human, at this device) - one card
     // holding all of them rather than a card per player: stacked cards, each with its own title,
     // padding and controls, is what pushed the form off the screen. No card title here - every
@@ -284,34 +209,11 @@ private fun PlayerCards(
     }
 }
 
-/** The form's second half: the game mode and the modifiers. */
+/** The form's second half: the game mode. Modifiers join it in Phase 9 of `.claude/IMPLEMENTATION.md`. */
 @Composable
 private fun GameCards(setup: GameSetupState, form: GameSetupForm) {
-    // Until a first game is finished each card holds a note in place of its picker, and the form plays Standard with no
-    // modifiers.
-    if (!setup.modesUnlocked) {
-        LockedSetupCard(title = stringResource(Res.string.setup_game_mode), note = stringResource(Res.string.setup_modes_locked))
-        LockedSetupCard(title = stringResource(Res.string.setup_modifiers), note = stringResource(Res.string.setup_modifiers_locked))
-        return
-    }
-
     SetupCard(title = stringResource(Res.string.setup_game_mode)) {
         GameModeSelector(selected = setup.gameMode, onSelect = form::setGameMode)
-    }
-
-    SetupCard(title = stringResource(Res.string.setup_modifiers)) {
-        SetupModifierPicker(
-            setup = setup,
-            onTurnTimer = form::setTurnTimer,
-            onRollsPerTurn = form::setRollsPerTurn,
-            onStoredRolls = form::setStoredRolls,
-            onStoredRollsMax = form::setStoredRollsMax,
-            onExtendedScores = form::setExtendedScores,
-            onFirstRollBonus = form::setFirstRollBonus,
-            onUnluckyDiceEnabled = form::setUnluckyDiceEnabled,
-            onUnluckyOdds = form::setUnluckyOdds,
-            onUnluckyMaxDice = form::setUnluckyMaxDice,
-        )
     }
 }
 
@@ -323,7 +225,7 @@ private val LANDSCAPE_ROW_SPACING = 2.dp
  *
  * [title] is optional: a section whose contents already label themselves (the player rows) doesn't
  * need a heading repeating it. [rowSpacing] is tightened further still for the player list, where
- * up to four rows (plus their dividers) need to fit on screen at once alongside every other card.
+ * four rows (plus their dividers) need to fit on screen at once alongside every other card.
  * With [enabled] false the card is darker and its title takes Material's disabled text colour.
  * Tighter on a landscape page, where the form has height to spare for nothing.
  */
@@ -364,35 +266,6 @@ private fun SetupCard(
 private fun disabledContentColour() = MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
 
 private const val DISABLED_CONTENT_ALPHA = 0.38f
-
-/** A [SetupCard] whose picker is locked, greyed out: its [title] over a [note] saying so, read as one by a screen reader. */
-@Composable
-private fun LockedSetupCard(title: String, note: String) {
-    SetupCard(title = title, enabled = false, modifier = Modifier.semantics(mergeDescendants = true) {}) {
-        Text(
-            text = note,
-            style = MaterialTheme.typography.bodyMedium,
-            fontStyle = FontStyle.Italic,
-            color = disabledContentColour(),
-        )
-    }
-}
-
-/**
- * Player count as four fixed choices rather than a -/+ stepper: the range is 1..4, so every option
- * fits on one line, and picking 4 is one tap instead of three.
- */
-@Composable
-private fun PlayerCountSelector(count: Int, onCountChange: (Int) -> Unit) {
-    SegmentedChoiceRow(
-        options = (GameState.MIN_PLAYERS..GameState.MAX_PLAYERS).toList(),
-        selected = count,
-        onSelect = onCountChange,
-        label = { it.localised() },
-        modifier = Modifier.fillMaxWidth(),
-        brandFont = true,
-    )
-}
 
 /**
  * A player on one line: their name (editable for a User, automatic for a CPU) and the control
@@ -609,143 +482,3 @@ private fun GameModeSelector(selected: GameMode, onSelect: (GameMode) -> Unit) {
         description = { stringResource(it.description) },
     )
 }
-
-/**
- * The setup screen's modifiers. The turn timer is off when [TurnTimer.NONE] and
- * otherwise one of the lengths. The length last chosen is kept in the setup state (and saved with it) while
- * the timer is off, so switching it back on - even next game - restores it.
- *
- * Number of Rolls and Stored Rolls (see [RollModifiers]) apply in every mode. Stored
- * Rolls' cap is a typed number, empty for none.
- *
- * Extended Scores is a plain switch with nothing to set, and applies in every mode that allows it
- * ([GameMode.allowsExtendedScores]) - locked off, with the player's pick kept, in one that doesn't. Unlucky Dice
- * First Roll Bonus is a plain switch too, locked the same way where the mode doesn't allow it
- * ([GameMode.allowsFirstRollBonus]). Unlucky Dice
- * ([UnluckyDice]) is a switch with two steppers, the odds and the most dice locked a roll, and applies in every mode too;
- * both are kept while it's off.
- */
-@Composable
-private fun SetupModifierPicker(
-    setup: GameSetupState,
-    onTurnTimer: (TurnTimer) -> Unit,
-    onRollsPerTurn: (Int?) -> Unit,
-    onStoredRolls: (Boolean) -> Unit,
-    onStoredRollsMax: (Int?) -> Unit,
-    onExtendedScores: (Boolean) -> Unit,
-    onFirstRollBonus: (Boolean) -> Unit,
-    onUnluckyDiceEnabled: (Boolean) -> Unit,
-    onUnluckyOdds: (Int) -> Unit,
-    onUnluckyMaxDice: (Int) -> Unit,
-) {
-    val onSelect = onTurnTimer
-    val lengths = TurnTimer.PRESETS
-    val rolls = setup.rollModifiers
-    ModifierPicker(
-        title = stringResource(Res.string.setup_modifiers),
-        description = stringResource(Res.string.setup_modifiers_description),
-        activeNote = stringResource(Res.string.setup_modifiers_active_note),
-        modifiers = listOf(
-            ModifierSetting(
-                title = stringResource(Res.string.setup_extended_title),
-                description = stringResource(Res.string.setup_extended_description),
-                // Locked off in a mode whose card it doesn't fit - the player's own pick is kept for the next mode.
-                enabled = setup.extendedScores && setup.gameMode.allowsExtendedScores,
-                onEnabledChange = onExtendedScores,
-                lockedNote = if (setup.gameMode.allowsExtendedScores) null else stringResource(Res.string.setup_extended_locked, stringResource(setup.gameMode.displayName)),
-            ),
-            ModifierSetting(
-                title = stringResource(Res.string.setup_first_roll_bonus_title),
-                description = stringResource(Res.string.setup_first_roll_bonus_description, ScoreCalculator.FIRST_ROLL_BONUS),
-                // Locked off in a mode with no box that earns it - the player's own pick is kept for the next mode.
-                enabled = setup.firstRollBonus && setup.gameMode.allowsFirstRollBonus,
-                onEnabledChange = onFirstRollBonus,
-                lockedNote = if (setup.gameMode.allowsFirstRollBonus) {
-                    null
-                } else {
-                    stringResource(Res.string.setup_first_roll_bonus_locked, stringResource(setup.gameMode.displayName))
-                },
-            ),
-            ModifierSetting(
-                title = stringResource(Res.string.setup_rolls_title),
-                description = stringResource(Res.string.setup_rolls_description),
-                enabled = rolls.rollsPerTurn != null,
-                onEnabledChange = { on -> onRollsPerTurn(if (on) setup.rollsPerTurnLength else null) },
-                steppers = listOf(
-                    ModifierStepper(
-                        value = setup.rollsPerTurnLength,
-                        range = RollModifiers.ROLLS,
-                        onValueChange = onRollsPerTurn,
-                        label = stringResource(Res.string.setup_rolls_stepper),
-                        decreaseLabel = stringResource(Res.string.setup_rolls_decrease_cd),
-                        increaseLabel = stringResource(Res.string.setup_rolls_increase_cd),
-                        valueText = { pluralStringResource(Res.plurals.setup_rolls_per_turn_value, it, it) },
-                    ),
-                ),
-            ),
-            ModifierSetting(
-                title = stringResource(Res.string.setup_stored_title),
-                description = stringResource(Res.string.setup_stored_description),
-                enabled = rolls.storedRolls,
-                onEnabledChange = onStoredRolls,
-                numberField = ModifierNumberField(
-                    label = stringResource(Res.string.setup_stored_field),
-                    hint = stringResource(Res.string.setup_stored_hint),
-                    initial = rolls.storedRollsMax?.localised().orEmpty(),
-                    maxDigits = RollModifiers.MAX_CAP_DIGITS,
-                    onValueChange = onStoredRollsMax,
-                ),
-            ),
-            ModifierSetting(
-                title = stringResource(Res.string.setup_timer_title),
-                description = stringResource(Res.string.setup_timer_description),
-                enabled = setup.turnTimer != TurnTimer.NONE,
-                onEnabledChange = { on -> onSelect(if (on) setup.turnTimerLength else TurnTimer.NONE) },
-                valueLabels = lengths.map { it.label() },
-                selectedValue = lengths.indexOf(setup.turnTimerLength),
-                onValueSelect = { onSelect(lengths[it]) },
-                customValue = ModifierCustomValue(
-                    active = !setup.turnTimerLength.isPreset,
-                    text = setup.turnTimerLength.takeIf { !it.isPreset }?.seconds?.localised().orEmpty(),
-                    label = stringResource(Res.string.setup_timer_custom_field),
-                    unit = stringResource(Res.string.setup_timer_unit),
-                    maxDigits = TurnTimer.MAX_DIGITS,
-                    // Nothing typed goes back to the middle preset. A number under the least never gets here: the field holds it, marked.
-                    onValueChange = { seconds -> onSelect(seconds?.let(::TurnTimer) ?: TurnTimer.SECONDS_60) },
-                    min = TurnTimer.MIN_SECONDS,
-                    belowMinMessage = stringResource(Res.string.setup_timer_custom_min, TurnTimer.MIN_SECONDS.localised()),
-                ),
-            ),
-            ModifierSetting(
-                title = stringResource(Res.string.setup_unlucky_title),
-                description = stringResource(Res.string.setup_unlucky_description),
-                enabled = setup.unluckyDiceEnabled,
-                onEnabledChange = onUnluckyDiceEnabled,
-                steppers = listOf(
-                    ModifierStepper(
-                        value = setup.unluckyDice.oddsPercent,
-                        range = UnluckyDice.ODDS_PERCENT,
-                        onValueChange = onUnluckyOdds,
-                        label = stringResource(Res.string.setup_unlucky_odds),
-                        decreaseLabel = stringResource(Res.string.setup_unlucky_odds_decrease_cd),
-                        increaseLabel = stringResource(Res.string.setup_unlucky_odds_increase_cd),
-                        valueText = { stringResource(Res.string.setup_unlucky_odds_value, it) },
-                        step = UnluckyDice.ODDS_STEP_PERCENT,
-                    ),
-                    ModifierStepper(
-                        value = setup.unluckyDice.maxDice,
-                        range = UnluckyDice.MAX_DICE,
-                        onValueChange = onUnluckyMaxDice,
-                        label = stringResource(Res.string.setup_unlucky_max),
-                        decreaseLabel = stringResource(Res.string.setup_unlucky_max_decrease_cd),
-                        increaseLabel = stringResource(Res.string.setup_unlucky_max_increase_cd),
-                        valueText = { pluralStringResource(Res.plurals.setup_unlucky_max_dice_value, it, it) },
-                    ),
-                ),
-            ),
-        ),
-    )
-}
-
-@Composable
-private fun TurnTimer.label(): String = seconds?.let { stringResource(Res.string.setup_timer_seconds, it) } ?: stringResource(Res.string.setup_timer_none)

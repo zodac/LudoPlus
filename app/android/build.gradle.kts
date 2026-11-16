@@ -401,18 +401,10 @@ dependencies {
     // artifacts, which resolve to these same androidx ones on Android); the BOM keeps the test and
     // tooling artifacts below on matching versions.
     implementation(platform(libs.androidx.compose.bom))
-    // AndroidAppContainer opens the shared module's database and preferences files.
-    implementation(libs.androidx.room.runtime)
+    // AndroidAppContainer opens the shared module's preferences files.
     implementation(libs.androidx.datastore.preferences.core)
-    // Google Play Games Services v2: sign-in, achievements, leaderboards and saved games (online/PlayGamesServices).
-    // The play flavour's alone: the github APK has none of it.
-    "playImplementation"(libs.play.services.games.v2)
-    // Google Play Billing: the one purchase, "Unlock all styles" (purchases/PlayBillingStore). The play flavour's alone.
-    "playImplementation"(libs.play.billing.ktx)
-    constraints {
-        // play-services-base asks for androidx.fragment 1.1.0, which Play Console flags as an outdated SDK.
-        "playImplementation"(libs.androidx.fragment)
-    }
+    // Google Play Games Services and Play Billing (DiceFive's play flavour) come back in Phases 10 and 11 of
+    // .claude/IMPLEMENTATION.md.
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

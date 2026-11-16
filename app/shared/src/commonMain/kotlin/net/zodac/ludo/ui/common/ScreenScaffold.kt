@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -46,9 +45,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -56,7 +53,6 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.common_back_cd
-import net.zodac.ludo.ui.game.landscapeGameContentWidth
 import net.zodac.ludo.ui.icons.Symbols
 
 /** How long a page's content takes to fade in once it's opened - see [ScreenScaffold]. */
@@ -72,24 +68,11 @@ private val PANE_GAP = 24.dp
 val WIDE_CONTENT_MAX_WIDTH = CONTENT_MAX_WIDTH * 2 + PANE_GAP
 
 /**
- * A [wide][ScreenScaffold] landscape page's column, its side [padding] included: [WIDE_CONTENT_MAX_WIDTH], or wider where
- * the game screen's content is drawn wider on this screen, so the two take the same width.
+ * A [wide][ScreenScaffold] landscape page's column, its side [padding] included: [WIDE_CONTENT_MAX_WIDTH] and the
+ * padding. In DiceFive it widened to the game screen's content, so the two took the same width; the board brings that
+ * back in Phase 2 of `.claude/IMPLEMENTATION.md`.
  */
-@Composable
-fun wideColumnMaxWidth(padding: Dp): Dp {
-    val density = LocalDensity.current
-    val layoutDirection = LocalLayoutDirection.current
-    val window = LocalWindowInfo.current.containerSize
-    // The game's room: the window less the insets it keeps clear (the top, and the sides' cutout or navigation buttons).
-    val insets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
-    val gameWidth = with(density) {
-        landscapeGameContentWidth(
-            width = (window.width - insets.getLeft(density, layoutDirection) - insets.getRight(density, layoutDirection)).toDp(),
-            screenHeight = (window.height - insets.getTop(density)).toDp(),
-        )
-    }
-    return maxOf(WIDE_CONTENT_MAX_WIDTH, gameWidth + padding * 2)
-}
+fun wideColumnMaxWidth(padding: Dp): Dp = WIDE_CONTENT_MAX_WIDTH + padding * 2
 
 /** Whether the page is wider than it's tall - provided by [ScreenScaffold] and [PageColumn] for the page's content. */
 val LocalLandscapePage = compositionLocalOf { false }

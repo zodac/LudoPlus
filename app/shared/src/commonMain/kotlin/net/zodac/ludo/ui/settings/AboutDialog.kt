@@ -39,19 +39,15 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import net.zodac.ludo.online.GameServicesState
-import net.zodac.ludo.online.LocalGameServices
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.about_author_body
 import net.zodac.ludo.resources.about_author_heading
 import net.zodac.ludo.resources.about_author_link
-import net.zodac.ludo.resources.about_inspiration_body
-import net.zodac.ludo.resources.about_inspiration_heading
-import net.zodac.ludo.resources.about_inspiration_link
+import net.zodac.ludo.resources.about_game_body
+import net.zodac.ludo.resources.about_game_heading
+import net.zodac.ludo.resources.about_game_link
 import net.zodac.ludo.resources.about_privacy_body
-import net.zodac.ludo.resources.about_privacy_body_online
 import net.zodac.ludo.resources.about_privacy_heading
 import net.zodac.ludo.resources.about_privacy_link
 import net.zodac.ludo.resources.about_title
@@ -66,9 +62,9 @@ import net.zodac.ludo.ui.icons.Symbols
 import org.jetbrains.compose.resources.StringResource
 
 private const val GITHUB_REPO_URL = "https://github.com/zodac/LudoPlus"
-private const val DICE_ME_ONLINE_URL = "https://play.google.com/store/apps/details?id=com.giu.diceme"
 
 /** Published by GitHub Pages from `docs/privacy-policy.md` - the same URL the Play Store listing links to. */
+private const val LUDO_WIKIPEDIA_URL = "https://en.wikipedia.org/wiki/Ludo"
 private const val PRIVACY_POLICY_URL = "https://zodac.github.io/LudoPlus/privacy-policy"
 
 /** A button under a section's body that opens [url] in the browser. */
@@ -77,13 +73,11 @@ private data class AboutLink(val label: StringResource, val url: String)
 /** One About section: a heading, its body text and an optional link. Kept as data rather than
  * inlined composables so the list itself documents what the page says, in order, without reading
  * the layout code. Names in [body] go between backticks, which draws them a shade brighter than the
- * rest of the sentence. [onlineBody] replaces [body] where the device has an online game service,
- * taking its name as a second argument. */
+ * rest of the sentence. */
 private data class AboutSection(
     val heading: StringResource,
     val body: StringResource,
     val link: AboutLink? = null,
-    val onlineBody: StringResource? = null,
 )
 
 private val ABOUT_SECTIONS = listOf(
@@ -93,15 +87,14 @@ private val ABOUT_SECTIONS = listOf(
         link = AboutLink(Res.string.about_author_link, GITHUB_REPO_URL),
     ),
     AboutSection(
-        heading = Res.string.about_inspiration_heading,
-        body = Res.string.about_inspiration_body,
-        link = AboutLink(Res.string.about_inspiration_link, DICE_ME_ONLINE_URL),
+        heading = Res.string.about_game_heading,
+        body = Res.string.about_game_body,
+        link = AboutLink(Res.string.about_game_link, LUDO_WIKIPEDIA_URL),
     ),
     AboutSection(
         heading = Res.string.about_privacy_heading,
         body = Res.string.about_privacy_body,
         link = AboutLink(Res.string.about_privacy_link, PRIVACY_POLICY_URL),
-        onlineBody = Res.string.about_privacy_body_online,
     ),
 )
 
@@ -140,9 +133,6 @@ fun AboutDialog(onDismissRequest: () -> Unit, modifier: Modifier = Modifier, deb
         DebugCrashes.Kind.BACKGROUND -> DebugCrashes.crashInBackground()
         DebugCrashes.Kind.COMPOSITION -> crashWhileDrawn = true
     }
-    val services = LocalGameServices.current
-    // Null without a service: no Settings card, so nothing to sign in to.
-    val serviceName = services.serviceName.takeIf { services.state.collectAsStateWithLifecycle().value != GameServicesState.Unavailable }
 
     LargeDialog(onDismissRequest = onDismissRequest, modifier = modifier) {
         val scroll = rememberScrollState()
@@ -157,7 +147,6 @@ fun AboutDialog(onDismissRequest: () -> Unit, modifier: Modifier = Modifier, deb
                     ABOUT_SECTIONS.forEachIndexed { index, section ->
                         AboutSectionCard(
                             section = section,
-                            serviceName = serviceName,
                             nameStyle = nameStyle,
                             onOpenLink = if (crashMode) { _ -> crash(DebugCrashes.Kind.entries[index]) } else uriHandler::openUri,
                             onNameTapped = onNameTapped.takeIf { section.heading == Res.string.about_author_heading },
@@ -178,7 +167,6 @@ fun AboutDialog(onDismissRequest: () -> Unit, modifier: Modifier = Modifier, deb
 @Composable
 private fun AboutSectionCard(
     section: AboutSection,
-    serviceName: String?,
     nameStyle: SpanStyle,
     onOpenLink: (String) -> Unit,
     onNameTapped: (() -> Unit)? = null,
@@ -198,11 +186,7 @@ private fun AboutSectionCard(
                 modifier = Modifier.semantics { heading() },
             )
             val appName = stringResource(Res.string.app_name)
-            val body = if (section.onlineBody != null && serviceName != null) {
-                stringResource(section.onlineBody, appName, serviceName)
-            } else {
-                stringResource(section.body, appName)
-            }
+            val body = stringResource(section.body, appName)
             val text = parseInlineMarkup(body, nameStyle)
             var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
             Text(

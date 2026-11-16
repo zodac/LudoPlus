@@ -38,7 +38,7 @@ class AndroidSoundPlayerTest {
 
     @Test
     fun `a clip decoded while the player is still being built plays at once`() {
-        player.play(SoundEffect.HOLD, 0.5f)
+        player.play(SoundEffect.SELECT, 0.5f)
         player.play(SoundEffect.CELEBRATION, 1f)
         assertTrue("hold didn't play", pool.wasResourcePlayed(R.raw.hold))
         assertTrue("celebration didn't play", pool.wasResourcePlayed(R.raw.celebration))

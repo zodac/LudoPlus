@@ -40,10 +40,7 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
         val container = AndroidAppContainer.get(this)
-        // Each flavour's own (Distribution): Play Games and Play Billing in the play app, progress files in the github one.
-        val platform = AndroidPlatformServices(this, Distribution.progressFiles(this))
-        val gameServices = Distribution.gameServices(this)
-        val store = Distribution.store(this)
+        val platform = AndroidPlatformServices(this)
         // The window's recomposer, built as Compose would build it itself, but on a frame clock that can be capped
         // for the player's "Animations" level - see CappedFrameClock. setContent's ComposeView finds it on the
         // decor view, its parent, and composes with it instead of making its own. Its effects run under screenIdle, which
@@ -63,7 +60,7 @@ class MainActivity : ComponentActivity() {
             OrientationLock.changes.collect { requestedOrientation = it.activityOrientation }
         }
         setContent {
-            LudoPlusApp(container = container, platform = platform, gameServices = gameServices, store = store, screenIdle = screenIdle)
+            LudoPlusApp(container = container, platform = platform, screenIdle = screenIdle)
         }
     }
 

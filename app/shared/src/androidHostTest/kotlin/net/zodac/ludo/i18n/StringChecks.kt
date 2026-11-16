@@ -37,8 +37,12 @@ internal object StringChecks {
         return names.filter { "$it[other]" !in base }.sorted().map { "plural '$it' has no 'other' item" }
     }
 
-    /** The trademark, lower case. The only place it is written out (CLAUDE.md's exception); tests refer to this. */
-    const val TRADEMARK = "yahtzee"
+    /**
+     * Other companies' trademarked names for Ludo-family games (CLAUDE.md, "Banned words"), as patterns, matched
+     * ignoring case. "Trouble" and "Sorry!" are banned as games' names too, but they're everyday words, so they're left
+     * to review rather than matched here.
+     */
+    val TRADEMARKS = listOf("frustration", "parcheesi", "mensch [aä]rgere dich nicht", "ludo (king|club|star)")
 
     /** Every base (English) plural must spell out `one` as well as `other`, so a translator sees both forms to begin from. */
     fun pluralsWithoutOne(base: Map<String, String>): List<String> {
@@ -46,10 +50,7 @@ internal object StringChecks {
         return names.filter { "$it[one]" !in base }.sorted().map { "plural '$it' has no 'one' item" }
     }
 
-    private val banned = listOf(
-        Regex(TRADEMARK, RegexOption.IGNORE_CASE),
-        Regex("(three|four|five)[ -]of[ -]a[ -]kind", RegexOption.IGNORE_CASE),
-    )
+    private val banned = TRADEMARKS.map { Regex(it, RegexOption.IGNORE_CASE) }
 
     /** Entries whose text contains a banned word (see CLAUDE.md's working agreements). */
     fun bannedWords(strings: Map<String, String>): List<String> =

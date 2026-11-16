@@ -53,7 +53,7 @@ private val Colors = darkColorScheme(
  *   point, with `MotionScheme` and `ButtonGroup`, is androidx 1.5.0's. Revisit once a stable
  *   JetBrains material3 is built on it and that migration is worth doing.
  * - **No dynamic colour.** M3 recommends deriving the palette from the user's wallpaper, but the
- *   navy-and-gold table is the game's identity and shouldn't change per device. Swapping this for
+ *   violet-and-navy look is the game's identity and shouldn't change per device. Swapping this for
  *   `dynamicDarkColorScheme(context)` on API 31+ is a two-line change if that's ever wanted.
  * - **No typography or shape overrides.** The M3 type scale and shape defaults come with the
  *   theme; overriding them with hand-written styles is how an app quietly loses the system's

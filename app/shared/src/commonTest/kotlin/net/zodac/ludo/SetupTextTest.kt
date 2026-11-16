@@ -26,15 +26,15 @@ class SetupTextTest : UiTest() {
 
     private fun show(viewModel: GameViewModel = gameViewModel()) = showcase.show {
         CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
-            LudoPlusTheme { GameSetupScreen(viewModel = viewModel, onStartGame = {}, onTutorial = {}, onBack = {}) }
+            LudoPlusTheme { GameSetupScreen(viewModel = viewModel, onStartGame = {}, onBack = {}) }
         }
     }
 
     @Test
-    fun `the form's words - its title and sections - a seat's default as a hint - a clash with it - and the seat chips and difficulties`() = uiTest(SCREEN) {
+    fun `the form's words - its title and section - a seat's default as a hint - a clash with it - and the seat chips and difficulties`() = uiTest(SCREEN) {
         val viewModel = gameViewModel()
         show(viewModel)
-        listOf("New Game", "Players", "Game Mode", "Modifiers", "Start Game").forEach { compose.onAllNodesWithText(it).assertCountEquals(1) }
+        listOf("New Game", "Game Mode", "Start Game").forEach { compose.onAllNodesWithText(it).assertCountEquals(1) }
 
         // An empty name field shows its seat's default as a hint - and a name typed over it replaces it.
         compose.onNodeWithText("Player 1").assertExists()
@@ -46,18 +46,15 @@ class SetupTextTest : UiTest() {
 
         // A seat's default clashes with another seat that typed the same words.
         val clash = gameViewModel()
-        clash.setupForm.setPlayerCount(3)
         clash.setupForm.setPlayerType(2, PlayerType.HUMAN)
         clash.setupForm.setPlayerType(3, PlayerType.HUMAN)
         clash.setupForm.setPlayerName(2, "player 3")
         show(clash)
         compose.onNodeWithText("Names must be unique").assertExists()
 
-        // The seat chips and a computer player's difficulties are named.
-        val cpu = gameViewModel()
-        cpu.setupForm.setPlayerType(2, PlayerType.AI)
-        show(cpu)
-        compose.onNodeWithText("CPU").assertExists()
-        listOf("Easy", "Medium", "Hard").forEach { compose.onNodeWithText(it).assertExists() }
+        // The seat chips and a computer player's difficulties are named: seats 2 to 4 are computer players by default.
+        show(gameViewModel())
+        compose.onAllNodesWithText("CPU").assertCountEquals(3)
+        listOf("Easy", "Medium", "Hard").forEach { compose.onAllNodesWithText(it).assertCountEquals(3) }
     }
 }

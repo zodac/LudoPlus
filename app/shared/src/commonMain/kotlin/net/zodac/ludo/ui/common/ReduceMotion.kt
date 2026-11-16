@@ -62,30 +62,25 @@ object LastMotionSettings {
 @ReadOnlyComposable
 fun ambientMotion(group: MotionGroup): Boolean = LocalMotionSettings.current.moves(group) && !stilledHere
 
-/** Whether a scoring tile's gold glow pulses, rather than being steady - see [MotionSettings.scorePulse]. */
-val scorePulse: Boolean
-    @Composable @ReadOnlyComposable
-    get() = LocalMotionSettings.current.scorePulse && !stilledHere
-
 /** Whether [group] shows as little motion as possible: it's off, or it's [stilledHere]. */
 @Composable
 @ReadOnlyComposable
 fun groupReduceMotion(group: MotionGroup): Boolean = !LocalMotionSettings.current.moves(group) || stilledHere
 
-/** Whether the dice show as little motion as possible - see [groupReduceMotion]. */
+/** Whether the die shows as little motion as possible - see [groupReduceMotion]. */
 val rollReduceMotion: Boolean
     @Composable @ReadOnlyComposable
-    get() = groupReduceMotion(MotionGroup.DICE_ROLL)
+    get() = groupReduceMotion(MotionGroup.DIE_ROLL)
 
-/** Whether the cup shows as little motion as possible - see [groupReduceMotion]. */
-val cupReduceMotion: Boolean
+/** Whether the pawns show as little motion as possible - see [groupReduceMotion]. */
+val pawnReduceMotion: Boolean
     @Composable @ReadOnlyComposable
-    get() = groupReduceMotion(MotionGroup.CUP_SHAKE)
+    get() = groupReduceMotion(MotionGroup.PAWN_MOVE)
 
 /**
  * [content] as [group] moves it, not as Menus & pages does: under its own reduced motion ([groupReduceMotion]) as
- * [LocalReduceMotion], at its [FramePace]. Round the dice ([MotionGroup.DICE_ROLL]), the cup, the banners, a player tab's
- * score, and the fireworks.
+ * [LocalReduceMotion], at its [FramePace]. Round the die ([MotionGroup.DIE_ROLL]), the pawns, the banners, and the
+ * fireworks.
  */
 @Composable
 fun GroupMotion(group: MotionGroup, content: @Composable () -> Unit) {

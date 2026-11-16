@@ -97,13 +97,13 @@ class AboutDebugCrashesTest : UiTest() {
     }
 
     @Test
-    fun `the inspiration link crashes in a coroutine off the main thread`() = uiTest {
+    fun `the game link crashes in a coroutine off the main thread`() = uiTest {
         val thrown = mutableListOf<Throwable>()
         val job = Job()
         DebugCrashes.backgroundScope = CoroutineScope(Dispatchers.Default + job + CoroutineExceptionHandler { _, error -> thrown += error })
         showDialog(debugCrashes = true)
         tapAuthorName(DebugCrashes.TAP_TARGET)
-        compose.onNodeWithText("Dice Me Online on Google Play").performScrollTo().performClick()
+        compose.onNodeWithText("Ludo on Wikipedia").performScrollTo().performClick()
         runBlocking { job.children.forEach { it.join() } }
 
         assertEquals(listOf("Debug build's crash mode: A coroutine off the main thread"), thrown.map { it.message })

@@ -43,16 +43,12 @@ class IdleTimeoutSettingTest {
     }
 
     @Test
-    fun `an unknown saved one is the level's - and it isn't in the cloud save`() = runTest {
+    fun `an unknown saved one is the level's`() = runTest {
         val (store, repository) = fresh()
         repository.setAnimationLevel(AnimationLevel.OFF)
         store.edit { it[idleTimeoutKey] = "45" }
         assertEquals(IdleTimeout.SECONDS_30, repository.motionSettings.first().idleTimeout)
 
-        repository.setMotionSettings(AnimationLevel.OFF.motion.copy(idleTimeout = IdleTimeout.SECONDS_90))
-        repository.wipeSynced()
-        assertEquals(emptyMap(), repository.cloudSettings())
-        assertEquals(IdleTimeout.SECONDS_90, repository.motionSettings.first().idleTimeout)
     }
 
     @Test

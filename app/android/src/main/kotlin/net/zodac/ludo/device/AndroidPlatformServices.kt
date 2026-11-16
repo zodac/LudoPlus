@@ -22,7 +22,6 @@ import net.zodac.ludo.platform.Accelerometer
 import net.zodac.ludo.platform.HapticsPlayer
 import net.zodac.ludo.platform.LicenceReports
 import net.zodac.ludo.platform.PlatformServices
-import net.zodac.ludo.platform.ProgressFiles
 import net.zodac.ludo.platform.SoundPlayer
 import net.zodac.ludo.platform.LicenceScroll
 import net.zodac.ludo.platform.LicenseReport
@@ -32,7 +31,7 @@ import net.zodac.ludo.platform.SelectionClearer
  * [PlatformServices] for Android. Holds the application context, never an Activity's: sound
  * players and sensors can outlive any single Activity instance across a configuration change.
  */
-class AndroidPlatformServices(context: Context, override val progressFiles: ProgressFiles? = null) : PlatformServices {
+class AndroidPlatformServices(context: Context) : PlatformServices {
 
     private val appContext = context.applicationContext
 

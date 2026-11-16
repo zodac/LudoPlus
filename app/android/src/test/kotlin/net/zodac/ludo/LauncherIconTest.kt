@@ -4,13 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.AdaptiveIconDrawable
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import net.zodac.ludo.ui.theme.FeltNavyBottom
-import net.zodac.ludo.ui.theme.FeltNavyGlow
-import net.zodac.ludo.ui.theme.TrayBlueBottom
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -49,63 +45,19 @@ class LauncherIconTest {
     }
 
     @Test
-    fun `the mat's gold ring shows against the blue felt and mat`() {
+    fun `the background is the brand navy, the secondary seed`() {
         val background = render(R.drawable.ic_launcher_background)
-        // Left of the cup, the ring crosses this column at about 79 units down; everything else there is blue.
-        val column = 25 * PIXELS_PER_UNIT
-        val gold = (75 * PIXELS_PER_UNIT..83 * PIXELS_PER_UNIT).count {
-            val pixel = background.getPixel(column, it)
-            Color.red(pixel) > Color.blue(pixel)
-        }
-        assertTrue("Gold pixels: $gold", gold > 0)
+        val pixel = background.getPixel(0, 0)
+        assertEquals(BRAND_NAVY, pixel)
     }
 
     @Test
-    fun `the felt and the mat's edge are the game's own colours`() {
-        val background = render(R.drawable.ic_launcher_background)
-        fun assertAt(expected: androidx.compose.ui.graphics.Color, x: Int, y: Int) {
-            val pixel = background.getPixel(x * PIXELS_PER_UNIT, y * PIXELS_PER_UNIT)
-            val wanted = expected.toArgb()
-            listOf(Color::red, Color::green, Color::blue).forEach { channel ->
-                assertEquals("($x, $y) is #${Integer.toHexString(pixel)}", channel(wanted).toDouble(), channel(pixel).toDouble(), COLOUR_TOLERANCE)
-            }
-        }
-        assertAt(FeltNavyGlow, FELT_LIGHT_X, FELT_LIGHT_Y) // The light's centre.
-        assertAt(FeltNavyBottom, 0, 0) // Beyond the light's reach.
-        assertAt(TrayBlueBottom, MAT_EDGE_X, MAT_EDGE_Y) // Beyond the mat's own gradient, clear of the cup's shadow.
-    }
-
-    @Test
-    fun `the cup's band ends on its sides, without sticking out past them`() {
-        val foreground = render(R.drawable.ic_launcher_foreground)
-        // The cup's left side is at 40.6 inner units and the band's end at 79.5, inside the icon's 0.8 zoom about 54.
-        val justOutsideCup = ((54 + (40.1 - 54) * 0.8) * PIXELS_PER_UNIT).toInt()
-        val atBandHeight = ((54 + (79.5 - 54) * 0.8) * PIXELS_PER_UNIT).toInt()
-        assertEquals(0, Color.alpha(foreground.getPixel(justOutsideCup, atBandHeight)))
-    }
-
-    @Test
-    fun `the cup has the proportions of the game's Classic cup`() {
-        val foreground = render(R.drawable.ic_launcher_foreground)
-        // From a point on the cup's body, its solid run each way stops at its edges, short of the dice beside it.
-        val middle = 54 * PIXELS_PER_UNIT
-        val solid = { x: Int, y: Int -> Color.alpha(foreground.getPixel(x, y)) == OPAQUE }
-        val width = generateSequence(middle) { it + 1 }.takeWhile { solid(it, middle) }.count() +
-            generateSequence(middle) { it - 1 }.takeWhile { solid(it, middle) }.count() - 1
-        val height = generateSequence(middle) { it + 1 }.takeWhile { solid(middle, it) }.count() +
-            generateSequence(middle) { it - 1 }.takeWhile { solid(middle, it) }.count() - 1
-        // The game's cup is 40 grid units wide, and 67 + 2 x 7.6 tall from the top of its mouth to the foot of its base.
-        assertEquals(40.0 / 82.2, width.toDouble() / height, 0.01)
-    }
-
-    @Test
-    fun `the cube dice keep their margin inside the 72 units a launcher shows`() {
+    fun `the pawn keeps its margin inside the 72 units a launcher shows`() {
         val foreground = render(R.drawable.ic_launcher_foreground)
         val low = ((VISIBLE_START + MIN_MARGIN) * PIXELS_PER_UNIT).toInt()
         val high = ((CANVAS_UNITS - VISIBLE_START - MIN_MARGIN) * PIXELS_PER_UNIT).toInt()
         val outside = (0 until foreground.height).sumOf { y ->
             (0 until foreground.width).count { x ->
-                // Solid art only: the soft shadows may fade away past the margin.
                 (x < low || x >= high || y < low || y >= high) && Color.alpha(foreground.getPixel(x, y)) == OPAQUE
             }
         }
@@ -126,7 +78,7 @@ class LauncherIconTest {
                 }
             }
         }
-        // The rim's stroke and antialiased edges may differ by a hair; a die out of place is far more.
+        // Antialiased edges may differ by a hair; art out of place is far more.
         assertTrue("$uncovered of $solid solid pixels are off the foreground", uncovered * 100 < solid)
     }
 
@@ -136,10 +88,8 @@ class LauncherIconTest {
         const val CANVAS_UNITS = 108
         const val PIXELS_PER_UNIT = 10
         const val OPAQUE = 255
-        const val COLOUR_TOLERANCE = 4.0
-        const val FELT_LIGHT_X = 54
-        const val FELT_LIGHT_Y = 32
-        const val MAT_EDGE_X = 10
-        const val MAT_EDGE_Y = 93
+
+        /** The secondary seed in the shared module's ui/theme/Color.kt. */
+        const val BRAND_NAVY = 0xFF1E2A4A.toInt()
     }
 }

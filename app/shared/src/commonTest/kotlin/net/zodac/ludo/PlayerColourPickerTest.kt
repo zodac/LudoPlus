@@ -27,7 +27,7 @@ class PlayerColourPickerTest : UiTest() {
                 PlayerColourPicker(
                     slot = 2,
                     colour = colour,
-                    holders = mapOf(PlayerColour.CYAN to 1, PlayerColour.GREEN to 2),
+                    holders = mapOf(PlayerColour.RED to 1, PlayerColour.GREEN to 2),
                     onColourChange = { colour = it },
                 )
             }
@@ -42,14 +42,14 @@ class PlayerColourPickerTest : UiTest() {
         // The choices are radio buttons, the current one selected, and a swap said.
         compose.onNodeWithContentDescription("Player 2 colour, Green").performClick()
         compose.onNodeWithContentDescription("Green").assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)).assertIsSelected()
-        compose.onNodeWithContentDescription("Cyan, swaps with player 1").assertExists()
-        compose.onNodeWithContentDescription("Pink").assertExists()
+        compose.onNodeWithContentDescription("Red, swaps with player 1").assertExists()
+        compose.onNodeWithContentDescription("Yellow").assertExists()
 
         // Picking a colour reports it and closes the pop-up.
-        compose.onNodeWithContentDescription("Pink").performClick()
+        compose.onNodeWithContentDescription("Yellow").performClick()
         compose.waitForIdle()
-        assertEquals(PlayerColour.PINK, colour)
-        compose.onNodeWithContentDescription("Pink").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Player 2 colour, Pink").assertExists()
+        assertEquals(PlayerColour.YELLOW, colour)
+        compose.onNodeWithContentDescription("Yellow").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Player 2 colour, Yellow").assertExists()
     }
 }

@@ -1,32 +1,24 @@
 package net.zodac.ludo.model
 
 import net.zodac.ludo.resources.Res
-import net.zodac.ludo.resources.player_colour_amber
 import net.zodac.ludo.resources.player_colour_blue
-import net.zodac.ludo.resources.player_colour_cyan
 import net.zodac.ludo.resources.player_colour_green
-import net.zodac.ludo.resources.player_colour_lime
-import net.zodac.ludo.resources.player_colour_pink
-import net.zodac.ludo.resources.player_colour_purple
 import net.zodac.ludo.resources.player_colour_red
+import net.zodac.ludo.resources.player_colour_yellow
 import org.jetbrains.compose.resources.StringResource
 
 /**
- * The colours a player can be given on the setup screen - a curated set rather than a free picker, so
- * every one reads against the dark table and no two look alike. The drawn value lives in `ui/theme`
- * (`PlayerColour.color`); this stays Compose-free like the rest of the model.
+ * The colours a player can be on the setup screen, which are the colours of the board's yards and home columns. The
+ * drawn value lives in `ui/theme` (`PlayerColour.color`); this stays Compose-free like the rest of the model.
  *
- * The first four, in order, are each seat's default ([defaultFor]).
+ * In the board's clockwise seat order, so each seat's default ([defaultFor]) is the classic board's colour there. More
+ * come with 2-8 players (Phase 8 of `.claude/IMPLEMENTATION.md`).
  */
 enum class PlayerColour(override val id: String, val label: StringResource) : StoredId {
-    CYAN("CYAN", Res.string.player_colour_cyan),
-    GREEN("GREEN", Res.string.player_colour_green),
-    PURPLE("PURPLE", Res.string.player_colour_purple),
-    AMBER("AMBER", Res.string.player_colour_amber),
-    PINK("PINK", Res.string.player_colour_pink),
     RED("RED", Res.string.player_colour_red),
+    GREEN("GREEN", Res.string.player_colour_green),
+    YELLOW("YELLOW", Res.string.player_colour_yellow),
     BLUE("BLUE", Res.string.player_colour_blue),
-    LIME("LIME", Res.string.player_colour_lime),
     ;
 
     companion object {

@@ -35,14 +35,15 @@ class StringResourcesTest {
     fun `each check finds what it should - banned words, extra keys, lost arguments and a plural without an other`() {
         val found = StringChecks.bannedWords(
             mapOf(
-                "a" to "Fine, 3x and 5x",
-                "b" to "Roll a Three of a kind",
-                "c" to "four-of-a-kind",
-                "d" to "FIVE OF A KIND",
-                "e" to "${StringChecks.TRADEMARK}!",
+                "a" to "Fine: Ludo, Pachisi, and Uckers",
+                "b" to "A game of Frustration",
+                "c" to "PARCHEESI night",
+                "d" to "Mensch argere dich nicht",
+                "e" to "Better than Ludo King",
+                "f" to "Join the ludo club",
             ),
         )
-        assertEquals(listOf("b", "c", "d", "e"), found)
+        assertEquals(listOf("b", "c", "d", "e", "f"), found)
 
         val base = mapOf("greet" to "Hi %1\$s", "rolls[one]" to "%1\$d roll", "rolls[other]" to "%1\$d rolls")
         val translation = mapOf("greet" to "Salut", "rolls[one]" to "%1\$d lancer", "rolls[few]" to "%1\$d lancers", "stray" to "x")

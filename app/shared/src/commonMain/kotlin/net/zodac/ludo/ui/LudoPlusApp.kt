@@ -8,52 +8,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.conflate
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.launch
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.app.Breadcrumbs
 import net.zodac.ludo.app.LocalAppContainer
-import net.zodac.ludo.data.orNullOnFailure
 import net.zodac.ludo.data.settings.AnimationLevel
-import net.zodac.ludo.navigation.AchievementScrollRequest
-import net.zodac.ludo.navigation.AchievementScrollRequests
 import net.zodac.ludo.navigation.LudoPlusNavHost
-import net.zodac.ludo.navigation.Screen
-import net.zodac.ludo.navigation.StyleScrollRequest
-import net.zodac.ludo.navigation.StyleScrollRequests
-import net.zodac.ludo.online.GameServices
-import net.zodac.ludo.online.GameServicesState
-import net.zodac.ludo.online.LocalCloudSave
-import net.zodac.ludo.online.LocalGameServices
-import net.zodac.ludo.online.NoGameServices
-import net.zodac.ludo.online.LocalOnlineSyncStatus
-import net.zodac.ludo.online.OnlineSync
-import net.zodac.ludo.online.OnlineSyncRequests
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.platform.PlatformServices
-import net.zodac.ludo.purchases.LocalStore
-import net.zodac.ludo.purchases.NoStore
-import net.zodac.ludo.purchases.Store
-import net.zodac.ludo.ui.style.LocalTricolourMarks
-import net.zodac.ludo.ui.achievements.AchievementBannerHost
-import net.zodac.ludo.ui.common.DatabaseFailurePage
 import net.zodac.ludo.ui.common.DriftState
 import net.zodac.ludo.ui.common.FramePaces
 import net.zodac.ludo.ui.common.LastMotionSettings
@@ -67,30 +35,23 @@ import net.zodac.ludo.ui.common.ScreenIdle
 import net.zodac.ludo.ui.common.delayWhileResumed
 import net.zodac.ludo.ui.common.rememberPageCover
 import net.zodac.ludo.ui.common.wakesScreen
-import net.zodac.ludo.ui.game.LeaveGameConfirmation
-import net.zodac.ludo.ui.game.LeaveGameConfirmationDialog
-import net.zodac.ludo.ui.game.LocalLeaveGameConfirmation
-import net.zodac.ludo.ui.game.LocalDiceHaptics
-import net.zodac.ludo.ui.game.LocalSoundEffects
-import net.zodac.ludo.ui.game.rememberAppHaptics
-import net.zodac.ludo.ui.game.rememberAppSoundEffects
 import net.zodac.ludo.ui.theme.LudoPlusTheme
 
 /**
- * The whole app, on whatever platform hosts it: each platform's entry point builds its
- * [AppContainer] and [PlatformServices] (and, where the platform has them, its [GameServices] and [Store]) and hands them in here, and everything below is shared.
+ * The whole app, on whatever platform hosts it: each platform's entry point builds its [AppContainer] and
+ * [PlatformServices] and hands them in here, and everything below is shared.
+ *
+ * DiceFive's online sync, purchases, play-time count and achievement banners hung off this root too; they come back in
+ * their phases of `.claude/IMPLEMENTATION.md`.
  */
-@OptIn(FlowPreview::class)
 @Composable
 fun LudoPlusApp(
     container: AppContainer,
     platform: PlatformServices,
-    gameServices: GameServices = NoGameServices,
-    store: Store = NoStore,
     /** What freezes the window's infinite animations, where it's the policy its recomposer runs under. */
     screenIdle: ScreenIdle = remember { ScreenIdle() },
 ) {
-    // Held here, above the NavHost, so the menu's drifting dice carry on unbroken across every screen off it.
+    // Held here, above the NavHost, so the backdrop's drift carries on unbroken across every screen.
     val driftState = remember { DriftState() }
     // Lifecycle-aware, so the system-settings observer behind it is only registered while the app is in front.
     val systemReduceMotion by remember(platform) { platform.reduceMotion() }.collectAsStateWithLifecycle(initialValue = false)
@@ -107,61 +68,6 @@ fun LudoPlusApp(
     val reduceMotion = !motion.menusMotion
     val framePaces = remember(motion) { FramePaces(motion) }
     SideEffect { LastMotionSettings.value = motion }
-    val leaveConfirmation = remember { LeaveGameConfirmation() }
-    // Achievements, scores and the cloud save are synced with the online service on signing in (and at each launch once
-    // signed in), after every recorded change (one with no new unlock waits if the game screen is up), a few seconds after
-    // a synced setting changes (a Styles pick), on leaving the game screen, on going to the background with something new
-    // to save, and on coming back at least 60 seconds after the last sync; requests made while one runs fold into the next.
-    val onlineSync = remember(container, gameServices) {
-        OnlineSync(
-            gameServices,
-            container.achievementsRepository,
-            container.onlineSettingsRepository,
-            container.scoreRepository::leaderboardTotals,
-            container.scoreRepository::bestUnpostedScore,
-            LocalCloudSave(
-                container.achievementsRepository,
-                container.scoreRepository,
-                container.settingsRepository,
-                container.inProgressGameRepository,
-                container.onlineSettingsRepository,
-            ),
-        )
-    }
-    LaunchedEffect(onlineSync) {
-        // Only a sign-in's sync shows its progress on the Settings card; the ones after it are quiet. All of this runs
-        // on the one main thread, so the flag needs no lock.
-        var signInPending = false
-        val signedIn = gameServices.state.map { it is GameServicesState.SignedIn }.distinctUntilChanged().filter { it }.map { signInPending = true }
-        merge(signedIn, OnlineSyncRequests.requests).conflate().collect {
-            val showProgress = signInPending
-            signInPending = false
-            // A sync that fails here (the scores can't be written) costs that sync: thrown on, it would take the app down,
-            // and every later sync with it.
-            orNullOnFailure { onlineSync.reconcile(showProgress) }
-        }
-    }
-    LaunchedEffect(onlineSync) {
-        gameServices.state.collect { if (it !is GameServicesState.SignedIn) onlineSync.forgetSignInSync() }
-    }
-    LaunchedEffect(container) {
-        container.settingsRepository.syncedChanges.debounce(SETTINGS_SYNC_DELAY).collect { OnlineSyncRequests.request() }
-    }
-    // What the store says the player owns is kept on the device, which every style lock reads.
-    LaunchedEffect(container, store) { container.purchasesRepository.follow(store) }
-    // Only while in front of the player: pausing covers the background, the screen going off, and a system sheet on top.
-    LifecycleResumeEffect(container) {
-        container.playTime.resume()
-        onPauseOrDispose { container.playTime.pause() }
-    }
-    // Put one device down and pick another up: the first saves, the second reads. A check that fails asks for the sync.
-    val appSwitches = rememberCoroutineScope()
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-        appSwitches.launch { if (orNullOnFailure { onlineSync.needsSyncOnLeaving() } != false) OnlineSyncRequests.request() }
-    }
-    LifecycleEventEffect(Lifecycle.Event.ON_START) {
-        appSwitches.launch { if (orNullOnFailure { onlineSync.needsSyncOnReturning() } != false) OnlineSyncRequests.request() }
-    }
     // Infinite animations freeze after the motion's Pause when idle with nobody there (never, where it's off), and move on
     // again at the next touch or on coming back.
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -171,110 +77,31 @@ fun LudoPlusApp(
         screenIdle.wake()
         onPauseOrDispose { }
     }
-    val tricolourMarks by container.settingsRepository.tricolourMarksEnabled.collectAsStateWithLifecycle(initialValue = false)
     CompositionLocalProvider(
-        LocalTricolourMarks provides tricolourMarks,
         LocalReduceMotion provides reduceMotion,
         LocalMotionSettings provides motion,
         LocalFramePaces provides framePaces,
         LocalFramePace provides framePaces.menus,
         LocalAppContainer provides container,
         LocalPlatformServices provides platform,
-        LocalGameServices provides gameServices,
-        LocalStore provides store,
-        LocalOnlineSyncStatus provides onlineSync.status,
         LocalDriftState provides driftState,
         LocalScreenIdle provides screenIdle,
-        LocalLeaveGameConfirmation provides leaveConfirmation,
     ) {
-        // Inside the provider above, for the platform it creates its player from.
-        CompositionLocalProvider(
-            LocalSoundEffects provides rememberAppSoundEffects(container.settingsRepository.soundEnabled),
-            LocalDiceHaptics provides rememberAppHaptics(container.settingsRepository.vibrationEnabled),
-        ) {
-            LudoPlusTheme {
-                Surface(modifier = Modifier.fillMaxSize().wakesScreen(screenIdle)) {
-                    // Scores that can't be opened stop the app here, saying why, rather than on the first page to read one.
-                    val databaseFailure by container.databaseFailure.collectAsStateWithLifecycle()
-                    databaseFailure?.let {
-                        DatabaseFailurePage(details = it)
-                        return@Surface
-                    }
-                    // Hoisted out of LudoPlusNavHost (which otherwise creates its own) so a banner
-                    // long press, handled above the NavHost, can navigate the same controller the
-                    // NavHost itself renders from.
-                    val navController = rememberNavController()
-                    // Likewise the page cover, so a banner opens its page the way the pages open each other.
-                    val pageCover = rememberPageCover()
-                    // Each page opened, for a crash report to say where the player was. It wakes the screen too: a screen
-                    // reader's double tap opens a page with no touch for wakesScreen to see.
-                    LaunchedEffect(navController) {
-                        navController.currentBackStackEntryFlow.map { it.destination.route }.distinctUntilChanged()
-                            .collect {
-                                Breadcrumbs.record("Opened $it") // i18n: not translated - a crash report's breadcrumb
-                                screenIdle.wake()
-                            }
-                    }
-                    // What can wait for the game to end does: leaving its screen, below, asks for the sync anyway.
-                    LaunchedEffect(navController) {
-                        OnlineSyncRequests.outsideGameRequests.awayFrom(Screen.PLAY_GAME) { navController.currentDestination?.route }
-                            .collect { OnlineSyncRequests.request() }
-                    }
-                    // A game left part-way through is saved as it was left, for another device's Continue.
-                    LaunchedEffect(navController) {
-                        navController.currentBackStackEntryFlow.map { it.destination.route }.leaving(Screen.PLAY_GAME)
-                            .collect { OnlineSyncRequests.request() }
-                    }
-                    // Above the NavHost, not inside it: the burst of banners at the end of a game
-                    // has to survive the move from the board to the results screen and on to the
-                    // menu, which a per-destination overlay wouldn't.
-                    AchievementBannerHost(
-                        modifier = Modifier.fillMaxSize(),
-                        isOnGameScreen = { navController.currentDestination?.route == Screen.PLAY_GAME },
-                        onAchievementSelected = { achievement ->
-                            val alreadyOnAchievements = navController.currentDestination?.route == Screen.ACHIEVEMENTS
-                            // The request has to be made before navigating, not after: if the
-                            // Achievements screen isn't open yet, its own collector only starts once
-                            // it composes, and the request's replay is what lets it still catch this.
-                            AchievementScrollRequests.request(AchievementScrollRequest(achievement.id, animate = alreadyOnAchievements))
-                            if (!alreadyOnAchievements) {
-                                pageCover.change(reduceMotion) { navController.navigate(Screen.ACHIEVEMENTS) }
-                            }
-                        },
-                        onStylesSelected = { styles ->
-                            val target = Screen.stylesBannerTarget(styles)
-                            val alreadyThere = navController.currentDestination?.route == target
-                            // Before navigating, for the same reason as the achievement request above.
-                            StyleScrollRequests.request(StyleScrollRequest(styles, animate = alreadyThere))
-                            if (!alreadyThere) {
-                                pageCover.change(reduceMotion) {
-                                    // Back to the Styles page if it's open under this page; otherwise a fresh one.
-                                    if (!navController.popBackStack(Screen.STYLES, inclusive = false)) navController.navigate(Screen.STYLES)
-                                    if (target != Screen.STYLES) navController.navigate(target)
-                                }
-                            }
-                        },
-                    ) {
-                        LudoPlusNavHost(navController = navController, cover = pageCover)
-                    }
-                    LeaveGameConfirmationDialog(leaveConfirmation)
+        LudoPlusTheme {
+            Surface(modifier = Modifier.fillMaxSize().wakesScreen(screenIdle)) {
+                val navController = rememberNavController()
+                val pageCover = rememberPageCover()
+                // Each page opened, for a crash report to say where the player was. It wakes the screen too: a screen
+                // reader's double tap opens a page with no touch for wakesScreen to see.
+                LaunchedEffect(navController) {
+                    navController.currentBackStackEntryFlow.map { it.destination.route }.distinctUntilChanged()
+                        .collect {
+                            Breadcrumbs.record("Opened $it") // i18n: not translated - a crash report's breadcrumb
+                            screenIdle.wake()
+                        }
                 }
+                LudoPlusNavHost(navController = navController, cover = pageCover)
             }
         }
     }
 }
-
-/** Emits each time these routes move off [route] to another. */
-internal fun Flow<String?>.leaving(route: String): Flow<Unit> = flow {
-    var previous: String? = null
-    distinctUntilChanged().collect { current ->
-        if (previous == route) emit(Unit)
-        previous = current
-    }
-}
-
-/** Each of these made while [current] isn't [route]. */
-internal fun Flow<Unit>.awayFrom(route: String, current: () -> String?): Flow<Unit> = filter { current() != route }
-
-/** How long synced settings are left unchanged before they're saved to the cloud: a run of Styles picks saves once. */
-private val SETTINGS_SYNC_DELAY = 5.seconds

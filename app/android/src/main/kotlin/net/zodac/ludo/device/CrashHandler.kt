@@ -10,7 +10,6 @@ import android.util.Log
 import java.io.File
 import kotlin.system.exitProcess
 import net.zodac.ludo.CrashActivity
-import net.zodac.ludo.app.ResumeAttempt
 
 /**
  * What an error nothing caught does: [CrashActivity] shows its [CrashReport], in a process of its own ([PROCESS_SUFFIX], the
@@ -67,11 +66,10 @@ internal object CrashHandler {
         override fun uncaughtException(thread: Thread, error: Throwable) {
             if (!tried) {
                 tried = true
-                val gameRemoved = ResumeAttempt.active
-                if (gameRemoved) runCatching { SavedGameDiscardFile(appContext).request() }
+                // No saved game to remove until Phase 4 of .claude/IMPLEMENTATION.md (DiceFive's ResumeAttempt).
                 // Whatever goes wrong opening the page (out of memory, for one), the error still goes somewhere.
                 opened = runCatching {
-                    onScreen() && run { appContext.startActivity(CrashActivity.intent(appContext, CrashReport.of(appContext, thread, error), gameRemoved = gameRemoved)); true }
+                    onScreen() && run { appContext.startActivity(CrashActivity.intent(appContext, CrashReport.of(appContext, thread, error), gameRemoved = false)); true }
                 }.getOrDefault(false)
             }
             // No platform handler only on a plain JVM (a Robolectric test): print it, as the JVM itself would.

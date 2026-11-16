@@ -32,7 +32,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.zodac.ludo.data.settings.AnimationLevel
-import net.zodac.ludo.data.settings.DiceRollStyle
 import net.zodac.ludo.data.settings.FrameRate
 import net.zodac.ludo.data.settings.IdleTimeout
 import net.zodac.ludo.data.settings.MotionGroup
@@ -62,23 +61,14 @@ import net.zodac.ludo.resources.settings_idle_seconds
 import net.zodac.ludo.resources.settings_idle_seconds_spoken
 import net.zodac.ludo.resources.settings_motion_banners
 import net.zodac.ludo.resources.settings_motion_celebrations
-import net.zodac.ludo.resources.settings_motion_cup_shake
-import net.zodac.ludo.resources.settings_motion_dice_roll
-import net.zodac.ludo.resources.settings_motion_dice_roll_rate
+import net.zodac.ludo.resources.settings_motion_die_roll
 import net.zodac.ludo.resources.settings_motion_menus
-import net.zodac.ludo.resources.settings_motion_score_glow
-import net.zodac.ludo.resources.settings_motion_scores
+import net.zodac.ludo.resources.settings_motion_pawn_move
 import net.zodac.ludo.resources.settings_orientation
 import net.zodac.ludo.resources.settings_orientation_device
 import net.zodac.ludo.resources.settings_orientation_landscape
 import net.zodac.ludo.resources.settings_orientation_portrait
-import net.zodac.ludo.resources.settings_roll_in_place
-import net.zodac.ludo.resources.settings_roll_tossed
 import net.zodac.ludo.resources.styles_category_background
-import net.zodac.ludo.resources.styles_category_box
-import net.zodac.ludo.resources.styles_category_dice
-import net.zodac.ludo.resources.styles_category_dice_cup
-import net.zodac.ludo.resources.styles_category_mat
 import net.zodac.ludo.resources.styles_title
 import net.zodac.ludo.ui.common.FittedSegmentedChoiceRow
 import net.zodac.ludo.ui.common.HoldPageCover
@@ -205,47 +195,26 @@ private fun idleTimeoutShortLabel(timeout: IdleTimeout): String = timeout.second
 private fun idleTimeoutSpoken(timeout: IdleTimeout): String =
     timeout.seconds?.let { pluralStringResource(Res.plurals.settings_idle_seconds_spoken, it, it) } ?: idleTimeoutLabel(timeout)
 
-@Composable
-private fun rollStyleLabel(style: DiceRollStyle): String = stringResource(
-    when (style) {
-        DiceRollStyle.TOSSED -> Res.string.settings_roll_tossed
-        DiceRollStyle.IN_PLACE -> Res.string.settings_roll_in_place
-        DiceRollStyle.OFF -> Res.string.settings_animations_off
-    },
-)
-
 /** Each [MotionGroup]'s row in the Advanced graphics settings: its icon and name - a style's as the Styles page names it. */
 private val MotionGroup.icon: ImageVector
     get() = when (this) {
-        MotionGroup.DICE -> Symbols.Casino
-        MotionGroup.DICE_CUP -> Symbols.LocalCafe
-        MotionGroup.MAT -> Symbols.Texture
         MotionGroup.BACKGROUND -> Symbols.Wallpaper
-        MotionGroup.SCORE_BOX -> Symbols.GridView
         MotionGroup.MENUS -> Symbols.SportsEsports
         MotionGroup.BANNERS -> Symbols.MilitaryTech
-        MotionGroup.SCORES -> Symbols.Numbers
         MotionGroup.CELEBRATIONS -> Symbols.Stars
-        MotionGroup.SCORE_GLOW -> Symbols.Star
-        MotionGroup.CUP_SHAKE -> Symbols.SyncAlt
-        MotionGroup.DICE_ROLL -> Symbols.Speed
+        MotionGroup.DIE_ROLL -> Symbols.Casino
+        MotionGroup.PAWN_MOVE -> Symbols.Speed
     }
 
 @Composable
 private fun MotionGroup.title(): String = stringResource(
     when (this) {
-        MotionGroup.DICE -> Res.string.styles_category_dice
-        MotionGroup.DICE_CUP -> Res.string.styles_category_dice_cup
-        MotionGroup.MAT -> Res.string.styles_category_mat
         MotionGroup.BACKGROUND -> Res.string.styles_category_background
-        MotionGroup.SCORE_BOX -> Res.string.styles_category_box
         MotionGroup.MENUS -> Res.string.settings_motion_menus
         MotionGroup.BANNERS -> Res.string.settings_motion_banners
-        MotionGroup.SCORES -> Res.string.settings_motion_scores
         MotionGroup.CELEBRATIONS -> Res.string.settings_motion_celebrations
-        MotionGroup.SCORE_GLOW -> Res.string.settings_motion_score_glow
-        MotionGroup.CUP_SHAKE -> Res.string.settings_motion_cup_shake
-        MotionGroup.DICE_ROLL -> Res.string.settings_motion_dice_roll_rate
+        MotionGroup.DIE_ROLL -> Res.string.settings_motion_die_roll
+        MotionGroup.PAWN_MOVE -> Res.string.settings_motion_pawn_move
     },
 )
 
@@ -307,10 +276,9 @@ private const val ADVANCED_OPEN_MILLIS = 220
 
 /**
  * The Advanced graphics settings: their title (a heading, in the page's text colour), then three cards, each closed each time
- * the page opens (kept open across a rotation). Gameplay, what moves on the game screen: Cup shake, the Dice roll
- * (Off, In place, or Tossed) and, under it, its frame rate, which has no Off (the roll's own is its off) and is locked,
- * its pick kept, while the roll is off, then Pause when idle (30s, 60s, 90s, or Off: least motion to most, so Off is last), Score glow, and Scores. Styles: each style's own decoration
- * ([MotionGroup.decoration]), in the Styles page's order. Miscellaneous: Achievement banners (on every screen),
+ * the page opens (kept open across a rotation). Gameplay, what moves on the game screen: the Die roll, Pause when idle
+ * (30s, 60s, 90s, or Off: least motion to most, so Off is last), and Pawn moves. Styles: each style's own decoration
+ * ([MotionGroup.decoration]). Miscellaneous: Achievement banners (on every screen),
  * Celebrations (the results), and Menus & pages. Gameplay's and Miscellaneous' rows are in their names' English
  * alphabetical order.
  */
@@ -324,18 +292,7 @@ private fun AdvancedSettings(motion: MotionSettings, viewModel: GraphicsViewMode
             modifier = Modifier.padding(horizontal = 4.dp).semantics { heading() },
         )
         CollapsibleCard(stringResource(Res.string.settings_advanced_gameplay)) {
-            FrameRateChoice(MotionGroup.CUP_SHAKE, FrameRate.entries, motion, viewModel)
-            // Least to most, Off first, as every row runs.
-            TitledChoice(
-                icon = Symbols.Casino,
-                title = stringResource(Res.string.settings_motion_dice_roll),
-                options = DiceRollStyle.entries,
-                selected = motion.rollStyle,
-                onSelect = viewModel::setRollStyle,
-                optionLabel = { rollStyleLabel(it) },
-                compactGlyph = { if (it == DiceRollStyle.OFF) Symbols.MotionPhotosOff else null },
-            )
-            FrameRateChoice(MotionGroup.DICE_ROLL, FrameRate.entries - FrameRate.OFF, motion, viewModel, enabled = motion.rollStyle != DiceRollStyle.OFF)
+            FrameRateChoice(MotionGroup.DIE_ROLL, FrameRate.entries, motion, viewModel)
             // Least motion to most, as every row runs: Off, which never pauses, last. Its Off is a word, not the crossed-out
             // motion glyph, as it means more motion here, not none.
             TitledChoice(
@@ -348,12 +305,9 @@ private fun AdvancedSettings(motion: MotionSettings, viewModel: GraphicsViewMode
                 compactLabel = { idleTimeoutShortLabel(it) },
                 spokenLabel = { idleTimeoutSpoken(it) },
             )
-            for (group in listOf(MotionGroup.SCORE_GLOW, MotionGroup.SCORES)) {
-                FrameRateChoice(group, FrameRate.entries, motion, viewModel)
-            }
+            FrameRateChoice(MotionGroup.PAWN_MOVE, FrameRate.entries, motion, viewModel)
         }
         CollapsibleCard(stringResource(Res.string.styles_title)) {
-            // In the Styles page's order, not alphabetical.
             for (group in MotionGroup.decoration) FrameRateChoice(group, FrameRate.entries, motion, viewModel)
         }
         CollapsibleCard(stringResource(Res.string.settings_advanced_misc)) {

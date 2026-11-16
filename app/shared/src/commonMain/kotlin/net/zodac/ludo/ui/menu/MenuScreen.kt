@@ -28,15 +28,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.zodac.ludo.resources.Res
-import net.zodac.ludo.resources.menu_achievements
 import net.zodac.ludo.resources.menu_continue
-import net.zodac.ludo.resources.menu_leaderboard
 import net.zodac.ludo.resources.menu_new_game
 import net.zodac.ludo.resources.menu_play
 import net.zodac.ludo.resources.menu_rules
 import net.zodac.ludo.resources.menu_settings
-import net.zodac.ludo.resources.menu_statistics
-import net.zodac.ludo.resources.menu_styles
 import net.zodac.ludo.ui.common.AppLogo
 import net.zodac.ludo.ui.common.BrandBackdrop
 import net.zodac.ludo.ui.common.LocalLandscapePage
@@ -45,8 +41,6 @@ import net.zodac.ludo.ui.common.PageColumn
 import net.zodac.ludo.ui.common.WholeWordsText
 import net.zodac.ludo.ui.common.isLargeFont
 import net.zodac.ludo.ui.common.stringResource
-import net.zodac.ludo.ui.style.DiceCupStyles
-import net.zodac.ludo.ui.style.DiceStyles
 import net.zodac.ludo.ui.theme.LudoPlusTheme
 
 /**
@@ -70,33 +64,14 @@ fun MenuScreen(
     hasInProgressGame: Boolean?,
     onContinue: () -> Unit,
     onNewGame: () -> Unit,
-    onScores: () -> Unit,
-    onStatistics: () -> Unit,
-    onAchievements: () -> Unit,
-    onStyles: () -> Unit,
     onRules: () -> Unit,
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
-    logoStyles: LogoStyles? = LogoStyles(DiceStyles.default, DiceCupStyles.default),
-    onDiceTap: () -> Unit = {},
 ) {
-    // The menu alone has its backdrop's dice drifting about; every other screen keeps them still.
+    // The menu alone has its backdrop drifting; every other screen keeps it still.
     BrandBackdrop(modifier = modifier, driftingDice = true) {
         PageColumn(horizontalPadding = 28.dp, wide = true) {
-            // Drawn in the player's own dice and cup. Held invisible (still taking its space, so
-            // nothing below moves) until their picks have loaded, rather than flashing the defaults.
-            val logo = @Composable {
-                AppLogo(
-                    modifier = Modifier.alpha(if (logoStyles == null) 0f else 1f),
-                    diceStyle = logoStyles?.dice ?: DiceStyles.default,
-                    cupStyle = logoStyles?.cup ?: DiceCupStyles.default,
-                    // Googly eyes only: the one screen whose dice follow the phone's own tilt and shake.
-                    pupilsFollowDevice = true,
-                    // Tapping the cup itself shakes it, as in a game.
-                    shakeCupOnTap = true,
-                    onDiceTap = onDiceTap,
-                )
-            }
+            val logo = @Composable { AppLogo() }
 
             // Held invisible (still taking its space) until the saved-game check has answered, so the
             // buttons arrive together rather than Play flashing before it splits, or a gap popping in.
@@ -107,10 +82,6 @@ fun MenuScreen(
                 label = "menuButtonsAlpha", // i18n: not translated - an animation label, not shown
             )
             val destinations = listOf(
-                stringResource(Res.string.menu_achievements) to onAchievements,
-                stringResource(Res.string.menu_styles) to onStyles,
-                stringResource(Res.string.menu_leaderboard) to onScores,
-                stringResource(Res.string.menu_statistics) to onStatistics,
                 stringResource(Res.string.menu_rules) to onRules,
                 stringResource(Res.string.menu_settings) to onSettings,
             )
@@ -234,10 +205,6 @@ private fun MenuScreenPreview() {
             hasInProgressGame = false,
             onContinue = {},
             onNewGame = {},
-            onScores = {},
-            onStatistics = {},
-            onAchievements = {},
-            onStyles = {},
             onRules = {},
             onSettings = {},
         )
@@ -252,10 +219,6 @@ private fun MenuScreenInProgressPreview() {
             hasInProgressGame = true,
             onContinue = {},
             onNewGame = {},
-            onScores = {},
-            onStatistics = {},
-            onAchievements = {},
-            onStyles = {},
             onRules = {},
             onSettings = {},
         )

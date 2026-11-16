@@ -1,5 +1,0 @@
-<resources>
-    <!-- Present so Android lists Arabic among the app's languages (the per-app language setting, via the generated locale config).
-         The app's own text is in :app:shared's composeResources/values-ar. -->
-    <string name="app_name">Ludo Plus</string>
-</resources>

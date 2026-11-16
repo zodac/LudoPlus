@@ -9,51 +9,51 @@ import net.zodac.ludo.model.PlayerColour
 //
 // These are tonal-palette values, not hand-picked hexes: each palette holds one hue at a fixed
 // chroma across the standard M3 tones (0-100, where the number is CIELAB lightness), and every
-// role below is one tone from one palette, following M3's own role->tone mapping. That's what
-// makes the contrast pairs (primary/onPrimary, surface/onSurface, ...) reliable rather than
-// eyeballed, and it's what any Material Theme Builder export would give you.
+// role below is one tone from one palette, following M3's own dark-scheme role->tone mapping. That's
+// what makes the contrast pairs (primary/onPrimary, surface/onSurface, ...) reliable rather than
+// eyeballed.
 //
-// Generated from three brand seeds:
-//   primary   #FFC14D - the gold the game board already uses for "this is the thing to press"
-//   secondary #1E4B86 - the felt blue of the table
-//   tertiary  #1B5E20 - Ludo Plus's original brand green
-// Neutrals are the same blue held at very low chroma, so greys read slightly cool rather than
-// dead, which is what keeps the app feeling like one piece with the board.
+// Generated (Google's material-color-utilities, HCT) from three brand seeds:
+//   primary   #9C6BFF - violet: no player's colour, so "press this" never reads as "your turn"
+//   secondary #1E2A4A - the navy of the board's surround
+//   tertiary  #F1E4C3 - the ivory of the board's plain squares
+// Neutrals are the navy held at low chroma (6, and 12 for the variants), so greys read slightly
+// cool rather than dead.
 //
-// To re-generate after a seed change, see the tonal-palette maths in M3's spec (or Material
-// Theme Builder) - do not nudge individual values by hand, or the contrast guarantees go with it.
+// To re-generate after a seed change, use the same tonal-palette maths (or Material Theme Builder)
+// - do not nudge individual values by hand, or the contrast guarantees go with it.
 // ---------------------------------------------------------------------------------------------
 
-val Primary = Color(0xFFF9BC48)
-val OnPrimary = Color(0xFF412D00)
-val PrimaryContainer = Color(0xFF5E4200)
-val OnPrimaryContainer = Color(0xFFFFDEAD)
-val Secondary = Color(0xFFB6C6F2)
-val OnSecondary = Color(0xFF1B3053)
-val SecondaryContainer = Color(0xFF34466B)
-val OnSecondaryContainer = Color(0xFFD9E2FF)
-val Tertiary = Color(0xFF94D78F)
-val OnTertiary = Color(0xFF003908)
-val TertiaryContainer = Color(0xFF0A5315)
-val OnTertiaryContainer = Color(0xFFB0F3AA)
-val Background = Color(0xFF11131A)
-val OnBackground = Color(0xFFE0E2EC)
-val Surface = Color(0xFF11131A)
-val OnSurface = Color(0xFFE0E2EC)
-val SurfaceVariant = Color(0xFF414656)
-val OnSurfaceVariant = Color(0xFFC1C6D9)
-val SurfaceDim = Color(0xFF11131A)
-val SurfaceBright = Color(0xFF373940)
-val SurfaceContainerLowest = Color(0xFF0B0E16)
-val SurfaceContainerLow = Color(0xFF191B22)
-val SurfaceContainer = Color(0xFF1D1F26)
-val SurfaceContainerHigh = Color(0xFF282A31)
-val SurfaceContainerHighest = Color(0xFF32353C)
-val Outline = Color(0xFF8B90A2)
-val OutlineVariant = Color(0xFF414656)
-val InverseSurface = Color(0xFFE0E2EC)
-val InverseOnSurface = Color(0xFF2E3037)
-val InversePrimary = Color(0xFF7C5800)
+val Primary = Color(0xFFD2BBFF)
+val OnPrimary = Color(0xFF3E008E)
+val PrimaryContainer = Color(0xFF581AB8)
+val OnPrimaryContainer = Color(0xFFEADDFF)
+val Secondary = Color(0xFFBAC5EE)
+val OnSecondary = Color(0xFF232F50)
+val SecondaryContainer = Color(0xFF3A4667)
+val OnSecondaryContainer = Color(0xFFDAE2FF)
+val Tertiary = Color(0xFFD2C6A6)
+val OnTertiary = Color(0xFF37301A)
+val TertiaryContainer = Color(0xFF4E462E)
+val OnTertiaryContainer = Color(0xFFEFE2C1)
+val Background = Color(0xFF121318)
+val OnBackground = Color(0xFFE3E2E9)
+val Surface = Color(0xFF121318)
+val OnSurface = Color(0xFFE3E2E9)
+val SurfaceVariant = Color(0xFF434654)
+val OnSurfaceVariant = Color(0xFFC3C6D6)
+val SurfaceDim = Color(0xFF121318)
+val SurfaceBright = Color(0xFF38393F)
+val SurfaceContainerLowest = Color(0xFF0D0E13)
+val SurfaceContainerLow = Color(0xFF1A1B21)
+val SurfaceContainer = Color(0xFF1E1F25)
+val SurfaceContainerHigh = Color(0xFF292A2F)
+val SurfaceContainerHighest = Color(0xFF33343A)
+val Outline = Color(0xFF8D909F)
+val OutlineVariant = Color(0xFF434654)
+val InverseSurface = Color(0xFFE3E2E9)
+val InverseOnSurface = Color(0xFF2F3036)
+val InversePrimary = Color(0xFF703CD1)
 
 // M3's baseline error palette, used as-is: there's no reason to brand "something went wrong".
 val Error = Color(0xFFF2B8B5)
@@ -61,277 +61,26 @@ val OnError = Color(0xFF601410)
 val ErrorContainer = Color(0xFF8C1D18)
 val OnErrorContainer = Color(0xFFF9DEDC)
 
-// Game-table palette: the tavern felt/parchment look of the in-game board, kept separate from
-// the Material roles above. Referenced by the default GameVisualTheme implementations in
-// ui.style, which is the layer to swap out for alternate dice/cup/background art. These are
-// deliberately NOT colour roles - the board is a rendered object, not app chrome, and it looks
-// the same whichever theme the app is in.
-// The felt's colours are shared with the launcher icon's (ic_launcher_background.xml): change them together.
-val FeltNavyGlow = Color(0xFF2A5590)
-val FeltNavyTop = Color(0xFF1C3D66)
-val FeltNavyBottom = Color(0xFF0B1E3A)
-// Deeper than the launcher icon's mat is lit, and darker than Tricolour's blue die (TricolourBlueDiceTop/Bottom) at
-// its top: a brighter blue (0xFF3574C4..0xFF123765, once) sat under a blue die like a hole in the mat.
-val TrayBlueTop = Color(0xFF2A62A8)
-val TrayBlueBottom = Color(0xFF13315F)
-val TrayBlueRing = Color(0xFFE6C278)
-
-val TileTealTop = Color(0xFF234B47)
-val TileTealBottom = Color(0xFF122E2B)
-val TileTealBorder = Color(0xFF3C6C66)
-val TileIconColor = Color(0xFFE7F3EF)
-
-// D20's two halves in a colour each, neither the standard teal: sky blue for 1-10 and indigo for 11-20, so they read apart at a glance.
-val TileSkyTop = Color(0xFF1F6A8A)
-val TileSkyBottom = Color(0xFF0F3A4D)
-val TileSkyBorder = Color(0xFF4FA6CC)
-
-val TileIndigoTop = Color(0xFF3A3668)
-val TileIndigoBottom = Color(0xFF1F1C3D)
-val TileIndigoBorder = Color(0xFF6A63A6)
-
-val TileHighlightTop = Color(0xFF4A3B12)
-val TileHighlightBottom = Color(0xFF241C08)
-
-// A visibly "used up" look for a category that already has a committed score - flat and desaturated
-// so it reads as spent at a glance, distinct from both the teal "open" tile and the gold "good pick" glow.
-val TileScoredTop = Color(0xFF2E2E2E)
-val TileScoredBottom = Color(0xFF181818)
-val TileScoredBorder = Color(0xFF3F3F3F)
-
-// The dark disc behind a score tile's small count badge (a straight's run length, the 5x bonus count).
-val TileBadgeBackground = Color(0xFF0F211D)
-
-val GoldAccent = Color(0xFFFFCC55)
-val GoldAccentDim = Color(0xFFB8862A)
-
-val IvoryDiceTop = Color(0xFFFFFCF3)
-val IvoryDiceBottom = Color(0xFFD9C9A3)
-val DicePipColor = Color(0xFF2B2118)
-
-// The held-dice slots are part of the mat (see DiceMat.slotSocketBrush), so each mat has its own:
-// a fill darker than the mat and a rim lighter than both it and the mat, so the rim reads as a crisp
-// highlight against the mat rather than just a slightly-different shade of it - matching how
-// CategoryTile's border pops against its felt background.
-val TrayBlueSlotTop = Color(0xFF0D2549)
-val TrayBlueSlotBottom = Color(0xFF081833)
-val TrayBlueSlotBorder = Color(0xFF6FA3E0)
-
-val CupRimGold = Color(0xFFC79A4B)
-val CupShadow = Color(0xFF06101F)
-
-// FacetedDiceCupStyle: the green score tiles' own colours, one per visible face
-// (shadowed left, lit centre, mid-tone right), so the cup reads as part of the same board, edged in
-// the gold the board uses for a good pick and a held die.
-val FacetedCupShadeFace = TileTealBottom
-val FacetedCupLitFace = TileTealBorder
-val FacetedCupMidFace = TileTealTop
-val FacetedCupEdge = GoldAccent
-
-// BarrelDiceCupStyle: brown wooden staves bound with dark iron hoops.
-val BarrelWoodDark = Color(0xFF3E2412)
-val BarrelWood = Color(0xFF6B4226)
-val BarrelWoodLight = Color(0xFF8A5A32)
-val BarrelRim = Color(0xFFA87447)
-val BarrelInterior = Color(0xFF1A0F08)
-val BarrelIron = Color(0xFF34343A)
-val BarrelIronSheen = Color(0xFF74747C)
-
-// The rest of the barrel skin: honey-oak dice with off-white pips (mid-tone enough that the gold held
-// ring still stands off the face), a plank tray in the cup's own wood, and a darker stained-wood
-// background so the teal score tiles still pop against it.
-val BarrelDiceTop = Color(0xFFC8894A)
-val BarrelDiceBottom = Color(0xFF7A4A22)
-val BarrelDicePipColor = Color(0xFFFFF6E8)
-val BarrelTrayTop = BarrelWood
-val BarrelTrayBottom = BarrelWoodDark
-val BarrelSlotTop = Color(0xFF2E1B0E)
-val BarrelSlotBottom = Color(0xFF1C1009)
-val BarrelSlotBorder = Color(0xFFC08A55)
-val BarrelBackgroundTop = Color(0xFF3A2314)
-val BarrelBackgroundBottom = Color(0xFF1C1009)
-
-// Fire theme: a red-and-orange skin for the dice cup, table mat and background - see
-// FireDiceCupStyle, FireDiceMat and FireTableBackground. Same "not a colour role" rule as the rest of this block.
-
-// The fire cup's faces: shadowed left, lit centre, mid-tone right - the same lighting as the
-// faceted cup's teal faces.
-val FireCupShadeFace = Color(0xFF4A0D08)
-val FireCupLitFace = Color(0xFFD9473A)
-val FireCupMidFace = Color(0xFFB3261B)
-val FireCupShadow = Color(0xFF1A0503)
-
-val FlameOrange = Color(0xFFFF8A1E)
-
-val FireBackgroundTop = Color(0xFF7A130D)
-val FireBackgroundBottom = Color(0xFF3D0805)
-val FireTrayTop = Color(0xFFB2231A)
-val FireTrayBottom = Color(0xFF6E120A)
-val FireSlotTop = Color(0xFF5C0E09)
-val FireSlotBottom = Color(0xFF3A0604)
-val FireSlotBorder = Color(0xFFF07A5A)
-
-// Tricolour mode: the dice's own red/yellow/blue, which recolour the player's dice style in that
-// mode (see DiceStyle.recoloured), and the colour-box tiles on the scorecard (see CategoryIcon/CategoryTile). A
-// fixed meaning, not a theme - same rule as the rest of this block. "Swatch" is the flat colour a
-// colour box shows; "Stripe" is a deeper shade of it for the Coloured House tile's background, dark
-// enough that the tile's white/gold house glyph still reads on top of it.
-val TricolourRedDiceTop = Color(0xFFEF5350)
-val TricolourRedDiceBottom = Color(0xFF9A1B1B)
-val TricolourRedPipColor = Color(0xFFFFF4EF)
-// The yellow die's face and its own held ring have swapped shades from every other die: its face
-// is drawn in GoldAccent/GoldAccentDim (the colour every OTHER die's held ring uses) and its own
-// held ring uses what used to be its face colour instead - see TricolourYellowHeldRing and
-// DieColourPalette.heldRing. The original same-hue pairing made a held yellow die's ring vanish
-// against its own face.
-val TricolourYellowDiceTop = GoldAccent
-val TricolourYellowDiceBottom = GoldAccentDim
-val TricolourYellowPipColor = Color(0xFF3A2A05)
-val TricolourYellowHeldRing = Color(0xFFFFE66B)
-val TricolourBlueDiceTop = Color(0xFF5C9CEB)
-val TricolourBlueDiceBottom = Color(0xFF173E8C)
-val TricolourBluePipColor = Color(0xFFF1F6FF)
-
-val TricolourRedSwatch = Color(0xFFE53935)
-val TricolourYellowSwatch = Color(0xFFFDD835)
-val TricolourBlueSwatch = Color(0xFF1E88E5)
-
-val TricolourRedStripe = Color(0xFF9E2A22)
-val TricolourYellowStripe = Color(0xFF8F7011)
-val TricolourBlueStripe = Color(0xFF1F4F9A)
-
-// Luck Of The Irish: while active (see net.zodac.ludo.model.isLuckOfTheIrish), Tricolour's
-// red/yellow/blue render in these instead - RED -> green, YELLOW -> white, BLUE -> orange, the
-// Irish flag's colours - via DieColour.palette(irish = true). Same fields, same meaning, as the
-// TricolourRed/Yellow/Blue block above; White's own top/bottom/pip follow Yellow's old "bright
-// body, dark pip, dark stripe" pattern rather than Red/Blue's "medium body, light pip" one, since
-// it's the one colour here actually as light as the flag colour it's named for.
-val IrishGreenDiceTop = Color(0xFF4CAF50)
-val IrishGreenDiceBottom = Color(0xFF1B5E20)
-val IrishGreenPipColor = Color(0xFFF1FFF3)
-val IrishWhiteDiceTop = Color(0xFFFFFFFF)
-val IrishWhiteDiceBottom = Color(0xFFD8D8D8)
-val IrishWhitePipColor = Color(0xFF262626)
-val IrishOrangeDiceTop = Color(0xFFFF8A50)
-val IrishOrangeDiceBottom = Color(0xFFC1440E)
-val IrishOrangePipColor = Color(0xFFFFF3E8)
-
-val IrishGreenSwatch = Color(0xFF169B62)
-val IrishWhiteSwatch = Color(0xFFFFFFFF)
-val IrishOrangeSwatch = Color(0xFFFF883E)
-
-// A proportional darkening of IrishGreenSwatch/IrishOrangeSwatch (same R:G:B ratio, not a
-// separately-picked hue) - a from-scratch dark shade kept drifting away from the flag's own hue
-// once darkened enough to hold the Coloured House tile's glyph.
-val IrishGreenStripe = Color(0xFF127C4E)
-val IrishOrangeStripe = Color(0xFFAD5C2A)
-// The flag's white band, full brightness - CategoryIcon's HouseIcon already drops a dark shadow
-// behind the glyph for exactly this "background too light to hold it" case (see its own doc), so
-// this doesn't need darkening down to a readable grey the way the other two stripes do.
-val IrishWhiteStripe = Color(0xFFFFFFFF)
-
 /**
- * What a [PlayerColour] looks like - the one place a player's colour is turned into a [Color], so their
- * tab, name and score, the swatch on the setup screen and anything else marking that player (the outline
- * on the box they last scored in) all come from here, and change together. Each is a light, mid-chroma
- * tone that reads on the dark table and the dark page; keep a new one that way and clear of the others.
+ * What a [PlayerColour] looks like - the one place a player's colour is turned into a [Color], so the setup screen's
+ * swatch, the board's yard and home column, and anything else marking that player all change together. Each is a
+ * light, mid-chroma tone of the classic board's colour that reads on the dark page; keep a new one that way and clear
+ * of the others (and of [Primary]).
  */
 val PlayerColour.color: Color
     get() = when (this) {
-        PlayerColour.CYAN -> Color(0xFF4FD6E8)
-        PlayerColour.GREEN -> Color(0xFF5CE38F)
-        PlayerColour.PURPLE -> Color(0xFFA07BF0)
-        PlayerColour.AMBER -> Color(0xFFF2A93B)
-        PlayerColour.PINK -> Color(0xFFF58BC0)
         PlayerColour.RED -> Color(0xFFF2675F)
+        PlayerColour.GREEN -> Color(0xFF5CE38F)
+        PlayerColour.YELLOW -> Color(0xFFFFD54F)
         PlayerColour.BLUE -> Color(0xFF6C9CFF)
-        PlayerColour.LIME -> Color(0xFFD2E55C)
     }
 
 /**
- * Each [GameMode]'s own colour: the one place a mode is turned into a [Color], so anything marking a mode (the
- * Statistics Combined page's mode table, and each name on the Leaderboard's Combined board) shows the same one. Standard, the main mode, takes the
- * brand gold ([Primary]); the rest are light tones that read on the dark page, clear of each other, of the gold and of
- * red (`error`, a loss). A new mode needs one (the `when` won't compile without it): keep it that way.
+ * Each [GameMode]'s own colour: the one place a mode is turned into a [Color], so anything marking a mode shows the
+ * same one. Classic, the main mode, takes the brand violet ([Primary]). A new mode needs one (the `when` won't compile
+ * without it): a light tone that reads on the dark page, clear of the others and of red (`error`).
  */
 val GameMode.color: Color
     get() = when (this) {
-        GameMode.STANDARD -> Primary
-        GameMode.TRICOLOUR -> Color(0xFF94D78F)
-        GameMode.THIRD_WIND -> Color(0xFFB6C6F2)
-        GameMode.STUD -> Color(0xFFE8A0BF)
-        GameMode.D20 -> Color(0xFF7FD1D9)
-        GameMode.HIT_LIST -> Color(0xFFD4E157)
-        GameMode.QUICKFIRE -> Color(0xFFC9A0F0)
+        GameMode.CLASSIC -> Primary
     }
-
-// Leaderboard podium accents for 2nd/3rd place - a fixed silver/bronze pairing, same "not a
-// colour role" reasoning as the rest of this file: M3 has no role for "silver" or "bronze", and
-// there's exactly one meaning for each, not a theme-able choice. 1st place reuses `primary`
-// itself (see ScoresScreen) rather than adding a third fixed value here, since that's already
-// the brand's gold. Both are light tones, picked for contrast against the app's dark page
-// background the same way Primary is.
-val Silver = Color(0xFFC4CCD9)
-val Bronze = Color(0xFFE0965A)
-
-// Big Fan's heart icon (Achievement.iconTintOrUnspecified) - a fixed red for the same reason as
-// the podium accents above: M3 has no role for "this heart is red", and it's one meaning, not a
-// theme-able choice. Not TricolourRedSwatch - that one belongs to the Tricolour game mode and
-// shouldn't couple an unrelated achievement's colour to a game mode's palette.
-val AchievementHeartRed = Color(0xFFE53935)
-
-/** Are You A Developer?'s icon: the cyan of the Wireframe dice it unlocks. */
-val AchievementDeveloperCyan = Color(0xFF3FE6FF)
-
-/** The Completionist trophy's crystal, top left to bottom right: white, ice, cyan, violet. */
-val CrystalTrophyWhite = Color(0xFFFFFFFF)
-val CrystalTrophyIce = Color(0xFFCDEFFF)
-val CrystalTrophyCyan = Color(0xFF8EC5EC)
-val CrystalTrophyViolet = Color(0xFF6F7FD8)
-
-/** Everything Everywhere All At Once's googly eye: a white eye with a dark rim, a black pupil and its glint. */
-val GooglyEyeWhite = Color(0xFFFFFFFF)
-val GooglyEyeRim = Color(0xFF20232B)
-val GooglyEyePupil = Color(0xFF14161C)
-
-/** Tricolourful's traffic light: a charcoal housing round the mode's red, yellow and blue lights. */
-val TrafficLightHousing = Color(0xFF2B2F38)
-
-// Shaken, Not Tapped's martini icon (Achievement.iconTintOrUnspecified) - same "fixed meaning,
-// not a theme-able choice" reasoning as the heart/podium accents above: a martini has a glass, a
-// drink and an olive, and those are three specific colours, not one ambient tint.
-val MartiniGlassSwatch = Color(0xFFD8DEE0)
-val MartiniLiquidSwatch = Color(0xFFD9B23C)
-val MartiniOliveSwatch = Color(0xFF6E7A2E)
-val MartiniOliveHighlightSwatch = Color(0xFF93A150)
-
-// The Top Hat cup's rabbit (TopHatDiceCupStyle), shared with The Magician's Secret's icon so the
-// achievement shows the same rabbit the player found. Fixed colours for the same reason as the
-// martini's: a white rabbit with pink ears is one specific look, not a theme-able tint.
-val RabbitFur = Color(0xFFF5F5F5)
-val RabbitFurShade = Color(0xFFD9D9D9)
-val RabbitPink = Color(0xFFF4A6B8)
-val RabbitEye = Color(0xFF222222)
-// The Black Top Hat's own colours, for that icon: its shaded edge, lit side and mid tone, ribbon and inside.
-val MagicianHatDark = Color(0xFF0B0B0C)
-val MagicianHatLight = Color(0xFF3C3C40)
-val MagicianHatMid = Color(0xFF1E1E21)
-val MagicianHatRibbon = Color(0xFFB71C1C)
-val MagicianHatInside = Color(0xFF030303)
-val MartiniPickSwatch = Color(0xFFC9A66B)
-
-// The Solution's icon: a sheaf of white pages, the top one written on in black.
-val ManuscriptPaper = Color(0xFFFFFFFF)
-val ManuscriptPaperEdge = Color(0xFF9AA3A8)
-val ManuscriptInk = Color(0xFF1B1F23)
-
-// The Flowerpot cup's plant (FlowerpotDiceCupStyle), from seedling to sunflower, shared with
-// Green Fingers' icon so the achievement shows the same sunflower the player grew. Fixed colours for
-// the same reason as the rabbit's: a sunflower is one specific look, not a theme-able tint.
-val FlowerpotStem = Color(0xFF5DA34A)
-val FlowerpotLeaf = Color(0xFF7CC95C)
-val FlowerpotLeafDark = Color(0xFF4E8F3A)
-val SunflowerPetal = Color(0xFFFFC928)
-val SunflowerPetalShade = Color(0xFFE9A416)
-val SunflowerDisc = Color(0xFF5A3A1A)
-val SunflowerSeed = Color(0xFF2E1C0C)

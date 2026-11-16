@@ -18,7 +18,7 @@ internal class AndroidSoundPlayer(context: Context) : SoundPlayer {
 
     @VisibleForTesting
     internal val pool: SoundPool = SoundPool.Builder()
-        // Three at once: the Chicken cup's shake runs past the dice landing, where the mat and a golden egg's cluck both start.
+        // Three at once: a pawn's pick, the die landing, and the fanfare can overlap.
         .setMaxStreams(3)
         .setAudioAttributes(
             AudioAttributes.Builder()
@@ -50,13 +50,9 @@ internal class AndroidSoundPlayer(context: Context) : SoundPlayer {
 
     private val soundIds: Map<SoundEffect, Int> = SoundEffect.entries.associateWith { effect ->
         val resId = when (effect) {
-            SoundEffect.CUP_SHAKE -> R.raw.cup_shake
-            SoundEffect.CUP_SHAKE_CHICKEN -> R.raw.cup_shake_chicken
-            SoundEffect.EMPTY_CUP_SHAKE -> R.raw.empty_cup_shake
-            SoundEffect.MAT_LANDING -> R.raw.mat_landing
-            SoundEffect.EGG_LAY -> R.raw.chicken_egg_lay
-            SoundEffect.HOLD -> R.raw.hold
-            SoundEffect.UNHOLD -> R.raw.unhold
+            SoundEffect.DIE_LANDING -> R.raw.mat_landing
+            SoundEffect.SELECT -> R.raw.hold
+            SoundEffect.DESELECT -> R.raw.unhold
             SoundEffect.CELEBRATION -> R.raw.celebration
         }
         pool.load(context, resId, 1)

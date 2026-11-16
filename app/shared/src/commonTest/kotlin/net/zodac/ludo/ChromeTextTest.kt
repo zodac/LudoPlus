@@ -40,12 +40,12 @@ class ChromeTextTest : UiTest() {
                 LudoPlusTheme {
                     MenuScreen(
                         hasInProgressGame = hasInProgressGame,
-                        onContinue = {}, onNewGame = {}, onScores = {}, onStatistics = {}, onAchievements = {}, onStyles = {}, onRules = {}, onSettings = {},
+                        onContinue = {}, onNewGame = {}, onRules = {}, onSettings = {},
                     )
                 }
             }
             if (hasInProgressGame) {
-                listOf("Achievements", "Styles", "Leaderboard", "Statistics", "Rules", "Settings", "New Game", "Continue").forEach { compose.onNodeWithText(it).assertExists() }
+                listOf("Rules", "Settings", "New Game", "Continue").forEach { compose.onNodeWithText(it).assertExists() }
                 compose.onAllNodesWithText("Play").assertCountEquals(0)
             } else {
                 compose.onNodeWithText("Play").assertExists()
@@ -59,11 +59,11 @@ class ChromeTextTest : UiTest() {
         compose.onNodeWithText("OK").performClick()
         assertEquals(1, closed)
         compose.onAllNodesWithText("About").assertCountEquals(1)
-        listOf("Author", "Inspiration", "Privacy", "Source code on GitHub", "Dice Me Online on Google Play", "Full privacy policy").forEach {
+        listOf("Author", "The game", "Privacy", "Source code on GitHub", "Ludo on Wikipedia", "Full privacy policy").forEach {
             compose.onNodeWithText(it).assertExists()
         }
         compose.onNodeWithText("Ludo Plus is created by zodac.").assertExists()
-        compose.onNodeWithText("Ludo Plus was inspired by Dice Me Online, created by Arturo Gutierrez.").assertExists()
+        compose.onNodeWithText("Ludo Plus plays the rules of Ludo, the race game that grew from the ancient Indian game Pachisi.").assertExists()
         compose.onNodeWithText("Ludo Plus holds no user data. Your games, scores, and settings stay on this device, and there are no ads, analytics, or tracking.")
             .assertExists()
     }

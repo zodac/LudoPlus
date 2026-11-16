@@ -36,13 +36,6 @@ import androidx.compose.ui.unit.dp
 import net.zodac.ludo.platform.LicenceScroll
 import net.zodac.ludo.platform.LicenseReport
 import net.zodac.ludo.platform.LicensedComponent
-import net.zodac.ludo.platform.SelectionClearer
-import net.zodac.ludo.resources.Res
-import net.zodac.ludo.resources.licences_hide_text
-import net.zodac.ludo.resources.licences_notices_subtitle
-import net.zodac.ludo.resources.licences_notices_title
-import net.zodac.ludo.resources.licences_show_text
-import net.zodac.ludo.ui.common.stringResource
 
 /**
  * The licence report in plain Compose: one card per licence - its name, what uses it, a "Show

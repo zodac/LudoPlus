@@ -51,12 +51,6 @@ interface PlatformServices {
     /** A short message that shows for a moment and needs no response - each platform's own (a toast, on Android). */
     fun showTransientMessage(message: String)
 
-    /**
-     * Saving and opening progress files, or null for a build without them: only one with no online game service has
-     * them (on Android, the github APK), so nothing from a file can reach the service's achievements or leaderboards.
-     */
-    val progressFiles: ProgressFiles? get() = null
-
     /** The build-generated open-source licence reports the Licences dialog lists - see [LicenceReports]. */
     suspend fun loadLicenceReports(): LicenceReports
 
@@ -92,13 +86,16 @@ val LocalPlatformServices = staticCompositionLocalOf<PlatformServices> {
 
 /** Every sound the game makes. Each platform maps these to its own copy of the clips. */
 enum class SoundEffect {
-    CUP_SHAKE,
-    CUP_SHAKE_CHICKEN,
-    EMPTY_CUP_SHAKE,
-    MAT_LANDING,
-    EGG_LAY,
-    HOLD,
-    UNHOLD,
+    /** The die landing on the board. */
+    DIE_LANDING,
+
+    /** A pawn picked to move. */
+    SELECT,
+
+    /** A pawn's pick taken back. */
+    DESELECT,
+
+    /** The winner's fanfare. */
     CELEBRATION,
 }
 
@@ -120,12 +117,12 @@ interface SoundPlayer {
  * closest thing its own haptics offer rather than all of them sharing one amplitude. [millis] is how
  * long it lasts on a platform that times its own vibrations; one with fixed taps ignores it. */
 enum class HapticEffect(val millis: Long) {
-    /** A die being held or unheld: slightly shorter than the hold/unhold sound clips, so the buzz
+    /** A pawn being picked or its pick taken back: slightly shorter than the select/deselect sound clips, so the buzz
      * resolves just before the click finishes. */
-    HOLD_TICK(150L),
+    SELECT_TICK(150L),
 
-    /** The dice cup being shaken: 20% shorter than the shake (`ui.game.CUP_SHAKE_MILLIS`, `CupShakeTest`), so it ends before the shake does. */
-    SHAKE_BUZZ(336L),
+    /** A pawn captured and sent back to its yard. */
+    CAPTURE_BUZZ(336L),
 }
 
 interface HapticsPlayer {

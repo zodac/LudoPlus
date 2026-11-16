@@ -24,15 +24,12 @@ class LocaleFilterTest {
     }
 
     @Test
-    fun `the app's languages keep the libraries' translations`() {
+    fun `the app's one language, English, keeps the libraries' English`() {
         assertEquals("On", stateOn("en-GB"))
-        assertEquals("Activado", stateOn("es"))
-        assertEquals("مفعَّل", stateOn("ar"))
     }
 
     @Test
-    fun `any other language has the libraries' English`() {
-        assertEquals("On", stateOn("fr"))
-        assertEquals("On", stateOn("fa"))
+    fun `any other language has the libraries' English - there are no translations yet`() {
+        listOf("es", "ar", "fr", "fa").forEach { assertEquals(it, "On", stateOn(it)) }
     }
 }

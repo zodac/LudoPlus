@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.data.settings.AnimationLevel
-import net.zodac.ludo.data.settings.DiceRollStyle
 import net.zodac.ludo.data.settings.FrameRate
 import net.zodac.ludo.data.settings.IdleTimeout
 import net.zodac.ludo.data.settings.MotionGroup
@@ -46,8 +45,6 @@ class GraphicsViewModel(private val settingsRepository: SettingsRepository) : Vi
 
     /** Sets [group] to [rate], the other groups as they are. */
     fun setFrameRate(group: MotionGroup, rate: FrameRate) = setMotion { it.with(group, rate) }
-
-    fun setRollStyle(style: DiceRollStyle) = setMotion { it.copy(rollStyle = style) }
 
     fun setIdleTimeout(timeout: IdleTimeout) = setMotion { it.copy(idleTimeout = timeout) }
 

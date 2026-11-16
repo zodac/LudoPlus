@@ -54,30 +54,7 @@ class BaselineProfileGenerator {
         pressHome()
         startActivityAndWait()
 
-        if (first) {
-            // The banner: tapped into existence from the logo, long-pressed to jump to its achievement and its glow. Its
-            // achievement can only be earned once, so this lap alone can raise it.
-            visitAchievementBanner()
-
-            // A fresh install locks the setup's modes and modifiers until a game is finished, and the steps below pick
-            // both. The unlock survives from lap to lap.
-            unlockModes()
-        }
-
-        // A game is left saved behind, so the menu then offers Continue - and the next lap of the
-        // run, which starts from that state, takes the New Game route instead of Play.
-        playATurn()
-        playAModeGame()
-        resumeGame()
-
-        // A game played to the end - after the saved one has been resumed, as finishing a game clears it. Only on
-        // the first lap of a short run: the profile is what every lap touched together, so repeating it adds
-        // nothing there. A long run (the one that soaks a changed journey) plays it every lap, to find its races.
-        if (first || laps > SHORT_RUN_LAPS) playFinishedGame()
-
-        visitStyles()
-        visitAchievements()
-        visitScoreScreens()
+        playAGame()
         visitRules()
         visitSettings()
     }

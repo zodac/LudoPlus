@@ -12,17 +12,16 @@ import net.zodac.ludo.model.StoredId
  * Saved by [id]. [HIGH] is the default; a player who had the old "Remove animations" switch on starts at [OFF].
  */
 enum class AnimationLevel(override val id: String, val motion: MotionSettings) : StoredId {
-    HIGH("HIGH", MotionSettings.of(decoration = FrameRate.MAX, gameplay = FrameRate.MAX, scoreGlow = FrameRate.MAX, cupShake = FrameRate.MAX, diceRoll = FrameRate.MAX, rollStyle = DiceRollStyle.TOSSED, idleTimeout = IdleTimeout.SECONDS_60)),
-    MEDIUM("MEDIUM", MotionSettings.of(decoration = FrameRate.OFF, gameplay = FrameRate.FPS_60, scoreGlow = FrameRate.FPS_60, cupShake = FrameRate.FPS_60, diceRoll = FrameRate.FPS_60, rollStyle = DiceRollStyle.TOSSED, idleTimeout = IdleTimeout.SECONDS_60)),
-    LOW("LOW", MotionSettings.of(decoration = FrameRate.OFF, gameplay = FrameRate.FPS_30, scoreGlow = FrameRate.OFF, cupShake = FrameRate.FPS_30, diceRoll = FrameRate.FPS_30, rollStyle = DiceRollStyle.IN_PLACE, idleTimeout = IdleTimeout.SECONDS_30)),
-    // The dice's roll off by its style, rather than its rate, which is never off (MotionGroup.DICE_ROLL).
-    OFF("OFF", MotionSettings.of(decoration = FrameRate.OFF, gameplay = FrameRate.OFF, scoreGlow = FrameRate.OFF, cupShake = FrameRate.OFF, diceRoll = FrameRate.FPS_30, rollStyle = DiceRollStyle.OFF, idleTimeout = IdleTimeout.SECONDS_30)),
+    HIGH("HIGH", MotionSettings.of(decoration = FrameRate.MAX, gameplay = FrameRate.MAX, dieRoll = FrameRate.MAX, pawnMove = FrameRate.MAX, idleTimeout = IdleTimeout.SECONDS_60)),
+    MEDIUM("MEDIUM", MotionSettings.of(decoration = FrameRate.OFF, gameplay = FrameRate.FPS_60, dieRoll = FrameRate.FPS_60, pawnMove = FrameRate.FPS_60, idleTimeout = IdleTimeout.SECONDS_60)),
+    LOW("LOW", MotionSettings.of(decoration = FrameRate.OFF, gameplay = FrameRate.FPS_30, dieRoll = FrameRate.FPS_30, pawnMove = FrameRate.FPS_30, idleTimeout = IdleTimeout.SECONDS_30)),
+    OFF("OFF", MotionSettings.of(decoration = FrameRate.OFF, gameplay = FrameRate.OFF, dieRoll = FrameRate.OFF, pawnMove = FrameRate.OFF, idleTimeout = IdleTimeout.SECONDS_30)),
     ;
 
     companion object {
         val default = HIGH
 
-        /** The level whose preset [motion] is - the dice's roll's rate aside while the roll is off - or null for none. */
-        fun matching(motion: MotionSettings): AnimationLevel? = entries.firstOrNull { it.motion.sameAs(motion) }
+        /** The level whose preset [motion] is, or null for none. */
+        fun matching(motion: MotionSettings): AnimationLevel? = entries.firstOrNull { it.motion == motion }
     }
 }

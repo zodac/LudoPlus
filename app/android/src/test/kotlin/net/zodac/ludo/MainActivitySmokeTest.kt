@@ -30,27 +30,27 @@ class MainActivitySmokeTest {
         }
     }
 
-    // Real time, not the test clock: generous, since the waits below return as soon as their text is there. Back on the
-    // menu, its warm-ups compose every style's art, which on a cold JVM on a CI runner took longer than 5 seconds.
+    // Real time, not the test clock: generous, since the waits below return as soon as their text is there, and a cold JVM
+    // on a CI runner is slow.
     private val waitMillis = 30_000L
 
     @Test
-    fun `a game can be started from the menu and system back asks before leaving it`() {
+    fun `a game can be started from the menu and system back leaves it for the menu`() {
         compose.onNodeWithText("Ludo Plus").assertExists()
 
-        // A game left in progress by an earlier test run splits Play into New Game and Continue.
-        val play = if (compose.onAllNodesWithText("Play").fetchSemanticsNodes().isNotEmpty()) "Play" else "New Game"
-        compose.onNodeWithText(play).performClick()
+        compose.onNodeWithText("Play").performClick()
         // The form (and its button) only appears once the last game's choices are read back from disk.
         compose.waitUntil(timeoutMillis = waitMillis) { compose.onAllNodesWithText("Start Game").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Start Game").performClick()
         compose.waitForIdle()
 
-        Espresso.pressBack()
-        compose.onNodeWithText("Leave game?").assertExists()
+        // The placeholder game screen (Phase 0 of .claude/IMPLEMENTATION.md): the players, and a note that the board is coming.
+        compose.waitUntil(timeoutMillis = waitMillis) {
+            compose.onAllNodesWithText("The board is on its way. For now, this is who's playing.").fetchSemanticsNodes().isNotEmpty()
+        }
 
-        compose.onNodeWithText("Leave").performClick()
-        // Left, not finished: the game is saved, so the menu offers to continue it.
-        compose.waitUntil(timeoutMillis = waitMillis) { compose.onAllNodesWithText("Continue").fetchSemanticsNodes().isNotEmpty() }
+        // No game is saved or confirmed before leaving yet (Phases 2 and 4), so back goes straight to the menu.
+        Espresso.pressBack()
+        compose.waitUntil(timeoutMillis = waitMillis) { compose.onAllNodesWithText("Play").fetchSemanticsNodes().isNotEmpty() }
     }
 }
