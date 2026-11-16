@@ -26,11 +26,11 @@ commit**, and tell the user so they can rename it before it spreads.
 | `[AI]`           | Claude's set-up - CLAUDE.md, skills, hooks, reference docs, the sandbox |
 | `[CI]`           | GitHub workflows, release pipeline, git hooks and changelog scripts     |
 | `[Dependencies]` | Version bumps - libraries, SDK, JDK, sandbox pins, actions              |
-| `[Game Mode]`    | Game modes - adding or changing one, with its rules and achievements    |
-| `[Gameplay]`     | The in-game screen - dice, cup, scorecard, player tabs - and rules      |
+| `[Game Mode]`    | Game modes and modifiers - adding or changing one, with its rules       |
+| `[Gameplay]`     | The game screen - board, pawns, die, player header - and the rules      |
 | `[Game Over]`    | The end-of-game results page and its celebration                        |
 | `[Icon]`         | The app's launcher icon                                                 |
-| `[Leaderboard]`  | The Leaderboard (scores) screen and the score records behind it         |
+| `[Leaderboard]`  | The Leaderboard (fastest wins) and the game records behind it           |
 | `[Performance]`  | Start-up, loading, storage and frame cost across the app                |
 | `[Play Games]`   | Google Play Games Services - sign-in, online sync, cloud save, Sidekick |
 | `[Project]`      | Repo-wide setup that isn't any one feature (tooling, docs, skills)      |
@@ -40,7 +40,7 @@ commit**, and tell the user so they can rename it before it spreads.
 | `[Settings]`     | The Settings screen and the preferences behind it                       |
 | `[Stability]`    | Crash fixes and hardening across the app - bad input, I/O, threads      |
 | `[Statistics]`   | The Statistics screen - per-player cards, a page per mode and Combined  |
-| `[Styles]`       | The Styles screen and the table art - dice, cups, mats, backgrounds     |
+| `[Styles]`       | The Styles screen and the art - board, pawns, die, backgrounds          |
 | `[UI]`           | App-wide layout and navigation - main menu, shared chrome, dialogs      |
 
 A change that applies to every mode goes under its own area (`[Gameplay]`, `[Achievements]`), not `[Game Mode]`.

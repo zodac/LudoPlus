@@ -1,5 +1,9 @@
 # Ludo Plus: Google Play Games Services
 
+> **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
+> from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
+> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
+
 **Built on Android; release remaining (see "Release").** Sign-in, achievements mirrored both ways, a leaderboard per
 mode, cloud save across devices, and Play Games Sidekick, each checked by the maintainer on real phones. This file is the one source on the subject:
 where another doc disagrees, follow this one.

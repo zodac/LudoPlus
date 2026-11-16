@@ -1,5 +1,9 @@
 # Ludo Plus: making table art (dice, cups, mats, backgrounds, frames)
 
+> **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
+> from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
+> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
+
 The working method and the drawing techniques. Elsewhere:
 
 - what a style *is* (catalogs, ids, locks): `DESIGN.md` "Table art" and `UI_SCREENS.md` "Style locks";

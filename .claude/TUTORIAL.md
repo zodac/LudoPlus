@@ -1,5 +1,9 @@
 # Tutorials
 
+> **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
+> from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
+> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
+
 How the guided Standard tutorial is built, the rules its script follows, and how to add one for another mode. The
 player-facing summary is in `DESIGN.md`, "The tutorial"; the New Game lock it sits beside is in `DESIGN.md`, "Game
 setup".

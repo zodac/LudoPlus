@@ -34,26 +34,28 @@ its own art and doesn't use colour roles.
 `ui/theme/Color.kt` holds M3 tonal palettes: one hue at fixed chroma per palette, and each role one tone from one
 palette per M3's mapping. That's what makes `primary`/`onPrimary` and the other pairs reliable.
 
-| Role                      | Seed                        | What it is                    |
-|---------------------------|-----------------------------|-------------------------------|
-| primary                   | `#FFC14D`                   | the board's "press this" gold |
-| secondary                 | `#1E4B86`                   | the table's felt blue         |
-| tertiary                  | `#1B5E20`                   | the original brand green      |
-| neutral / neutral variant | the blue at very low chroma | cool greys                    |
-| error                     | M3 baseline red             |                               |
+| Role                      | Seed                                    | What it is                                           |
+|---------------------------|-----------------------------------------|------------------------------------------------------|
+| primary                   | `#9C6BFF`                               | violet, "press this": no player's colour             |
+| secondary                 | `#1E2A4A`                               | the navy of the board's surround                     |
+| tertiary                  | `#F1E4C3`                               | the ivory of the board's plain squares               |
+| neutral / neutral variant | the navy at chroma 6 / 12               | cool greys                                           |
+| error                     | M3 baseline red                         |                                                      |
 
 - **Never nudge single values by hand.** Change a seed and regenerate the whole set (Material Theme Builder or the M3
-    tonal maths).
+    tonal maths; Phase 0 used Google's material-color-utilities, HCT).
+- **Primary is never a player's colour.** Red, green, yellow, and blue are the players'; a violet "press this" can't be
+    read as "your turn". Keep any later player colour (Phase 8) clear of it.
 - **Dark only.** `LudoPlusTheme` takes no arguments and ignores system dark mode. Two things outside Compose depend on
     this:
     - The window theme in `themes.xml` is dark `Theme.Material.NoActionBar`, so the first frame isn't white and
         light-mode phones keep light status icons.
     - Its versioned copies (`values-v28`, `-v29`, `-v30`) hold the bars' transparency, contrast, and cutout mode. Never
         use androidx's `enableEdgeToEdge()` or `Window`'s bar colour setters: Play flags them as deprecated.
-- **No dynamic colour.** The navy-and-gold table is the identity. `dynamicDarkColorScheme` is a two-line change if
+- **No dynamic colour.** The violet-and-navy look is the identity. `dynamicDarkColorScheme` is a two-line change if
     it's ever wanted (deferred).
 - **No typography or shape overrides**, and no `Type.kt`. Make per-use changes at the call site
-    (`style = MaterialTheme.typography.titleMedium`). The one exception is the gold titles: `pageTitleStyle` and
+    (`style = MaterialTheme.typography.titleMedium`). The one exception is the violet titles: `pageTitleStyle` and
     `dialogTitleStyle` (`AppLogo.kt`) are the page and dialog title styles.
 - **Sora (`SoraFontFamily`, `AppLogo.kt`) is for brand marks, never body text.**
     - It's used on:
@@ -72,9 +74,9 @@ palette per M3's mapping. That's what makes `primary`/`onPrimary` and the other 
     - **ASCII and Latin-1 only.** Never put a player's name or other free text in Sora. The stored-rolls cap is the one
         typed field in Sora, because it takes only 0-9. A new fixed Sora string must stay in U+0020-007E / U+00A0-00FF, or
         the font must be re-cut (the recipe is on `SoraFontFamily`).
-- **`primary` is the one brand accent and means "gold".** Examples: the Statistics max, the scrollbar thumbs, the
-    backdrop spotlight, page titles. Use it as a text or icon tint for emphasis, not `primaryContainer` as a fill, which
-    would be a second accent. For gold as a background, copy an existing use (a filled button, the unlock banner).
+- **`primary` is the one brand accent: violet.** Examples: the scrollbar thumbs, the backdrop spotlight, page titles. Use
+    it as a text or icon tint for emphasis, not `primaryContainer` as a fill, which would be a second accent. For violet
+    as a background, copy an existing use (a filled button). (DiceFive's was gold; older notes saying "gold" mean it.)
 - **Fixed non-role colours only where M3 has no role**: the board palette, `PlayerColour`, the mode colours ("Mode
     colours"), and the Leaderboard's `Silver` and `Bronze` (1st reuses `primary`). Never use one to dodge picking the right existing role.
 - **M3 Expressive is deferred.** `MaterialExpressiveTheme` is internal in material3 1.4.x. The public API (with
@@ -543,31 +545,21 @@ Examples:
 
 ## Player colours
 
-**A player's colour is chosen on New Game and read from `PlayerState.colour`.**
+**A player's colour is chosen on New Game**, and is the colour of their yard and home column on the board.
 
-- It's a `PlayerColour` (eight of them), turned into a `Color` only in `PlayerColour.color` (`ui/theme/Color.kt`).
-- Tab, name, score and the last-scored box outline all use it. Never use a seat index.
-- **The active tab's frame** is the player's `ScoreFrame` in their colour. It's decoration only; the "Current turn"
-    state is unchanged.
-- **Every tab sits on a panel**: `surfaceContainer` in the tab's 10dp shape, tinted 8% with the player's colour
-    (`PANEL_TINT`).
-    - The tint is capped by contrast: at 8% the lowest is Purple at 4.63:1, and at 10% Purple fails (4.49:1).
-    - Re-check all eight colours before raising it.
-- **Frames stay off the tab's text.**
-    - The name sits `NAME_TOP_DROP` (3dp) down.
-    - Every frame keeps 1.5dp clear of name, score, place and dot, at 360dp with 1-4 players, the widest names and 1.3x
-        font (`ScoreFrameClearanceTest`).
-    - Side padding grows with the font scale (2 to 10dp).
-    - The dot row keeps its height even solo.
-    - A frame that fails is drawn smaller or further out, never given more room.
-- **Setup.** A 28dp circle (48dp target) opens a 4x2 `DropdownMenu` of the eight colours (`ui/setup/PlayerColourPicker.kt`).
+- It's a `PlayerColour` (red, green, yellow, and blue, in the board's clockwise seat order), turned into a `Color` only
+    in `PlayerColour.color` (`ui/theme/Color.kt`): a light tone of the classic board's colour, readable on the dark page.
+    Never use a seat index.
+- **Setup.** A 28dp circle (48dp target) opens a `DropdownMenu` of the colours (`ui/setup/PlayerColourPicker.kt`).
     - It's a curated set, not a free picker: M3 has no colour picker, and a free choice could clash or be unreadable.
-        Add a colour only if it's light enough for the dark page and distinct from the others.
-- **Always four distinct.** `setPlayerColour` swaps with whichever slot holds the colour, across all four slots. The
-    defaults (`PlayerColour.defaultFor`) are cyan, green, purple and amber.
-- **Persisted** per slot (`player_colour_N`, falling back to the defaults if not distinct) and in a saved game.
-- **TalkBack**: "Player 2 colour, Pink", action "Choose colour". Choices are radio buttons, and a taken one says
+        2-8 players (Phase 8) add more; each must be light enough for the dark page and distinct from the others and
+        from `primary`.
+- **Always four distinct.** `setPlayerColour` swaps with whichever slot holds the colour. The defaults
+    (`PlayerColour.defaultFor`) are the classic board's: red, green, yellow, and blue.
+- **Persisted** per slot (`player_colour_N`, falling back to the defaults if not distinct).
+- **TalkBack**: "Player 2 colour, Green", action "Choose colour". Choices are radio buttons, and a taken one says
     "swaps with player 1" (`PlayerColourPickerTest`).
+- DiceFive's tab panels, frames and their contrast checks come back with the board (Phase 2).
 
 ## Mode colours
 
@@ -575,20 +567,14 @@ Examples:
 Anything that marks a mode by colour uses it: the Statistics Combined page's mode table, and each name on the
 Leaderboard's Combined board.
 
-| Mode        | Colour                   |
-|-------------|--------------------------|
-| Standard    | `primary` (brand gold)   |
-| Tricolour   | `#94D78F` green          |
-| Third Wind  | `#B6C6F2` periwinkle     |
-| 7 Dice Stud | `#E8A0BF` pink           |
-| D20         | `#7FD1D9` cyan           |
-| Hit List    | `#D4E157` lime           |
-| Quickfire   | `#C9A0F0` violet         |
+| Mode    | Colour                   |
+|---------|--------------------------|
+| Classic | `primary` (brand violet) |
 
-- Standard is the main mode, so it takes the brand gold.
-- The rest are light tones that read on the dark page. Each stays clear of the others, of the gold and of red
-    (`error`, a loss on the Statistics card).
-- A new mode needs one: the `when` won't compile without it. `GameModeColourTest` checks they're distinct, Standard's
+- Classic is the main mode, so it takes the brand violet.
+- The rest (Phase 9) are light tones that read on the dark page. Each stays clear of the others, of the violet and of
+    red (`error`).
+- A new mode needs one: the `when` won't compile without it. `GameModeColourTest` checks they're distinct, Classic's
     is `Primary` and none is `Error`.
 - Colour is never the only signal: the mode's name is always beside it.
 
@@ -616,20 +602,15 @@ Leaderboard's Combined board.
         first use.
 - **No `@Preview`s that build a view model.** Every view model but `ScoresViewModel` takes its repositories as
     required, and the app ships no fakes, so a preview can't make one. Use the `render` skill instead.
-- **The launcher icon's safe zone is a floor, not a guarantee.** The spec's 66dp circle passed on paper, but a device
-    still cropped the dice.
-    - Keep the baked-in margin (everything inside one `<group scaleX="0.8" scaleY="0.8" pivotX="54" pivotY="54">`), and
-        get an on-device look for icon work.
-    - `ic_launcher_monochrome.xml` (the themed icon) is a flat silhouette: pips and band are even-odd cut-outs, and its
-        geometry is copied from the foreground. Change the two together.
+- **The launcher icon's safe zone is a floor, not a guarantee.** The spec's 66dp circle passed on paper in DiceFive,
+    but a device still cropped its dice.
+    - Keep the art inside the 72 units a launcher shows, with a margin (`LauncherIconTest`), and get an on-device look
+        for icon work.
+    - `ic_launcher_monochrome.xml` (the themed icon) is a flat silhouette whose geometry is copied from the foreground.
+        Change the two together.
     - `ic_launcher.xml` is the only wrapper (`roundIcon` too).
-    - The icon's depth lives in its layers. `ic_launcher_background.xml` is the table (lit felt, the blue mat and its
-        gold ring), opaque to every edge of the canvas. Its felt and the mat's edge are the default background's and
-        mat's own colours (`FeltNavy*`, `TrayBlue*`), and the store art's `TableBackdrop` and
-        `scripts/generate-store-assets.sh` copy them: change them together. The foreground's cup is shaded by one light from the top left, and
-        its dice are projected cubes, drawn as flat paths, each tilted 20 degrees away from the cup's mouth with its value
-        facing the screen. The themed icon keeps the cubes as flat faces. `scripts/generate-launcher-dice.py` generates
-        the dice in both layers, so change a pose there, never in the XML.
+    - Today's icon is a placeholder: an ivory pawn (`ic_launcher_foreground.xml`) on the flat brand navy
+        (`ic_launcher_background.xml`). The brand art replaces it (`IMPLEMENTATION.md`, Phase 0).
 
 ## Verifying UI work
 

@@ -1,5 +1,9 @@
 # Game modes
 
+> **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
+> from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
+> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
+
 How modes are built and how to add one, including a mode unlike any so far. A mode is picked on New Game and carried
 on `GameState` and each `PlayerState`. The achievement audit (what each mode blocks or guards) is in
 `GAME_MODES_AUDIT.md`.

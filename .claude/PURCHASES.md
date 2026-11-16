@@ -1,5 +1,9 @@
 # Ludo Plus: the "Unlock all styles" purchase
 
+> **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
+> from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
+> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
+
 **In progress: built (Phases 1-5); testing on a phone (Phase 6) is next.**
 One one-time Google Play purchase that unlocks every style without earning it. Android only. This file is the plan, in
 phases. Resume at the phase marked **Next**.

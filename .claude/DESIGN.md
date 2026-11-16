@@ -1,5 +1,11 @@
 # Ludo Plus: design reference
 
+> **Partly inherited from DiceFive.** Phase 0 of `IMPLEMENTATION.md` removed DiceFive's dice game. Sections on what
+> is still in the app (the stack, errors and the crash page, settings, distribution, and the release pipeline) hold;
+> sections on the dice, the scorecard, modes, the CPU, achievements, styles, scores, and saved games describe the code
+> in commit `5423b6c` (`git show 5423b6c:<path>`), for bringing a feature back in its phase. Rewrite a section for
+> Ludo Plus when the code it describes is.
+
 What the app does and why. The interface is in `UI.md` (plus `UI_BOARD.md` and `UI_SCREENS.md`), modes in
 `GAME_MODES.md`, and art in `STYLE_ART.md`.
 

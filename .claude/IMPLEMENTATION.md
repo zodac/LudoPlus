@@ -9,7 +9,7 @@ reorders them.
 
 | Phase | What | Status |
 | --- | --- | --- |
-| 0 | Gut the dice game, rebrand the chrome | In progress |
+| 0 | Gut the dice game, rebrand the chrome | Done but for renders |
 | 1 | The Ludo rules engine (pure, tested) | Not started |
 | 2 | The board and game screen | Not started |
 | 3 | CPU opponents | Not started |
@@ -27,6 +27,7 @@ reorders them.
 
 - **Name.** Ludo Plus. "Frustration" (the working title) is Hasbro's UK trademark and is banned (`CLAUDE.md`, "Banned
     words"). Package `net.zodac.ludo`, repo `github.com/zodac/LudoPlus`.
+- **Gutting.** Interim red builds were fine while gutting (the maintainer, 2026-11-16).
 - **Releases.** VERSION 0.1.0. CI runs every check, but publishes nothing until VERSION reaches 1.0.0.
 - **Languages.** en-GB only until a later phase. Every string still goes through Compose resources.
 - **Brand.** DiceFive's dark-only M3 tonal system, re-seeded: primary violet `#9C6BFF` (not a player colour, so it
@@ -101,49 +102,47 @@ Sources: [Wikipedia, "Ludo"](https://en.wikipedia.org/wiki/Ludo),
 ## Phase 0: Gut the dice game, rebrand the chrome
 
 **Goal:** a building app with DiceFive's chrome and infrastructure, Ludo Plus's name and colours, and no dice game.
-The game screen is a placeholder. Tests may be red along the way (the maintainer agreed, 2026-11-16); the phase ends
-green.
+The game screen is a placeholder.
 
-**Keep (the skeleton).** `ui/common`, `ui/theme`, `ui/menu`, `ui/settings` (graphics, about, licences, progress
-files), `ui/setup` (players, names, colours, CPU), `navigation`, `platform`, `app` (container, breadcrumbs, crash
-pages), `data/settings`, `data` failures/DataStore/JSON, `online` and `purchases` (their seams), the Room scores
-database (rebuilt in Phase 4), the achievements engine and list UI (emptied, refilled in Phase 6), the Styles screen
-and style framework (re-cast in Phase 7), the D6 die art (the Ludo die), the backgrounds, the build-logic, the
-licensing guard, and the Baseline Profile set-up.
+**What was kept (the skeleton).** `ui/common` (scaffold, dialogs, pickers, scrollbars, page cover, crash and failure
+pages, the drifting backdrop), `ui/theme`, `ui/menu`, `ui/settings` (switches, Graphics, About, Licences),
+`ui/setup` (four seats: name, Player/CPU, difficulty, colour), `navigation`, `platform`, `app` (container,
+breadcrumbs), `data` (DataStore, failures, JSON), the D6 pips (`ui/style/Pips.kt`), the sound pipeline and four
+clips, build-logic, the licensing guard, the Baseline Profile set-up, CI, scripts, and the Claude set-up.
 
-**Remove (the dice game).** The checklist below. Delete a test with the code it covers.
+**What was removed, and comes back from commit `5423b6c`.** That commit is the renamed copy before the gut: each
+removed feature is restored from it in its phase (`git show 5423b6c:<path>`), not written again.
 
-- [ ] `model/`: the dice-only types (`Die`, `DieColour`, `ScoreCategory`, `SectionBonus`, `HitList`,
-    `RollModifiers`, `UnluckyDice`, `TurnTimer`, the Easter eggs, `FlowerpotGrowth`, `ModePage`). `GameMode`,
-    `PlayerConfig`, `PlayerColour`, `PlayerType`, `Difficulty`, `PlayerName`, and `StoredId` stay, cut down.
-- [ ] `game/`: the dice engine, scoring, CPU strategies, tie-break, Hit List, perfect-play table, and the tutorial
-    script. Keep `Clock`, `LocalHour`, and `AiNameGenerator`.
-- [ ] `ui/game/`: the scorecard, tray, cup, shake detector, totals, undo, coach card, and tutorial guide. Leave a
-    placeholder `GameScreen` reached from New Game, and keep `LeaveGameConfirmation`, `Haptics`, and `SoundEffects`
-    (emptied).
-- [ ] `ui/style/`: the cups, mats, score frames and boxes, and the D20/Maths/Poker/Tally/Mahjong dice (not D6).
-    `GameVisualTheme` becomes the board/pawn/die/background theme seam. Drop the `ludo_d20` and `ludo_maths_*` fonts,
-    their subsetting scripts, and their licensing records.
-- [ ] `app/audio/`: the dice clips and their Freesound licence records. Keep `NormalizeOggAudioTask` (Ludo's sounds
-    come in Phase 5). Check the build copes with no clips.
-- [ ] Achievements: empty the catalog and the dice event rules. Keep the engine, persistence, banners, and list
-    screen.
-- [ ] Leaderboard and Statistics: keep the screens, and strip the dice columns down to placeholders. The Room schema
-    restarts at version 1 (nothing has shipped).
-- [ ] Rules screen: replace the dice rules text with the classic Ludo rules above.
-- [ ] Strings: delete every dice string, and the `values-es`/`values-ar` folders (Compose resources and
-    `app/android` res). Move `StringChecks` to guard the Ludo trademarks in `CLAUDE.md`.
-- [ ] Theme: re-seed `ui/theme/Color.kt` (violet/navy/ivory, generated tonal palettes, not hand-nudged). The player
-    colours are red, green, yellow, and blue. Render the menu and settings for approval (`render` skill).
-- [ ] Launcher icon: a placeholder pawn on the navy background (`scripts/generate-launcher-dice.py` becomes the icon
-    generator).
-- [ ] Docs: rewrite `DESIGN.md`'s rules, modes, CPU, and table-art sections for Ludo. Retire `UI_BOARD.md`,
-    `GAME_MODES_AUDIT.md`, `TUTORIAL.md`, and `STYLE_ART.md`'s dice content, or mark it as to-come. Bring the
-    `commit` skill's categories up to date (`[Board]` for `[Gameplay]`'s scorecard sense, and drop `[Game Mode]`
-    until Phase 9).
-- [ ] Store-assets and Baseline Profile journeys: cut them to what exists (menu, setup, placeholder game). The README
-    gallery comes back at 1.0.0.
-- [ ] Phase exit: `./gradlew` full gate green (the `test` skill), with the debug APK sent.
+| Removed | Comes back in |
+| --- | --- |
+| The dice engine, scoring, CPU strategies, tie-break, and tutorial script (`game/`, most of `model/`) | Never (Ludo's own in Phases 1 and 3); the CPU pacing UI in Phase 3 |
+| The scorecard, tray, cup, totals, undo, leave-game confirmation, haptics, and sound hooks (`ui/game/`) | Phase 2 (leave confirmation, haptics, sound hooks) |
+| The dice, cup, mat, frame, and box art (`ui/style/`, `game/style/`), the Styles screen (`ui/styles/`) | Phase 2 (the D6 die), Phase 7 (the style framework and screen) |
+| Room, the Leaderboard, and Statistics (`data/scores/`, `ui/scores/`, `ui/statistics/`) | Phase 4 |
+| Saved games and Continue (`data/game/`, `ResumeAttempt`) | Phase 4 |
+| Progress files (github flavour) | Phase 4 |
+| Achievements: engine, catalog, banners, and list (`data/achievements/`, `ui/achievements/`, `game/Achievement*`) | Phase 6 |
+| The guided tutorial | Phase 5 |
+| Play Games, cloud save, and online sync (`online/`, `src/play`) | Phase 10 |
+| Play Billing and "Unlock all styles" (`purchases/`) | Phase 11 |
+| Spanish and Arabic | A later languages phase |
+
+- [x] Dice code, its tests, and its resources removed (fonts, the perfect-play table, the cup and chicken clips, and
+    their licence records).
+- [x] Settings cut to sound, vibration, confirm leaving, and Graphics. The motion groups are Ludo's: Background,
+    Menus & pages, Achievement banners, Celebrations, Die roll, and Pawn moves.
+- [x] Setup form: four seats (seat 1 always a player), names, Player/CPU, difficulty, colour, and the mode (Classic).
+- [x] Placeholder game screen: the players, and a note that the board is coming. Back goes to the menu.
+- [x] Rules screen: the classic rules above, a card a part.
+- [x] Strings: every unused one deleted; the es/ar folders removed. `StringChecks` guards the Ludo trademarks.
+- [x] Theme re-seeded (violet `#9C6BFF`, navy `#1E2A4A`, ivory `#F1E4C3`, generated with material-color-utilities).
+    Player colours red, green, yellow, and blue.
+- [x] Placeholder launcher icon: an ivory pawn on the brand navy.
+- [x] Baseline Profile journey cut to the menu, setup, the placeholder game, Rules, and Settings.
+- [x] Docs that still describe DiceFive say so at their top; `UI.md`'s colour, player-colour, mode-colour, and icon
+    notes rewritten.
+- [ ] Renders of the menu, setup, and settings in the new colours, for the maintainer's approval (`render` skill).
+- [ ] The full gate green (the `test` skill), and the debug APK sent.
 
 ## Phase 1: The Ludo rules engine
 
@@ -178,7 +177,7 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 - [ ] Accessibility: each square is a node that says what's on it, and each movable pawn is an action ("Move red
     pawn 2 by 4, captures green"), plus a "Roll" action. TalkBack must be able to play a whole game (`UI.md`, the
     checklist).
-- [ ] Leave-game confirmation and back handling, kept from DiceFive.
+- [ ] Leave-game confirmation (restored from `5423b6c`), with back asking before it leaves.
 
 ## Phase 3: CPU opponents
 

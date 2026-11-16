@@ -9,13 +9,12 @@ them all home first. In development, pre-1.0.0.
 
 - **Where it came from.** The repo was copied whole from DiceFive (`github.com/zodac/DiceFive`, the maintainer's
     five-dice scorecard game) and renamed. Its build, CI, scripts, sandbox, Claude set-up and app chrome are kept; its
-    dice game is being gutted and replaced with Ludo. **`.claude/IMPLEMENTATION.md` is the plan**: read it before any
-    gameplay work, and keep its phase status current.
-- **Inherited code and docs.** Until Phase 0 of `IMPLEMENTATION.md` is done, the dice game's code (scorecard, cup,
-    dice modes, its achievements and styles) is still in the tree, and the dice-specific reference docs (`DESIGN.md`,
-    `UI_BOARD.md`, `GAME_MODES.md`, `GAME_MODES_AUDIT.md`, `TUTORIAL.md`, `STYLE_ART.md`, `STORE_ASSETS.md`) still
-    describe it. The infrastructure they describe (persistence, errors, the release pipeline, the style framework,
-    accessibility) still holds. A doc section is rewritten for Ludo when the code it describes is.
+    dice game was gutted (Phase 0). **`.claude/IMPLEMENTATION.md` is the plan**: read it before any gameplay work, and
+    keep its phase status current.
+- **Bringing DiceFive's features back.** Achievements, styles, scores and Statistics, saved games, progress files, the
+    tutorial, Play Games and purchases were removed with the dice game. Their code, built and tested, is in commit
+    `5423b6c` (the renamed copy, before the gut): restore what a phase needs from there (`git show 5423b6c:<path>`)
+    rather than writing it again, then make it Ludo's. Docs that still describe DiceFive say so in a note at their top.
 - **Players.** 4 per game to start (any mix of pass-and-play and CPU opponents); 2-8 later.
 - **Planned content.** Custom game modes, house-rule modifiers, netplay, achievements, styles for the board, pawns
     and die, and in-app purchases (`IMPLEMENTATION.md`).
@@ -40,7 +39,7 @@ them all home first. In development, pre-1.0.0.
 | Package | `net.zodac.ludo` (Kotlin root package; the play app's `applicationId`; the github APK is `net.zodac.ludo.github`). Code identifiers use `LudoPlus` (`LudoPlusTheme`); player text says "Ludo Plus" |
 | Version | `VERSION` at the repo root (0.1.0 in development; releases start at 1.0.0). Never hand-edit for a debug install |
 | Platforms | Android minSdk 26, targetSdk/compileSdk 37 (`gradle/android-sdk.properties`). Android only |
-| Stack | Kotlin Multiplatform, Compose Multiplatform, Material 3 (dark only), Navigation Compose, MVVM (`ViewModel` + `StateFlow`), Room (scores), DataStore (everything else) |
+| Stack | Kotlin Multiplatform, Compose Multiplatform, Material 3 (dark only), Navigation Compose, MVVM (`ViewModel` + `StateFlow`), DataStore (settings). Room comes back for game records in Phase 4 |
 | Versions | `gradle/libs.versions.toml`, bumped monthly by CI (an entry tied to another is marked `# @update`); sandbox pins in `ai-sandbox-configuration/Dockerfile` |
 | Languages | English (`en-GB` base, British spelling) only for now: all player text in Compose resources (`I18N.md`), so translations can follow. The Spanish and Arabic folders inherited from DiceFive go in Phase 0 |
 | Licence | Proprietary, all rights reserved (`LICENSE`), source public read-only; no outside contributions. Third-party parts keep their own licences (the Sora font stays OFL) |
@@ -86,8 +85,8 @@ them all home first. In development, pre-1.0.0.
     (the app, the store listing, `README.md`), and never in identifiers or filenames: Frustration, Trouble, Sorry!,
     Parcheesi, Mensch ärgere dich nicht, Ludo King, Ludo Club, and Ludo Star. "Frustration" was the working title and
     was dropped for this reason (2026-11-16). "Ludo", "Pachisi", and "Uckers" are generic and fine. Say "Ludo" or "the
-    classic rules" generically. Phase 0 moves `StringChecks` (`app/shared/src/androidHostTest/…/i18n/`) to guard these;
-    until then it still guards DiceFive's own banned trademark, which stays out of everything too.
+    classic rules" generically. `StringChecks.TRADEMARKS` (`app/shared/src/androidHostTest/…/i18n/`) guards the player
+    text against them; "Trouble" and "Sorry!" are everyday words, so they're left to review.
 - **Fix every build warning and error**: compiler, lint, tests, Gradle. That includes ones that were there before you
     started.
     - If one truly shouldn't be fixed (a deliberate choice, a false positive), suppress it at the narrowest scope with a
@@ -96,7 +95,7 @@ them all home first. In development, pre-1.0.0.
 - **Accessibility is part of done.** Every new or changed UI element goes through the checklist in `.claude/UI.md`.
     The report says what TalkBack does with it. Don't add that it wasn't heard on a device: the maintainer knows
     speech is never heard here.
-- **Achievement titles fit ONE line of the unlock banner at 11sp or larger.**
+- **Achievement titles (from Phase 6) fit ONE line of the unlock banner at 11sp or larger.**
     - English titles are at most `MAX_ACHIEVEMENT_TITLE_LENGTH` (38) characters (`AchievementTextTest`). A translation
         may set its own `achievement_title_max_length`.
     - Shorten a title that doesn't fit; never wrap or shrink it. A description gets exactly two lines.
