@@ -1,0 +1,64 @@
+name: Build setup
+description: >-
+  Everything a Gradle job here needs before it runs - the JDK, the Android SDK packages, Gradle with its
+  caches - and, when asked, ffmpeg (for the app's sound effects). Shared by the workflows' Gradle jobs;
+  runs after actions/checkout.
+
+inputs:
+  ffmpeg:
+    description: "Install ffmpeg - scripts/normalize-audio.sh needs it for app:android's resources"
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    # The Java version is owned by the Gradle toolchain (gradle/gradle-daemon-jvm.properties), which
+    # Gradle would download itself; installing the same JDK here just saves it that download. Read
+    # at run time rather than pinned here, so a JDK move never has to edit this file.
+    - name: Read the Java version from the Gradle toolchain
+      id: java
+      shell: bash
+      run: echo "version=$(sed -n 's/^toolchainVersion=\([0-9]*\).*/\1/p' gradle/gradle-daemon-jvm.properties)" >> "$GITHUB_OUTPUT"
+
+    - name: Set up JDK
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+      with:
+        distribution: temurin
+        java-version: ${{ steps.java.outputs.version }}
+
+    # ubuntu-latest runners ship a full Android SDK pre-installed (cmdline-tools, licenses already
+    # accepted) - just install the specific packages this project builds against, which
+    # android_sdk_packages.sh reads from gradle/android-sdk.properties (not pinned here, for the same
+    # reason as the JDK above). (android-actions/setup-android@v3 was tried here but fails on current
+    # runners: it also tries to install the long-removed legacy "tools" package.)
+    - name: Install required Android SDK packages
+      shell: bash
+      run: |
+        ANDROID_CLI="$ANDROID_HOME/cmdline-tools/latest/bin/android"
+        read -ra packages <<< "$(.github/scripts/android_sdk_packages.sh)"
+        if [ -x "$ANDROID_CLI" ]; then
+          "$ANDROID_CLI" sdk install --sdk="$ANDROID_HOME" "${packages[@]}"
+        else
+          # The runner's cmdline-tools predate the android CLI, so sdkmanager is the only installer.
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          # yes always exits non-zero here (sdkmanager stops reading, so yes hits a broken pipe), which
+          # `shell: bash`'s pipefail would take as the step failing; only sdkmanager's own status counts.
+          { yes 2>/dev/null || true; } | "$SDKMANAGER" --licenses > /dev/null
+          "$SDKMANAGER" "${packages[@]}"
+        fi
+
+    # scripts/normalize-audio.sh shells out to ffmpeg to peak-normalise the clips in app/audio/ (for
+    # Android's normalizeOggAudio task), and ubuntu-latest runners don't ship it. The runner's own package
+    # lists are tried first - refreshing them is most of this step's time - and only refreshed if they
+    # can't find it.
+    - name: Install ffmpeg
+      if: inputs.ffmpeg == 'true'
+      shell: bash
+      run: |
+        sudo apt-get install -y --no-install-recommends ffmpeg || {
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+        }
+
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1

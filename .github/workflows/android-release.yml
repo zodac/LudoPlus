@@ -1,0 +1,725 @@
+name: Android release
+
+# Every push to main that changes what the Android app ships (see the paths filter below) builds, tests,
+# and publishes a GitHub Release android-v<version> for the version currently in VERSION, then commits
+# that file bumped to the next patch version back to main (e.g. 1.0.1 -> 1.0.2) so development always
+# continues one patch ahead of the last release. That bump-commit is pushed with the default GITHUB_TOKEN,
+# which GitHub does not use to re-trigger workflows, so this can't loop.
+#
+# What a run builds is main as it is when the run starts (the version job), not the commit whose push started it.
+# Runs queue one at a time (concurrency below), so a push made during a run waits, and starts only after that run has
+# pushed its bump: built from its own commit, it would read the VERSION just released and release it a second time.
+# A run that finds nothing new on main since the last release (only the bot's bump, as when two pushes queued and the
+# first run built them both) releases nothing. A run that finds VERSION already tagged fails rather than replace that
+# release's files.
+#
+# For a minor/major bump, edit VERSION by hand (or run scripts/set-version.sh) and
+# push that - the next run releases that version, then resumes patch-bumping from it (1.1.0 -> 1.1.1 -> ...).
+#
+# The release's description is RELEASE_NOTES.md, all of it (the maintainer's own summary, written
+# before pushing; scripts/release-notes.sh), followed by every commit since the
+# previous release, grouped by the "[Category]" at the start of its subject line
+# (scripts/release-changelog.sh; the format is enforced locally by .githooks/commit-msg). The bump
+# commit afterwards also empties that file, ready for the next release's notes.
+#
+# Every release attaches its build assets: the signed github APK (for sideloading; an app of its own,
+# net.zodac.ludo.github, with progress files and no Play Games), the signed play App Bundle (.aab) for
+# Google Play, and R8's mapping.txt for each, for reading obfuscated stack traces.
+# Both are signed with the RELEASE_KEY* secrets' key, which is the app's
+# Play App Signing upload key - Play re-signs the bundle with its own key.
+#
+# The checks run side by side, each on a runner of its own - the app's Robolectric tests, the shared
+# module's tests, lint, the upgrade check, and the Baseline Profile, which stops itself if a check fails. The signed APK is
+# built with that profile once it and every check have passed, and the release itself is made only once
+# all of that has. Each job sets itself up through .github/actions/build-setup.
+#
+# Only a push that touches what ships triggers a release: app sources and resources (VERSION
+# included), and the Gradle build. Docs, CI, tooling, test code and Markdown files don't build a new
+# release. The workflow_dispatch trigger below still releases on demand.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "VERSION"
+      - "app/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "build-logic/**"
+      - "gradle.properties"
+      # The sound effects' build step (the clips themselves are in app/audio).
+      - "scripts/normalize-audio.sh"
+      # ...except test code and documentation inside those.
+      - "!app/**/src/test/**"
+      - "!app/**/src/testPlay/**"
+      - "!app/**/src/testGithub/**"
+      - "!app/**/src/commonTest/**"
+      - "!app/**/src/androidHostTest/**"
+      - "!app/**/src/androidTest/**"
+      - "!app/**/*.md"
+  # Lets a release for the VERSION currently on main be triggered on demand
+  # (Actions tab, or `gh workflow run android-release.yml`) instead of only ever
+  # firing from a push - useful when a push-triggered run failed partway
+  # (e.g. a red unit-test run) and left main sitting on an unreleased
+  # VERSION with nothing to re-trigger it.
+  workflow_dispatch:
+
+# Read-only by default: the checks run Gradle, its plugins and the app's dependencies, none of which needs to write.
+# Only the release job, which tags, uploads and pushes the version bump, gets write access.
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  # What's being released, read once for every other job: the commit (main as it is now - see the top of this file),
+  # its VERSION, and whether there's anything to release. Every other job checks out that commit and runs only if so.
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.version.outputs.name }}
+      sha: ${{ steps.version.outputs.sha }}
+      release: ${{ steps.version.outputs.release }}
+      publish: ${{ steps.version.outputs.publish }}
+      previous_tag: ${{ steps.version.outputs.previous_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0 # the tags, and the commits since the previous release
+
+      # The bot's own commits (the version bumps, which scripts/release-changelog.sh leaves out of the notes too) are
+      # not something new to release.
+      - name: Read version
+        id: version
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          sha="$(git rev-parse HEAD)"
+          echo "name=$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/android-v$version" > /dev/null; then
+            echo "::error::android-v$version is already released, and VERSION on main still says $version - set the next version (scripts/set-version.sh), push it, and run this again"
+            exit 1
+          fi
+          previous_tag="$(git tag --merged HEAD --list 'android-v*' --sort=-version:refname | head -n 1 || true)"
+          release=true
+          if [ -n "$previous_tag" ] && [ -z "$(git log --format='%an' "$previous_tag..HEAD" | grep -vxF 'github-actions[bot]' || true)" ]; then
+            release=false
+            echo "::notice::Nothing on main since $previous_tag but the version bump - nothing to release"
+          fi
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+          # Pre-1.0.0 (the app is in development, with no Play listing yet): every check still runs, but nothing is
+          # built for release, tagged or published. Setting VERSION to 1.0.0 or later (scripts/set-version.sh) turns
+          # publishing on.
+          publish=false
+          if [ "$release" = true ] && [ "${version%%.*}" -ge 1 ]; then
+            publish=true
+          elif [ "$release" = true ]; then
+            echo "::notice::VERSION $version is below 1.0.0 - checks only, no release is published"
+          fi
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+          echo "previous_tag=$previous_tag" >> "$GITHUB_OUTPUT"
+          echo "Releasing: $release (android-v$version, $sha; previous release: ${previous_tag:-none})"
+
+  # app:android's unit tests - Robolectric, so the slowest of the checks. One runner per flavour, side by side: each
+  # runs src/test plus its own src/test<Flavour> (the play and github apps; .claude/DESIGN.md, "Distribution"). Neither
+  # leg stops the other, so a failure in one still reports the other's results.
+  android-tests:
+    name: android-tests (${{ matrix.flavour }})
+    strategy:
+      fail-fast: false
+      matrix:
+        flavour: [Play, Github]
+    needs: version
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true # code-quality-config: lint's rules, which release builds read too (lintVital)
+          ref: ${{ needs.version.outputs.sha }}
+
+      - name: Set up the build
+        uses: ./.github/actions/build-setup
+        with:
+          ffmpeg: "true"
+
+      # Robolectric downloads its Android runtime jar (android-all-instrumented, a few hundred MB) from
+      # Maven Central into ~/.m2 as the first test classes start, and nothing else caches ~/.m2. A
+      # dropped download failed whichever classes were starting ("MavenArtifactFetcher ...
+      # FileNotFoundException"), and a re-run passed. So the jar is cached, keyed on what picks it (the
+      # Robolectric version and robolectric.properties' SDK), and on a miss fetched by one small test
+      # before the real run, retried until the jar is there. Restored and saved as separate steps, so a
+      # failing test run still keeps the download.
+      - name: Read what picks Robolectric's runtime
+        id: robolectric
+        run: |
+          echo "version=$(grep -oP '^robolectric = "\K[^"]+' gradle/libs.versions.toml)" >> "$GITHUB_OUTPUT"
+          echo "sdk=$(grep -oP '^sdk=\K[0-9]+' app/android/src/test/resources/robolectric.properties)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Robolectric's runtime
+        id: robolectric-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ steps.robolectric.outputs.version }}-sdk${{ steps.robolectric.outputs.sdk }}
+
+      # Only the download is retried: the test's own result is the real run's to report.
+      - name: Fetch Robolectric's runtime
+        if: steps.robolectric-cache.outputs.cache-hit != 'true'
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :app:android:test${{ matrix.flavour }}DebugUnitTest --tests '*ReduceMotionFlagTest' --console=plain || true
+            if compgen -G "$HOME/.m2/repository/org/robolectric/android-all-instrumented/*/*.jar" > /dev/null; then
+              exit 0
+            fi
+            echo "::warning::Robolectric's runtime didn't download (attempt $attempt)"
+            sleep 30
+          done
+          echo "::error::Robolectric's runtime couldn't be downloaded"
+          exit 1
+
+      - name: Save Robolectric's runtime
+        if: steps.robolectric-cache.outputs.cache-hit != 'true'
+        continue-on-error: true # both legs miss together, and only the first to save the key can
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: ${{ steps.robolectric-cache.outputs.cache-primary-key }}
+
+      - name: Run app unit tests
+        run: ./gradlew :app:android:test${{ matrix.flavour }}DebugUnitTest --console=plain
+
+  # app:shared's tests as Android runs them (commonTest and androidHostTest, under Robolectric for the UI) - see the
+  # testDebugUnitTest task in app/shared/build.gradle.kts.
+  shared-tests:
+    needs: version
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true # code-quality-config: lint's rules, which release builds read too (lintVital)
+          ref: ${{ needs.version.outputs.sha }}
+
+      - name: Set up the build
+        uses: ./.github/actions/build-setup
+
+      - name: Run shared tests
+        run: ./gradlew :app:shared:testDebugUnitTest --console=plain
+
+  # Deprecation gates. Any compile already fails on a deprecated API (allWarningsAsErrors, from build-logic's
+  # StrictChecks.kt) or a build-script warning (org.gradle.kotlin.dsl.allWarningsAsErrors in
+  # gradle.properties); this extends that to the Baseline Profile journey (app/baselineprofile), which nothing else
+  # compiles before the emulator job, and runs lint, where Deprecated / ObsoleteSdkInt findings are errors - on the
+  # release builds too (lintRelease), whose own source sets and manifests the debug lint never sees.
+  lint:
+    needs: version
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true # code-quality-config: lint's rules, which release builds read too (lintVital)
+          ref: ${{ needs.version.outputs.sha }}
+
+      - name: Set up the build
+        uses: ./.github/actions/build-setup
+        with:
+          ffmpeg: "true"
+
+      - name: Check the profile journey compiles and lint passes
+        run: ./gradlew :app:baselineprofile:compileNonMinifiedReleaseKotlin lintDebug lintRelease --console=plain
+
+  # A fresh Baseline Profile for every APK: the profile journey (app/baselineprofile) run on an
+  # emulator, from this commit. Only when there's an APK to put it in. The profile is not committed (it is
+  # gitignored); it goes to the apk job as an artifact. A failing journey fails the job, and with it the
+  # release, rather than shipping a thinner profile - but in a 3-lap run it is first run once more, as most
+  # failures were a starved runner dropping a tap, which a relabelled button would not survive. An emulator
+  # that fails to boot, or whose framework fails the APK install (Gradle then passes with no profile), is
+  # retried too, since neither says anything about the journey: three attempts in all. The
+  # emulator and the journey are explained in .claude/EMULATOR.md; the journey in .claude/DESIGN.md
+  # Phase 19.
+  #
+  # Timeouts: a lap of the journey is ~4.5 minutes on a 4-core sandbox emulator when it plays a game to the end (every
+  # lap of a 10-lap run; the first ~0.5 more, with the game that unlocks the modes), and a hosted runner is at
+  # least three times slower - a 60-minute step timed out with laps still to run. The step stops at 190
+  # (a boot of up to 15, the benchmark build, 10 laps, room for two retried boots) and fails like a failed
+  # journey, so its report is still uploaded; the job's own 210 is the backstop for a hang anywhere else
+  # (setup, the cache, an upload). Each lap's start is printed in the step's log, so a slow run shows how
+  # far it got.
+  #
+  # It runs alongside the checks but is no use once one of them fails (nothing will be released), so it
+  # watches them and stops itself when one does - see watch_checks.sh.
+  baseline-profile:
+    needs: version
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    permissions:
+      contents: read
+      actions: read # watch_checks.sh reads this run's jobs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true # code-quality-config: lint's rules, which release builds read too (lintVital)
+          ref: ${{ needs.version.outputs.sha }}
+          fetch-depth: 0 # the lap count below diffs against the previous release's tag
+
+      # 3 laps are enough for a profile (a rule is recorded once). 10 only when the journey or a
+      # profile file changed since the previous release: the journey's timing races only showed up
+      # from lap 4, so a changed journey is soaked once, before it goes on being run 3 laps at a time.
+      # A change only to comments or blank lines isn't one: a reworded KDoc cost a release a 10-lap soak. Each
+      # comment pattern is its own -I (joined into one with `|`, git's -I ignored every line).
+      - name: Pick the number of laps
+        id: laps
+        run: |
+          previous_tag="$(git tag --merged HEAD --list 'android-v*' --sort=-version:refname \
+            | grep -vxF "android-v${{ needs.version.outputs.name }}" | head -n 1 || true)"
+          laps=3
+          if [ -z "$previous_tag" ] || ! git diff --quiet --ignore-blank-lines \
+              -I '^[[:space:]]*//' -I '^[[:space:]]*/\*' -I '^[[:space:]]*\*' -I '^[[:space:]]*#' \
+              "$previous_tag" HEAD -- \
+              app/baselineprofile app/android/src/main/baseline-prof.txt; then
+            laps=10
+          fi
+          echo "laps=$laps" >> "$GITHUB_OUTPUT"
+          echo "Journey laps: $laps (previous release: ${previous_tag:-none})"
+
+      # In the background for the rest of the job: it writes the marker file, and stops Gradle and the
+      # emulator, as soon as a check fails. The generate step below reads the marker so it neither starts
+      # nor retries once that has happened.
+      - name: Watch the checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          nohup .github/scripts/watch_checks.sh "$RUNNER_TEMP/checks-failed" "android-tests (Play)" "android-tests (Github)" \
+            shared-tests lint upgrade-check \
+            > "$RUNNER_TEMP/watch-checks.log" 2>&1 &
+
+      - name: Set up the build
+        uses: ./.github/actions/build-setup
+        with:
+          ffmpeg: "true"
+
+      # The emulator's Android version is ai-sandbox-configuration/Dockerfile's EMULATOR_API (see ci_emulator.sh). The SDK's
+      # path is read here too: the runner's own environment isn't in the `env` context the cache reads.
+      - name: Read the emulator's Android version
+        id: emulator
+        run: |
+          echo "api=$(grep -oP '^ARG EMULATOR_API=\K[0-9.]+' ai-sandbox-configuration/Dockerfile)" >> "$GITHUB_OUTPUT"
+          echo "sdk=$ANDROID_HOME" >> "$GITHUB_OUTPUT"
+
+      # About 1.5 GB to download otherwise. Keyed on the Android version: the emulator and its image
+      # can't be pinned to a revision, so a cached pair is kept until EMULATOR_API moves. Restored and saved
+      # as separate steps: actions/cache only saves when the whole job passes, so a failed journey would
+      # leave the next run downloading them again.
+      - name: Restore the emulator and its system image
+        id: emulator-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ steps.emulator.outputs.sdk }}/emulator
+            ${{ steps.emulator.outputs.sdk }}/system-images/android-${{ steps.emulator.outputs.api }}
+          key: emulator-${{ runner.os }}-api${{ steps.emulator.outputs.api }}
+
+      # The app and journey APKs are built before the emulator boots, not by the generate step, so the two
+      # don't compete for the runner's cores. The generate step then finds these up to date and goes
+      # straight to the device.
+      - name: Build the journey's APKs
+        run: |
+          ./gradlew :app:android:assemblePlayNonMinifiedRelease :app:baselineprofile:assembleNonMinifiedRelease \
+            --console=plain
+
+      # 3 laps, or 10 when the journey or a profile file changed (see "Pick the number of laps").
+      # The boot and the install are retried, and a failed journey once in a short run; the three attempts are
+      # shared (see the job's comment).
+      # The benchmark library logs "Compile iteration (N)" as each lap starts; those lines are echoed here
+      # (Gradle prints nothing until the tests end).
+      - name: Generate the Baseline Profile
+        timeout-minutes: 190
+        env:
+          JOURNEY_LAPS: ${{ steps.laps.outputs.laps }}
+        run: |
+          # adb for the logcat below: ci_emulator.sh puts platform-tools on its own PATH, not this step's.
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          checks_failed() {
+            if [ -f "$RUNNER_TEMP/checks-failed" ]; then
+              echo "::error::$(cat "$RUNNER_TEMP/checks-failed") failed - the Baseline Profile was stopped"
+              return 0
+            fi
+            return 1
+          }
+          journey_retried=""
+          for attempt in 1 2 3; do
+            if checks_failed; then exit 1; fi
+            if ! .github/scripts/ci_emulator.sh start; then
+              .github/scripts/ci_emulator.sh stop
+              echo "::warning::The emulator failed to boot (attempt $attempt)"
+              continue
+            fi
+            adb logcat -v time -s Benchmark:D -e "Compile iteration" &
+            trap 'kill $! 2>/dev/null || true' EXIT
+            if ./gradlew :app:android:generatePlayReleaseBaselineProfile \
+                -Pandroid.testInstrumentationRunnerArguments.journeyLaps="$JOURNEY_LAPS" \
+                --console=plain; then
+              # The plugin only warns when the tests yield no profile, so Gradle can pass without one. That
+              # means the APKs never installed (the emulator's framework fell over), not that the journey
+              # failed, so it is retried like a failed boot.
+              if [ -s app/android/src/playRelease/generated/baselineProfiles/baseline-prof.txt ]; then
+                # R8 lays the dex out from the startup profile (dexLayoutOptimization), so a release without
+                # one would quietly lose that. The install worked, so this is the startup journey's fault, not
+                # the emulator's: it fails rather than retries.
+                if [ -s app/android/src/playRelease/generated/baselineProfiles/startup-prof.txt ]; then
+                  exit 0
+                fi
+                echo "::error::Gradle wrote a Baseline Profile but no startup profile - see StartupProfileGenerator"
+                exit 1
+              fi
+              .github/scripts/ci_emulator.sh logcat "$RUNNER_TEMP/logcat-attempt$attempt.txt" || true
+              .github/scripts/ci_emulator.sh stop
+              echo "::warning::Gradle passed but wrote no Baseline Profile - the install failed (attempt $attempt)"
+              continue
+            fi
+            if checks_failed; then exit 1; fi
+            # No screenshot here: the app was force-stopped as the journey failed, and the journey saved its own
+            # (connected_android_test_additional_output, in the report artifact).
+            .github/scripts/ci_emulator.sh logcat "$RUNNER_TEMP/logcat-attempt$attempt.txt" || true
+            .github/scripts/ci_emulator.sh stop
+            # A failed journey is run once more, in a short run only: a renamed label fails both runs, a race on a
+            # starved runner rarely does. The 10-lap soak is there to find races, so it fails on the first. The
+            # failed run's saved screen and results are kept apart, as the next run replaces them.
+            if [ "$JOURNEY_LAPS" -le 3 ] &&[ -z "$journey_retried" ] && [ "$attempt" -lt 3 ]; then
+              journey_retried=1
+              mkdir -p "$RUNNER_TEMP/journey-attempt$attempt"
+              cp -r app/baselineprofile/build/outputs/connected_android_test_additional_output \
+                app/baselineprofile/build/outputs/androidTest-results "$RUNNER_TEMP/journey-attempt$attempt/" || true
+              failure="$(grep -rhoE 'Baseline Profile journey: [^&<]*' app/baselineprofile/build/outputs/androidTest-results | head -n 1 || true)"
+              echo "::warning::The journey failed (attempt $attempt) and is run once more: ${failure:-see the logcat}"
+              continue
+            fi
+            echo "::error::Baseline Profile generation failed - see the baseline-profile-report artifact"
+            exit 1
+          done
+          echo "::error::The emulator failed to boot, or to install the APKs, three times - see the baseline-profile-report artifact"
+          exit 1
+
+      # Whether or not the journey passed: ci_emulator.sh installed them if the restore missed.
+      - name: Save the emulator and its system image
+        if: always() && steps.emulator-cache.outputs.cache-hit != 'true'
+        continue-on-error: true # nothing to save if the step stopped before installing them
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ steps.emulator.outputs.sdk }}/emulator
+            ${{ steps.emulator.outputs.sdk }}/system-images/android-${{ steps.emulator.outputs.api }}
+          key: ${{ steps.emulator-cache.outputs.cache-primary-key }}
+
+      - name: Upload the journey's report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: baseline-profile-report
+          path: |
+            ${{ runner.temp }}/watch-checks.log
+            app/baselineprofile/build/reports/androidTests/
+            app/baselineprofile/build/outputs/androidTest-results/
+            app/baselineprofile/build/outputs/connected_android_test_additional_output/**/journey-failure-*
+            ${{ runner.temp }}/emulator-*.log
+            ${{ runner.temp }}/logcat-*.txt
+            ${{ runner.temp }}/journey-attempt*/
+          retention-days: 7
+
+      - name: Hand the profile to the apk job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: baseline-profile
+          path: app/android/src/playRelease/generated/baselineProfiles/
+          if-no-files-found: error
+          retention-days: 1
+
+  # A game left on the last release must resume on this one: .github/scripts/ci_upgrade_check.py plays one on the last
+  # release's APK, upgrades over it, and continues it (.claude/EMULATOR.md, "The upgrade check"). A failure fails the job,
+  # and with it the release. Both APKs are real R8 builds, re-signed with the public debug key: an upgrade needs one key,
+  # and this way a job that runs the app holds no signing secrets. Signing itself is the apk job's.
+  #
+  # An emulator that fails to boot, or an old app that couldn't be driven, says nothing about the upgrade and is tried
+  # again (three attempts in all). What the upgrade itself did (the script's exit status 2) is never retried: a game lost
+  # now and then is still a game lost.
+  upgrade-check:
+    needs: version
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true # code-quality-config: lint's rules, which release builds read too (lintVital)
+          ref: ${{ needs.version.outputs.sha }}
+
+      - name: Set up the build
+        uses: ./.github/actions/build-setup
+        with:
+          ffmpeg: "true"
+
+      - name: Read the emulator's Android version
+        id: emulator
+        run: |
+          echo "api=$(grep -oP '^ARG EMULATOR_API=\K[0-9.]+' ai-sandbox-configuration/Dockerfile)" >> "$GITHUB_OUTPUT"
+          echo "sdk=$ANDROID_HOME" >> "$GITHUB_OUTPUT"
+
+      # Restored only: the baseline-profile job saves this key. On a miss ci_emulator.sh installs them.
+      - name: Restore the emulator and its system image
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ steps.emulator.outputs.sdk }}/emulator
+            ${{ steps.emulator.outputs.sdk }}/system-images/android-${{ steps.emulator.outputs.api }}
+          key: emulator-${{ runner.os }}-api${{ steps.emulator.outputs.api }}
+
+      # No signing secrets here, so Gradle leaves the APK unsigned.
+      - name: Build this version's APK
+        run: ./gradlew :app:android:assembleGithubRelease --console=plain
+
+      - name: Fetch the last release's APK and sign both with one key
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_TAG: ${{ needs.version.outputs.previous_tag }}
+          VERSION: ${{ needs.version.outputs.name }}
+        run: |
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "::error::No android-v* release to upgrade from"
+            exit 1
+          fi
+          mkdir "$RUNNER_TEMP/upgrade"
+          gh release download "$PREVIOUS_TAG" --repo "$GITHUB_REPOSITORY" --pattern "LudoPlus-${PREVIOUS_TAG#android-v}.apk" --output "$RUNNER_TEMP/upgrade/old.apk"
+          cp "app/android/build/outputs/apk/github/release/LudoPlus-$VERSION-github-release-unsigned.apk" "$RUNNER_TEMP/upgrade/new.apk"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)"
+          for apk in old new; do
+            "$apksigner" sign --ks app/android/debug.keystore --ks-pass pass:android --ks-key-alias androiddebugkey \
+              --key-pass pass:android "$RUNNER_TEMP/upgrade/$apk.apk"
+          done
+
+      - name: Upgrade over a game in progress
+        timeout-minutes: 40
+        run: |
+          # adb for the script below: ci_emulator.sh puts platform-tools on its own PATH, not this step's.
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          for attempt in 1 2 3; do
+            if ! .github/scripts/ci_emulator.sh start; then
+              .github/scripts/ci_emulator.sh stop
+              echo "::warning::The emulator failed to boot (attempt $attempt)"
+              continue
+            fi
+            status=0
+            .github/scripts/ci_upgrade_check.py "$RUNNER_TEMP/upgrade/old.apk" "$RUNNER_TEMP/upgrade/new.apk" \
+              "$RUNNER_TEMP/upgrade-failure-$attempt" || status=$?
+            if [ "$status" -eq 0 ]; then
+              exit 0
+            fi
+            .github/scripts/ci_emulator.sh stop
+            if [ "$status" -eq 2 ]; then
+              exit 1
+            fi
+          done
+          echo "::error::The upgrade check couldn't drive the last release in three attempts - see the upgrade-check-report artifact"
+          exit 1
+
+      - name: Upload the upgrade check's report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: upgrade-check-report
+          path: |
+            ${{ runner.temp }}/upgrade-failure-*/
+            ${{ runner.temp }}/emulator-*.log
+          retention-days: 7
+
+  # The signed release APK and App Bundle, built with the Baseline Profile generated above - only once the
+  # profile and every check have passed (there's no use for a build that won't be released). Handed to the
+  # release job as an artifact, with the mapping.txt each R8 run wrote.
+  apk:
+    needs: [version, android-tests, shared-tests, lint, upgrade-check, baseline-profile]
+    if: needs.version.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true # code-quality-config: lint's rules, which release builds read too (lintVital)
+          ref: ${{ needs.version.outputs.sha }}
+
+      - name: Set up the build
+        uses: ./.github/actions/build-setup
+        with:
+          ffmpeg: "true"
+
+      # Where AGP merges it into each flavour's release build (alongside the hand-written src/main/baseline-prof.txt).
+      # The journey runs the play app; the github one is the same code less Play Games, so it takes the same profile.
+      - name: Fetch the Baseline Profile
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: baseline-profile
+          path: app/android/src/playRelease/generated/baselineProfiles/
+
+      - name: Give the github APK the same profile
+        run: cp -r app/android/src/playRelease/generated app/android/src/githubRelease/
+
+      # The github APK's progress files are sealed with this (app/android/build.gradle.kts, PROGRESS_FILE_KEY): without
+      # it the build would use the all-zero key anyone can read in the source, and its files would be readable and
+      # writable by anyone. Permanent once released - files made with one key can't be opened with another.
+      - name: Check the progress file key
+        env:
+          PROGRESS_FILE_KEY: ${{ secrets.PROGRESS_FILE_KEY }}
+        run: |
+          if ! [[ "$PROGRESS_FILE_KEY" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            echo "::error::The PROGRESS_FILE_KEY secret must be set to 64 hex digits - see .claude/DESIGN.md, \"Progress files\""
+            exit 1
+          fi
+
+      # The play app checks each purchase's signature with this (app/android/build.gradle.kts, PLAY_LICENCE_KEY): the
+      # app's Base64 RSA licence key from Play Console. A public key, so a repository variable, not a secret. Without it
+      # the play app would count every purchase Play reports, so the release is refused instead.
+      - name: Check the Play licence key
+        env:
+          PLAY_LICENCE_KEY: ${{ vars.PLAY_LICENCE_KEY }}
+        run: |
+          if ! [[ "$PLAY_LICENCE_KEY" =~ ^[A-Za-z0-9+/]+=*$ ]]; then
+            echo "::error::The PLAY_LICENCE_KEY repository variable must be set to Play Console's Base64 licence key, on one line - see .claude/PURCHASES.md, \"Entitlement\""
+            exit 1
+          fi
+
+      # Through env, never ${{ }} in the script: the secret is then never part of the script's text.
+      - name: Decode release keystore
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore.jks"
+
+      # The APK is the github flavour's and the bundle the play flavour's: two apps, two R8 runs, a mapping.txt each.
+      # The bundle also carries its mapping inside it (BUNDLE-METADATA), which Play uses to deobfuscate its crash
+      # reports.
+      - name: Build release APK and App Bundle
+        env:
+          ANDROID_RELEASE_KEYSTORE_PATH: ${{ runner.temp }}/release.keystore.jks
+          ANDROID_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          ANDROID_RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          PROGRESS_FILE_KEY: ${{ secrets.PROGRESS_FILE_KEY }}
+          PLAY_LICENCE_KEY: ${{ vars.PLAY_LICENCE_KEY }}
+        run: ./gradlew :app:android:assembleGithubRelease :app:android:bundlePlayRelease --console=plain
+
+      # app/android/build.gradle.kts names the APK LudoPlus-<version>-<flavour>-<buildType>.apk (signed here, so no
+      # -unsigned suffix - a missing secret fails this copy). The bundle's name has no version and no
+      # unsigned suffix (only APK names can be set), so its signature is checked here instead: Play
+      # refuses an unsigned one.
+      - name: Rename the release files
+        run: |
+          version="${{ needs.version.outputs.name }}"
+          mkdir release-files
+          cp "app/android/build/outputs/apk/github/release/LudoPlus-$version-github-release.apk" "release-files/LudoPlus-$version.apk"
+          cp app/android/build/outputs/bundle/playRelease/LudoPlus-play-release.aab "release-files/LudoPlus-$version.aab"
+          cp app/android/build/outputs/mapping/githubRelease/mapping.txt "release-files/LudoPlus-$version-mapping.txt"
+          cp app/android/build/outputs/mapping/playRelease/mapping.txt "release-files/LudoPlus-$version-play-mapping.txt"
+          if ! keytool -printcert -jarfile "release-files/LudoPlus-$version.aab" | grep -q '^Owner:'; then
+            echo "::error::The App Bundle is not signed - check the RELEASE_KEY* secrets"
+            exit 1
+          fi
+
+      - name: Hand the release files to the release job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-files
+          path: release-files/
+          if-no-files-found: error
+          retention-days: 1
+
+  # Made only once every job it needs has succeeded (Actions' default), so a release always has its APK.
+  release:
+    needs: [version, android-tests, shared-tests, lint, upgrade-check, baseline-profile, apk]
+    if: needs.version.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # Full history and tags: the release description lists every commit since the previous
+      # release's tag, which a shallow clone wouldn't have.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.version.outputs.sha }}
+          fetch-depth: 0
+
+      - name: Fetch the release files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-files
+          path: release-files/
+
+      # RELEASE_NOTES.md (skipped if empty; scripts/release-notes.sh), then the grouped commit list. A
+      # copy of the notes is kept aside so the bump step below can tell whether the file on main is still
+      # the text this release shipped with.
+      - name: Compose release description
+        id: notes
+        run: |
+          body="$RUNNER_TEMP/release-body.md"
+          if [[ -f RELEASE_NOTES.md ]]; then cp RELEASE_NOTES.md "$RUNNER_TEMP/released-notes.md"; fi
+          notes="$(./scripts/release-notes.sh extract)"
+          {
+            if [[ -n "$notes" ]]; then
+              printf '%s\n\n' "$notes"
+            fi
+            ./scripts/release-changelog.sh "${{ needs.version.outputs.name }}"
+          } > "$body"
+          cat "$body"
+          echo "path=$body" >> "$GITHUB_OUTPUT"
+
+      # The tag is made on the commit built, not on main's tip, which may have moved on since (the action's default).
+      # The version job has already made sure the tag is new, so this never replaces a release's files.
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          tag_name: android-v${{ needs.version.outputs.name }}
+          target_commitish: ${{ needs.version.outputs.sha }}
+          name: Ludo Plus Android v${{ needs.version.outputs.name }}
+          files: release-files/*
+          body_path: ${{ steps.notes.outputs.path }}
+
+      # Only reached once everything above has succeeded, so a failed build
+      # never bumps the version. Re-syncs with the current main tip first in
+      # case it moved during this run.
+      #
+      # VERSION is bumped only if main still says the version just released: one set by hand while this run was going
+      # (scripts/set-version.sh, for a minor or major) is the next release's, and is left as it is.
+      # RELEASE_NOTES.md is emptied for the next release - only if it still holds exactly what this release
+      # shipped with. If notes for the next release were pushed while this run was going, they're left alone.
+      - name: Bump version for next development iteration
+        run: |
+          released="${{ needs.version.outputs.name }}"
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+          if [ "$(tr -d '[:space:]' < VERSION)" = "$released" ]; then
+            ./scripts/bump-patch-version.sh
+            subject="[Release] Bump Android version to $(cat VERSION) [skip ci]"
+          else
+            echo "::notice::VERSION on main was set to $(cat VERSION) during this run - left as it is"
+            subject="[Release] Clear the release notes after $released [skip ci]"
+          fi
+          ./scripts/release-notes.sh clear "$RUNNER_TEMP/released-notes.md"
+          git add VERSION RELEASE_NOTES.md
+          if git diff --cached --quiet; then
+            echo "Nothing to commit after the release"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "$subject"
+          git push origin main
