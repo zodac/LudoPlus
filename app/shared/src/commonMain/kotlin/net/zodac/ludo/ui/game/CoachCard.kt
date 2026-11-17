@@ -128,8 +128,9 @@ internal fun CoachCard(
                     Text(text = styled, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
-            // Takes room beside the words only while they scroll (a larger font); at the standard size it draws nothing.
-            VerticalScrollbar(scroll, width = SCROLLBAR_WIDTH, modifier = Modifier.fillMaxHeight())
+            // Takes room beside the words only while they scroll (a larger font); at the standard size it draws nothing. Inset
+            // as the words are, so the thumb's rounded ends stay clear of the card's edge and border.
+            VerticalScrollbar(scroll, width = SCROLLBAR_WIDTH, modifier = Modifier.fillMaxHeight().padding(vertical = CARD_PADDING_VERTICAL))
             PartArrow(back = false, onClick = onForward)
         }
     }
