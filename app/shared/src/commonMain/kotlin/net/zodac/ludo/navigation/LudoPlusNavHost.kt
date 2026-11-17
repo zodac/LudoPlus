@@ -28,6 +28,10 @@ import net.zodac.ludo.ui.common.rememberPageCover
 import net.zodac.ludo.ui.game.GameScreen
 import net.zodac.ludo.ui.game.GameViewModel
 import net.zodac.ludo.ui.menu.MenuScreen
+import net.zodac.ludo.ui.records.LeaderboardScreen
+import net.zodac.ludo.ui.records.LeaderboardViewModel
+import net.zodac.ludo.ui.records.StatisticsScreen
+import net.zodac.ludo.ui.records.StatisticsViewModel
 import net.zodac.ludo.ui.rules.RulesScreen
 import net.zodac.ludo.ui.settings.GraphicsScreen
 import net.zodac.ludo.ui.settings.GraphicsViewModel
@@ -81,6 +85,8 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
             // Straight to the board, which brings the saved game back itself (see below).
             onContinue = { navigate(Screen.PLAY_GAME) },
             onNewGame = { navigate(Screen.PLAY_GRAPH) },
+            onLeaderboard = { navigate(Screen.LEADERBOARD) },
+            onStatistics = { navigate(Screen.STATISTICS) },
             onRules = { navigate(Screen.RULES) },
             onSettings = { navigate(Screen.SETTINGS) },
         )
@@ -122,5 +128,11 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
     }
     composable(Screen.RULES) {
         RulesScreen(onBack = navigateUp)
+    }
+    composable(Screen.LEADERBOARD) {
+        LeaderboardScreen(viewModel = viewModel(factory = LeaderboardViewModel.factory(container)), onBack = navigateUp)
+    }
+    composable(Screen.STATISTICS) {
+        StatisticsScreen(viewModel = viewModel(factory = StatisticsViewModel.factory(container)), onBack = navigateUp)
     }
 }

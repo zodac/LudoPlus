@@ -232,9 +232,13 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     captures, times captured, pawns home, the game's length, and whether it was played unmodified. Written once, as the
     game finishes. A database that can't be opened shows DiceFive's failure page. `GameResultDaoTest` runs the real
     queries on SQLite; the shared tests use `InMemoryGameResultDao`.
-- [ ] Leaderboard: fastest wins per mode (fewest turns, then more captures).
-- [ ] Statistics per player: games, wins, win rate, current and best streaks, captures, times captured, and pawns
-    home, overall and per mode.
+- [x] Leaderboard (`ui/records/LeaderboardScreen`): the mode's fastest wins (fewest turns, then more captures), the
+    top three on gold, silver, and bronze pills; two lines a row where a large font leaves a name no room. The top 100
+    for now: paging and a mode picker come with more modes (Phase 9).
+- [x] Statistics per player (`ui/records/StatisticsScreen`): games, wins, win rate, current and best streaks, fewest
+    turns to win, captures, times captured, and pawns home. Added up overall; `PlayerStatistics.modes` has them per
+    mode, for a mode picker once there's more than one. Both screens approved from renders 2026-11-17
+    (`RecordsScreensTest`).
 - [ ] A "stop at first winner" setting.
 - [ ] Progress files (github flavour) carry the new records.
 

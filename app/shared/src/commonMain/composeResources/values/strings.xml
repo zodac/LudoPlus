@@ -120,6 +120,8 @@
         <item quantity="other">%1$d images</item>
     </plurals>
 
+    <string name="menu_leaderboard">Leaderboard</string>
+    <string name="menu_statistics">Statistics</string>
     <string name="menu_rules">Rules</string>
     <string name="menu_settings">Settings</string>
     <string name="menu_play">Play</string>
@@ -228,6 +230,32 @@
     <string name="game_leave_title">Leave game?</string>
     <string name="game_leave_message">Your progress is saved, so you can continue this game later.</string>
     <string name="game_leave_confirm">Leave</string>
+
+    <!-- The Leaderboard (ui/records/LeaderboardScreen.kt): each mode's fastest wins. -->
+    <string name="leaderboard_title">Leaderboard</string>
+    <!-- Above the table. %1$s is the game mode's name. -->
+    <string name="leaderboard_heading">%1$s: fastest wins</string>
+    <string name="leaderboard_empty">No wins in %1$s yet. Win a game to set a time.</string>
+    <string name="leaderboard_player">Player</string>
+    <string name="leaderboard_turns">Turns</string>
+    <string name="leaderboard_captures">Captures</string>
+
+    <!-- Statistics (ui/records/StatisticsScreen.kt): each person's games added up. -->
+    <string name="stats_title">Statistics</string>
+    <string name="stats_empty">No statistics yet. Play a game!</string>
+    <string name="stats_games">Games played</string>
+    <string name="stats_wins">Wins</string>
+    <string name="stats_win_rate">Win rate</string>
+    <!-- A win rate in whole percent. -->
+    <string name="stats_win_rate_value">%1$d%</string>
+    <string name="stats_current_streak">Current win streak</string>
+    <string name="stats_best_streak">Best win streak</string>
+    <string name="stats_fewest_turns">Fewest turns to win</string>
+    <!-- Fewest turns to win, for a player with no win. -->
+    <string name="stats_none">None</string>
+    <string name="stats_captures">Captures</string>
+    <string name="stats_times_captured">Times captured</string>
+    <string name="stats_pawns_home">Pawns home</string>
 
     <!-- New Game setup (ui/setup/*) -->
     <!-- The name a human player gets when they type none, and what the empty name field shows as a hint. %1$d is the seat, 1 to 4. Not used for names the player has typed. -->

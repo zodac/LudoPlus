@@ -110,3 +110,7 @@ val DicePipColor = Color(0xFF2B2118)
 val GoldAccent = Color(0xFFFFCC55)
 val GoldAccentDim = Color(0xFFB8862A)
 val CupRimGold = Color(0xFFC79A4B)
+
+/** The Leaderboard's second and third places; the first is [GoldAccent]. */
+val LeaderboardSilver = Color(0xFFC9D1DC)
+val LeaderboardBronze = Color(0xFFD79A6A)

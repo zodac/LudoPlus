@@ -14,4 +14,8 @@ object Screen {
     const val GRAPHICS = "settings/graphics"
 
     const val RULES = "rules"
+
+    const val LEADERBOARD = "leaderboard"
+
+    const val STATISTICS = "statistics"
 }
