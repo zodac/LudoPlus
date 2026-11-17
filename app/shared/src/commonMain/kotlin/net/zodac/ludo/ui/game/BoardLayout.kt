@@ -379,8 +379,8 @@ private fun edgeDistance(outline: List<Offset>, point: Offset): Float = outline.
     abs(side.x * (point.y - from.y) - side.y * (point.x - from.x)) / side.getDistance()
 }
 
-/** The convex [outline] shrunk by [by] on every side. */
-private fun inset(outline: List<Offset>, by: Float): List<Offset> {
+/** The convex [outline] shrunk by [by] on every side (grown, for a negative [by]): a yard's court, or a frame's inside. */
+internal fun inset(outline: List<Offset>, by: Float): List<Offset> {
     val inside = outline.reduce { a, b -> a + b } / outline.size.toFloat()
     val sides = outline.indices.map { i ->
         val from = outline[i]

@@ -44,9 +44,10 @@ The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and
 - **On a star board, every square is still drawn by `drawSquare`.** `drawBoardSquare` turns an arm's squares to the
     arm's angle (by its angle less whole quarter turns, so the classic board's and a straight arm's aren't turned), and
     stretches the three-seat board's six yard-side squares over their shape, cut to it. A yard there is
-    `drawYardShape` (the outline, its court, and the spots; the default fills them plainly, no family overrides it yet),
-    and a home is `drawHomeTriangle` with three points, or five on the three-seat board. Render every family at 3 and 8
-    seats after changing one.
+    `drawYardShape` (the outline, its court, and the spots, in pixels): every family draws its classic yard's art on the
+    shape, its spots scaled by `spotScale` to the board's (Stone's slab through `drawBevelledShape`, Retro's through
+    `steppedShape`). A home is `drawHomeTriangle` with three points, or five on the three-seat board. Render every
+    family at 3, 5, and 8 seats after changing one.
 - **Texture is seeded** (`Random(id.hashCode())`, or a square's position), so a board draws the same every time and
     renders compare byte for byte.
 - **A grid style snaps to it.** Retro draws on a grid of `RETRO_PIXELS` to a square, including its stars, spots, and

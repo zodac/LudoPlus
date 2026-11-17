@@ -17,7 +17,7 @@ reorders them.
 | 5 | Rules, tutorial, sound, and polish (to 1.0.0) | In progress |
 | 6 | Achievements | Done |
 | 7 | Styles | Done |
-| 8 | 2-8 players | In progress |
+| 8 | 2-8 players | Done |
 | 9 | Game modes and modifiers | Not started |
 | 10 | Google Play: Play Console, Play Games, and the store listing | Not started |
 | 11 | In-app purchases | Not started |
@@ -344,8 +344,9 @@ count but 4 has a board of its own; one player on two colours was dropped.
     for 5 to 109 for 8 (57 on the classic board).
     - Three seats: the arms on every other side of a hexagon, so each home has room, and 3 more track squares along
         each yard's side of it (16 a seat, the star 11 on; 53 steps).
-    - Every board family draws them: arm squares turned, the three-seat board's yard-side squares stretched, the
-        yards a plain shape (`STYLE_ART.md`, "Boards"). Each family's own yard art for them awaits review.
+    - Every board family draws them: arm squares turned, the three-seat board's yard-side squares stretched, and each
+        family's own yards (`drawYardShape`: Wood's grooves, Stone's slab, Neon's tubes, Ocean's ripples, Starry's
+        stars, Paper's hatching, Retro's pixels), approved from renders (2026-11-18; `STYLE_ART.md`, "Boards").
 - [x] New Game's Players row (2-8), eight slots kept, the count saved (`player_count`).
 - [x] Teams as a New Game setting (decided with the maintainer, 2026-11-18): Off, Two Teams (seats alternating: 2v2,
     3v3, 4v4), or Pairs (partners opposite: two, three, or four teams), with 4, 6, or 8 players (`TeamMode`). Two
@@ -359,6 +360,8 @@ count but 4 has a board of its own; one player on two colours was dropped.
     maintainer, 2026-11-18).
 - [x] The CPU: Hard's weights hold at every count (one Hard among Mediums wins 40% of 3-player and 23% of 6-player
     games; 54% of 2-player games, now opposite; `CpuTournamentTest`).
+- [ ] Audit each achievement for team games one by one (`GAME_MODES_AUDIT.md`, "Teams"): the win, the opponents, and
+    Wooden Spoon are team-aware; the rest await review.
 - [x] Statistics and the Leaderboard by player count (`DESIGN.md`, "Leaderboard and Statistics"): a Leaderboard a count,
     and Statistics for every game or one count's.
 

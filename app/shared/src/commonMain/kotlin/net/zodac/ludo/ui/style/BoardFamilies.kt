@@ -17,11 +17,13 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
 import net.zodac.ludo.ui.game.BoardLayout
 import net.zodac.ludo.ui.game.BoardSquare
 import net.zodac.ludo.ui.game.ClassicBoardLayout
+import net.zodac.ludo.ui.game.inset
 import net.zodac.ludo.ui.theme.BoardEmptySeat
 
 /**
@@ -160,6 +162,30 @@ internal fun DrawScope.drawBoardSquare(square: BoardSquare, unit: Float, draw: D
     }
 }
 
+/** The classic yard's spot radius, in squares: a family's spots are drawn to it, scaled by [spotScale] on another board. */
+private const val CLASSIC_SPOT_RADIUS = 0.62f
+
+/** How much bigger (or smaller) a yard's spots are than the classic yard's, [spotRadius] being theirs in pixels. */
+private fun spotScale(spotRadius: Float, unit: Float): Float = spotRadius / (CLASSIC_SPOT_RADIUS * unit)
+
+/**
+ * The convex [outline] (pixels) in [fill], its rim [depth] deep lit from the top left: [light] where a side faces up or
+ * left, [dark] where it faces down or right, as Stone's square slabs are.
+ */
+private fun DrawScope.drawBevelledShape(outline: List<Offset>, depth: Float, fill: Color, light: Color, dark: Color) {
+    drawPath(outline.toPath(), fill)
+    val inner = inset(outline, depth)
+    val centre = outline.reduce { a, b -> a + b } / outline.size.toFloat()
+    for (i in outline.indices) {
+        val j = (i + 1) % outline.size
+        val side = outline[j] - outline[i]
+        var normal = Offset(side.y, -side.x)
+        val middle = (outline[i] + outline[j]) / 2f - centre
+        if (middle.x * normal.x + middle.y * normal.y < 0) normal = -normal
+        drawPath(listOf(outline[i], outline[j], inner[j], inner[i]).toPath(), if (normal.x + normal.y < 0) light else dark)
+    }
+}
+
 private fun List<Offset>.toPath(): Path = Path().apply {
     moveTo(first().x, first().y)
     drop(1).forEach { lineTo(it.x, it.y) }
@@ -213,6 +239,18 @@ class WoodBoardStyle(id: String, private val plank: Color, private val groove: C
         for (spot in spots) {
             drawCircle(groove.copy(alpha = 0.35f), unit * 0.62f, spot)
             drawCircle(colour, unit * 0.56f, spot)
+        }
+    }
+
+    override fun DrawScope.drawYardShape(outline: List<Offset>, court: List<Offset>, spots: List<Offset>, spotRadius: Float, unit: Float, colour: Color) {
+        val shape = outline.toPath()
+        drawPath(shape, colour)
+        drawPath(shape, groove.copy(alpha = 0.7f), style = Stroke(1.25.dp.toPx()))
+        drawPath(court.toPath(), this@WoodBoardStyle.court)
+        val scale = spotScale(spotRadius, unit)
+        for (spot in spots) {
+            drawCircle(groove.copy(alpha = 0.35f), unit * 0.62f * scale, spot)
+            drawCircle(colour, unit * 0.56f * scale, spot)
         }
     }
 
@@ -296,6 +334,17 @@ class StoneBoardStyle(id: String, private val slab: Color, private val mortar: C
         }
     }
 
+    override fun DrawScope.drawYardShape(outline: List<Offset>, court: List<Offset>, spots: List<Offset>, spotRadius: Float, unit: Float, colour: Color) {
+        // A slab of the yard's shape, set in the mortar and bevelled as each square is.
+        drawBevelledShape(inset(outline, unit * 0.04f), unit * 0.07f, colour, Color.White.copy(alpha = 0.22f), Color.Black.copy(alpha = 0.22f))
+        drawPath(court.toPath(), this@StoneBoardStyle.court)
+        val scale = spotScale(spotRadius, unit)
+        for (spot in spots) {
+            drawCircle(Color.Black.copy(alpha = 0.22f), unit * 0.62f * scale, spot + Offset(-unit * 0.03f, -unit * 0.03f))
+            drawCircle(lerp(colour, this@StoneBoardStyle.court, 0.35f), unit * 0.58f * scale, spot)
+        }
+    }
+
     /** The speckle: fine flecks of [fleck] and of light over every stone. */
     override fun DrawScope.drawFinish(extent: Size, unit: Float) {
         val random = Random(id.hashCode())
@@ -347,6 +396,15 @@ class NeonBoardStyle(id: String, private val dark: Color, private val tube: Colo
         glow(unit, colour) { stroke, c -> drawRect(c, outer.topLeft, outer.size, style = stroke) }
         drawRoundRectCourt(topLeft, unit)
         for (spot in spots) glow(unit * 0.8f, colour) { stroke, c -> drawCircle(c, unit * 0.55f, spot, style = stroke) }
+    }
+
+    override fun DrawScope.drawYardShape(outline: List<Offset>, court: List<Offset>, spots: List<Offset>, spotRadius: Float, unit: Float, colour: Color) {
+        val tubeShape = inset(outline, unit * 0.15f).toPath()
+        drawPath(tubeShape, colour.copy(alpha = 0.16f))
+        glow(unit, colour) { stroke, c -> drawPath(tubeShape, c, style = stroke) }
+        drawPath(court.toPath(), this@NeonBoardStyle.court)
+        val scale = spotScale(spotRadius, unit)
+        for (spot in spots) glow(unit * 0.8f, colour) { stroke, c -> drawCircle(c, unit * 0.55f * scale, spot, style = stroke) }
     }
 
     override fun DrawScope.drawHomeTriangle(points: List<Offset>, unit: Float, colour: Color) {
@@ -429,6 +487,38 @@ class OceanBoardStyle(
         }
     }
 
+    override fun DrawScope.drawYardShape(outline: List<Offset>, court: List<Offset>, spots: List<Offset>, spotRadius: Float, unit: Float, colour: Color) {
+        val shape = outline.toPath()
+        drawPath(shape, colour)
+        drawPath(shape, shore.copy(alpha = 0.55f), style = Stroke(1.dp.toPx()))
+        val water = court.toPath()
+        drawPath(water, this@OceanBoardStyle.court)
+        // Ripples across the water, as the classic yard's.
+        val bounds = water.getBounds()
+        val random = Random(outline.first().hashCode())
+        clipPath(water) {
+            var y = bounds.top + unit * 0.2f
+            while (y < bounds.bottom) {
+                val shift = random.nextFloat() * unit * 0.6f
+                var x = bounds.left - shift
+                while (x < bounds.right) {
+                    val path = Path().apply {
+                        moveTo(x, y)
+                        quadraticTo(x + unit * 0.15f, y - unit * 0.1f, x + unit * 0.3f, y)
+                    }
+                    drawPath(path, Color.White.copy(alpha = 0.35f), style = Stroke(maxOf(0.75.dp.toPx(), unit * 0.03f), cap = StrokeCap.Round))
+                    x += unit * (0.7f + random.nextFloat() * 0.3f)
+                }
+                y += unit * 0.4f
+            }
+        }
+        val scale = spotScale(spotRadius, unit)
+        for (spot in spots) {
+            drawCircle(sand, unit * 0.6f * scale, spot)
+            drawCircle(colour.copy(alpha = 0.5f), unit * 0.6f * scale, spot, style = Stroke(unit * 0.06f))
+        }
+    }
+
     override fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
         val spot = centre + Offset(0f, -0.05f * radius)
         drawCircle(sand, radius * 1.12f, spot)
@@ -481,6 +571,27 @@ class StarryBoardStyle(
             }
         }
         for (spot in spots) drawCircle(silver.copy(alpha = 0.5f), unit * 0.58f, spot, style = Stroke(unit * 0.05f))
+    }
+
+    override fun DrawScope.drawYardShape(outline: List<Offset>, court: List<Offset>, spots: List<Offset>, spotRadius: Float, unit: Float, colour: Color) {
+        drawPath(outline.toPath(), colour)
+        val sky = court.toPath()
+        drawPath(sky, this@StarryBoardStyle.court)
+        // The classic yard's stars, as many to the same area.
+        val bounds = sky.getBounds()
+        val random = Random(outline.first().hashCode())
+        clipPath(sky) {
+            repeat((40 * bounds.width * bounds.height / (16 * unit * unit)).toInt()) {
+                val at = Offset(bounds.left + random.nextFloat() * bounds.width, bounds.top + random.nextFloat() * bounds.height)
+                drawCircle(Color.White.copy(alpha = 0.3f + random.nextFloat() * 0.6f), unit * (0.015f + random.nextFloat() * 0.03f), at)
+            }
+            repeat(3) {
+                val at = Offset(bounds.left + random.nextFloat() * bounds.width, bounds.top + random.nextFloat() * bounds.height)
+                drawPath(starPath(at, unit * 0.14f, points = 4, inner = 0.25f), silver)
+            }
+        }
+        val scale = spotScale(spotRadius, unit)
+        for (spot in spots) drawCircle(silver.copy(alpha = 0.5f), unit * 0.58f * scale, spot, style = Stroke(unit * 0.05f))
     }
 
     /** A sprinkle of faint stars over the plain squares. */
@@ -582,6 +693,22 @@ class PaperBoardStyle(id: String, private val paper: Color, private val pencil: 
         for (spot in spots) drawCircle(pencil.copy(alpha = 0.7f), unit * 0.58f, spot, style = Stroke(maxOf(1.dp.toPx(), unit * 0.028f)))
     }
 
+    override fun DrawScope.drawYardShape(outline: List<Offset>, court: List<Offset>, spots: List<Offset>, spotRadius: Float, unit: Float, colour: Color) {
+        val shape = outline.toPath()
+        hatch(shape.getBounds(), unit, colour, clip = shape)
+        drawPath(court.toPath(), paper)
+        pencilShape(outline, unit)
+        pencilShape(court, unit)
+        val scale = spotScale(spotRadius, unit)
+        for (spot in spots) drawCircle(pencil.copy(alpha = 0.7f), unit * 0.58f * scale, spot, style = Stroke(maxOf(1.dp.toPx(), unit * 0.028f)))
+    }
+
+    /** A pencil line round each side of [outline]. */
+    private fun DrawScope.pencilShape(outline: List<Offset>, unit: Float) {
+        val random = Random(outline.first().hashCode())
+        outline.indices.forEach { pencilLine(outline[it], outline[(it + 1) % outline.size], unit, random) }
+    }
+
     override fun DrawScope.drawHomeTriangle(points: List<Offset>, unit: Float, colour: Color) {
         val triangle = points.toPath()
         hatch(triangle.getBounds(), unit, colour, clip = triangle)
@@ -671,9 +798,24 @@ class RetroBoardStyle(id: String, private val block: Color, private val screen: 
         }
     }
 
-    override fun DrawScope.drawHomeTriangle(points: List<Offset>, unit: Float, colour: Color) {
-        // Stepped: every pixel whose centre is in the area, in its colour, edged in black.
+    override fun DrawScope.drawYardShape(outline: List<Offset>, court: List<Offset>, spots: List<Offset>, spotRadius: Float, unit: Float, colour: Color) {
         val p = unit / RETRO_PIXELS
+        // Stepped to the pixel grid, edged in black, as the homes are.
+        steppedShape(outline, p, colour)
+        steppedShape(court, p, screen)
+        val radius = (6 * spotScale(spotRadius, unit)).roundToInt().coerceAtLeast(3)
+        for (spot in spots) {
+            pixelDisc(spot, radius, p, Color.Black)
+            pixelDisc(spot, radius - 1, p, lerp(colour, screen, 0.35f))
+        }
+    }
+
+    override fun DrawScope.drawHomeTriangle(points: List<Offset>, unit: Float, colour: Color) {
+        steppedShape(points, unit / RETRO_PIXELS, colour)
+    }
+
+    /** Every [p]-pixel whose centre is inside the convex [points], in [colour], edged in black. */
+    private fun DrawScope.steppedShape(points: List<Offset>, p: Float, colour: Color) {
         val bounds = points.toPath().getBounds()
         val columns = (bounds.width / p).toInt() + 1
         val rows = (bounds.height / p).toInt() + 1
