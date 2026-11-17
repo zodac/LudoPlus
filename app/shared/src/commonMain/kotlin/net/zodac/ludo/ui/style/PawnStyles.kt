@@ -15,7 +15,8 @@ import net.zodac.ludo.ui.theme.BoardInk
 import net.zodac.ludo.ui.theme.BoardIvory
 import net.zodac.ludo.ui.theme.Primary
 
-private val MovableRing = Primary
+/** The ring round a pawn that can be moved. */
+internal val MovableRing = Primary
 
 /** The default [PawnStyle]: a glossy turned pawn, lit from the left and outlined in ink. */
 object ClassicPawnStyle : PawnStyle, Swatched {

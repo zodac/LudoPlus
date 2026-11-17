@@ -118,6 +118,12 @@ object PawnStyles : StyleCatalog<PawnStyle>(
     PawnStyleRegistry,
     listOf(
         listOf(colour(ClassicPawnStyle)),
+        listOf(colour(CounterPawnStyle("counter_ridged"))),
+        listOf(colour(ConePawnStyle("cone_painted"))),
+        listOf(colour(PegPawnStyle("peg_stained"))),
+        listOf(colour(GlassPawnStyle("glass_clear"))),
+        listOf(colour(AnimalPawnStyle("animal_cat", PawnAnimal.CAT)), colour(AnimalPawnStyle("animal_duck", PawnAnimal.DUCK))),
+        listOf(colour(GemPawnStyle("gems_cut"))),
     ),
 )
 

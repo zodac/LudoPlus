@@ -542,7 +542,12 @@ The boards are Classic, Wood, Ocean, Retro, Paper, Starry, Stone, and Neon. Ever
 squares' marks, and a finish over it all (grain, speckle), each the family's own, with the seats' colours drawn through
 its `seatTone` (tinted towards the material, never so far that two seats look alike). `LudoBoard` draws the board on a
 Canvas of its own under the pawns, which reads only the style and the seat colours, so a texture isn't redrawn on every
-frame of a move. Only Classic pawns exist so far; the families to come are in `IMPLEMENTATION.md`, Phase 7.
+frame of a move.
+
+The pawns are Classic, Counter, Cone, Peg, Glass, Animal (Cat and Duck), and Gems. Every family but Classic is a
+`GridPawnStyle` (`ui/style/PawnFamilies.kt`), which draws the shadow and the movable ring on one footprint for all of
+them and leaves the family its body. Gems takes the Gems die's lock; the rest open at 5, 20, 25, 30, and 40
+achievements.
 
 **The die** is DiceFive's 35 families, D20 included (drawn showing 1-6). `GameDie` draws the style's face, turning
 through random faces as it tumbles; a style that tumbles itself (the D20, the Egg, the Bestagon) is handed the tumble's

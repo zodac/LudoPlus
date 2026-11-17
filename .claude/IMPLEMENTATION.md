@@ -16,7 +16,7 @@ reorders them.
 | 4 | Saving, Game Over, Statistics, and the Leaderboard | Done |
 | 5 | Rules, tutorial, sound, and polish (to 1.0.0) | In progress |
 | 6 | Achievements | Done |
-| 7 | Styles | In progress |
+| 7 | Styles | Done |
 | 8 | 2-8 players | Not started |
 | 9 | Game modes and modifiers | Not started |
 | 10 | Google Play: Play Console, Play Games, and the store listing | Not started |
@@ -306,8 +306,6 @@ Decided with the maintainer (2026-11-17):
 - **Order.** Slice 1 brings back DiceFive's style system (registry, saved picks, the Styles screen, unlocks and their
     banners) with the die and background art, and a Classic-only board and pawns. Later slices add the board and pawn
     families, each approved from renders.
-- **Resume here (2026-11-18).** The style structure and the board families are approved; what remains is the pawn
-    families (the unticked slice below), rendered and approved, and rewriting `STYLE_ART.md` alongside them.
 - **Die.** All 35 of DiceFive's families, D20 included (drawn showing 1-6).
 - **Boards.** Classic, Wood, Stone, Neon, Ocean, Starry, Paper, and Retro. Each keeps the four player colours readable;
     a family changes the track, safe squares, surround, and texture. A board shares its unlock with the die and
@@ -315,7 +313,7 @@ Decided with the maintainer (2026-11-17):
 - **Pawns.** Classic, Counter, Cone, Peg, Gem, Glass, and Animal (one animal per family, tinted). Pawns always take their
     player's colour; a family changes shape and material.
 
-- [ ] The style categories, re-cast for Ludo: **board**, **pawns**, **die** (DiceFive's styles, kept),
+- [x] The style categories, re-cast for Ludo: **board**, **pawns**, **die** (DiceFive's styles, kept),
     **background** (kept). Unlocks are tied to achievements, as in DiceFive.
     - [x] Slice 1 (2026-11-18, structure approved by the maintainer the same day): the registry and saved picks for the four
         categories, DiceFive's 35 die families (fonts and licences back) and 20 backgrounds, Classic board and pawns
@@ -327,9 +325,11 @@ Decided with the maintainer (2026-11-17):
         Paper (Pencil), Starry (Midnight), Stone (Slate, Sandstone), and Neon (Night), drawn as `LayeredBoardStyle`s
         (`ui/style/BoardFamilies.kt`). Each locks with the die of its name; Paper, which has none, at 50 achievements.
         The board draws on a layer of its own under the pawns, so a move doesn't redraw its texture.
-    - [ ] Pawn families: Counter, Cone, Peg, Gem, Glass, and Animal, each approved from renders.
+    - [x] Pawn families (2026-11-18, approved from renders): Counter (Ridged), Cone (Painted), Peg (Stained), Glass
+        (Clear), Animal (Cat, Duck), and Gems (Cut), drawn as `GridPawnStyle`s (`ui/style/PawnFamilies.kt`). Locks at 5,
+        20, 25, 30, and 40 achievements; Gems, named for the Gems die, shares its 65.
 - [x] The Styles screen's previews show a corner of the board with pawns (`BoardCornerPreview`).
-- [ ] `STYLE_ART.md` rewritten for board and pawn art.
+- [x] `STYLE_ART.md` rewritten for board and pawn art (2026-11-18).
 
 ## Phase 8: 2-8 players
 

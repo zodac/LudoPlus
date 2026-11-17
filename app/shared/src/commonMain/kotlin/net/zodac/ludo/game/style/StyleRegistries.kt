@@ -3,6 +3,18 @@ package net.zodac.ludo.game.style
 import net.zodac.ludo.data.settings.DefaultStyleIds
 import net.zodac.ludo.resources.style_noun_board
 import net.zodac.ludo.resources.style_noun_pawns
+import net.zodac.ludo.resources.style_family_counter
+import net.zodac.ludo.resources.style_family_cone
+import net.zodac.ludo.resources.style_family_peg
+import net.zodac.ludo.resources.style_family_glass
+import net.zodac.ludo.resources.style_family_animal
+import net.zodac.ludo.resources.style_colour_ridged
+import net.zodac.ludo.resources.style_colour_painted
+import net.zodac.ludo.resources.style_colour_stained
+import net.zodac.ludo.resources.style_colour_clear
+import net.zodac.ludo.resources.style_colour_cat
+import net.zodac.ludo.resources.style_colour_duck
+import net.zodac.ludo.resources.style_colour_cut
 import net.zodac.ludo.resources.style_colour_cream
 import net.zodac.ludo.resources.style_colour_gloss
 import net.zodac.ludo.resources.style_variant_finish
@@ -714,6 +726,40 @@ object PawnStyleRegistry : StyleRegistry(
         StyleGroup(
             Res.string.style_family_classic,
             listOf(StyleVariant(DefaultStyleIds.PAWNS, Res.string.style_colour_gloss)),
+        ),
+        StyleGroup(
+            Res.string.style_family_counter,
+            listOf(StyleVariant("counter_ridged", Res.string.style_colour_ridged)),
+            unlock = AchievementCount(5),
+        ),
+        StyleGroup(
+            Res.string.style_family_cone,
+            listOf(StyleVariant("cone_painted", Res.string.style_colour_painted)),
+            unlock = AchievementCount(20),
+        ),
+        StyleGroup(
+            Res.string.style_family_peg,
+            listOf(StyleVariant("peg_stained", Res.string.style_colour_stained)),
+            unlock = AchievementCount(25),
+        ),
+        StyleGroup(
+            Res.string.style_family_glass,
+            listOf(StyleVariant("glass_clear", Res.string.style_colour_clear)),
+            unlock = AchievementCount(30),
+        ),
+        StyleGroup(
+            Res.string.style_family_animal,
+            listOf(
+                StyleVariant("animal_cat", Res.string.style_colour_cat),
+                StyleVariant("animal_duck", Res.string.style_colour_duck),
+            ),
+            unlock = AchievementCount(40),
+        ),
+        // With the Gems die, and opened with it.
+        StyleGroup(
+            Res.string.style_family_gems,
+            listOf(StyleVariant("gems_cut", Res.string.style_colour_cut)),
+            unlock = AchievementCount(65),
         ),
     ),
     variantNoun = Res.string.style_variant_finish,

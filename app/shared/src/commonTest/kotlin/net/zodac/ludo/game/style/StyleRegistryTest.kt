@@ -79,6 +79,23 @@ class StyleRegistryTest {
     }
 
     @Test
+    fun `the pawns are the plan's seven families - Gems locked with the Gems die`() {
+        assertEquals(
+            listOf("classic", "counter", "cone", "peg", "glass", "animal", "gems"),
+            PawnStyleRegistry.groups.map { it.name.key.removePrefix("style_family_") },
+        )
+        assertEquals(
+            listOf("classic_gloss", "counter_ridged", "cone_painted", "peg_stained", "glass_clear", "animal_cat", "animal_duck", "gems_cut"),
+            PawnStyleRegistry.ids,
+        )
+        assertEquals(group(DiceStyleRegistry, "gems").unlock, group(PawnStyleRegistry, "gems").unlock)
+        assertEquals(
+            listOf(5, 20, 25, 30, 40, 65).map { StyleUnlock.AchievementCount(it) },
+            PawnStyleRegistry.groups.drop(1).map { it.unlock },
+        )
+    }
+
+    @Test
     fun `no count lock is beyond the 100 counted achievements - and the water set opens at 15`() {
         val counted = Achievement.entries.count { it.category != AchievementCategory.EASTER_EGGS }
         assertEquals(100, counted)

@@ -79,9 +79,8 @@ class StyleCategoryPageTest : UiTest() {
     private fun settle() = repeat(30) { compose.mainClock.advanceTimeByFrame() }
 
     @Test
-    fun `a narrow phone's pages fit four dice and backgrounds to a line`() = uiTest(TestScreen(360, 780)) {
-        // The Board and Pawns pages have Classic alone so far: a line of three is theirs to check once they have more.
-        val perLine = mapOf(StyleCategory.DICE to 4, StyleCategory.BACKGROUND to 4)
+    fun `a narrow phone's pages fit four dice and backgrounds to a line - and three boards and pawns`() = uiTest(TestScreen(360, 780)) {
+        val perLine = mapOf(StyleCategory.BOARD to 3, StyleCategory.PAWNS to 3, StyleCategory.DICE to 4, StyleCategory.BACKGROUND to 4)
         for ((category, expected) in perLine) {
             open(category)
             // Frame by frame: the backgrounds' animated art never lets the page go idle once it's on screen.
