@@ -548,8 +548,11 @@ Examples:
 **A player's colour is chosen on New Game**, and is the colour of their yard and home column on the board.
 
 - It's a `PlayerColour`: red, green, yellow, and blue (the classic board's, in its clockwise seat order), then orange,
-    cyan, pink, and purple for 5-8 players (2026-11-18). It's turned into a `Color` only in `PlayerColour.color`
+    cyan, pink, and purple for 5-8 players: the eight defaults (2026-11-18). Then lime, magenta, berry, and scarlet, only
+    ever chosen: with them, each colour blindness has a set of eight it can tell apart (simulated, every pair at least
+    21 apart, against 3.5 to 12 for the defaults). It's turned into a `Color` only in `PlayerColour.color`
     (`ui/theme/Color.kt`): a light tone, readable on the dark page. Never use a seat index.
+    - The menu logo shows the classic four (`AppLogo`).
     - Purple (`#A77BFF`) is near the violet ring round a movable pawn; the maintainer kept it (2026-11-18).
     - **Colour blindness** (simulated, CIE76 distance between each pair, 2026-11-18): the closest pairs are blue and
         purple (33; 12 with protanopia, **4 with deuteranopia**), yellow and orange (34; 13 deuteranopia), red and
@@ -560,7 +563,8 @@ Examples:
     - It's a curated set, not a free picker: M3 has no colour picker, and a free choice could clash or be unreadable.
         Each must be light enough for the dark page and distinct from the others and from `primary`.
 - **Always all eight distinct.** The form holds eight slots (the first `playerCount` play); `setPlayerColour` swaps
-    with whichever slot holds the colour, played or not. The defaults (`PlayerColour.defaultFor`) are in the order above.
+    with whichever slot holds the colour, played or not, and a colour no slot holds is simply taken. The defaults
+    (`PlayerColour.defaultFor`) are the first eight, in the order above. The pop-up is a grid of all twelve, four a row.
 - **Persisted** per slot (`player_colour_N`, falling back to the defaults if not distinct; slots saved before there
     were eight take the colours left), and the count as `player_count`.
 - **TalkBack**: "Player 2 colour, Green", action "Choose colour". Choices are radio buttons, and a taken one says

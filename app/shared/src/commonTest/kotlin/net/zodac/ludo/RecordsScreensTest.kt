@@ -1,8 +1,10 @@
 package net.zodac.ludo
 
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import kotlin.test.Test
 import kotlinx.coroutines.runBlocking
 import net.zodac.ludo.data.records.GameRecordRepository
@@ -25,8 +27,8 @@ class RecordsScreensTest : UiTest() {
         return GameRecordRepository(dao)
     }
 
-    private fun row(name: String, place: Int, turns: Int, captures: Int, endedAt: Long) = GameResult(
-        playerName = name, playerKey = name.lowercase(), isPrimaryPlayer = false, gameModeId = "classic", playerCount = 4,
+    private fun row(name: String, place: Int, turns: Int, captures: Int, endedAt: Long, players: Int = 4) = GameResult(
+        playerName = name, playerKey = name.lowercase(), isPrimaryPlayer = false, gameModeId = "classic", playerCount = players,
         endedAtEpochMillis = endedAt, playMillis = 1, place = place, won = place == 1, finishMillis = 1, turns = turns,
         captures = captures, timesCaptured = 2, pawnsHome = if (place == 4) 1 else 4,
     )
@@ -44,10 +46,23 @@ class RecordsScreensTest : UiTest() {
     }
 
     @Test
-    fun `an empty Leaderboard says how to get on it`() = uiTest(TestScreen(411, 891)) {
+    fun `an empty Leaderboard says how to get on it - for the player count picked`() = uiTest(TestScreen(411, 891)) {
         val viewModel = LeaderboardViewModel(records())
         showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
-        compose.waitUntil { compose.onAllNodes(hasText("No wins in Classic yet. Win a game to set a time.")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil { compose.onAllNodes(hasText("No wins in Classic with 4 players yet. Win a game to set a time.")).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    @Test
+    fun `the Leaderboard starts at New Game's count - each count its own board - each number said as players`() = uiTest(TestScreen(411, 891)) {
+        val repository = records(row("Alex", 1, 38, 4, 1), row("Sam", 1, 70, 1, 2, players = 6))
+        val viewModel = LeaderboardViewModel(repository) { 6 }
+        showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
+        compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Sam, 70 turns, 1 capture")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("1st, Alex", substring = true)).assertDoesNotExist()
+        (2..8).forEach { compose.onNode(hasContentDescription("$it players")).assertExists() }
+        compose.onNode(hasContentDescription("4 players")).performClick()
+        compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Alex, 38 turns, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("1st, Sam", substring = true)).assertDoesNotExist()
     }
 
     @Test
@@ -64,6 +79,20 @@ class RecordsScreensTest : UiTest() {
         // Sam never won.
         compose.onNode(hasText("Fewest turns to win") and hasText("None")).assertExists()
         compose.onNode(hasText("Win rate") and hasText("0%")).assertExists()
+    }
+
+    @Test
+    fun `Statistics adds up every game at first - or one player count's - All said as all games`() = uiTest(TestScreen(411, 891)) {
+        val repository = records(row("Alex", 1, 38, 4, 1), row("Alex", 2, 90, 1, 2, players = 8))
+        val viewModel = StatisticsViewModel(repository)
+        showcase.show { LudoPlusTheme { StatisticsScreen(viewModel, onBack = {}) } }
+        compose.waitUntil { compose.onAllNodes(hasText("Games played") and hasText("2")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("All games")).assertIsSelected()
+        compose.onNode(hasContentDescription("8 players")).performClick()
+        compose.waitUntil { compose.onAllNodes(hasText("Games played") and hasText("1")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasText("Wins") and hasText("0")).assertExists()
+        compose.onNode(hasContentDescription("3 players")).performClick()
+        compose.waitUntil { compose.onAllNodes(hasText("No games with 3 players yet.")).fetchSemanticsNodes().isNotEmpty() }
     }
 
     @Test

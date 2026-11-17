@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import net.zodac.ludo.model.BoardGeometry
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.app_name
@@ -78,7 +79,8 @@ internal val categoryHeaderStyle: TextStyle
 internal fun Char.isInSoraFont(): Boolean = this in ' '..'~' || this in '\u00A0'..'\u00FF'
 
 /**
- * The app's mark on the main menu: a pawn disc in each player colour, in the board's seat order, over the wordmark.
+ * The app's mark on the main menu: a pawn disc in each of the classic board's four colours, in its seat order, over the
+ * wordmark.
  * A placeholder until the brand art is made (the launcher icon's pawn, Phase 0 of `.claude/IMPLEMENTATION.md`). The
  * discs are decoration, so a screen reader hears only the name, as a heading.
  */
@@ -90,7 +92,7 @@ fun AppLogo(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.clearAndSetSemantics {},
         ) {
-            for (colour in PlayerColour.entries) {
+            for (colour in PlayerColour.entries.take(BoardGeometry.CLASSIC.seats)) {
                 ColourDisc(colour = colour.color, size = 36.dp, ring = MaterialTheme.colorScheme.surface)
             }
         }

@@ -388,6 +388,12 @@ can't is a page saying so, with the stack trace to report. The app never just cl
 
 ## Leaderboard and Statistics
 
+**By player count** (Phase 8, 2026-11-18). Each record keeps its game's `playerCount`, and both pages have a row of
+counts under their heading (`ui/records/PlayerCountRow.kt`, TalkBack "4 players"). The Leaderboard has a board a count,
+2 to 8 (a bigger board's lap is longer, so turns only compare within a count), opening at the count New Game last
+started; Statistics opens on "All" (every game, spoken "All games") and can show one count's games. Filtered in the
+query and in `playerStatistics`, with no schema change.
+
 **Time played** is a line at the top of Statistics, on every page and with no players yet: `PlayTimeLine`, seconds
 counting up for the first minute ("42s"), then minutes, hours and minutes ("12h 34m"), and from 24 hours days, hours,
 and minutes, however many days ("Time played: 3d 4h 12m", spoken "3 days, 4 hours, and 12 minutes"). Its numbers are

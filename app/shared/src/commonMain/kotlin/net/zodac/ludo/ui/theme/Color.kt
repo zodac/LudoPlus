@@ -78,6 +78,11 @@ val PlayerColour.color: Color
         PlayerColour.PINK -> Color(0xFFFF7EB6)
         // Kept though near the movable pawn's violet ring (the maintainer, 2026-11-18): deeper than Primary.
         PlayerColour.PURPLE -> Color(0xFFA77BFF)
+        // To choose instead of a default: each colour blindness's most distinct eight draws on these (2026-11-18).
+        PlayerColour.LIME -> Color(0xFFC4E87C)
+        PlayerColour.MAGENTA -> Color(0xFFD35FD3)
+        PlayerColour.BERRY -> Color(0xFFC0506A)
+        PlayerColour.SCARLET -> Color(0xFFF32424)
     }
 
 /**

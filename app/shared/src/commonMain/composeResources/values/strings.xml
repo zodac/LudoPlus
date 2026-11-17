@@ -50,6 +50,11 @@
     <string name="player_colour_cyan">Cyan</string>
     <string name="player_colour_pink">Pink</string>
     <string name="player_colour_purple">Purple</string>
+    <string name="player_colour_lime">Lime</string>
+    <string name="player_colour_magenta">Magenta</string>
+    <!-- A deep raspberry red. -->
+    <string name="player_colour_berry">Berry</string>
+    <string name="player_colour_scarlet">Scarlet</string>
 
     <!-- Shared chrome (ui/common/*) -->
     <!-- TalkBack's name for the back arrow in every screen's title bar. -->
@@ -283,7 +288,11 @@
     <string name="leaderboard_title">Leaderboard</string>
     <!-- Above the table. %1$s is the game mode's name. -->
     <string name="leaderboard_heading">%1$s: fastest wins</string>
-    <string name="leaderboard_empty">No wins in %1$s yet. Win a game to set a time.</string>
+    <!-- A Leaderboard with no wins for the player count picked. %1$s is the game mode's name, %2$d the count (2 to 8). -->
+    <plurals name="leaderboard_empty_players">
+        <item quantity="one">No wins in %1$s with %2$d player yet. Win a game to set a time.</item>
+        <item quantity="other">No wins in %1$s with %2$d players yet. Win a game to set a time.</item>
+    </plurals>
     <string name="leaderboard_player">Player</string>
     <string name="leaderboard_turns">Turns</string>
     <string name="leaderboard_captures">Captures</string>
@@ -291,6 +300,15 @@
     <!-- Statistics (ui/records/StatisticsScreen.kt): each person's games added up. -->
     <string name="stats_title">Statistics</string>
     <string name="stats_empty">No statistics yet. Play a game!</string>
+    <!-- Statistics with no games for the player count picked. %1$d is the count (2 to 8). -->
+    <plurals name="stats_empty_players">
+        <item quantity="one">No games with %1$d player yet.</item>
+        <item quantity="other">No games with %1$d players yet.</item>
+    </plurals>
+    <!-- The first of Statistics' player counts: every game, whatever its count. Short: it shares a row with 2 to 8. -->
+    <string name="stats_count_all">All</string>
+    <!-- What a screen reader says for it. -->
+    <string name="stats_count_all_spoken">All games</string>
     <!-- The time the app has been in front of the player, over every player's statistics (ui/records/PlayTime.kt): "Time played: 3d 4h 12m". Seconds for the first minute, then minutes, then hours and minutes, then days too. Spoken in words, without a part that's zero. -->
     <string name="stats_play_time">Time played: %1$s</string>
     <string name="stats_play_time_seconds">%1$ds</string>

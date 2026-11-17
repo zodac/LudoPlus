@@ -26,6 +26,7 @@ import net.zodac.ludo.resources.stats_best_streak
 import net.zodac.ludo.resources.stats_captures
 import net.zodac.ludo.resources.stats_current_streak
 import net.zodac.ludo.resources.stats_empty
+import net.zodac.ludo.resources.stats_empty_players
 import net.zodac.ludo.resources.stats_fewest_turns
 import net.zodac.ludo.resources.stats_games
 import net.zodac.ludo.resources.stats_none
@@ -38,22 +39,26 @@ import net.zodac.ludo.resources.stats_wins
 import net.zodac.ludo.ui.common.EmptyStateCard
 import net.zodac.ludo.ui.common.HoldPageCover
 import net.zodac.ludo.ui.common.ScreenScaffold
+import net.zodac.ludo.ui.common.pluralStringResource
 import net.zodac.ludo.ui.common.stringResource
 
 /**
- * Statistics: the time played in the app ([LivePlayTimeLine]), then a card per person, in name order, adding up every
- * game they've played. A screen reader reads the name as a heading, then each figure with its label as one.
+ * Statistics: the time played in the app ([LivePlayTimeLine]), the player counts (all, or 2 to 8), then a card per
+ * person, in name order, adding up every game they've played of the count picked. A screen reader reads the name as a heading, then each figure with its label as one.
  */
 @Composable
 fun StatisticsScreen(viewModel: StatisticsViewModel, onBack: () -> Unit) {
     val players by viewModel.players.collectAsStateWithLifecycle()
+    val playerCount by viewModel.playerCount.collectAsStateWithLifecycle()
     ScreenScaffold(title = stringResource(Res.string.stats_title), onBack = onBack, scrollable = true) {
         // Every player's and none, at the top whether anyone has a card or not.
         LivePlayTimeLine(viewModel.readPlaySeconds)
         // Nothing until the figures are read, so the empty card never flashes up before players who have some.
         val all = players ?: return@ScreenScaffold HoldPageCover()
+        PlayerCountRow(options = listOf(null) + PLAYER_COUNTS, selected = playerCount, onSelect = viewModel::selectPlayerCount)
         if (all.isEmpty()) {
-            EmptyStateCard(stringResource(Res.string.stats_empty))
+            val count = playerCount
+            EmptyStateCard(if (count == null) stringResource(Res.string.stats_empty) else pluralStringResource(Res.plurals.stats_empty_players, count, count))
             return@ScreenScaffold
         }
         all.forEach { PlayerCard(it) }

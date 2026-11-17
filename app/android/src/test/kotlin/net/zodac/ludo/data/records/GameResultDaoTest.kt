@@ -25,10 +25,10 @@ class GameResultDaoTest {
     @After
     fun close() = database.close()
 
-    private fun row(name: String, won: Boolean, turns: Int, captures: Int, endedAt: Long, mode: String = "classic", unmodified: Boolean = true) =
+    private fun row(name: String, won: Boolean, turns: Int, captures: Int, endedAt: Long, mode: String = "classic", unmodified: Boolean = true, players: Int = 4) =
         GameResult(
             playerName = name, playerKey = name.lowercase(), isPrimaryPlayer = false, gameModeId = mode, playedUnmodified = unmodified,
-            playerCount = 4, endedAtEpochMillis = endedAt, playMillis = 1, place = if (won) 1 else 2, won = won, finishMillis = 1,
+            playerCount = players, endedAtEpochMillis = endedAt, playMillis = 1, place = if (won) 1 else 2, won = won, finishMillis = 1,
             turns = turns, captures = captures, timesCaptured = 0, pawnsHome = 4,
         )
 
@@ -41,6 +41,8 @@ class GameResultDaoTest {
         row("Sam", won = false, turns = 30, captures = 9, endedAt = 5),
         row("Sam", won = true, turns = 30, captures = 9, endedAt = 6, mode = "other"),
         row("Sam", won = true, turns = 30, captures = 9, endedAt = 7, unmodified = false),
+        // On the 6-player board, not the 4-player one.
+        row("Sam", won = true, turns = 30, captures = 9, endedAt = 8, players = 6),
     )
 
     @Test
@@ -48,14 +50,17 @@ class GameResultDaoTest {
         dao.insertGame(rows)
 
         // Fewest turns, then most captures, then the earliest.
-        val board = dao.leaderboard("classic", limit = 10, offset = 0)
+        val board = dao.leaderboard("classic", playerCount = 4, limit = 10, offset = 0)
         assertEquals(listOf(2L, 3L, 1L, 4L), board.map { it.endedAtEpochMillis })
-        assertEquals(board.drop(1).take(2), dao.leaderboard("classic", limit = 2, offset = 1))
-        assertEquals(4, dao.leaderboardCount("classic"))
+        assertEquals(board.drop(1).take(2), dao.leaderboard("classic", playerCount = 4, limit = 2, offset = 1))
+        assertEquals(4, dao.leaderboardCount("classic", playerCount = 4))
+        // Each player count's board is its own: the 6-player win is on that one only.
+        assertEquals(listOf(8L), dao.leaderboard("classic", playerCount = 6, limit = 10, offset = 0).map { it.endedAtEpochMillis })
+        assertEquals(1, dao.leaderboardCount("classic", playerCount = 6))
 
         // By player (whatever the name's case), then oldest first.
-        assertEquals(listOf(2L, 3L, 1L, 4L, 5L, 6L, 7L), dao.allByPlayer().map { it.endedAtEpochMillis })
-        assertEquals(7, dao.count())
+        assertEquals(listOf(2L, 3L, 1L, 4L, 5L, 6L, 7L, 8L), dao.allByPlayer().map { it.endedAtEpochMillis })
+        assertEquals(8, dao.count())
         dao.clearAll()
         assertEquals(0, dao.count())
     }

@@ -95,11 +95,17 @@ class GameRecordRepositoryTest {
         repository.recordGame(game(order = listOf(0, 1, 2, 3), turns = listOf(43, 41, 42, 43)), endedAtEpochMillis = 3)
         // A loss for both: not on the board.
         repository.recordGame(game(order = listOf(1, 2, 0, 3)), endedAtEpochMillis = 4)
-        val board = repository.leaderboard(GameMode.CLASSIC)
+        val board = repository.leaderboard(GameMode.CLASSIC, playerCount = 4)
         assertEquals(listOf("Alex" to 40, "Sam" to 43, "Alex" to 43), board.map { it.playerName to it.turns })
         assertEquals(listOf(2L, 1L, 3L), board.map { it.endedAtEpochMillis })
-        assertEquals(3, repository.leaderboardCount(GameMode.CLASSIC))
-        assertEquals(listOf("Sam"), repository.leaderboard(GameMode.CLASSIC, pageIndex = 1, pageSize = 1).map { it.playerName })
+        assertEquals(3, repository.leaderboardCount(GameMode.CLASSIC, playerCount = 4))
+        assertEquals(listOf("Sam"), repository.leaderboard(GameMode.CLASSIC, playerCount = 4, pageIndex = 1, pageSize = 1).map { it.playerName })
+        // Each player count has its own board: none of these were of 2 or 8.
+        assertEquals(0, repository.leaderboardCount(GameMode.CLASSIC, playerCount = 2))
+        assertEquals(emptyList(), repository.leaderboard(GameMode.CLASSIC, playerCount = 8))
+        // Nor does Statistics count them for another count - only for every game, or theirs.
+        assertEquals(emptyList(), repository.playerStatistics(playerCount = 3))
+        assertEquals(repository.playerStatistics(), repository.playerStatistics(playerCount = 4))
     }
 
     @Test

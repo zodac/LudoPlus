@@ -65,11 +65,14 @@ class GameRecordRepository(
         writeCount.update { it + 1 }
     }
 
-    /** Page [pageIndex] of [gameMode]'s Leaderboard: its fastest wins (fewest turns, then most captures). */
-    suspend fun leaderboard(gameMode: GameMode, pageIndex: Int = 0, pageSize: Int = LEADERBOARD_PAGE_SIZE): List<GameResult> =
-        dao.leaderboard(gameMode.id, limit = pageSize, offset = pageIndex * pageSize)
+    /**
+     * Page [pageIndex] of [gameMode]'s Leaderboard for games of [playerCount]: its fastest wins (fewest turns, then most
+     * captures). Each player count has its own, as a bigger board's lap is longer.
+     */
+    suspend fun leaderboard(gameMode: GameMode, playerCount: Int, pageIndex: Int = 0, pageSize: Int = LEADERBOARD_PAGE_SIZE): List<GameResult> =
+        dao.leaderboard(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
 
-    suspend fun leaderboardCount(gameMode: GameMode): Int = dao.leaderboardCount(gameMode.id)
+    suspend fun leaderboardCount(gameMode: GameMode, playerCount: Int): Int = dao.leaderboardCount(gameMode.id, playerCount)
 
     /**
      * Opens the database with a read, so it is migrated to this build's schema now: throws whatever the opening does (a
@@ -90,10 +93,10 @@ class GameRecordRepository(
 
     /**
      * Every player's Statistics, in name order: names differing only by case are one player, shown by the spelling of
-     * their latest game.
+     * their latest game. Only games of [playerCount] count, or every game for null.
      */
-    suspend fun playerStatistics(): List<PlayerStatistics> {
-        val rows = dao.allByPlayer()
+    suspend fun playerStatistics(playerCount: Int? = null): List<PlayerStatistics> {
+        val rows = dao.allByPlayer().filter { playerCount == null || it.playerCount == playerCount }
         return withContext(computeContext) { rows.groupBy { it.playerKey }.values.map(::statisticsOf) }
     }
 }

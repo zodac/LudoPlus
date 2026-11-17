@@ -9,14 +9,14 @@ class InMemoryGameResultDao : GameResultDao {
         results.forEach { rows += it.copy(id = nextId++) }
     }
 
-    private fun leaderboardRows(gameModeId: String) = rows
-        .filter { it.gameModeId == gameModeId && it.playedUnmodified && it.won }
+    private fun leaderboardRows(gameModeId: String, playerCount: Int) = rows
+        .filter { it.gameModeId == gameModeId && it.playedUnmodified && it.won && it.playerCount == playerCount }
         .sortedWith(compareBy<GameResult> { it.turns }.thenByDescending { it.captures }.thenBy { it.endedAtEpochMillis })
 
-    override suspend fun leaderboard(gameModeId: String, limit: Int, offset: Int): List<GameResult> =
-        leaderboardRows(gameModeId).drop(offset).take(limit)
+    override suspend fun leaderboard(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult> =
+        leaderboardRows(gameModeId, playerCount).drop(offset).take(limit)
 
-    override suspend fun leaderboardCount(gameModeId: String): Int = leaderboardRows(gameModeId).size
+    override suspend fun leaderboardCount(gameModeId: String, playerCount: Int): Int = leaderboardRows(gameModeId, playerCount).size
 
     override suspend fun allByPlayer(): List<GameResult> =
         rows.sortedWith(compareBy<GameResult> { it.playerKey }.thenBy { it.endedAtEpochMillis }.thenBy { it.id })

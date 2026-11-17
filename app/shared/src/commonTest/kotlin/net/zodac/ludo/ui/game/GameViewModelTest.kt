@@ -273,12 +273,12 @@ class GameViewModelTest {
         val viewModel = GameViewModel(SettingsRepository(prefs), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao()))
         runCurrent()
         val setup = viewModel.setupForm.setup.value
-        assertEquals(saved + PlayerColour.entries.drop(4), setup.allSlots.map { it.colour })
+        assertEquals(saved + PlayerColour.entries.subList(4, 8), setup.allSlots.map { it.colour })
         assertEquals(4, setup.playerCount)
     }
 
     @Test
-    fun `a colour swaps with whichever slot holds it - played or not - so all eight stay different`() = runTest(dispatcher) {
+    fun `a colour swaps with whichever slot holds it - played or not - so all eight stay different - and one nobody holds is just taken`() = runTest(dispatcher) {
         val form = GameSetupForm()
         form.setPlayerCount(3)
         // Player 1 takes purple from slot 8, which isn't playing, and slot 8 takes red.
@@ -286,8 +286,11 @@ class GameViewModelTest {
         val colours = form.setup.value.allSlots.map { it.colour }
         assertEquals(PlayerColour.PURPLE, colours[0])
         assertEquals(PlayerColour.RED, colours[7])
-        assertEquals(PlayerColour.entries.toSet(), colours.toSet())
+        assertEquals(8, colours.toSet().size)
         assertEquals(3, form.setup.value.playerSlots.size)
+        // Lime is one of the four no slot starts with: player 2 takes it, and nobody else changes.
+        form.setPlayerColour(2, PlayerColour.LIME)
+        assertEquals(listOf(PlayerColour.PURPLE, PlayerColour.LIME) + colours.drop(2), form.setup.value.allSlots.map { it.colour })
     }
 
     private companion object {

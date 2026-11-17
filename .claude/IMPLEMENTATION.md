@@ -350,10 +350,12 @@ count but 4 has a board of its own; one player on two colours was dropped.
 - [ ] Teams (2v2, 3v3, 4v4: partners across the board, both sets home to win) as a setting.
 - [x] Player colours past four: orange, cyan, pink, and purple, kept by the maintainer though purple is near the
     movable ring. Checked for colour blindness (`UI.md`, "Player colours"): blue and purple, and green and cyan, are
-    close for some; awaiting the maintainer's call.
+    close for some, so the defaults stay and the picker offers four more (lime, magenta, berry, and scarlet; the
+    maintainer, 2026-11-18).
 - [x] The CPU: Hard's weights hold at every count (one Hard among Mediums wins 40% of 3-player and 23% of 6-player
     games; 54% of 2-player games, now opposite; `CpuTournamentTest`).
-- [ ] Statistics and the Leaderboard keyed by player count (the records already store it).
+- [x] Statistics and the Leaderboard by player count (`DESIGN.md`, "Leaderboard and Statistics"): a Leaderboard a count,
+    and Statistics for every game or one count's.
 
 ## Phase 9: Game modes and modifiers
 

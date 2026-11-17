@@ -44,6 +44,10 @@ class PlayerColourPickerTest : UiTest() {
         compose.onNodeWithContentDescription("Green").assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)).assertIsSelected()
         compose.onNodeWithContentDescription("Red, swaps with player 1").assertExists()
         compose.onNodeWithContentDescription("Yellow").assertExists()
+        // Twelve to choose from: the eight defaults and four more.
+        listOf("Blue", "Orange", "Cyan", "Pink", "Purple", "Lime", "Magenta", "Berry", "Scarlet").forEach {
+            compose.onNodeWithContentDescription(it).assertExists()
+        }
 
         // Picking a colour reports it and closes the pop-up.
         compose.onNodeWithContentDescription("Yellow").performClick()
