@@ -271,7 +271,9 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     - [ ] Run the journey on an emulator (the sandbox's `emulator` skill): written on a host without one, so not yet run.
     - [ ] `PawnMoveBenchmark` on a phone: frameDurationCpuMs P90 under 16ms.
 - [ ] Store-assets generator scenes for Ludo, README gallery, and `assets/full-description.txt`.
-- [ ] Privacy policy re-read against the app.
+- [x] Privacy policy re-read against the app, and rewritten for 1.0.0 (approved 2026-11-17): no sign-in, cloud save,
+    purchase, or progress files yet, and nothing leaves the device but a crash report the player posts. It must be
+    updated again before Phase 10 or 11 ships.
 - [ ] Set VERSION to 1.0.0, which turns publishing on: the first GitHub release.
 
 ## Phase 6: Achievements
