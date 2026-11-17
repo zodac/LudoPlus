@@ -548,4 +548,42 @@ class AchievementTrackerTest {
         val play = Play(game(listOf(Y, Y, Y, Y), listOf(HOME, HOME, HOME, HOME - 1), listOf(10, Y, Y, Y), listOf(5, Y, Y, Y), current = GREEN, rules = rules)).play(1, pawn = 3)
         assertEquals(1, play.counts[AchievementCounter.LAST_PLACES])
     }
+
+    @Test
+    fun `Broken Record is one number four times in a row - Counting Up 1 to 6 in order - each across turns`() {
+        val record = Play(game()).rollEach(3, 3, 3)
+        assertFalse(Achievement.BROKEN_RECORD in record.earned)
+        assertTrue(Achievement.BROKEN_RECORD in record.rollEach(3).earned)
+        assertFalse(Achievement.BROKEN_RECORD in Play(game()).rollEach(3, 3, 2, 3, 3).earned)
+
+        // Every pawn in the yard, so a 6 alone moves: the turn passes back after each other roll.
+        val counting = Play(game()).rollEach(1, 2, 3, 4, 5)
+        assertFalse(Achievement.COUNTING_UP in counting.earned)
+        counting.roll(6)
+        assertTrue(Achievement.COUNTING_UP in counting.earned)
+        assertFalse(Achievement.COUNTING_UP in Play(game()).rollEach(1, 2, 4, 3, 5).roll(6).earned)
+    }
+
+    @Test
+    fun `Wire To Wire is a win seen from the start with no opponent ever ahead on pawns home`() {
+        val wire = Play(game(listOf(HOME - 1, 10, 10, 10))).roll(3)
+        wire.skipTo(game(listOf(HOME, HOME, HOME, HOME - 1), listOf(HOME, HOME, Y, Y), turns = 40)).play(1, pawn = 3)
+        assertTrue(Achievement.WIRE_TO_WIRE in wire.earned)
+
+        val behind = Play(game(listOf(HOME - 1, 10, 10, 10))).roll(3)
+        behind.skipTo(game(listOf(HOME, 10, 10, 10), listOf(HOME, HOME, Y, Y), turns = 20)).roll(3)
+        behind.skipTo(game(listOf(HOME, HOME, HOME, HOME - 1), listOf(HOME, HOME, Y, Y), turns = 40)).play(1, pawn = 3)
+        assertFalse(Achievement.WIRE_TO_WIRE in behind.earned, "green was ahead 2 to 1")
+
+        val resumed = Play(game(listOf(HOME, HOME, HOME, HOME - 1), turns = 40)).play(1, pawn = 3)
+        assertFalse(Achievement.WIRE_TO_WIRE in resumed.earned, "not seen from the start")
+    }
+
+    @Test
+    fun `Time Flies is an hour of one game on screen - once`() {
+        val tracker = AchievementTracker(configs())
+        assertEquals(GameFeats(), tracker.playTime(59 * 60 * 1_000L))
+        assertEquals(GameFeats(setOf(Achievement.TIME_FLIES)), tracker.playTime(60 * 60 * 1_000L))
+        assertEquals(GameFeats(), tracker.playTime(2 * 60 * 60 * 1_000L))
+    }
 }

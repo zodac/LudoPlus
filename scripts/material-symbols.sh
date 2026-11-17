@@ -20,10 +20,12 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 GLYPHS = """
+Abc abc
 AcUnit ac_unit
 Acute acute
 Add add
 Air air
+Album album
 AllInclusive all_inclusive
 Anchor anchor
 Android android
@@ -40,6 +42,7 @@ Badge badge
 BarChart bar_chart
 Block block
 Bolt bolt
+Cabin cabin
 Calculate calculate
 Cancel cancel
 Casino casino
@@ -52,6 +55,7 @@ Close close
 ContentCut content_cut
 Cottage cottage
 Crown crown
+Dangerous dangerous
 DeleteForever delete_forever
 DeleteSweep delete_sweep
 DeveloperMode developer_mode
@@ -88,6 +92,7 @@ Help help mirror
 HelpOutline help fill0 mirror
 Hiking hiking
 History history
+HistoryEdu history_edu
 HolidayVillage holiday_village
 HomeWork home_work
 HourglassEmpty hourglass_empty
@@ -146,10 +151,12 @@ Restaurant restaurant
 Rocket rocket
 RocketLaunch rocket_launch
 Savings savings
+Schedule schedule
 School school
 ScreenRotation screen_rotation
 SentimentDissatisfied sentiment_dissatisfied
 SentimentNeutral sentiment_neutral
+Signature signature
 Skull skull
 SlowMotionVideo slow_motion_video
 SmartToy smart_toy
@@ -174,6 +181,7 @@ Target target
 Texture texture
 ThumbDown thumb_down
 ThumbUp thumb_up
+Timeline timeline
 Timer timer
 TravelExplore travel_explore
 TrendingDown trending_down mirror

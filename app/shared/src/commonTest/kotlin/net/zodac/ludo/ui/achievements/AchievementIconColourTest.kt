@@ -15,11 +15,15 @@ class AchievementIconColourTest {
         assertEquals(
             setOf(
                 Achievement.COMPLETIONIST,
+                Achievement.ALLITERATION,
                 Achievement.ARE_YOU_A_DEVELOPER,
                 Achievement.BIG_FAN,
                 Achievement.I_AM_NOT_A_ROBOT,
                 Achievement.MIDNIGHT_RUN,
                 Achievement.MUSICAL_CHAIRS,
+                Achievement.SIDEWAYS,
+                Achievement.TIME_FLIES,
+                Achievement.WHATS_IN_A_NAME,
                 Achievement.WHOS_LUDO,
             ),
             fixed,

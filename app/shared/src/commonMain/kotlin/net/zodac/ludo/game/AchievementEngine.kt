@@ -6,6 +6,8 @@ import net.zodac.ludo.model.AchievementCounter
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.maxPlayerNameLength
+import net.zodac.ludo.model.nameWidth
 import net.zodac.ludo.model.ProgressStyle
 
 /** One "getting closer" banner: [achievement] moved from [previous] to [current] out of its target. */
@@ -73,10 +75,15 @@ object AchievementEngine {
             if (localHour in MIDNIGHT_HOURS) add(Achievement.MIDNIGHT_RUN)
             if (players.any { it.name.equals(LUDO_NAME, ignoreCase = true) }) add(Achievement.WHOS_LUDO)
             if (players.first().name.equals(CPU_NAME, ignoreCase = true)) add(Achievement.I_AM_NOT_A_ROBOT)
+            if (players.map { it.name.firstOrNull()?.lowercaseChar() }.distinct().singleOrNull()?.isLetter() == true) add(Achievement.ALLITERATION)
+            if (players.any { it.type == PlayerType.HUMAN && it.name.nameWidth() >= maxPlayerNameLength(players.size) }) add(Achievement.WHATS_IN_A_NAME)
             if (players.withIndex().all { (seat, player) -> player.colour != PlayerColour.defaultFor(seat) }) add(Achievement.MUSICAL_CHAIRS)
         }
         return GameFeats(earned)
     }
+
+    /** What a game shown with the phone on its side earns. */
+    fun atSideways(): GameFeats = GameFeats(setOf(Achievement.SIDEWAYS))
 
     /** What finishing the tutorial earns. */
     fun atTutorialEnd(): GameFeats = GameFeats(setOf(Achievement.BACK_TO_SCHOOL))

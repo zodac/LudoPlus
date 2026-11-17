@@ -131,6 +131,15 @@ val AchievementMusicGold = Color(0xFFF2C14E)
 /** Who's Ludo?'s name badge: the brand's own violet seed. */
 val AchievementBadgeViolet = Color(0xFF9C6BFF)
 
+/** Alliteration's letters and What's In A Name?'s signature: fountain-pen ink blue. */
+val AchievementInkBlue = Color(0xFF6FA8FF)
+
+/** Sideways' turning phone: teal. */
+val AchievementSidewaysTeal = Color(0xFF4FD1C5)
+
+/** Time Flies' clock: amber. */
+val AchievementClockAmber = Color(0xFFFFB74D)
+
 /** The Completionist trophy's crystal, top left to bottom right: white, ice, cyan, violet. */
 val CrystalTrophyWhite = Color(0xFFFFFFFF)
 val CrystalTrophyIce = Color(0xFFCDEFFF)

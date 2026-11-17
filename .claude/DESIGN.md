@@ -453,7 +453,7 @@ they open on, then **Combined**, every mode's games together, last (a divider af
 
 ## Achievements
 
-`model/Achievement.kt` (100: 94 counted, 6 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
+`model/Achievement.kt` (110: 100 counted, 10 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
 (pure), `data/achievements/`, `app/AchievementUnlocker.kt`, `ui/achievements/`. Rebuilt for Ludo in Phase 6; DiceFive's
 110 are in `5423b6c`.
 
@@ -463,16 +463,19 @@ they open on, then **Combined**, every mode's games together, last (a divider af
     - String keys follow the constant: `achievement_<constant>_title`, `_description`.
 - **Player 1 only.** The person in seat 1 earns them; every other seat, person or CPU, is an opponent. The tutorial
     earns nothing.
-- **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (18), The Die (6), Captures (15), Racing
-    (11), Winning (16), Misfortune (17), Miscellaneous (10, hidden), Collection (Completionist), and Easter Eggs (6,
-    hidden, outside Completionist and the page's total). Each entry's description is its rule; the thresholds are the
-    tracker's constants (`AchievementTracker`'s companion). The maintainer is reviewing the list (asked for 100 on
-    2026-11-17, "a variety of them in groups, like DiceFive").
+- **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (19), The Die (8), Captures (16), Racing
+    (12), Winning (17), Misfortune (17), Miscellaneous (10, hidden), Collection (Completionist), and Easter Eggs (10,
+    hidden, outside Completionist and the page's total): 100 counted, as DiceFive had. Each entry's description is its rule; the thresholds are the
+    tracker's constants (`AchievementTracker`'s companion). The maintainer is reviewing the list (asked for 100, plus 10
+    Easter Eggs, on 2026-11-17, "a variety of them in groups, like DiceFive").
     - Speed Demon (60 turns) and Lightning Fast (50), and Punching Bag (15 captured), come from simulated games: a win
         takes player 1 about 80 turns, the fastest tenth about 60, the fastest hundredth about 50.
-    - Easter Eggs: Are You A Developer? (the version tapped seven times), Big Fan (a person named "zodac", exactly), I
-        Am Not A Robot (player 1 named "CPU", any case), Midnight Run (a new game from midnight to 6am), Musical Chairs
-        (nobody in their seat's own colour), Who's Ludo? (anyone named "Ludo", any case).
+    - Easter Eggs: Alliteration (every name starting with one letter), Are You A Developer? (the version tapped seven
+        times), Big Fan (a person named "zodac", exactly), I Am Not A Robot (player 1 named "CPU", any case), Midnight Run
+        (a new game from midnight to 6am), Musical Chairs (nobody in their seat's own colour), Sideways (a game shown
+        with the phone on its side), Time Flies (an hour of one game on screen), What's In A Name? (a person's name as
+        wide as the setup form allows), Who's Ludo? (anyone named "Ludo", any case).
+    - Wire To Wire needs the whole game seen (from player 1's first roll): one continued from its save can't earn it.
     - Opening the Rules (Read The Manual), Statistics (Number Cruncher), or About (Who Made This?), and finishing the
         tutorial (Back To School) earn hidden ones. The tutorial earns nothing else.
 - **Counters** (`AchievementCounter`): games played, games won, the win and losing streaks, captures, pawns home,

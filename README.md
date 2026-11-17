@@ -13,7 +13,7 @@ and be the first to get all four home. Land on a rival to send them back to the 
     levels
 - **A guided tutorial** that teaches the game in four short parts, and the rules with a diagram for each idea
 - **A Leaderboard** of the fastest wins, and **Statistics** for every player: wins, streaks, and captures
-- **Achievements** to chase: 100 of them, for captures, comebacks, close finishes, and a few hidden surprises
+- **Achievements** to chase: 110 of them, for captures, comebacks, close finishes, and a few hidden surprises
 - Built for **TalkBack** and large fonts, with no ads and no accounts: your games stay on your phone
 
 <table>

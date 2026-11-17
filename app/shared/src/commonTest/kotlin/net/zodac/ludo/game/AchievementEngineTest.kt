@@ -13,6 +13,7 @@ import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.ProgressStyle
+import net.zodac.ludo.model.maxPlayerNameLength
 
 private const val NOW = 1_000L
 
@@ -84,6 +85,25 @@ class AchievementEngineTest {
 
         assertEquals(GameFeats(setOf(Achievement.LETS_FINISH_THIS)), AchievementEngine.atGameResume())
         assertEquals(GameFeats(setOf(Achievement.BACK_TO_SCHOOL)), AchievementEngine.atTutorialEnd())
+        assertEquals(GameFeats(setOf(Achievement.SIDEWAYS)), AchievementEngine.atSideways())
+    }
+
+    @Test
+    fun `every name with one first letter is Alliteration - a person's name as wide as allowed What's In A Name`() {
+        val names = listOf("Mia", "max", "Moe", "Mel")
+        val same = PLAYERS.mapIndexed { i, player -> player.copy(name = names[i]) }
+        assertTrue(Achievement.ALLITERATION in AchievementEngine.atGameStart(same, null, 14).achievements)
+        assertTrue(Achievement.ALLITERATION !in AchievementEngine.atGameStart(PLAYERS, null, 14).achievements, "Me, P2, P3, P4")
+        val digits = PLAYERS.mapIndexed { i, player -> player.copy(name = "${i}x") }
+        assertTrue(Achievement.ALLITERATION !in AchievementEngine.atGameStart(digits, null, 14).achievements)
+
+        val cap = maxPlayerNameLength(PLAYERS.size)
+        val long = PLAYERS.toMutableList().apply { this[0] = this[0].copy(name = "W".repeat(cap)) }
+        assertTrue(Achievement.WHATS_IN_A_NAME in AchievementEngine.atGameStart(long, null, 14).achievements)
+        val short = PLAYERS.toMutableList().apply { this[0] = this[0].copy(name = "W".repeat(cap - 1)) }
+        assertTrue(Achievement.WHATS_IN_A_NAME !in AchievementEngine.atGameStart(short, null, 14).achievements)
+        val cpu = PLAYERS.toMutableList().apply { this[1] = this[1].copy(name = "W".repeat(cap)) }
+        assertTrue(Achievement.WHATS_IN_A_NAME !in AchievementEngine.atGameStart(cpu, null, 14).achievements, "a CPU's name isn't typed")
     }
 
     @Test
@@ -124,7 +144,7 @@ class AchievementEngineTest {
 
         val unlocking = AchievementEngine.evaluate(
             GameFeats(counts = mapOf(AchievementCounter.PAWNS_HOME to 1)),
-            AchievementsState(counters = mapOf(AchievementCounter.PAWNS_HOME to 99)),
+            AchievementsState(unlockedAt = mapOf(Achievement.HOMECOMING to 5L), counters = mapOf(AchievementCounter.PAWNS_HOME to 99)),
             NOW,
         )
         assertEquals(listOf(Achievement.FREQUENT_TRAVELLER), unlocking.newlyUnlocked)

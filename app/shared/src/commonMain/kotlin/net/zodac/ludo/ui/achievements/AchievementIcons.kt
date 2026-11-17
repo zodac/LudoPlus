@@ -11,9 +11,12 @@ import net.zodac.ludo.model.Achievement
 import net.zodac.ludo.ui.icons.Symbols
 import net.zodac.ludo.ui.theme.AchievementDeveloperCyan
 import net.zodac.ludo.ui.theme.AchievementBadgeViolet
+import net.zodac.ludo.ui.theme.AchievementClockAmber
 import net.zodac.ludo.ui.theme.AchievementHeartRed
+import net.zodac.ludo.ui.theme.AchievementInkBlue
 import net.zodac.ludo.ui.theme.AchievementMusicGold
 import net.zodac.ludo.ui.theme.AchievementRobotSilver
+import net.zodac.ludo.ui.theme.AchievementSidewaysTeal
 
 /**
  * The glyph an unlocked [Achievement] shows on the Achievements page and its banner: its own, never a stock trophy, and
@@ -47,13 +50,17 @@ val Achievement.icon: ImageVector
         Achievement.PART_OF_THE_FURNITURE -> Symbols.Chair
         Achievement.DIE_HARD -> Symbols.FitnessCenter
         Achievement.IMMORTAL -> Symbols.AllInclusive
+        Achievement.LIFETIME_ACHIEVEMENT -> Symbols.HistoryEdu
 
         // ---- The Die ------------------------------------------------------------------------
         Achievement.OFF_THE_MARK -> Symbols.Start
         Achievement.SIX_SHOOTER -> Symbols.Filter6
+        Achievement.BROKEN_RECORD -> Symbols.Album
         Achievement.FULL_SPREAD -> Symbols.FormatListNumbered
         Achievement.HOT_HAND -> Symbols.BackHand
         Achievement.SIX_PACK -> Symbols.SportsBar
+        // Steps up, one number at a time.
+        Achievement.COUNTING_UP -> Symbols.Stairs2
         Achievement.SIXTH_SENSE -> Symbols.Visibility
 
         // ---- Captures -----------------------------------------------------------------------
@@ -76,10 +83,12 @@ val Achievement.icon: ImageVector
         Achievement.ON_THE_WARPATH -> Symbols.Swords
         // Shown the door.
         Achievement.BOUNCER -> Symbols.Logout
+        Achievement.MENACE -> Symbols.Dangerous
         Achievement.PUBLIC_ENEMY -> Symbols.Skull
 
         // ---- Racing -------------------------------------------------------------------------
         Achievement.HOME_SWEET_HOME -> Symbols.House
+        Achievement.HOMECOMING -> Symbols.Cabin
         Achievement.EARLY_BIRD -> Symbols.FlutterDash
         Achievement.ALL_HANDS_ON_DECK -> Symbols.WavingHand
         Achievement.DOUBLE_DELIVERY -> Symbols.LocalShipping
@@ -110,6 +119,7 @@ val Achievement.icon: ImageVector
         Achievement.TRAINING_WHEELS -> Symbols.PedalBike
         // Locked away, out of reach: never captured.
         Achievement.UNTOUCHABLE -> Symbols.Lock
+        Achievement.WIRE_TO_WIRE -> Symbols.Timeline
 
         // ---- Misfortune ---------------------------------------------------------------------
         Achievement.BACK_TO_SQUARE_ONE -> Symbols.RestartAlt
@@ -149,12 +159,16 @@ val Achievement.icon: ImageVector
 
         // ---- Easter Eggs --------------------------------------------------------------------
         // Every icon in this category is a fixed colour rather than the ambient tint - see [iconTintOrUnspecified].
+        Achievement.ALLITERATION -> Symbols.Abc
         Achievement.ARE_YOU_A_DEVELOPER -> Symbols.DeveloperMode
         Achievement.BIG_FAN -> Symbols.Favorite
         Achievement.I_AM_NOT_A_ROBOT -> Symbols.SmartToy
         // A crescent moon and two stars, for the small hours it was earned in.
         Achievement.MIDNIGHT_RUN -> rememberMidnightIcon()
         Achievement.MUSICAL_CHAIRS -> Symbols.MusicNote
+        Achievement.SIDEWAYS -> Symbols.ScreenRotation
+        Achievement.TIME_FLIES -> Symbols.Schedule
+        Achievement.WHATS_IN_A_NAME -> Symbols.Signature
         Achievement.WHOS_LUDO -> Symbols.Badge
     }
 
@@ -165,11 +179,15 @@ val Achievement.icon: ImageVector
  */
 fun Achievement.iconTintOrUnspecified(tint: Color): Color = when (this) {
     Achievement.COMPLETIONIST -> Color.Unspecified
+    Achievement.ALLITERATION -> AchievementInkBlue
     Achievement.ARE_YOU_A_DEVELOPER -> AchievementDeveloperCyan
     Achievement.BIG_FAN -> AchievementHeartRed
     Achievement.MIDNIGHT_RUN -> Color.Unspecified
     Achievement.I_AM_NOT_A_ROBOT -> AchievementRobotSilver
     Achievement.MUSICAL_CHAIRS -> AchievementMusicGold
+    Achievement.SIDEWAYS -> AchievementSidewaysTeal
+    Achievement.TIME_FLIES -> AchievementClockAmber
+    Achievement.WHATS_IN_A_NAME -> AchievementInkBlue
     Achievement.WHOS_LUDO -> AchievementBadgeViolet
     else -> tint
 }

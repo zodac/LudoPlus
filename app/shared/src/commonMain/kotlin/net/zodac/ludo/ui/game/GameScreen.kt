@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -161,6 +162,9 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
     val tutorialStep by viewModel.tutorialStep.collectAsStateWithLifecycle()
     val tutorialPart by viewModel.tutorialPart.collectAsStateWithLifecycle()
     SuperuserRollPicker(viewModel)
+    val window = LocalWindowInfo.current.containerSize
+    val sideways = window.width > window.height
+    LaunchedEffect(sideways) { if (sideways) viewModel.onShownSideways() }
     CompositionLocalProvider(LocalDieLongPress provides viewModel::onDieLongPressed.takeIf { viewModel.hasSuperuserMode }) {
         GameContent(
             started,

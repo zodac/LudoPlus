@@ -285,7 +285,7 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 
 ## Phase 6: Achievements
 
-- [x] Achievement catalog for Ludo (`DESIGN.md`, "Achievements"): 100 (the maintainer, 2026-11-17), in Milestones, The
+- [x] Achievement catalog for Ludo (`DESIGN.md`, "Achievements"): 110, 100 counted and 10 Easter Eggs (the maintainer, 2026-11-17), in Milestones, The
     Die, Captures, Racing, Winning, Misfortune, Miscellaneous (hidden), Collection, and Easter Eggs, with permanent ids
     and titles of 38 characters or less. First win, captures (Gotcha!, Bouncer, Public Enemy: 1, 100, 1,000), Comeback
     Kid, Untouchable, Hat Trick, Lap Of Honour (the full lap), streaks, and hidden ones. A debug build's game has a

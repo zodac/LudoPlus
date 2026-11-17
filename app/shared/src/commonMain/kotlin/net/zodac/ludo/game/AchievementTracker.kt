@@ -67,6 +67,15 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
     /** Player 1's 1s in a row. */
     private var onesInARow = 0
 
+    /** Player 1's last few rolls, in order, one turn after another. */
+    private val recentRolls = ArrayDeque<Int>()
+
+    /** Whether this tracker has seen the game from player 1's first roll: [Achievement.WIRE_TO_WIRE] needs all of it. */
+    private var seenFromStart = false
+
+    /** Whether an opponent has had more pawns home than player 1. */
+    private var everBehind = false
+
     /** Player 1's turns in a row started with a 6. */
     private var turnsStartedWithSix = 0
 
@@ -141,6 +150,7 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
         if (after.players[PLAYER_ONE].timesCaptured >= PUNCHING_BAG_CAPTURES) feats += Achievement.PUNCHING_BAG
         val opponents = after.players.indices.filter { it != PLAYER_ONE }
         val myHome = after.players[PLAYER_ONE].pawnsHome(board)
+        if (opponents.any { after.players[it].pawnsHome(board) > myHome }) everBehind = true
         if (myHome == 0 && opponents.any { after.players[it].pawnsHome(board) == pawnsPerPlayer - 1 }) trailedBadly = true
         if (myHome == pawnsPerPlayer - 1 && opponents.all { after.players[it].pawnsHome(board) == 0 }) ledBadly = true
         if (before.players.all { it.pawnsHome(board) == 0 } && event is GameEvent.Moved && event.move.to == board.homeProgress) firstHome = event.player
@@ -168,6 +178,12 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
         return GameFeats(feats, counts, won)
     }
 
+    /** What [playMillis] of this game on screen earns: [Achievement.TIME_FLIES] from an hour, once. */
+    fun playTime(playMillis: Long): GameFeats {
+        if (!active || playMillis < TIME_FLIES_MILLIS || !earned.add(Achievement.TIME_FLIES)) return GameFeats()
+        return GameFeats(setOf(Achievement.TIME_FLIES))
+    }
+
     /** Player 1's counts not yet handed over, now: for a game leaving the screen, which may never come back. */
     fun flush(): GameFeats = GameFeats(counts = pending.toMap()).also { pending.clear() }
 
@@ -182,6 +198,7 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
         pending.add(AchievementCounter.DIE_ROLLS)
         val first = startsTurn && before.players[PLAYER_ONE].turns == 0
         if (first) {
+            seenFromStart = true
             firstRolls = mutableListOf()
             if (roll == SIX) feats += Achievement.OFF_THE_MARK
         }
@@ -197,6 +214,10 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
         } else if (++rollsWithoutSix >= DRY_SPELL_ROLLS) {
             feats += Achievement.DRY_SPELL
         }
+        recentRolls.addLast(roll)
+        if (recentRolls.size > COUNTING_UP.size) recentRolls.removeFirst()
+        if (recentRolls.size >= BROKEN_RECORD_ROLLS && recentRolls.takeLast(BROKEN_RECORD_ROLLS).distinct().size == 1) feats += Achievement.BROKEN_RECORD
+        if (recentRolls.toList() == COUNTING_UP) feats += Achievement.COUNTING_UP
         onesInARow = if (roll == 1) onesInARow + 1 else 0
         if (onesInARow >= ONES_IN_A_ROW) feats += Achievement.BOTTOM_OF_THE_BARREL
         if (startsTurn) {
@@ -309,6 +330,7 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
         if (me.turns <= LIGHTNING_TURNS) add(Achievement.LIGHTNING_FAST)
         if (firstHome == PLAYER_ONE) add(Achievement.FRONT_RUNNER)
         if (lastOut) add(Achievement.LATE_BLOOMER)
+        if (seenFromStart && !everBehind) add(Achievement.WIRE_TO_WIRE)
         if (opponents.any { after.players[it].isOneFromFinishing(after) }) add(Achievement.PHOTO_FINISH)
         if (opponents.size == FULL_TABLE_OPPONENTS) {
             val table = opponents.map { players[it] }
@@ -362,6 +384,9 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
         const val HOT_HAND_TURNS = 3
         const val EXPRESS_TURNS = 12
         const val SCENIC_TURNS = 60
+        const val BROKEN_RECORD_ROLLS = 4
+        val COUNTING_UP = (1..SIX).toList()
+        const val TIME_FLIES_MILLIS = 60 * 60 * 1_000L
 
         /** About the fastest tenth of wins against Medium CPUs (simulated, 2026-11-17): the average is about 80. */
         const val SPEED_DEMON_TURNS = 60
