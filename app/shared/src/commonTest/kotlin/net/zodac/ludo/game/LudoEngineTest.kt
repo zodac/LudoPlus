@@ -294,6 +294,28 @@ class LudoEngineTest {
     }
 
     @Test
+    fun `two players sit opposite - and a game can seat them where it says - in clockwise order`() {
+        assertEquals(listOf(0, 2), GameState.new(GameMode.CLASSIC, playerCount = 2).players.map { it.seat })
+        assertEquals(listOf(0, 1), GameState.new(GameMode.CLASSIC, playerCount = 2, seats = listOf(0, 1)).players.map { it.seat })
+        assertFailsWith<IllegalArgumentException> { GameState.new(GameMode.CLASSIC, playerCount = 2, seats = listOf(2, 0)) }
+        assertFailsWith<IllegalArgumentException> { GameState.new(GameMode.CLASSIC, playerCount = 2, seats = listOf(0, 4)) }
+    }
+
+    @Test
+    fun `on an eight-seat board a pawn captures the seat after's - and play passes clockwise round all eight`() {
+        val rules = GameMode.CLASSIC.rules.forPlayers(8)
+        val new = GameState.new(GameMode.CLASSIC, playerCount = 8, rules = rules)
+        assertEquals(104, new.board.trackLength)
+        // Player 1's pawn 2 squares past its start (square 15); player 0's pawn 4 short of it (square 11).
+        val state = new.copy(players = new.players.mapIndexed { i, p -> if (i == 0) p.copy(pawns = listOf(11, Y, Y, Y)) else if (i == 1) p.copy(pawns = listOf(2, Y, Y, Y)) else p })
+        val moved = state.roll(4).move(0)
+        assertEquals(listOf(Y, Y, Y, Y), moved.players[1].pawns)
+        // The capture rolls again; then a 1 that moves passes play to player 1.
+        assertEquals(RED, moved.current)
+        assertEquals(1, moved.roll(1).move(0).current)
+    }
+
+    @Test
     fun `the die rolls every face from 1 to 6 and nothing else`() {
         val random = kotlin.random.Random(7)
         val faces = (1..600).map { (LudoEngine.roll(game(), random).lastEvent as GameEvent).let { event -> roll(event) } }.toSet()

@@ -62,7 +62,7 @@ class TutorialScript(val gameMode: GameMode, val parts: List<TutorialPart>) {
     /** The game as [part] starts: its pawns set out, and the player to roll. */
     fun start(part: Int): GameState {
         val lesson = parts[part]
-        val new = GameState.new(gameMode, playerCount = 2, first = YOU)
+        val new = GameState.new(gameMode, playerCount = 2, first = YOU, seats = listOf(YOU, CPU))
         val pawns = listOf(lesson.you, lesson.cpu)
         return new.copy(players = new.players.mapIndexed { index, player -> player.copy(pawns = pawns[index]) })
     }

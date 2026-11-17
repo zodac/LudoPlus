@@ -73,6 +73,11 @@ val PlayerColour.color: Color
         PlayerColour.GREEN -> Color(0xFF5CE38F)
         PlayerColour.YELLOW -> Color(0xFFFFD54F)
         PlayerColour.BLUE -> Color(0xFF6C9CFF)
+        PlayerColour.ORANGE -> Color(0xFFFF9A3C)
+        PlayerColour.CYAN -> Color(0xFF4DD9E8)
+        PlayerColour.PINK -> Color(0xFFFF7EB6)
+        // Kept though near the movable pawn's violet ring (the maintainer, 2026-11-18): deeper than Primary.
+        PlayerColour.PURPLE -> Color(0xFFA77BFF)
     }
 
 /**

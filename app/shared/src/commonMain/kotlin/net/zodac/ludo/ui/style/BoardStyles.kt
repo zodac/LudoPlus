@@ -13,7 +13,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import net.zodac.ludo.data.settings.DefaultStyleIds
 import net.zodac.ludo.ui.game.BoardLayout
-import net.zodac.ludo.ui.game.Cell
+import net.zodac.ludo.ui.game.ClassicBoardLayout
 import net.zodac.ludo.ui.theme.BoardEmptySeat
 import net.zodac.ludo.ui.theme.BoardInk
 import net.zodac.ludo.ui.theme.BoardIvory
@@ -24,50 +24,41 @@ object ClassicBoardStyle : BoardStyle, Swatched {
     override val swatch: Color = BoardIvory
 
     /** The board itself, no pawns: squares, yards, start squares, stars, home columns, and the centre. */
-    override fun DrawScope.drawBoard(unit: Float, seatColours: List<Color?>) {
-        val board = BoardLayout.geometry
+    override fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>) {
+        val board = layout.geometry
         val line = BoardInk.copy(alpha = 0.45f)
         val lineWidth = 1.dp.toPx()
-        drawRect(BoardIvory, size = Size(unit * BoardLayout.SIZE, unit * BoardLayout.SIZE))
-        fun square(cell: Cell, fill: Color) {
-            val topLeft = Offset(cell.column * unit, cell.row * unit)
-            drawRect(fill, topLeft, Size(unit, unit))
-            drawRect(line, topLeft, Size(unit, unit), style = Stroke(lineWidth))
+        val extent = Size(unit * layout.size, unit * layout.size)
+        if (layout.round) drawOval(BoardIvory, size = extent) else drawRect(BoardIvory, size = extent)
+        fun shape(points: List<Offset>, fill: Color) {
+            val path = points.map { it * unit }.toPath()
+            drawPath(path, fill)
+            drawPath(path, line, style = Stroke(lineWidth))
         }
         for (square in 0..<board.trackLength) {
-            val cell = BoardLayout.trackCell(square)
+            val cell = layout.trackSquare(square)
             val startOf = if (square % board.seatSpacing == 0) square / board.seatSpacing else null
-            square(cell, startOf?.let { seatColours.colourOf(it) } ?: BoardIvory)
+            shape(cell.corners, startOf?.let { seatColours.colourOf(it) } ?: BoardIvory)
             if (square % board.seatSpacing == board.starOffset) drawStar(cell.centre * unit, unit * 0.36f, BoardInk.copy(alpha = 0.55f))
         }
         for (seat in 0..<board.seats) {
             val colour = seatColours.colourOf(seat)
-            for (index in 0..<board.homeColumnLength) square(BoardLayout.homeColumnCell(seat, index), colour)
+            for (index in 0..<board.homeColumnLength) shape(layout.homeColumnSquare(seat, index).corners, colour)
             // The yard: a block of the seat's colour round an ivory court with a spot for each pawn.
-            val origin = BoardLayout.yardOrigin(seat)
-            val yardTopLeft = Offset(origin.column * unit, origin.row * unit)
-            val yardSize = Size(BoardLayout.YARD_SIZE * unit, BoardLayout.YARD_SIZE * unit)
-            drawRect(colour, yardTopLeft, yardSize)
-            drawRect(line, yardTopLeft, yardSize, style = Stroke(lineWidth))
-            drawRoundRect(
-                BoardIvory,
-                yardTopLeft + Offset(unit, unit),
-                Size(4 * unit, 4 * unit),
-                CornerRadius(unit * 0.5f),
-            )
+            shape(layout.yard(seat), colour)
+            if (layout is ClassicBoardLayout) {
+                val court = layout.yardCourt(seat)
+                drawRoundRect(BoardIvory, court[0] * unit, Size(4 * unit, 4 * unit), CornerRadius(unit * 0.5f))
+            } else {
+                drawPath(layout.yardCourt(seat).map { it * unit }.toPath(), BoardIvory)
+            }
             for (slot in 0..3) {
-                drawCircle(colour.copy(alpha = 0.45f), unit * 0.62f, BoardLayout.yardSpot(seat, slot) * unit)
+                drawCircle(colour.copy(alpha = 0.45f), unit * layout.yardSpotRadius, layout.yardSpot(seat, slot) * unit)
             }
-            // Home: the seat's triangle of the centre.
-            val triangle = BoardLayout.homeTriangle(seat).map { it * unit }
-            val path = Path().apply {
-                moveTo(triangle[0].x, triangle[0].y)
-                triangle.drop(1).forEach { lineTo(it.x, it.y) }
-                close()
-            }
-            drawPath(path, colour)
-            drawPath(path, line, style = Stroke(lineWidth))
+            // Home: the seat's part of the centre.
+            shape(layout.homeArea(seat), colour)
         }
+        if (layout.round) drawOval(BoardInk.copy(alpha = 0.6f), size = extent, style = Stroke(1.5.dp.toPx()))
     }
 
     /** The ivory spot a pawn that is home stands on, ringed in ink: it lifts the pawn off its own colour's triangle. */
@@ -79,6 +70,12 @@ object ClassicBoardStyle : BoardStyle, Swatched {
 }
 
 private fun List<Color?>.colourOf(seat: Int): Color = getOrNull(seat) ?: BoardEmptySeat
+
+private fun List<Offset>.toPath(): Path = Path().apply {
+    moveTo(first().x, first().y)
+    drop(1).forEach { lineTo(it.x, it.y) }
+    close()
+}
 
 /** A five-pointed star, point up, its points [radius] from [centre]: a safe square's mark. */
 private fun DrawScope.drawStar(centre: Offset, radius: Float, colour: Color) {

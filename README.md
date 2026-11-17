@@ -9,8 +9,8 @@ and be the first to get all four home. Land on a rival to send them back to the 
 
 ## What's in it
 
-- **The classic rules** for four players, against friends passing the phone around or computer opponents at three
-    levels
+- **The classic rules** for 2 to 8 players, on a board made for each size, against friends passing the phone around
+    or computer opponents at three levels
 - **A guided tutorial** that teaches the game in four short parts, and the rules with a diagram for each idea
 - **A Leaderboard** of the fastest wins, and **Statistics** for every player: wins, streaks, and captures
 - **Achievements** to chase: 110 of them, for captures, comebacks, close finishes, and a few hidden surprises
@@ -52,7 +52,6 @@ and be the first to get all four home. Land on a rival to send them back to the 
 
 ## Planned
 
-- **2 to 8 players**, on boards made for each size
 - **Game modes and house rules** - variations on the classic, and optional modifiers to mix in
 - **Online play** with friends
 

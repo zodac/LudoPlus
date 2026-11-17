@@ -16,7 +16,7 @@ class BoardLayoutTest {
 
     @Test
     fun `the track is 52 different squares - each touching the one before - round the cross`() {
-        val cells = (0..<board.trackLength).map { BoardLayout.trackCell(it) }
+        val cells = (0..<board.trackLength).map { ClassicBoardLayout.trackCell(it) }
         assertEquals(board.trackLength, cells.toSet().size)
         for (i in cells.indices) {
             val (a, b) = cells[i] to cells[(i + 1) % cells.size]
@@ -29,27 +29,27 @@ class BoardLayoutTest {
 
     @Test
     fun `each seat's start - star - home column - and yard are where the classic board has them`() {
-        assertEquals(listOf(Cell(1, 6), Cell(8, 1), Cell(13, 8), Cell(6, 13)), (0..3).map { BoardLayout.trackCell(board.startSquare(it)) })
-        assertEquals(listOf(Cell(6, 2), Cell(12, 6), Cell(8, 12), Cell(2, 8)), (0..3).map { BoardLayout.trackCell(board.startSquare(it) + 8) })
-        assertEquals((1..5).map { Cell(it, 7) }, (0..4).map { BoardLayout.homeColumnCell(0, it) })
-        assertEquals((1..5).map { Cell(7, it) }, (0..4).map { BoardLayout.homeColumnCell(1, it) })
-        assertEquals((13 downTo 9).map { Cell(it, 7) }, (0..4).map { BoardLayout.homeColumnCell(2, it) })
-        assertEquals(listOf(Cell(0, 0), Cell(9, 0), Cell(9, 9), Cell(0, 9)), (0..3).map { BoardLayout.yardOrigin(it) })
+        assertEquals(listOf(Cell(1, 6), Cell(8, 1), Cell(13, 8), Cell(6, 13)), (0..3).map { ClassicBoardLayout.trackCell(board.startSquare(it)) })
+        assertEquals(listOf(Cell(6, 2), Cell(12, 6), Cell(8, 12), Cell(2, 8)), (0..3).map { ClassicBoardLayout.trackCell(board.startSquare(it) + 8) })
+        assertEquals((1..5).map { Cell(it, 7) }, (0..4).map { ClassicBoardLayout.homeColumnCell(0, it) })
+        assertEquals((1..5).map { Cell(7, it) }, (0..4).map { ClassicBoardLayout.homeColumnCell(1, it) })
+        assertEquals((13 downTo 9).map { Cell(it, 7) }, (0..4).map { ClassicBoardLayout.homeColumnCell(2, it) })
+        assertEquals(listOf(Cell(0, 0), Cell(9, 0), Cell(9, 9), Cell(0, 9)), (0..3).map { ClassicBoardLayout.yardOrigin(it) })
     }
 
     @Test
     fun `a pawn's last track square leads straight into its home column`() {
         for (seat in 0..3) {
-            assertTrue(adjacent(BoardLayout.trackCell(board.trackSquare(seat, board.trackSteps - 1)), BoardLayout.homeColumnCell(seat, 0)), "seat $seat")
+            assertTrue(adjacent(ClassicBoardLayout.trackCell(board.trackSquare(seat, board.trackSteps - 1)), ClassicBoardLayout.homeColumnCell(seat, 0)), "seat $seat")
         }
     }
 
     @Test
     fun `yard spots sit inside their seat's yard`() {
         for (seat in 0..3) {
-            val origin = BoardLayout.yardOrigin(seat)
+            val origin = ClassicBoardLayout.yardOrigin(seat)
             for (slot in 0..3) {
-                val spot = BoardLayout.yardSpot(seat, slot)
+                val spot = ClassicBoardLayout.yardSpot(seat, slot)
                 assertTrue(spot.x > origin.column && spot.x < origin.column + 6 && spot.y > origin.row && spot.y < origin.row + 6, "$seat/$slot")
             }
         }
@@ -58,8 +58,8 @@ class BoardLayoutTest {
     @Test
     fun `each pawn home has its own spot inside its seat's triangle - close together but never overlapping`() {
         for (seat in 0..3) {
-            val (a, b, c) = BoardLayout.homeTriangle(seat)
-            val spots = (0..3).map { BoardLayout.homeSpot(seat, it) }
+            val (a, b, c) = ClassicBoardLayout.homeTriangle(seat)
+            val spots = (0..3).map { ClassicBoardLayout.homeSpot(seat, it) }
             for (centre in spots) {
                 // Inside: on the same side of each edge as the third corner.
                 fun side(p: Offset, q: Offset, r: Offset) = (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)

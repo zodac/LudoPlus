@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.onClick
@@ -33,8 +36,13 @@ import net.zodac.ludo.ui.common.joinClauses
 import net.zodac.ludo.ui.common.pluralStringResource
 import net.zodac.ludo.ui.common.stringResource
 
-/** A place on the board a screen reader stops at: where it is, in board squares, and what's said and offered there. */
-private class Spot(val column: Float, val row: Float, val size: Float, val description: String, val move: Move?, val moveLabel: String?)
+/** A place on the board a screen reader stops at: where it is, in board units, and what's said and offered there. */
+private class Spot(val bounds: Rect, val description: String, val move: Move?, val moveLabel: String?)
+
+/** The unit box round a square's centre: a turned square's own box would overlap its neighbours'. */
+private fun BoardSquare.spotBounds(): Rect = Rect(centre - Offset(0.5f, 0.5f), Size(1f, 1f))
+
+private fun List<Offset>.bounds(): Rect = Rect(minOf { it.x }, minOf { it.y }, maxOf { it.x }, maxOf { it.y })
 
 /**
  * The board for a screen reader, laid over the drawn one: a node for each yard, each track square (numbered from red's
@@ -45,12 +53,12 @@ private class Spot(val column: Float, val row: Float, val size: Float, val descr
 fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>, onPawn: (Int) -> Unit, modifier: Modifier = Modifier) {
     val spots = boardSpots(state, seatColours, moves)
     BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
-        val unit: Dp = maxWidth / BoardLayout.SIZE
+        val unit: Dp = maxWidth / BoardLayout.of(state.board).size
         spots.forEachIndexed { index, spot ->
             Box(
                 Modifier
-                    .offset(unit * spot.column, unit * spot.row)
-                    .size(unit * spot.size)
+                    .offset(unit * spot.bounds.left, unit * spot.bounds.top)
+                    .size(unit * spot.bounds.width, unit * spot.bounds.height)
                     .semantics {
                         contentDescription = spot.description
                         traversalIndex = index.toFloat()
@@ -65,6 +73,7 @@ fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: Li
 @Composable
 private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>): List<Spot> {
     val board = state.board
+    val layout = BoardLayout.of(board)
     val colourOf = { player: Int -> seatColours[state.players[player].seat] ?: PlayerColour.defaultFor(state.players[player].seat) }
     // Every pawn's spoken name and where it is, once.
     val pawns = state.players.indices.flatMap { player ->
@@ -83,7 +92,6 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
     for (player in state.players.indices) {
         val seat = state.players[player].seat
         val waiting = state.players[player].pawns.indices.filter { state.position(player, it) == PawnPosition.Yard }
-        val origin = BoardLayout.yardOrigin(seat)
         val description = joinClauses(
             listOf(
                 stringResource(Res.string.game_square_yard_spoken, stringResource(colourOf(player).label)),
@@ -91,7 +99,7 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
             ),
         )
         val move = movableAt(player, waiting)
-        spots += Spot(origin.column.toFloat(), origin.row.toFloat(), BoardLayout.YARD_SIZE.toFloat(), description, move, move?.let(moveLabels::get))
+        spots += Spot(layout.yard(seat).bounds(), description, move, move?.let(moveLabels::get))
     }
     // The track, from red's start.
     for (square in 0..<board.trackLength) {
@@ -106,8 +114,7 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
             if (board.isSafe(square)) stringResource(Res.string.game_square_safe_spoken) else null,
         ) + here.map { it.second }.ifEmpty { listOf(empty) }
         val move = state.players.indices.firstNotNullOfOrNull { player -> movableAt(player, here.filter { it.first.first == player }.map { it.first.second }) }
-        val cell = BoardLayout.trackCell(square)
-        spots += Spot(cell.column.toFloat(), cell.row.toFloat(), 1f, joinClauses(clauses), move, move?.let(moveLabels::get))
+        spots += Spot(layout.trackSquare(square).spotBounds(), joinClauses(clauses), move, move?.let(moveLabels::get))
     }
     // Each home column, then home.
     for (player in state.players.indices) {
@@ -117,12 +124,11 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
             val clauses = listOf(stringResource(Res.string.game_square_column_spoken, stringResource(colourOf(player).label), index + 1)) +
                 here.map { it.second }.ifEmpty { listOf(empty) }
             val move = movableAt(player, here.map { it.first.second })
-            val cell = BoardLayout.homeColumnCell(seat, index)
-            spots += Spot(cell.column.toFloat(), cell.row.toFloat(), 1f, joinClauses(clauses), move, move?.let(moveLabels::get))
+            spots += Spot(layout.homeColumnSquare(seat, index).spotBounds(), joinClauses(clauses), move, move?.let(moveLabels::get))
         }
     }
     val home = pawns.filter { it.first.third == PawnPosition.Home }.map { it.second }
-    spots += Spot(6f, 6f, 3f, joinClauses(listOf(stringResource(Res.string.game_square_home_spoken)) + home.ifEmpty { listOf(empty) }), null, null)
+    spots += Spot(layout.homeBounds, joinClauses(listOf(stringResource(Res.string.game_square_home_spoken)) + home.ifEmpty { listOf(empty) }), null, null)
     return spots
 }
 

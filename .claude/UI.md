@@ -547,16 +547,22 @@ Examples:
 
 **A player's colour is chosen on New Game**, and is the colour of their yard and home column on the board.
 
-- It's a `PlayerColour` (red, green, yellow, and blue, in the board's clockwise seat order), turned into a `Color` only
-    in `PlayerColour.color` (`ui/theme/Color.kt`): a light tone of the classic board's colour, readable on the dark page.
-    Never use a seat index.
-- **Setup.** A 28dp circle (48dp target) opens a `DropdownMenu` of the colours (`ui/setup/PlayerColourPicker.kt`).
+- It's a `PlayerColour`: red, green, yellow, and blue (the classic board's, in its clockwise seat order), then orange,
+    cyan, pink, and purple for 5-8 players (2026-11-18). It's turned into a `Color` only in `PlayerColour.color`
+    (`ui/theme/Color.kt`): a light tone, readable on the dark page. Never use a seat index.
+    - Purple (`#A77BFF`) is near the violet ring round a movable pawn; the maintainer kept it (2026-11-18).
+    - **Colour blindness** (simulated, CIE76 distance between each pair, 2026-11-18): the closest pairs are blue and
+        purple (33; 12 with protanopia, **4 with deuteranopia**), yellow and orange (34; 13 deuteranopia), red and
+        green (18 deuteranopia, as on any Ludo board), and **green and cyan (8 with tritanopia)**. On the board a seat is
+        also known by where it sits, and every status line and spoken line names the player.
+- **Setup.** A Players row (2-8, `FittedSegmentedChoiceRow`; TalkBack "4 players") above the players, then a 28dp
+    circle (48dp target) a player opens a `DropdownMenu` of the colours (`ui/setup/PlayerColourPicker.kt`).
     - It's a curated set, not a free picker: M3 has no colour picker, and a free choice could clash or be unreadable.
-        2-8 players (Phase 8) add more; each must be light enough for the dark page and distinct from the others and
-        from `primary`.
-- **Always four distinct.** `setPlayerColour` swaps with whichever slot holds the colour. The defaults
-    (`PlayerColour.defaultFor`) are the classic board's: red, green, yellow, and blue.
-- **Persisted** per slot (`player_colour_N`, falling back to the defaults if not distinct).
+        Each must be light enough for the dark page and distinct from the others and from `primary`.
+- **Always all eight distinct.** The form holds eight slots (the first `playerCount` play); `setPlayerColour` swaps
+    with whichever slot holds the colour, played or not. The defaults (`PlayerColour.defaultFor`) are in the order above.
+- **Persisted** per slot (`player_colour_N`, falling back to the defaults if not distinct; slots saved before there
+    were eight take the colours left), and the count as `player_count`.
 - **TalkBack**: "Player 2 colour, Green", action "Choose colour". Choices are radio buttons, and a taken one says
     "swaps with player 1" (`PlayerColourPickerTest`).
 - DiceFive's tab panels, frames and their contrast checks come back with the board (Phase 2).

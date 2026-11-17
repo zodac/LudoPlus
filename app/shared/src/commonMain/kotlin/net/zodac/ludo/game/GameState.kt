@@ -6,8 +6,8 @@ import net.zodac.ludo.model.GameRules
 import net.zodac.ludo.model.PawnPosition
 
 /**
- * A whole game at one moment: immutable, and changed only by [LudoEngine]. Players sit in turn order, which is the
- * board's clockwise order; [current] is the index of the one whose turn it is.
+ * A whole game at one moment: immutable, and changed only by [LudoEngine]. Players are in turn order, which is the
+ * board's clockwise order of their seats; [current] is the index of the one whose turn it is.
  */
 data class GameState(
     val mode: GameMode,
@@ -40,16 +40,26 @@ data class GameState(
     companion object {
         /**
          * A new game of [mode] for [playerCount] players under [rules] (the mode's own by default), every pawn in its
-         * yard, [first] to roll. Player `i` sits at seat `i` (2-8 players spread them round a bigger board in Phase 8).
+         * yard, [first] to roll. The players sit at [seats], in clockwise order: spread round the board by default
+         * ([BoardGeometry.seatsFor]).
          */
-        fun new(mode: GameMode, playerCount: Int, first: Int = 0, rules: GameRules = mode.rules): GameState {
-            val seats = rules.board.seats
-            require(playerCount in 2..seats) { "A $seats-seat board takes 2 to $seats players" }
+        fun new(
+            mode: GameMode,
+            playerCount: Int,
+            first: Int = 0,
+            rules: GameRules = mode.rules,
+            seats: List<Int> = rules.board.seatsFor(playerCount),
+        ): GameState {
+            val board = rules.board
+            require(playerCount in 2..board.seats) { "A ${board.seats}-seat board takes 2 to ${board.seats} players" }
             require(first in 0..<playerCount) { "No player $first to go first" }
+            require(seats.size == playerCount && seats.zipWithNext().all { (a, b) -> a < b } && seats.all { it in 0..<board.seats }) {
+                "Seats $seats don't seat $playerCount players clockwise"
+            }
             return GameState(
                 mode = mode,
                 rules = rules,
-                players = List(playerCount) { seat ->
+                players = seats.map { seat ->
                     PlayerState(seat = seat, pawns = List(rules.pawnsPerPlayer) { PawnPosition.YARD_PROGRESS })
                 },
                 current = first,

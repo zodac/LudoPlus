@@ -4,6 +4,7 @@ import net.zodac.ludo.data.achievements.AchievementsState
 import net.zodac.ludo.model.Achievement
 import net.zodac.ludo.model.AchievementCategory
 import net.zodac.ludo.model.AchievementCounter
+import net.zodac.ludo.model.BoardGeometry
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
@@ -82,7 +83,7 @@ object AchievementEngine {
             if (players.any { it.name.equals(LUDO_NAME, ignoreCase = true) }) add(Achievement.WHOS_LUDO)
             if (players.first().name.equals(CPU_NAME, ignoreCase = true)) add(Achievement.I_AM_NOT_A_ROBOT)
             if (players.map { it.name.firstOrNull()?.lowercaseChar() }.distinct().singleOrNull()?.isLetter() == true) add(Achievement.ALLITERATION)
-            if (players.any { it.type == PlayerType.HUMAN && it.name.nameWidth() >= maxPlayerNameLength(players.size) }) add(Achievement.WHATS_IN_A_NAME)
+            if (players.any { it.type == PlayerType.HUMAN && it.name.nameWidth() >= maxPlayerNameLength(BoardGeometry.MAX_PLAYERS) }) add(Achievement.WHATS_IN_A_NAME)
             if (players.withIndex().all { (seat, player) -> player.colour != PlayerColour.defaultFor(seat) }) add(Achievement.MUSICAL_CHAIRS)
         }
         return GameFeats(earned)

@@ -37,12 +37,20 @@ The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and
     Check all four in one render.
 - **Pawns must stand out on it.** Render the board with pawns of every colour on plain squares, on their own colour's
     squares, and in the yards. A dark board (Neon, Starry) needs the pawns' ink outline to show.
-- **The board is 15 squares by 15** (`BoardLayout`), all of it covered by the yards, the track, and the centre, so
-    `ground` shows only through gaps (Stone's mortar) or translucent squares.
+- **The board is a `BoardLayout`** (`ui/game/BoardLayout.kt`): the classic 15 squares by 15 (`ClassicBoardLayout`)
+    for 2 and 4 players, all of it covered by the yards, the track, and the centre, so `ground` shows only through gaps
+    (Stone's mortar) or translucent squares; or for 3 and 5-8 players a round `StarBoardLayout` of an arm a seat, where
+    `ground` (and `drawFinish`) are cut to the disc and show round the yards.
+- **On a star board, every square is still drawn by `drawSquare`.** `drawBoardSquare` turns an arm's squares to the
+    arm's angle (by its angle less whole quarter turns, so the classic board's and a straight arm's aren't turned), and
+    stretches the three-seat board's six yard-side squares over their shape, cut to it. A yard there is
+    `drawYardShape` (the outline, its court, and the spots; the default fills them plainly, no family overrides it yet),
+    and a home is `drawHomeTriangle` with three points, or five on the three-seat board. Render every family at 3 and 8
+    seats after changing one.
 - **Texture is seeded** (`Random(id.hashCode())`, or a square's position), so a board draws the same every time and
     renders compare byte for byte.
 - **A grid style snaps to it.** Retro draws on a grid of `RETRO_PIXELS` to a square, including its stars, spots, and
-    stepped triangles (`encloses` tests each pixel's centre against the triangle).
+    stepped homes (`encloses` tests each pixel's centre against the home's convex outline).
 - **`drawHomeSpot`** is the disc a pawn that's home stands on: the court's colour ringed in the line colour, unless the
     family draws its own.
 

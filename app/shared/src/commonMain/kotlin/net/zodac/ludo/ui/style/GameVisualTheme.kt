@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import net.zodac.ludo.ui.game.BoardLayout
 
 /**
  * One swappable piece of table art in one colour - a [BoardStyle], [PawnStyle], [DiceStyle], or [TableBackground]. [id] is what the player's pick is saved as, so it must never change once shipped. It is
@@ -123,13 +124,13 @@ interface TableBackground : TableArt {
 
 /**
  * A board: its track, safe squares, yards, home columns, and centre, drawn under the pawns on a square
- * [net.zodac.ludo.ui.game.BoardLayout.SIZE] units across. The seats' colours are the players' own (a seat with no
- * player is null) and must stay readable: a style changes the track, the safe squares' marks, the surround, and the
- * texture, never which colour a seat is.
+ * [BoardLayout.size] units across. The seats' colours are the players' own (a seat with no player is null) and must
+ * stay readable: a style changes the track, the safe squares' marks, the surround, and the texture, never which colour
+ * a seat is.
  */
 interface BoardStyle : TableArt {
-    /** The board itself, no pawns, at [unit] pixels a square, in [seatColours] by seat. */
-    fun DrawScope.drawBoard(unit: Float, seatColours: List<Color?>)
+    /** The board of [layout] itself, no pawns, at [unit] pixels a square, in [seatColours] by seat. */
+    fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>)
 
     /** The spot a pawn that is home stands on, under it: it lifts the pawn off its own colour's triangle. */
     fun DrawScope.drawHomeSpot(centre: Offset, radius: Float)

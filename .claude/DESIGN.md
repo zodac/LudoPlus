@@ -668,7 +668,7 @@ Each category is two lists in the same order:
 - **Layout.** Two tab rows: groups, then the pages of the chosen group. One pager runs across every page. There is only
     **Gameplay** so far (How to Play, The Board, Your Turn, Captures, and Winning), so its group row isn't shown;
     **Modes** and **Modifiers** join it in Phase 9.
-- **Diagrams** (`RulesDiagram.kt`): a crop of the real board (`drawBoard`, `drawPawn`, and `BoardLayout`'s positions),
+- **Diagrams** (`RulesDiagram.kt`): a crop of the real board (`drawBoard`, `drawPawn`, and `ClassicBoardLayout`'s positions),
     in the default seat colours, with pawns, ink arrows (dashed for a pawn sent back), and a die. One image to TalkBack,
     described in words (`rules_*_diagram_cd`).
 - **Accuracy.** The text is kept in step with the engine and `IMPLEMENTATION.md`'s "The classic rules".

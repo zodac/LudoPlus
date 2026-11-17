@@ -38,7 +38,7 @@ import net.zodac.ludo.resources.rules_capture_diagram_cd
 import net.zodac.ludo.resources.rules_turn_diagram_cd
 import net.zodac.ludo.resources.rules_winning_diagram_cd
 import net.zodac.ludo.ui.common.stringResource
-import net.zodac.ludo.ui.game.BoardLayout
+import net.zodac.ludo.ui.game.ClassicBoardLayout
 import net.zodac.ludo.ui.game.GameDie
 import net.zodac.ludo.ui.game.HOME_PAWN_RADIUS
 import net.zodac.ludo.ui.style.ClassicBoardStyle
@@ -72,20 +72,20 @@ private const val DIE_SQUARES = 1.6f
 /** The widest a diagram draws, so a tablet's card doesn't blow it up past what a phone shows. */
 private val MAX_DIAGRAM_WIDTH = 420.dp
 
-private val board = BoardLayout.geometry
+private val board = ClassicBoardLayout.geometry
 
 /** Where [seat]'s pawn stands [progress] steps on from its start square (`BoardGeometry`'s progress). */
-private fun at(seat: Int, progress: Int): Offset = BoardLayout.centreOf(seat, PawnPosition.of(progress, board), 0)
+private fun at(seat: Int, progress: Int): Offset = ClassicBoardLayout.centreOf(seat, PawnPosition.of(progress, board), 0)
 
 /** The centre of [seat]'s home triangle. */
-private fun homeCentre(seat: Int): Offset = BoardLayout.homeTriangle(seat).let { (a, b, c) -> (a + b + c) / 3f }
+private fun homeCentre(seat: Int): Offset = ClassicBoardLayout.homeTriangle(seat).let { (a, b, c) -> (a + b + c) / 3f }
 
 /** The board: Red's whole route, a lap of the track from its start square, then up its home column to home. */
 private val BOARD_DIAGRAM = Diagram(
-    view = Rect(0f, 0f, BoardLayout.SIZE.toFloat(), BoardLayout.SIZE.toFloat()),
+    view = Rect(0f, 0f, ClassicBoardLayout.SIZE.toFloat(), ClassicBoardLayout.SIZE.toFloat()),
     description = Res.string.rules_board_diagram_cd,
-    pawns = listOf(DiagramPawn(0, at(0, 0))) + (1..3).map { DiagramPawn(0, BoardLayout.yardSpot(0, it), radius = 0.5f) } +
-        (1..3).flatMap { seat -> (0..3).map { DiagramPawn(seat, BoardLayout.yardSpot(seat, it), radius = 0.5f) } },
+    pawns = listOf(DiagramPawn(0, at(0, 0))) + (1..3).map { DiagramPawn(0, ClassicBoardLayout.yardSpot(0, it), radius = 0.5f) } +
+        (1..3).flatMap { seat -> (0..3).map { DiagramPawn(seat, ClassicBoardLayout.yardSpot(seat, it), radius = 0.5f) } },
     arrows = listOf(DiagramArrow((0..<board.homeProgress).map { at(0, it) } + homeCentre(0))),
 )
 
@@ -94,9 +94,9 @@ private val TURN_DIAGRAM = Diagram(
     view = Rect(0f, 0f, 8f, 8f),
     description = Res.string.rules_turn_diagram_cd,
     // The pawn leaving is the yard's lower left, nearest the start square, so its arrow crosses no other pawn.
-    pawns = listOf(DiagramPawn(0, BoardLayout.yardSpot(0, 2), radius = 0.5f, ghost = true), DiagramPawn(0, at(0, 0))) +
-        listOf(0, 1, 3).map { DiagramPawn(0, BoardLayout.yardSpot(0, it), radius = 0.5f) },
-    arrows = listOf(DiagramArrow(listOf(BoardLayout.yardSpot(0, 2), at(0, 0)))),
+    pawns = listOf(DiagramPawn(0, ClassicBoardLayout.yardSpot(0, 2), radius = 0.5f, ghost = true), DiagramPawn(0, at(0, 0))) +
+        listOf(0, 1, 3).map { DiagramPawn(0, ClassicBoardLayout.yardSpot(0, it), radius = 0.5f) },
+    arrows = listOf(DiagramArrow(listOf(ClassicBoardLayout.yardSpot(0, 2), at(0, 0)))),
     die = 6,
     dieAt = Offset(6.2f, 0.2f),
 )
@@ -112,12 +112,12 @@ private val CAPTURE_DIAGRAM = Diagram(
     pawns = listOf(
         DiagramPawn(0, at(0, CAPTURE_FROM), ghost = true),
         DiagramPawn(0, at(0, CAPTURE_FROM + CAPTURE_ROLL)),
-        DiagramPawn(1, BoardLayout.yardSpot(1, 2), radius = 0.5f),
+        DiagramPawn(1, ClassicBoardLayout.yardSpot(1, 2), radius = 0.5f),
         DiagramPawn(3, at(0, board.starOffset)),
     ),
     arrows = listOf(
         DiagramArrow((CAPTURE_FROM..CAPTURE_FROM + CAPTURE_ROLL).map { at(0, it) }),
-        DiagramArrow(listOf(at(0, CAPTURE_FROM + CAPTURE_ROLL), BoardLayout.yardSpot(1, 2)), dashed = true),
+        DiagramArrow(listOf(at(0, CAPTURE_FROM + CAPTURE_ROLL), ClassicBoardLayout.yardSpot(1, 2)), dashed = true),
     ),
     die = CAPTURE_ROLL,
     dieAt = Offset(11.2f, 7.2f),
@@ -132,7 +132,7 @@ private val WINNING_DIAGRAM = Diagram(
     description = Res.string.rules_winning_diagram_cd,
     pawns = listOf(
         DiagramPawn(0, at(0, board.homeProgress - WINNING_ROLL)),
-        DiagramPawn(0, BoardLayout.homeSpot(0, 0), radius = HOME_PAWN_RADIUS, home = true),
+        DiagramPawn(0, ClassicBoardLayout.homeSpot(0, 0), radius = HOME_PAWN_RADIUS, home = true),
     ),
     arrows = listOf(DiagramArrow((board.homeProgress - WINNING_ROLL..<board.homeProgress).map { at(0, it) } + Offset(6.2f, 7.5f))),
     die = WINNING_ROLL,
@@ -172,7 +172,7 @@ fun RulesDiagram(kind: RulesDiagramKind, modifier: Modifier = Modifier) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val unit = size.width / view.width
             translate(-view.left * unit, -view.top * unit) {
-                with(ClassicBoardStyle) { drawBoard(unit, colours) }
+                with(ClassicBoardStyle) { drawBoard(ClassicBoardLayout, unit, colours) }
                 for (arrow in diagram.arrows) drawArrow(arrow, unit)
                 for (pawn in diagram.pawns) {
                     val colour = colours[pawn.seat].let { if (pawn.ghost) it.copy(alpha = 0.35f) else it }

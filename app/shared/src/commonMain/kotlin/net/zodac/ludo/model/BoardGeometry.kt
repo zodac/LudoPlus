@@ -3,8 +3,8 @@ package net.zodac.ludo.model
 /**
  * The shape of a board: a looped track shared by every seat, a start square per seat, star squares, and a home column
  * per seat leading off the track to home. A pawn's place is measured by its **progress**: how many steps it has come
- * from its own start square ([PawnPosition.progressOf]). Nothing here assumes four seats, so a bigger board is just
- * other numbers (Phase 8 of `.claude/IMPLEMENTATION.md`).
+ * from its own start square ([PawnPosition.progressOf]). Nothing here assumes four seats: [forPlayers] gives each
+ * player count its board.
  *
  * Squares on the track are numbered absolutely from 0, at seat 0's start square, in the direction of play.
  */
@@ -44,8 +44,36 @@ data class BoardGeometry(
     /** Whether the absolute track [square] is safe: a start square or a star square. */
     fun isSafe(square: Int): Boolean = square % seatSpacing == 0 || square % seatSpacing == starOffset
 
+    /** The seats [players] players sit at, spread as evenly round the board as they go: 2 on 4 seats sit opposite. */
+    fun seatsFor(players: Int): List<Int> {
+        require(players in 1..seats) { "A $seats-seat board takes 1 to $seats players" }
+        return (0..<players).map { it * seats / players }
+    }
+
     companion object {
         /** The classic 15x15 cross: 52 track squares, 13 between seats, the stars 8 on from each start, columns of 5. */
         val CLASSIC = BoardGeometry(seats = 4, trackLength = 52, seatSpacing = 13, starOffset = 8, homeColumnLength = 5)
+
+        /**
+         * Three arms round a hexagon, each yard's side of it 3 more track squares: 16 a seat, the stars 3 up the next arm
+         * as on the classic board (11 on).
+         */
+        val THREE_SEAT = BoardGeometry(seats = 3, trackLength = 48, seatSpacing = 16, starOffset = 11, homeColumnLength = 5)
+
+        /** The fewest and most players a game takes. */
+        const val MIN_PLAYERS = 2
+        const val MAX_PLAYERS = 8
+
+        /** [seats] arms round a [seats]-sided centre, each arm as the classic board's: 13 track squares a seat. */
+        fun star(seats: Int): BoardGeometry =
+            BoardGeometry(seats = seats, trackLength = 13 * seats, seatSpacing = 13, starOffset = 8, homeColumnLength = 5)
+
+        /** The board [players] players race on: the classic one for 2 and 4, and one seat a player for 3 and 5-8. */
+        fun forPlayers(players: Int): BoardGeometry = when (players) {
+            2, 4 -> CLASSIC
+            3 -> THREE_SEAT
+            in 5..MAX_PLAYERS -> star(players)
+            else -> throw IllegalArgumentException("No board for $players players")
+        }
     }
 }

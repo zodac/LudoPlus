@@ -5,7 +5,7 @@ import net.zodac.ludo.ui.theme.color
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.ui.game.YARD_PAWN_RADIUS
 import net.zodac.ludo.ui.game.PAWN_RADIUS
-import net.zodac.ludo.ui.game.BoardLayout
+import net.zodac.ludo.ui.game.ClassicBoardLayout
 import net.zodac.ludo.ui.common.DevicePullEffect
 import net.zodac.ludo.ui.style.PawnStyle
 import net.zodac.ludo.ui.style.BoardStyle
@@ -1165,13 +1165,13 @@ private fun <T : TableArt> ColourDots(colours: List<StyleColour<T>>, shown: Styl
 private const val CORNER_VIEW_WIDTH = 9f
 
 /** The seats' colours in [BoardCornerPreview]: the default ones, as the Rules diagrams use. */
-private val CornerSeatColours: List<Color> by lazy { List(BoardLayout.geometry.seats) { PlayerColour.defaultFor(it).color } }
+private val CornerSeatColours: List<Color> by lazy { List(ClassicBoardLayout.geometry.seats) { PlayerColour.defaultFor(it).color } }
 
 /** Where [BoardCornerPreview]'s other player's pawn stands: the first track square beside seat 0's yard that isn't its own. */
 private val CornerVisitorSquare: Int by lazy {
-    (0..<BoardLayout.geometry.trackLength).first { square ->
-        val cell = BoardLayout.trackCell(square)
-        cell.column in BoardLayout.YARD_SIZE..CORNER_VIEW_WIDTH.toInt() - 1 && cell.row in 1..<BoardLayout.YARD_SIZE
+    (0..<ClassicBoardLayout.geometry.trackLength).first { square ->
+        val cell = ClassicBoardLayout.trackCell(square)
+        cell.column in ClassicBoardLayout.YARD_SIZE..CORNER_VIEW_WIDTH.toInt() - 1 && cell.row in 1..<ClassicBoardLayout.YARD_SIZE
     }
 }
 
@@ -1184,11 +1184,11 @@ private val CornerVisitorSquare: Int by lazy {
 private fun BoardCornerPreview(board: BoardStyle, pawns: PawnStyle, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier.clipToBounds()) {
         val unit = size.width / CORNER_VIEW_WIDTH
-        with(board) { drawBoard(unit, CornerSeatColours) }
+        with(board) { drawBoard(ClassicBoardLayout, unit, CornerSeatColours) }
         with(pawns) {
-            for (slot in 0..2) drawPawn(BoardLayout.yardSpot(0, slot) * unit, YARD_PAWN_RADIUS * unit, CornerSeatColours[0], ringed = false)
-            drawPawn(BoardLayout.trackCell(0).centre * unit, PAWN_RADIUS * unit, CornerSeatColours[0], ringed = false)
-            drawPawn(BoardLayout.trackCell(CornerVisitorSquare).centre * unit, PAWN_RADIUS * unit, CornerSeatColours[1], ringed = false)
+            for (slot in 0..2) drawPawn(ClassicBoardLayout.yardSpot(0, slot) * unit, YARD_PAWN_RADIUS * unit, CornerSeatColours[0], ringed = false)
+            drawPawn(ClassicBoardLayout.trackCell(0).centre * unit, PAWN_RADIUS * unit, CornerSeatColours[0], ringed = false)
+            drawPawn(ClassicBoardLayout.trackCell(CornerVisitorSquare).centre * unit, PAWN_RADIUS * unit, CornerSeatColours[1], ringed = false)
         }
     }
 }

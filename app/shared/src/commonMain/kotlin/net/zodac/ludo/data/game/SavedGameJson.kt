@@ -71,7 +71,7 @@ object SavedGameJson {
         val mode = storedId<GameMode>(obj.string("mode"))
         val players = obj.objectList("players").map(::decodePlayer)
         val rollOff = decodeRollOff(obj.obj("rollOff"), players.size)
-        val rules = mode.rules.copy(stopAtFirstWinner = obj.flag("stopAtFirstWinner"))
+        val rules = mode.rules.forPlayers(players.size).copy(stopAtFirstWinner = obj.flag("stopAtFirstWinner"))
         val state = decodeState(obj.obj("state"), mode, rules, players.size)
         val playMillis = obj.long("playMillis")
         require(playMillis >= 0) { "Negative play time" }
@@ -161,7 +161,9 @@ object SavedGameJson {
             )
         }
         require(players.size == playerCount) { "${players.size} players' states for $playerCount players" }
-        require(players.map { it.seat } == players.indices.toList()) { "Players aren't at their own seats" }
+        require(players.map { it.seat }.let { seats -> seats.zipWithNext().all { (a, b) -> a < b } && seats.all { it in 0..<board.seats } }) {
+            "The players aren't seated clockwise round the board"
+        }
         players.forEach { player ->
             require(player.pawns.size == rules.pawnsPerPlayer) { "A player has ${player.pawns.size} pawns" }
             require(player.pawns.all { it in PawnPosition.YARD_PROGRESS..board.homeProgress }) { "A pawn is off the board" }

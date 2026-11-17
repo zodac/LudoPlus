@@ -213,7 +213,7 @@ class GameViewModel(
                     setup.gameMode,
                     players.size,
                     first = rollOff.first,
-                    rules = setup.gameMode.rules.copy(stopAtFirstWinner = stopAtFirstWinner.value),
+                    rules = setup.gameMode.rules.forPlayers(players.size).copy(stopAtFirstWinner = stopAtFirstWinner.value),
                 ),
                 rollOff = rollOff,
                 startedAtEpochMillis = startedAt,

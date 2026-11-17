@@ -48,9 +48,9 @@ import net.zodac.ludo.ui.theme.color
 private const val HOP_SWELL = 0.18f
 
 /**
- * The classic board, drawn from [BoardLayout], with [state]'s pawns on it. [seatColours] colours each seat's yard, start
- * square, home column, and pawns (null for a seat nobody sits at). The pawns that [moves] can move are ringed, and a
- * tap near one, or a screen reader's action on its square ([BoardSemantics]), moves it ([onPawn]).
+ * The board for [state]'s players, drawn from its [BoardLayout], with [state]'s pawns on it. [seatColours] colours each
+ * seat's yard, start square, home column, and pawns (null for a seat nobody sits at). The pawns that [moves] can move
+ * are ringed, and a tap near one, or a screen reader's action on its square ([BoardSemantics]), moves it ([onPawn]).
  *
  * A move arrives square by square, and any pawn it captures then slides back to its yard, unless the Pawn moves motion
  * is off ([MotionGroup.PAWN_MOVE]).
@@ -73,23 +73,24 @@ fun LudoBoard(
     val currentOnPawn by rememberUpdatedState(onPawn)
     val motion = rememberMoveMotion(state)
     val theme = LocalGameVisualTheme.current
+    val layout = BoardLayout.of(state.board)
     Box(modifier = modifier.aspectRatio(1f)) {
         // The board on a layer of its own, which reads only the style and the seats' colours: it's drawn again when they
         // change, not on every frame of a move.
         Canvas(modifier = Modifier.fillMaxSize()) {
-            with(theme.board) { drawBoard(size.minDimension / BoardLayout.SIZE, colours) }
+            with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours) }
         }
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
+                .pointerInput(layout) {
                     detectTapGestures { tap ->
-                        val unit = size.width.toFloat() / BoardLayout.SIZE
+                        val unit = size.width.toFloat() / layout.size
                         pawnAt(tap / unit, currentMarks, currentPlayer, currentMovable)?.let(currentOnPawn)
                     }
                 },
         ) {
-            val unit = size.minDimension / BoardLayout.SIZE
+            val unit = size.minDimension / layout.size
             val animating = motion.moving
             for (mark in marks) {
                 // The moving pawn and any it captured are drawn on their way, below; the rest of their mark stays.
@@ -157,14 +158,15 @@ private fun rememberMoveMotion(state: GameState): MoveMotion {
 }
 
 private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
+    val layout = BoardLayout.of(state.board)
     val seat = state.players[event.player].seat
     val move = event.move
     val path = if (move.from == PawnPosition.YARD_PROGRESS) {
-        listOf(BoardLayout.yardSpot(seat, move.pawn), BoardLayout.centreOf(seat, PawnPosition.of(0, state.board), 0))
+        listOf(layout.yardSpot(seat, move.pawn), layout.centreOf(seat, PawnPosition.of(0, state.board), 0))
     } else {
-        (move.from..move.to).map { BoardLayout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn) }
+        (move.from..move.to).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn) }
     }
-    val captured = move.captures.map { it to BoardLayout.yardSpot(state.players[it.player].seat, it.pawn) }
+    val captured = move.captures.map { it to layout.yardSpot(state.players[it.player].seat, it.pawn) }
     return MovingPawn(event.player, move.pawn, path, captured, path.last())
 }
 

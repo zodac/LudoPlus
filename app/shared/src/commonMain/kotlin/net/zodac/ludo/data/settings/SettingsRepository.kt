@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import net.zodac.ludo.model.BoardGeometry
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerColour
@@ -51,6 +52,10 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         fun setGameMode(gameMode: GameMode) {
             prefs[GAME_MODE_KEY] = gameMode.id
         }
+
+        fun setPlayerCount(count: Int) {
+            prefs[PLAYER_COUNT_KEY] = count
+        }
     }
 
     /** Settings no version reads any more, removed at launch. None yet. */
@@ -84,6 +89,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
         /** The mode the setup form last started a game in, or the default for one nothing recognises. */
         val gameMode: GameMode get() = prefs[GAME_MODE_KEY]?.let { storedIdOf<GameMode>(it) } ?: GameMode.DEFAULT
+
+        /** How many players the setup form last started a game with, or null for none it can start. */
+        val playerCount: Int? get() = prefs[PLAYER_COUNT_KEY]?.takeIf { it in BoardGeometry.MIN_PLAYERS..BoardGeometry.MAX_PLAYERS }
     }
 
     val confirmBeforeLeavingGame: Flow<Boolean> = read(CONFIRM_BEFORE_LEAVING_GAME_KEY, default = true)
@@ -192,6 +200,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val ANIMATION_LEVEL_KEY = stringPreferencesKey("animation_level")
         val SCREEN_ORIENTATION_KEY = stringPreferencesKey("screen_orientation")
         val GAME_MODE_KEY = stringPreferencesKey("game_mode")
+        val PLAYER_COUNT_KEY = intPreferencesKey("player_count")
         val PLAY_SECONDS_KEY = intPreferencesKey("play_seconds")
 
         // Stored ids: permanent once released. The die's and background's keys are DiceFive's.

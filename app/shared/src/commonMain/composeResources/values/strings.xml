@@ -46,6 +46,10 @@
     <string name="player_colour_green">Green</string>
     <string name="player_colour_red">Red</string>
     <string name="player_colour_blue">Blue</string>
+    <string name="player_colour_orange">Orange</string>
+    <string name="player_colour_cyan">Cyan</string>
+    <string name="player_colour_pink">Pink</string>
+    <string name="player_colour_purple">Purple</string>
 
     <!-- Shared chrome (ui/common/*) -->
     <!-- TalkBack's name for the back arrow in every screen's title bar. -->
@@ -329,6 +333,13 @@
     <string name="setup_title">New Game</string>
     <string name="setup_start">Start Game</string>
     <string name="setup_game_mode">Game Mode</string>
+    <!-- The setup form's card choosing how many play, 2 to 8. -->
+    <string name="setup_players">Players</string>
+    <!-- What a screen reader says for each of the Players card's numbers. -->
+    <plurals name="setup_player_count_spoken">
+        <item quantity="one">%1$d player</item>
+        <item quantity="other">%1$d players</item>
+    </plurals>
     <!-- Under the form, and said by TalkBack on each name field that clashes. -->
     <string name="setup_names_unique">Names must be unique</string>
     <!-- TalkBack's name for a player's name field. %1$d is the seat. -->

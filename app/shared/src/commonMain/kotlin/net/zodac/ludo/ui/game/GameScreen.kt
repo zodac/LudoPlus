@@ -279,7 +279,9 @@ fun GameContent(
     onResults: () -> Unit,
     tutorial: TutorialView? = null,
 ) {
-    val seatColours = List(started.state.board.seats) { seat -> started.players.getOrNull(seat)?.colour }
+    val seatColours = List(started.state.board.seats) { seat ->
+        started.state.players.indexOfFirst { it.seat == seat }.takeIf { it >= 0 }?.let { started.players[it].colour }
+    }
     val phase = started.state.phase
     val allMoves = if (phase is TurnPhase.AwaitingMove && !started.currentIsCpu) phase.moves else emptyList()
     // In the tutorial, only the step's own move: its pawn alone is ringed, and the only one a tap or TalkBack can move.

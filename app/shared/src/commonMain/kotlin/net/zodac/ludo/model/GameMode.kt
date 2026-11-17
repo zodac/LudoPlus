@@ -33,9 +33,6 @@ enum class GameMode(
     companion object {
         /** The mode a new player's first game is set to. */
         val DEFAULT = CLASSIC
-
-        /** How many players a game has. Fixed at four until 2-8 players come (Phase 8). */
-        const val PLAYER_COUNT = 4
     }
 }
 
@@ -69,6 +66,9 @@ data class GameRules(
      */
     val stopAtFirstWinner: Boolean = false,
 ) {
+    /** These rules on the board for [players] players ([BoardGeometry.forPlayers]). */
+    fun forPlayers(players: Int): GameRules = copy(board = BoardGeometry.forPlayers(players))
+
     init {
         require(pawnsPerPlayer > 0) { "A player needs a pawn" }
         require(dieFaces > 1) { "A die needs two faces" }

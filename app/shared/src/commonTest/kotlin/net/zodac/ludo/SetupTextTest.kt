@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -78,5 +79,18 @@ class SetupTextTest : UiTest() {
         link = false
         compose.waitForIdle()
         compose.onAllNodesWithText("New to the game? Play the tutorial").assertCountEquals(0)
+    }
+
+    @Test
+    fun `the Players row - each number said as a count of players - picking one shows that many players`() = uiTest(SCREEN) {
+        val viewModel = gameViewModel()
+        show(viewModel)
+        compose.onAllNodesWithText("Players").assertCountEquals(1)
+        (2..8).forEach { compose.onNodeWithContentDescription("$it players").assertExists() }
+        compose.onAllNodesWithContentDescription("Player 5 colour", substring = true).assertCountEquals(0)
+        compose.onNodeWithContentDescription("8 players").performClick()
+        compose.waitForIdle()
+        assertEquals(8, viewModel.setupForm.setup.value.playerCount)
+        compose.onAllNodesWithContentDescription("Player 8 colour, Purple").assertCountEquals(1)
     }
 }

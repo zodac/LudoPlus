@@ -29,6 +29,8 @@ import net.zodac.ludo.data.settings.SettingsRepository
 import net.zodac.ludo.game.GameEvent
 import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
+import net.zodac.ludo.model.BoardGeometry
+import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -240,6 +242,52 @@ class GameViewModelTest {
         runCurrent()
         assertTrue(viewModel.startGame { "Player $it" })
         assertTrue(viewModel.state.rules.stopAtFirstWinner)
+    }
+
+    @Test
+    fun `the setup form's player count plays that many on its board - spread round it - and comes back next time`() = runTest(dispatcher) {
+        val prefs = InMemoryPreferences()
+        val viewModel = GameViewModel(SettingsRepository(prefs), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao()))
+        runCurrent()
+        viewModel.setupForm.setPlayerCount(2)
+        assertTrue(viewModel.startGame { "Player $it" })
+        assertEquals(listOf(0, 2), viewModel.state.players.map { it.seat })
+        assertEquals(BoardGeometry.CLASSIC, viewModel.state.board)
+        viewModel.setupForm.setPlayerCount(6)
+        assertTrue(viewModel.startGame { "Player $it" })
+        assertEquals(6, assertNotNull(viewModel.game.value).players.size)
+        assertEquals(BoardGeometry.star(6), viewModel.state.board)
+        // Six different colours, the four new ones' first two among them.
+        assertEquals(PlayerColour.entries.take(6), assertNotNull(viewModel.game.value).players.map { it.colour })
+        runCurrent()
+        val again = GameViewModel(SettingsRepository(prefs), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao()))
+        runCurrent()
+        assertEquals(6, again.setupForm.setup.value.playerCount)
+    }
+
+    @Test
+    fun `colours saved for four slots come back - the four slots added take the colours left`() = runTest(dispatcher) {
+        val prefs = InMemoryPreferences()
+        val saved = listOf(PlayerColour.BLUE, PlayerColour.RED, PlayerColour.GREEN, PlayerColour.YELLOW)
+        SettingsRepository(prefs).batch { saved.forEachIndexed { i, colour -> setPlayerColour(i + 1, colour) } }
+        val viewModel = GameViewModel(SettingsRepository(prefs), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao()))
+        runCurrent()
+        val setup = viewModel.setupForm.setup.value
+        assertEquals(saved + PlayerColour.entries.drop(4), setup.allSlots.map { it.colour })
+        assertEquals(4, setup.playerCount)
+    }
+
+    @Test
+    fun `a colour swaps with whichever slot holds it - played or not - so all eight stay different`() = runTest(dispatcher) {
+        val form = GameSetupForm()
+        form.setPlayerCount(3)
+        // Player 1 takes purple from slot 8, which isn't playing, and slot 8 takes red.
+        form.setPlayerColour(1, PlayerColour.PURPLE)
+        val colours = form.setup.value.allSlots.map { it.colour }
+        assertEquals(PlayerColour.PURPLE, colours[0])
+        assertEquals(PlayerColour.RED, colours[7])
+        assertEquals(PlayerColour.entries.toSet(), colours.toSet())
+        assertEquals(3, form.setup.value.playerSlots.size)
     }
 
     private companion object {

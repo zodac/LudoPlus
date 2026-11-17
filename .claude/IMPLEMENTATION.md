@@ -17,7 +17,7 @@ reorders them.
 | 5 | Rules, tutorial, sound, and polish (to 1.0.0) | In progress |
 | 6 | Achievements | Done |
 | 7 | Styles | Done |
-| 8 | 2-8 players | Not started |
+| 8 | 2-8 players | In progress |
 | 9 | Game modes and modifiers | Not started |
 | 10 | Google Play: Play Console, Play Games, and the store listing | Not started |
 | 11 | In-app purchases | Not started |
@@ -333,15 +333,27 @@ Decided with the maintainer (2026-11-17):
 
 ## Phase 8: 2-8 players
 
-There is no standard board for more than four. This phase designs one.
+There is no standard board for more than four. This phase designs them. Decided with the maintainer (2026-11-18):
+the big boards were rendered and approved before any code; 2 players sit opposite on the classic board; every other
+count but 4 has a board of its own; one player on two colours was dropped.
 
-- [ ] 2 and 3 players on the classic board (empty yards, or one player on two colours as a setting).
-- [ ] 5-6 players: a six-armed board (each arm 3 wide, 13 squares a seat). 7-8 players: an eight-armed board.
-    `BoardGeometry` already allows any seat count (Phase 1). Render each before building.
+- [x] 2 players on the classic board, opposite each other (`BoardGeometry.seatsFor`), the other yards empty (grey).
+- [x] A board of its own for 3 and for 5, 6, 7, and 8 players (`BoardGeometry.forPlayers`, `StarBoardLayout`), approved
+    from renders (2026-11-18): an arm a seat as the classic board's (3 wide, 6 long, 13 track squares a seat), round a
+    centre with a side an arm, the yards between the arms out to a round edge. A lap is longer the more seats: 70 steps
+    for 5 to 109 for 8 (57 on the classic board).
+    - Three seats: the arms on every other side of a hexagon, so each home has room, and 3 more track squares along
+        each yard's side of it (16 a seat, the star 11 on; 53 steps).
+    - Every board family draws them: arm squares turned, the three-seat board's yard-side squares stretched, the
+        yards a plain shape (`STYLE_ART.md`, "Boards"). Each family's own yard art for them awaits review.
+- [x] New Game's Players row (2-8), eight slots kept, the count saved (`player_count`).
 - [ ] Teams (2v2, 3v3, 4v4: partners across the board, both sets home to win) as a setting.
-- [ ] Player colours past four: purple, orange, cyan, and pink (checked for colour-blind contrast, `UI.md`, "Player
-    colours").
-- [ ] The CPU, Statistics, and the Leaderboard keyed by player count.
+- [x] Player colours past four: orange, cyan, pink, and purple, kept by the maintainer though purple is near the
+    movable ring. Checked for colour blindness (`UI.md`, "Player colours"): blue and purple, and green and cyan, are
+    close for some; awaiting the maintainer's call.
+- [x] The CPU: Hard's weights hold at every count (one Hard among Mediums wins 40% of 3-player and 23% of 6-player
+    games; 54% of 2-player games, now opposite; `CpuTournamentTest`).
+- [ ] Statistics and the Leaderboard keyed by player count (the records already store it).
 
 ## Phase 9: Game modes and modifiers
 

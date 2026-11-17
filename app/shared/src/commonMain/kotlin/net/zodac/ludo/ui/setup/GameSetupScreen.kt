@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.zodac.ludo.model.BoardGeometry
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerColour
@@ -56,7 +57,9 @@ import net.zodac.ludo.resources.setup_difficulty_hard
 import net.zodac.ludo.resources.setup_difficulty_medium
 import net.zodac.ludo.resources.setup_game_mode
 import net.zodac.ludo.resources.setup_names_unique
+import net.zodac.ludo.resources.setup_player_count_spoken
 import net.zodac.ludo.resources.setup_player_name_cd
+import net.zodac.ludo.resources.setup_players
 import net.zodac.ludo.resources.setup_start
 import net.zodac.ludo.resources.setup_tutorial_link
 import net.zodac.ludo.resources.setup_title
@@ -69,6 +72,7 @@ import net.zodac.ludo.ui.common.MAIN_ACTION_HEIGHT
 import net.zodac.ludo.ui.common.MIN_READABLE_FONT_SIZE
 import net.zodac.ludo.ui.common.ScreenScaffold
 import net.zodac.ludo.ui.common.ScrollingColumn
+import net.zodac.ludo.ui.common.pluralStringResource
 import net.zodac.ludo.ui.common.SoraFontFamily
 import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.common.textScale
@@ -105,7 +109,7 @@ fun GameSetupScreen(
     val activeSlots = setup.playerSlots
     val focusManager = LocalFocusManager.current
 
-    val defaultNames = (1..GameMode.PLAYER_COUNT).map { stringResource(Res.string.common_default_player_name, it) }
+    val defaultNames = (1..BoardGeometry.MAX_PLAYERS).map { stringResource(Res.string.common_default_player_name, it) }
     val defaultName: (Int) -> String = { defaultNames[it - 1] }
     val duplicateNameSlots = setup.duplicateNameSlots(defaultName)
     val namesMustBeUnique = stringResource(Res.string.setup_names_unique)
@@ -118,6 +122,9 @@ fun GameSetupScreen(
         if (!setupRestored) return@ScreenScaffold HoldPageCover()
 
         val playerCards = @Composable {
+            SetupCard(title = stringResource(Res.string.setup_players)) {
+                PlayerCountSelector(selected = setup.playerCount, onSelect = viewModel.setupForm::setPlayerCount)
+            }
             PlayerCards(activeSlots = activeSlots, duplicateNameSlots = duplicateNameSlots, namesMustBeUnique = namesMustBeUnique, defaultName = defaultName, form = viewModel.setupForm)
         }
         val actions = @Composable {
@@ -481,6 +488,19 @@ private fun Difficulty.label(): String = stringResource(
  * scrollable list of every [GameMode] - the list is long enough to outgrow the form, so it isn't
  * laid out inline. See [ChoicePicker].
  */
+/** How many play, 2 to 8: one segment a number, each said as "4 players". */
+@Composable
+private fun PlayerCountSelector(selected: Int, onSelect: (Int) -> Unit) {
+    FittedSegmentedChoiceRow(
+        options = (BoardGeometry.MIN_PLAYERS..BoardGeometry.MAX_PLAYERS).toList(),
+        selected = selected,
+        onSelect = onSelect,
+        label = { it.toString() },
+        spokenLabel = { pluralStringResource(Res.plurals.setup_player_count_spoken, it, it) },
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
 @Composable
 private fun GameModeSelector(selected: GameMode, onSelect: (GameMode) -> Unit) {
     ChoicePicker(

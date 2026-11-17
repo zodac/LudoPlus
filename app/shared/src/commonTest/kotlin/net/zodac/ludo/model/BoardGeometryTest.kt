@@ -52,4 +52,40 @@ class BoardGeometryTest {
         assertFailsWith<IllegalArgumentException> { BoardGeometry(seats = 4, trackLength = 50, seatSpacing = 13, starOffset = 8, homeColumnLength = 5) }
         assertFailsWith<IllegalArgumentException> { BoardGeometry(seats = 4, trackLength = 52, seatSpacing = 13, starOffset = 13, homeColumnLength = 5) }
     }
+
+    @Test
+    fun `each player count has its board - the classic one for 2 and 4 - a seat a player otherwise`() {
+        assertEquals(BoardGeometry.CLASSIC, BoardGeometry.forPlayers(2))
+        assertEquals(BoardGeometry.CLASSIC, BoardGeometry.forPlayers(4))
+        assertEquals(listOf(3, 5, 6, 7, 8), listOf(3, 5, 6, 7, 8).map { BoardGeometry.forPlayers(it).seats })
+        assertFailsWith<IllegalArgumentException> { BoardGeometry.forPlayers(1) }
+        assertFailsWith<IllegalArgumentException> { BoardGeometry.forPlayers(9) }
+    }
+
+    @Test
+    fun `the three-seat board - 16 squares a seat - its stars 11 on - a 53-step journey`() {
+        val three = BoardGeometry.THREE_SEAT
+        assertEquals(listOf(0, 16, 32), (0..2).map { three.startSquare(it) })
+        assertEquals(setOf(0, 11, 16, 27, 32, 43), (0..<three.trackLength).filter { three.isSafe(it) }.toSet())
+        assertEquals(53, stepsToHome(PawnPosition.Yard, three))
+    }
+
+    @Test
+    fun `a 5-8 seat board is the classic arm a seat - its journey a lap of it - 70 steps to 109`() {
+        for (seats in 5..8) {
+            val star = BoardGeometry.star(seats)
+            assertEquals(13 * seats, star.trackLength)
+            assertEquals(2 * seats, (0..<star.trackLength).count { star.isSafe(it) })
+            assertEquals(13 * seats + 5, stepsToHome(PawnPosition.Yard, star))
+        }
+    }
+
+    @Test
+    fun `players spread round the board - 2 on the classic board sit opposite`() {
+        assertEquals(listOf(0, 2), board.seatsFor(2))
+        assertEquals(listOf(0, 1, 2), BoardGeometry.THREE_SEAT.seatsFor(3))
+        assertEquals(listOf(0, 1, 2, 3), board.seatsFor(4))
+        assertEquals((0..7).toList(), BoardGeometry.star(8).seatsFor(8))
+        assertFailsWith<IllegalArgumentException> { board.seatsFor(5) }
+    }
 }

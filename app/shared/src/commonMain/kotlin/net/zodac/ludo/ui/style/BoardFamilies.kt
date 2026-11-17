@@ -11,6 +11,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
@@ -18,7 +20,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 import net.zodac.ludo.ui.game.BoardLayout
-import net.zodac.ludo.ui.game.Cell
+import net.zodac.ludo.ui.game.BoardSquare
+import net.zodac.ludo.ui.game.ClassicBoardLayout
 import net.zodac.ludo.ui.theme.BoardEmptySeat
 
 /**
@@ -49,18 +52,33 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
     /** A safe square's mark, on the square centred on [centre]. */
     protected abstract fun DrawScope.drawSafeMark(centre: Offset, unit: Float)
 
-    /** A seat's yard in [colour], [unit] a square from [topLeft], round a court with a spot at each of [spots]. */
+    /**
+     * A seat's yard on the classic board in [colour], [unit] a square from [topLeft], round a court with a spot at each of
+     * [spots].
+     */
     protected open fun DrawScope.drawYard(topLeft: Offset, unit: Float, colour: Color, spots: List<Offset>) {
-        drawRect(colour, topLeft, Size(BoardLayout.YARD_SIZE * unit, BoardLayout.YARD_SIZE * unit))
+        drawRect(colour, topLeft, Size(ClassicBoardLayout.YARD_SIZE * unit, ClassicBoardLayout.YARD_SIZE * unit))
         drawRoundRectCourt(topLeft, unit)
         for (spot in spots) drawCircle(colour.copy(alpha = 0.45f), unit * 0.62f, spot)
+    }
+
+    /**
+     * A seat's yard on any other board: [outline] in [colour], round its [court] with a spot of [spotRadius] at each of
+     * [spots], all in pixels.
+     */
+    protected open fun DrawScope.drawYardShape(outline: List<Offset>, court: List<Offset>, spots: List<Offset>, spotRadius: Float, unit: Float, colour: Color) {
+        val path = outline.toPath()
+        drawPath(path, colour)
+        drawPath(path, line, style = Stroke(1.dp.toPx()))
+        drawPath(court.toPath(), this@LayeredBoardStyle.court)
+        for (spot in spots) drawCircle(colour.copy(alpha = 0.45f), spotRadius, spot)
     }
 
     /** A yard's court: the inner four squares, rounded. */
     protected fun DrawScope.drawRoundRectCourt(topLeft: Offset, unit: Float, colour: Color = court) =
         drawRoundRect(colour, topLeft + Offset(unit, unit), Size(4 * unit, 4 * unit), CornerRadius(unit * 0.5f))
 
-    /** A seat's triangle of the centre, its three [points], in [colour]. */
+    /** A seat's part of the centre, its [points] (three on most boards), in [colour]. */
     protected open fun DrawScope.drawHomeTriangle(points: List<Offset>, unit: Float, colour: Color) {
         val triangle = points.toPath()
         drawPath(triangle, colour)
@@ -70,31 +88,75 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
     /** Over everything, [extent] wide. */
     protected open fun DrawScope.drawFinish(extent: Size, unit: Float) = Unit
 
-    final override fun DrawScope.drawBoard(unit: Float, seatColours: List<Color?>) {
-        val board = BoardLayout.geometry
-        val extent = Size(unit * BoardLayout.SIZE, unit * BoardLayout.SIZE)
+    final override fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>) {
+        val board = layout.geometry
+        val extent = Size(unit * layout.size, unit * layout.size)
         fun seat(seat: Int) = seatTone(seatColours.getOrNull(seat) ?: BoardEmptySeat)
-        fun Cell.topLeft() = Offset(column * unit, row * unit)
-        ground(extent)
+        val disc = if (layout.round) Path().apply { addOval(Rect(Offset.Zero, extent)) } else null
+        if (disc != null) clipPath(disc) { ground(extent) } else ground(extent)
         for (square in 0..<board.trackLength) {
             val startOf = if (square % board.seatSpacing == 0) square / board.seatSpacing else null
-            drawSquare(BoardLayout.trackCell(square).topLeft(), unit, startOf?.let(::seat) ?: plain, seat = startOf != null)
+            drawBoardSquare(layout.trackSquare(square), unit) { drawSquare(it, unit, startOf?.let(::seat) ?: plain, seat = startOf != null) }
         }
         for (s in 0..<board.seats) {
-            for (index in 0..<board.homeColumnLength) drawSquare(BoardLayout.homeColumnCell(s, index).topLeft(), unit, seat(s), seat = true)
-            drawYard(BoardLayout.yardOrigin(s).topLeft(), unit, seat(s), (0..3).map { BoardLayout.yardSpot(s, it) * unit })
-            drawHomeTriangle(BoardLayout.homeTriangle(s).map { it * unit }, unit, seat(s))
+            for (index in 0..<board.homeColumnLength) {
+                drawBoardSquare(layout.homeColumnSquare(s, index), unit) { drawSquare(it, unit, seat(s), seat = true) }
+            }
+            val spots = (0..<YARD_SPOTS).map { layout.yardSpot(s, it) * unit }
+            if (layout is ClassicBoardLayout) {
+                drawYard(layout.yardOrigin(s).let { Offset(it.column * unit, it.row * unit) }, unit, seat(s), spots)
+            } else {
+                drawYardShape(layout.yard(s).map { it * unit }, layout.yardCourt(s).map { it * unit }, spots, layout.yardSpotRadius * unit, unit, seat(s))
+            }
+            drawHomeTriangle(layout.homeArea(s).map { it * unit }, unit, seat(s))
         }
         for (square in 0..<board.trackLength) {
-            if (square % board.seatSpacing == board.starOffset) drawSafeMark(BoardLayout.trackCell(square).centre * unit, unit)
+            if (square % board.seatSpacing == board.starOffset) drawSafeMark(layout.trackSquare(square).centre * unit, unit)
         }
-        drawFinish(extent, unit)
+        if (disc != null) {
+            clipPath(disc) { drawFinish(extent, unit) }
+            drawPath(disc, line, style = Stroke(1.5.dp.toPx()))
+        } else {
+            drawFinish(extent, unit)
+        }
     }
 
     override fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
         val spot = centre + Offset(0f, -0.05f * radius)
         drawCircle(court, radius * 1.12f, spot)
         drawCircle(line, radius * 1.12f, spot, style = Stroke(maxOf(0.75.dp.toPx(), radius * 0.07f)))
+    }
+}
+
+/** How many spots a yard has. */
+private const val YARD_SPOTS = 4
+
+/**
+ * Draws [square] with [draw], which draws a whole square [unit] across from the top-left it's given: turned to the
+ * square's angle, or for a square that isn't a whole one, stretched over it and cut to its shape. A classic board's
+ * squares draw as they are.
+ */
+internal fun DrawScope.drawBoardSquare(square: BoardSquare, unit: Float, draw: DrawScope.(topLeft: Offset) -> Unit) {
+    val half = Offset(unit / 2, unit / 2)
+    if (square.isUnit) {
+        val centre = square.centre * unit
+        // A square turned a quarter is the same square, so a classic board's (and an arm pointing straight) aren't turned.
+        val turn = square.angle.mod(90f).let { if (it > 89.99f) 0f else it }
+        if (turn < 0.01f) draw(centre - half) else rotate(turn, centre) { draw(centre - half) }
+        return
+    }
+    val along = (square.corners[1] - square.corners[0]).let { it / it.getDistance() }
+    val normal = Offset(-along.y, along.x)
+    val from = square.centre
+    val alongs = square.corners.map { (it - from).let { d -> d.x * along.x + d.y * along.y } }
+    val acrosses = square.corners.map { (it - from).let { d -> d.x * normal.x + d.y * normal.y } }
+    val boxCentre = from + along * ((alongs.min() + alongs.max()) / 2) + normal * ((acrosses.min() + acrosses.max()) / 2)
+    clipPath(square.corners.map { it * unit }.toPath()) {
+        withTransform({
+            translate(boxCentre.x * unit, boxCentre.y * unit)
+            rotate(square.angle, Offset.Zero)
+            scale(alongs.max() - alongs.min(), acrosses.max() - acrosses.min(), Offset.Zero)
+        }) { draw(-half) }
     }
 }
 
@@ -145,8 +207,8 @@ class WoodBoardStyle(id: String, private val plank: Color, private val groove: C
     }
 
     override fun DrawScope.drawYard(topLeft: Offset, unit: Float, colour: Color, spots: List<Offset>) {
-        drawRect(colour, topLeft, Size(BoardLayout.YARD_SIZE * unit, BoardLayout.YARD_SIZE * unit))
-        drawRect(groove.copy(alpha = 0.7f), topLeft, Size(BoardLayout.YARD_SIZE * unit, BoardLayout.YARD_SIZE * unit), style = Stroke(1.25.dp.toPx()))
+        drawRect(colour, topLeft, Size(ClassicBoardLayout.YARD_SIZE * unit, ClassicBoardLayout.YARD_SIZE * unit))
+        drawRect(groove.copy(alpha = 0.7f), topLeft, Size(ClassicBoardLayout.YARD_SIZE * unit, ClassicBoardLayout.YARD_SIZE * unit), style = Stroke(1.25.dp.toPx()))
         drawRoundRectCourt(topLeft, unit)
         for (spot in spots) {
             drawCircle(groove.copy(alpha = 0.35f), unit * 0.62f, spot)
@@ -226,7 +288,7 @@ class StoneBoardStyle(id: String, private val slab: Color, private val mortar: C
     }
 
     override fun DrawScope.drawYard(topLeft: Offset, unit: Float, colour: Color, spots: List<Offset>) {
-        drawSlab(Rect(topLeft, Size(BoardLayout.YARD_SIZE * unit, BoardLayout.YARD_SIZE * unit)), unit, colour)
+        drawSlab(Rect(topLeft, Size(ClassicBoardLayout.YARD_SIZE * unit, ClassicBoardLayout.YARD_SIZE * unit)), unit, colour)
         drawRoundRectCourt(topLeft, unit)
         for (spot in spots) {
             drawCircle(Color.Black.copy(alpha = 0.22f), unit * 0.62f, spot + Offset(-unit * 0.03f, -unit * 0.03f))
@@ -280,7 +342,7 @@ class NeonBoardStyle(id: String, private val dark: Color, private val tube: Colo
     }
 
     override fun DrawScope.drawYard(topLeft: Offset, unit: Float, colour: Color, spots: List<Offset>) {
-        val outer = Rect(topLeft, Size(BoardLayout.YARD_SIZE * unit, BoardLayout.YARD_SIZE * unit)).deflate(unit * 0.15f)
+        val outer = Rect(topLeft, Size(ClassicBoardLayout.YARD_SIZE * unit, ClassicBoardLayout.YARD_SIZE * unit)).deflate(unit * 0.15f)
         drawRect(colour.copy(alpha = 0.16f), outer.topLeft, outer.size)
         glow(unit, colour) { stroke, c -> drawRect(c, outer.topLeft, outer.size, style = stroke) }
         drawRoundRectCourt(topLeft, unit)
@@ -340,8 +402,8 @@ class OceanBoardStyle(
     }
 
     override fun DrawScope.drawYard(topLeft: Offset, unit: Float, colour: Color, spots: List<Offset>) {
-        drawRect(colour, topLeft, Size(BoardLayout.YARD_SIZE * unit, BoardLayout.YARD_SIZE * unit))
-        drawRect(shore.copy(alpha = 0.55f), topLeft, Size(BoardLayout.YARD_SIZE * unit, BoardLayout.YARD_SIZE * unit), style = Stroke(1.dp.toPx()))
+        drawRect(colour, topLeft, Size(ClassicBoardLayout.YARD_SIZE * unit, ClassicBoardLayout.YARD_SIZE * unit))
+        drawRect(shore.copy(alpha = 0.55f), topLeft, Size(ClassicBoardLayout.YARD_SIZE * unit, ClassicBoardLayout.YARD_SIZE * unit), style = Stroke(1.dp.toPx()))
         drawRoundRectCourt(topLeft, unit)
         // Ripples across the water.
         val court = Rect(topLeft + Offset(unit, unit), Size(4 * unit, 4 * unit))
@@ -404,7 +466,7 @@ class StarryBoardStyle(
     }
 
     override fun DrawScope.drawYard(topLeft: Offset, unit: Float, colour: Color, spots: List<Offset>) {
-        drawRect(colour, topLeft, Size(BoardLayout.YARD_SIZE * unit, BoardLayout.YARD_SIZE * unit))
+        drawRect(colour, topLeft, Size(ClassicBoardLayout.YARD_SIZE * unit, ClassicBoardLayout.YARD_SIZE * unit))
         drawRoundRectCourt(topLeft, unit)
         val court = Rect(topLeft + Offset(unit, unit), Size(4 * unit, 4 * unit))
         val random = Random(topLeft.hashCode())
@@ -445,12 +507,13 @@ class PaperBoardStyle(id: String, private val paper: Color, private val pencil: 
     override val court: Color = paper
     override val line: Color = pencil
 
-    /** The paper and its faint squared ruling, two lines to a square. */
+    /** The paper and its faint squared ruling, two lines to a classic board's square. */
     override fun DrawScope.ground(extent: Size) {
         drawRect(paper, size = extent)
-        val step = extent.width / (BoardLayout.SIZE * 2)
+        val lines = ClassicBoardLayout.SIZE * 2
+        val step = extent.width / lines
         val width = maxOf(0.5.dp.toPx(), step * 0.03f)
-        for (i in 1..<BoardLayout.SIZE * 2) {
+        for (i in 1..<lines) {
             drawLine(ruling, Offset(i * step, 0f), Offset(i * step, extent.height), width)
             drawLine(ruling, Offset(0f, i * step), Offset(extent.width, i * step), width)
         }
@@ -510,7 +573,7 @@ class PaperBoardStyle(id: String, private val paper: Color, private val pencil: 
     }
 
     override fun DrawScope.drawYard(topLeft: Offset, unit: Float, colour: Color, spots: List<Offset>) {
-        val outer = Rect(topLeft, Size(BoardLayout.YARD_SIZE * unit, BoardLayout.YARD_SIZE * unit))
+        val outer = Rect(topLeft, Size(ClassicBoardLayout.YARD_SIZE * unit, ClassicBoardLayout.YARD_SIZE * unit))
         hatch(outer, unit, colour)
         val court = Rect(topLeft + Offset(unit, unit), Size(4 * unit, 4 * unit))
         drawRect(paper, court.topLeft, court.size)
@@ -598,7 +661,7 @@ class RetroBoardStyle(id: String, private val block: Color, private val screen: 
 
     override fun DrawScope.drawYard(topLeft: Offset, unit: Float, colour: Color, spots: List<Offset>) {
         val p = unit / RETRO_PIXELS
-        bevel(topLeft, unit, colour, cells = BoardLayout.YARD_SIZE)
+        bevel(topLeft, unit, colour, cells = ClassicBoardLayout.YARD_SIZE)
         val court = topLeft + Offset(unit, unit)
         drawRect(Color.Black, court - Offset(p, p), Size(4 * unit + 2 * p, 4 * unit + 2 * p))
         drawRect(screen, court, Size(4 * unit, 4 * unit))
@@ -609,7 +672,7 @@ class RetroBoardStyle(id: String, private val block: Color, private val screen: 
     }
 
     override fun DrawScope.drawHomeTriangle(points: List<Offset>, unit: Float, colour: Color) {
-        // Stepped: every pixel whose centre is in the triangle, in its colour, edged in black.
+        // Stepped: every pixel whose centre is in the area, in its colour, edged in black.
         val p = unit / RETRO_PIXELS
         val bounds = points.toPath().getBounds()
         val columns = (bounds.width / p).toInt() + 1
@@ -630,9 +693,9 @@ class RetroBoardStyle(id: String, private val block: Color, private val screen: 
     }
 }
 
-/** Whether [point] is inside the triangle of these three points (on an edge counts). */
+/** Whether [point] is inside the convex polygon of these points (on an edge counts). */
 private fun List<Offset>.encloses(point: Offset): Boolean {
     fun side(a: Offset, b: Offset) = (b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x)
-    val sides = listOf(side(this[0], this[1]), side(this[1], this[2]), side(this[2], this[0]))
+    val sides = indices.map { side(this[it], this[(it + 1) % size]) }
     return sides.all { it >= 0f } || sides.all { it <= 0f }
 }

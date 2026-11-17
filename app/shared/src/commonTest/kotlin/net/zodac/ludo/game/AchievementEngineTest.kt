@@ -8,6 +8,7 @@ import net.zodac.ludo.model.Achievement
 import net.zodac.ludo.model.AchievementCategory
 import net.zodac.ludo.model.AchievementCounter
 import net.zodac.ludo.model.AchievementVisibility
+import net.zodac.ludo.model.BoardGeometry
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
@@ -97,9 +98,11 @@ class AchievementEngineTest {
         val digits = PLAYERS.mapIndexed { i, player -> player.copy(name = "${i}x") }
         assertTrue(Achievement.ALLITERATION !in AchievementEngine.atGameStart(digits, null, 14).achievements)
 
-        val cap = maxPlayerNameLength(PLAYERS.size)
+        // The form's cap, the most players' whatever the count, so a game of two can earn it too.
+        val cap = maxPlayerNameLength(BoardGeometry.MAX_PLAYERS)
         val long = PLAYERS.toMutableList().apply { this[0] = this[0].copy(name = "W".repeat(cap)) }
         assertTrue(Achievement.WHATS_IN_A_NAME in AchievementEngine.atGameStart(long, null, 14).achievements)
+        assertTrue(Achievement.WHATS_IN_A_NAME in AchievementEngine.atGameStart(long.take(2), null, 14).achievements)
         val short = PLAYERS.toMutableList().apply { this[0] = this[0].copy(name = "W".repeat(cap - 1)) }
         assertTrue(Achievement.WHATS_IN_A_NAME !in AchievementEngine.atGameStart(short, null, 14).achievements)
         val cpu = PLAYERS.toMutableList().apply { this[1] = this[1].copy(name = "W".repeat(cap)) }
