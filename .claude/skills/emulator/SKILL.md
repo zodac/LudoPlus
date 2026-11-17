@@ -45,9 +45,10 @@ emulator.sh stop
 ```
 
 - The journey (`app/baselineprofile/.../Journeys.kt`): a game's first turns (the player's rolls and moves, waiting out
-    the CPUs'), Continue with a move in landscape, every Rules tab, the whole tutorial to its Game Over, the Leaderboard
-    and Statistics, and Settings with its Graphics page and dialogs. Not yet run on an emulator (written 2026-11-17 on a
-    host without one): its first run may need its waits tuned.
+    the CPUs'), Continue with a move in landscape, every Rules tab, the whole tutorial to its Game Over, Achievements
+    scrolled through, the Leaderboard and Statistics, and Settings with its Graphics page and dialogs. First run here
+    2026-11-17: a lap takes about two and a half minutes. Under the two-core stress below the app draws under two frames a second, and the tutorial alone
+    outlasts even its six-minute budget, so a stressed lap fails there on time, not on a race.
 - Just after a boot on starved cores, the uninstall can fail with `DELETE_FAILED_INTERNAL_ERROR`, which the `2>/dev/null`
     above doesn't hide: try it again, or the benchmark install may not replace what's there.
 - Start with one lap. One lap doesn't prove a full run, because timing races can take several laps to show.

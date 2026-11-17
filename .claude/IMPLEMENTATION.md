@@ -270,7 +270,10 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     job in `android-release.yml`) and written for Ludo's screens (`BENCHMARKS.md`): 60fps while pawns move.
     - [x] The module, the startup and pawn-move benchmarks, Ludo's journey, and the CI job (from 1.0.0) are back
         (2026-11-17). The journey compiles in the lint job.
-    - [ ] Run the journey on an emulator (the sandbox's `emulator` skill): written on a host without one, so not yet run.
+    - [x] Run the journey on an emulator (the sandbox's `emulator` skill), 2026-11-17: a lap passes in about two and a
+        half minutes, once the Rules tab row is swiped back to How to Play. It now visits Achievements too, added with
+        Phase 6. Pinned to two cores beside two busy loops, a lap still runs out of time in the tutorial (under two
+        frames a second), even with its budget doubled to six minutes.
     - [ ] `PawnMoveBenchmark` on a phone: frameDurationCpuMs P90 under 16ms.
 - [x] Store-assets generator scenes for Ludo, README gallery, and `assets/full-description.txt`: six screenshots (phone
     and 10-inch tablet) from staged games and a seeded history, in the README from the `readme-assets` release

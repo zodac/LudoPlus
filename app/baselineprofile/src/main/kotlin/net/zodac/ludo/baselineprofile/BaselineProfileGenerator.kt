@@ -11,8 +11,8 @@ import org.junit.runner.RunWith
  * Records what a typical session touches, so the generated profile compiles those paths ahead of time: cold start, a
  * game's first turns (the player's roll and move, then the CPUs'), the game resumed with Continue and rolled in
  * landscape, the whole guided tutorial to its Game Over (rolls again, a capture, a pawn home, a win), the Rules' tabs,
- * the Leaderboard and Statistics, and Settings with its Graphics page and dialogs. Run on a device:
- * `./gradlew :app:android:generateBaselineProfile`.
+ * Achievements scrolled through, the Leaderboard and Statistics, and Settings with its Graphics page and dialogs. Run on
+ * a device: `./gradlew :app:android:generateBaselineProfile`.
  *
  * A real game isn't played to its end: four players take hundreds of turns. The tutorial's Game Over covers that page.
  * Deliberately left out: opening a link (it leaves the app, so no app code runs) and selecting text (Compose's and the
@@ -58,6 +58,7 @@ class BaselineProfileGenerator {
         playATurn()
         resumeGame()
         visitRules()
+        visitAchievements()
         visitRecords()
         visitSettings()
     }

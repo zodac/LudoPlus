@@ -136,12 +136,42 @@ private fun MacrobenchmarkScope.setChecked(label: BySelector, what: String, chec
 /** Whether the switch around [text] is on. */
 private fun MacrobenchmarkScope.isChecked(text: String): Boolean = await(By.checkable(true).hasDescendant(By.text(text)), text).isChecked
 
-/** Selects the Rules tab [text], the topmost match (the page's title can read the same), tapping until it is selected. */
+/**
+ * Selects the Rules tab [text], the topmost match (the page's title can read the same), tapping until it is selected.
+ * A tab scrolled out of the tab row is scrolled back into it first.
+ */
 internal fun MacrobenchmarkScope.selectTab(text: String) {
     val selected = By.selected(true).hasDescendant(By.text(text))
+    scrollTabIntoView(text)
     await(By.text(text), text)
     if (device.hasObject(selected)) return
     tapUntil(text, { topmost(text) }) { device.hasObject(selected) }
+}
+
+/**
+ * Scrolls the Rules' tab row until the tab [text] shows: towards the start for a tab before the ones on screen, towards
+ * the end otherwise. The row scrolls sideways, and a tab out of it isn't on screen to be found.
+ */
+private fun MacrobenchmarkScope.scrollTabIntoView(text: String) {
+    val target = RULES_TABS.indexOf(text)
+    repeat(TAB_SCROLL_ATTEMPTS) {
+        if (device.wait(Until.hasObject(By.text(text)), CLOSE_WAIT_MS)) return
+        val shown = RULES_TABS.indices.filter { device.hasObject(By.text(RULES_TABS[it])) }
+        // The topmost: the page below the row can show a tab's name as its heading.
+        val row = device.findObjects(By.scrollable(true).hasDescendant(By.text(Pattern.compile(RULES_TABS.joinToString("|")))))
+            .minByOrNull { it.visibleBounds.top } ?: return
+        val bounds = try {
+            row.visibleBounds
+        } catch (_: StaleObjectException) {
+            return@repeat // The row was redrawn: looked for again on the next attempt.
+        }
+        // A plain swipe across the row, from a quarter in to a quarter from the other side: the row didn't take
+        // UiObject2.scroll's gesture on the emulator.
+        val towardsStart = shown.isNotEmpty() && target < shown.min()
+        val (from, to) = bounds.left + bounds.width() / 4 to bounds.right - bounds.width() / 4
+        val y = bounds.centerY()
+        if (towardsStart) device.swipe(from, y, to, y, TAB_SWIPE_STEPS) else device.swipe(to, y, from, y, TAB_SWIPE_STEPS)
+    }
 }
 
 /** True if [text] is on screen right now, without waiting. */
@@ -349,6 +379,20 @@ internal fun MacrobenchmarkScope.playTutorial() {
     tapTextUntil("Done") { device.hasObject(start) }
 }
 
+/**
+ * Achievements from the menu: the list scrolled through its groups, a group header's Next category button tapped once
+ * if it shows, and back. Waits on the earned count, which only this screen shows (the menu's button shares its title).
+ */
+internal fun MacrobenchmarkScope.visitAchievements() {
+    openFromMenu("Achievements")
+    await(By.textContains(" earned"), "the Achievements' earned count")
+    scrollDown(ACHIEVEMENT_SCROLLS)
+    // Nothing later relies on it, so one tap and no retry.
+    device.findObject(By.desc("Next category"))?.click()
+    device.waitForIdle()
+    backToMenu()
+}
+
 /** The Leaderboard, then Statistics, each from the menu and back. */
 internal fun MacrobenchmarkScope.visitRecords() {
     openFromMenu("Leaderboard")
@@ -420,10 +464,17 @@ private const val PLAYER_ACTIONS = 4
 /** Three CPUs' turns between the player's: each thinks 500ms before a roll and a move, on top of the board's animations. */
 private const val CPU_TURNS_MS = 60_000L
 private const val ACTION_SETTLE_MS = 1_500L
-/** The whole tutorial: four parts, about twenty steps, each played out on the board. */
-private const val TUTORIAL_MS = 180_000L
+/**
+ * The whole tutorial: four parts, about twenty steps, each played out on the board. Six minutes: an emulator starved to
+ * under two frames a second (two cores, two busy loops) was still in its second part after three.
+ */
+private const val TUTORIAL_MS = 360_000L
 private const val CELEBRATION_MS = 1_000L
 private const val CLOSE_ATTEMPTS = 4
 private const val TAP_ATTEMPTS = 4
+private const val TAB_SCROLL_ATTEMPTS = 4
+private const val ACHIEVEMENT_SCROLLS = 3
+// About a fifth of a second a swipe: slow enough to scroll the row rather than fling it.
+private const val TAB_SWIPE_STEPS = 40
 private const val CLOSE_WAIT_MS = 3_000L
 private const val SHORT_IDLE_WAIT_MS = 100L
