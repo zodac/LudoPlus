@@ -167,10 +167,32 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 | --- | --- | --- | --- |
 | Classic | The classic rules | Yes | Yes |
 | Quick | Two pawns each; each yard draws two spots, on opposite corners (the maintainer, 2026-11-18) | Yes, its own | No |
+| Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | No |
 
 Every mode has its own Leaderboard (one a player count) and its own Statistics page. Only Classic earns achievements
 (`GameMode.earnsAchievements`) until the maintainer's review of the list adds any for a mode (2026-11-18). The Rules
 screen has a Game Modes group, a page a mode beyond Classic.
+
+**Two Dice** (`GameRules.dice`, `rollAgainOnDoubles`). A roll is both dice (`LudoEngine.applyDice`); the move phase
+holds the dice still to move, the whole roll, and whether it has earned another roll (`TurnPhase.AwaitingMove.dice`,
+`rolled`, `earned`), and each move the die it uses (`Move.roll`). Either order; a die with no move once the other is
+moved is lost; a double's moves are offered once. The game screen draws the two dice at 0.8 of one die's size: a tap on
+either rolls both, then a tap on a die picks the one the board's pawns move by (ringed; the other die's moves stay in
+TalkBack's actions), and a moved die fades. TalkBack: "First die showing 3, selected", "Second die showing 5, moved",
+action "Use this die"; the prompt "Alex rolled 3 and 5. Pick a pawn to move 3." then "Alex has 5 left. Pick a pawn to
+move." The CPU picks one move at a time, die by die. House rules apply die by die (Out on a 1, Free Start), and to the
+roll (Three Tries, Must Capture across both dice; Endless 6s makes doubles endless).
+
+**Custom modes** (`model/CustomMode.kt`, the maintainer, 2026-11-18). A name (unique among the player's and the
+built-in modes', whatever its case; at most 24 characters), a base mode, and at least one house rule (without one it
+would be its base). Kept as JSON in the `custom_modes` setting (`CustomModesJson`; one that can't be read is dropped),
+the one picked as `custom_mode`. New Game's mode picker lists them after the built-in modes, each with its base and
+house rules as its line; under it, New Custom Mode, and while one is picked, Edit and Delete (Delete asks first). The
+editor is a page of its own: the name, Based On (a segment a mode), and a switch a house rule, with Save offered once it
+can be. While one is picked, the House Rules card says "Set by Cut-Throat: Blockades and Must Capture." in place of the
+switches, which keep their own picks for the built-in modes. A game plays its base with its house rules, titled by its
+name (`StartedGame.customName`, saved with the game), and counts towards nothing, as any game with house rules. They're
+locked with the house rules until a first game is finished: hidden, and the base played plain.
 
 ## Modifiers
 

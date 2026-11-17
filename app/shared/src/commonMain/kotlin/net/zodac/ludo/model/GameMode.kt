@@ -5,6 +5,8 @@ import net.zodac.ludo.resources.mode_classic
 import net.zodac.ludo.resources.mode_classic_description
 import net.zodac.ludo.resources.mode_quick
 import net.zodac.ludo.resources.mode_quick_description
+import net.zodac.ludo.resources.mode_two_dice
+import net.zodac.ludo.resources.mode_two_dice_description
 import org.jetbrains.compose.resources.StringResource
 
 /**
@@ -44,6 +46,17 @@ enum class GameMode(
         description = Res.string.mode_quick_description,
         rules = GameRules(pawnsPerPlayer = 2),
     ),
+
+    /**
+     * Two dice, each moved on its own, one after the other, by any pawn: a 6 on either brings a pawn out with that die,
+     * and doubles roll again (three in a row end the turn), not 6s.
+     */
+    TWO_DICE(
+        id = "two_dice",
+        displayName = Res.string.mode_two_dice,
+        description = Res.string.mode_two_dice_description,
+        rules = GameRules(dice = 2, rollAgainRolls = emptySet(), rollAgainOnDoubles = true),
+    ),
     ;
 
     companion object {
@@ -61,11 +74,15 @@ data class GameRules(
     val board: BoardGeometry = BoardGeometry.CLASSIC,
     /** How many pawns each player races home. */
     val pawnsPerPlayer: Int = 4,
-    /** How many faces the die has, numbered 1 up to this. */
+    /** How many faces each die has, numbered 1 up to this. */
     val dieFaces: Int = 6,
+    /** How many dice a roll rolls: 1, or 2, each moved on its own, one after the other, by any pawn. */
+    val dice: Int = 1,
+    /** With two dice, whether doubles roll again (counted against [rollAgainLimit]). */
+    val rollAgainOnDoubles: Boolean = false,
     /** The rolls that bring a pawn out of the yard onto its start square. */
     val yardExitRolls: Set<Int> = setOf(6),
-    /** The rolls that give the player another roll after their move. A roll with no legal move gives none. */
+    /** The rolls of one die that give the player another roll after their move. A roll with no legal move gives none. */
     val rollAgainRolls: Set<Int> = setOf(6),
     /** Whether a move that captures gives the player another roll (one, however many pawns it captures). */
     val rollAgainOnCapture: Boolean = true,
@@ -141,6 +158,7 @@ data class GameRules(
     init {
         require(pawnsPerPlayer > 0) { "A player needs a pawn" }
         require(dieFaces > 1) { "A die needs two faces" }
+        require(dice in 1..2) { "A roll is one die or two" }
         require((yardExitRolls + rollAgainRolls).all { it in 1..dieFaces }) { "Every special roll must be on the die" }
         require(rollAgainLimit == null || rollAgainLimit > 0) { "A run of rolls again ends after one roll or more" }
         require(yardTries > 0) { "A player has a roll or more to leave the yard" }

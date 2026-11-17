@@ -109,8 +109,19 @@ sealed interface TurnPhase {
     /** The current player to roll the die. */
     data object AwaitingRoll : TurnPhase
 
-    /** The current player to pick one of [moves] for their [roll]. Never empty: a roll with no move passes. */
-    data class AwaitingMove(val roll: Int, val moves: List<Move>) : TurnPhase
+    /**
+     * The current player to pick one of [moves] for their [roll]. Never empty: a roll with no move passes. With two dice,
+     * [dice] are those still to be moved, [roll] the first of them, and each move says which it uses ([Move.roll]).
+     * [earned] is whether the roll has earned another already: a roll-again roll, or a capture or a pawn home with a die
+     * already moved. [rolled] is the whole roll, every die, for the screen to show.
+     */
+    data class AwaitingMove(
+        val roll: Int,
+        val moves: List<Move>,
+        val dice: List<Int> = listOf(roll),
+        val earned: Boolean = false,
+        val rolled: List<Int> = dice,
+    ) : TurnPhase
 
     /** Every placing is decided. */
     data object Finished : TurnPhase
@@ -121,7 +132,15 @@ sealed interface TurnPhase {
  * partner, [owner]'s (null for the mover's own). [captures] lists the opponents' pawns it sends back to their yards, as
  * (player, pawn) pairs.
  */
-data class Move(val pawn: Int, val from: Int, val to: Int, val captures: List<PawnRef> = emptyList(), val owner: Int? = null) {
+data class Move(
+    val pawn: Int,
+    val from: Int,
+    val to: Int,
+    val captures: List<PawnRef> = emptyList(),
+    val owner: Int? = null,
+    /** With two dice, the die it moves by; null with one, which is the roll's. */
+    val roll: Int? = null,
+) {
     /** Whose pawn moves in [state]: [owner], or the player whose turn it is. */
     fun ownerIn(state: GameState): Int = owner ?: state.current
 }
@@ -134,22 +153,25 @@ sealed interface GameEvent {
     /** The player who acted. */
     val player: Int
 
-    /** [player] rolled [roll] and has a move to make. */
-    data class Rolled(override val player: Int, val roll: Int) : GameEvent
+    /** [player] rolled [roll] (and [second] on a second die) and has a move to make. */
+    data class Rolled(override val player: Int, val roll: Int, val second: Int? = null) : GameEvent
 
     /**
-     * [player] rolled [roll] and had no legal move. With [triesLeft] (of [GameRules.yardTries]) they roll again;
-     * otherwise the turn passed (even on a roll-again roll).
+     * [player] rolled [roll] (and [second] on a second die) and had no legal move. With [triesLeft] (of
+     * [GameRules.yardTries]) they roll again; otherwise the turn passed (even on a roll-again roll).
      */
-    data class NoMove(override val player: Int, val roll: Int, val triesLeft: Int = 0) : GameEvent
-
-    /** [player] rolled [roll], the roll-again roll that ran out [GameRules.rollAgainLimit], so their turn ended unmoved. */
-    data class RollAgainLimit(override val player: Int, val roll: Int) : GameEvent
+    data class NoMove(override val player: Int, val roll: Int, val triesLeft: Int = 0, val second: Int? = null) : GameEvent
 
     /**
-     * [player] moved with [roll]. [finished] is true if that brought the moved pawn's owner's last pawn home (theirs, or
-     * a partner's they rolled for); [rollsAgain] if the move earned them another roll (a roll-again roll, a capture, or a
-     * pawn home, as the rules give).
+     * [player] rolled [roll] (and [second] on a second die), the roll-again roll that ran out [GameRules.rollAgainLimit],
+     * so their turn ended unmoved.
+     */
+    data class RollAgainLimit(override val player: Int, val roll: Int, val second: Int? = null) : GameEvent
+
+    /**
+     * [player] moved with [roll] (with two dice, the die moved). [finished] is true if that brought the moved pawn's
+     * owner's last pawn home (theirs, or a partner's they rolled for); [rollsAgain] if the roll, its dice all moved, earned
+     * them another (a roll-again roll, a capture, or a pawn home, as the rules give).
      */
     data class Moved(override val player: Int, val roll: Int, val move: Move, val finished: Boolean, val rollsAgain: Boolean = false) : GameEvent
 }

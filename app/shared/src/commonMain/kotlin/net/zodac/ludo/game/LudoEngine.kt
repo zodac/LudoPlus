@@ -10,19 +10,26 @@ import net.zodac.ludo.model.PawnPosition
  */
 object LudoEngine {
 
-    /** Rolls [state]'s die with [random], then plays the roll ([applyRoll]). */
-    fun roll(state: GameState, random: Random): GameState = applyRoll(state, random.nextInt(1, state.rules.dieFaces + 1))
+    /** Rolls [state]'s dice with [random], then plays the roll ([applyDice]). */
+    fun roll(state: GameState, random: Random): GameState = applyDice(state, List(state.rules.dice) { random.nextInt(1, state.rules.dieFaces + 1) })
+
+    /** The current player rolls [roll] on a game's one die ([applyDice]). */
+    fun applyRoll(state: GameState, roll: Int): GameState = applyDice(state, listOf(roll))
 
     /**
-     * The current player rolls [roll]. A run of roll-again rolls that reaches the rules' limit ends the turn unmoved,
-     * and so does a roll with no legal move, roll-again roll or not, unless the player has none on the board and tries
-     * left to leave the yard ([net.zodac.ludo.model.GameRules.yardTries]): then they roll again. Otherwise the game
-     * awaits one of the legal moves.
+     * The current player rolls [dice], one value a die the rules roll. A run of roll-again rolls (one of the rules'
+     * roll-again rolls on one die, or with two, doubles where they roll again) that reaches the rules' limit ends the turn
+     * unmoved, and so does a roll with no legal move, roll-again roll or not, unless the player has none on the board and
+     * tries left to leave the yard ([net.zodac.ludo.model.GameRules.yardTries]): then they roll again. Otherwise the game
+     * awaits one of the legal moves, with each die's moved on its own ([TurnPhase.AwaitingMove]).
      */
-    fun applyRoll(state: GameState, roll: Int): GameState {
+    fun applyDice(state: GameState, dice: List<Int>): GameState {
         check(state.phase == TurnPhase.AwaitingRoll) { "Not waiting for a roll: ${state.phase}" }
-        require(roll in 1..state.rules.dieFaces) { "A ${state.rules.dieFaces}-sided die can't roll $roll" }
         val rules = state.rules
+        require(dice.size == rules.dice) { "${rules.dice} dice roll ${rules.dice} values, not $dice" }
+        require(dice.all { it in 1..rules.dieFaces }) { "A ${rules.dieFaces}-sided die can't roll $dice" }
+        val roll = dice.first()
+        val second = dice.getOrNull(1)
         val player = state.current
         // The first roll of a turn starts it; a roll again continues it.
         val started = if (!state.rollingAgain) {
@@ -30,13 +37,13 @@ object LudoEngine {
         } else {
             state
         }
-        val rollsAgain = roll in rules.rollAgainRolls
+        val rollsAgain = if (dice.size == 1) roll in rules.rollAgainRolls else rules.rollAgainOnDoubles && dice.distinct().size == 1
         val run = if (rollsAgain) state.rollAgainRun + 1 else 0
         val limit = rules.rollAgainLimit
         if (rollsAgain && limit != null && run >= limit) {
-            return nextPlayer(started).copy(lastEvent = GameEvent.RollAgainLimit(player, roll))
+            return nextPlayer(started).copy(lastEvent = GameEvent.RollAgainLimit(player, roll, second))
         }
-        val moves = legalMoves(started, roll)
+        val moves = movesForDice(started, dice)
         if (moves.isEmpty()) {
             // With no pawn on the board, a player may have tries left to leave the yard: the turn carries on.
             val triesLeft = if (movers(started).none { owner -> started.players[owner].pawns.any { it.isOnBoard(started) } }) {
@@ -49,16 +56,31 @@ object LudoEngine {
                     rollAgainRun = run,
                     rollingAgain = true,
                     yardTriesUsed = state.yardTriesUsed + 1,
-                    lastEvent = GameEvent.NoMove(player, roll, triesLeft),
+                    lastEvent = GameEvent.NoMove(player, roll, triesLeft, second),
                 )
             }
-            return nextPlayer(started).copy(lastEvent = GameEvent.NoMove(player, roll))
+            return nextPlayer(started).copy(lastEvent = GameEvent.NoMove(player, roll, second = second))
         }
         return started.copy(
-            phase = TurnPhase.AwaitingMove(roll, moves),
+            phase = TurnPhase.AwaitingMove(roll, moves, dice = dice, earned = rollsAgain),
             rollAgainRun = run,
-            lastEvent = GameEvent.Rolled(player, roll),
+            lastEvent = GameEvent.Rolled(player, roll, second),
         )
+    }
+
+    /**
+     * Every legal move for [dice], the dice still to be moved: [legalMoves] for each value, with two dice each move marked
+     * with the die it uses ([Move.roll]; a double's moves once). Where the rules make captures compulsory and one of them
+     * captures, only those that do.
+     */
+    fun movesForDice(state: GameState, dice: List<Int>): List<Move> {
+        val moves = if (state.rules.dice == 1) {
+            movesFor(state, dice.single())
+        } else {
+            dice.distinct().flatMap { die -> movesFor(state, die).map { it.copy(roll = die) } }
+        }
+        if (state.rules.mustCapture && moves.any { it.captures.isNotEmpty() }) return moves.filter { it.captures.isNotEmpty() }
+        return moves
     }
 
     /**
@@ -67,18 +89,22 @@ object LudoEngine {
      * compulsory and one of them captures, only those that do.
      */
     fun legalMoves(state: GameState, roll: Int): List<Move> {
-        val board = state.board
+        val moves = movesFor(state, roll)
+        if (state.rules.mustCapture && moves.any { it.captures.isNotEmpty() }) return moves.filter { it.captures.isNotEmpty() }
+        return moves
+    }
+
+    /** Every move for [roll], captures compulsory or not ([legalMoves]). */
+    private fun movesFor(state: GameState, roll: Int): List<Move> {
         val me = state.current
         val blockades = blockades(state)
-        val moves = movers(state).flatMap { owner ->
+        return movers(state).flatMap { owner ->
             state.players[owner].pawns.mapIndexedNotNull { pawn, from ->
                 val to = destination(state, owner, from, roll) ?: return@mapIndexedNotNull null
                 if (isBlocked(state, blockades, owner, from, to)) return@mapIndexedNotNull null
                 Move(pawn = pawn, from = from, to = to, captures = capturesAt(state, owner, to), owner = owner.takeIf { it != me })
             }
         }
-        if (state.rules.mustCapture && moves.any { it.captures.isNotEmpty() }) return moves.filter { it.captures.isNotEmpty() }
-        return moves
     }
 
     /**
@@ -147,18 +173,25 @@ object LudoEngine {
         return (first..last).any { progress -> blockades[board.trackSquare(seat, progress)]?.let { it != owner } == true }
     }
 
+    /** The current player makes [move], one of the moves awaited ([move] by pawn, owner, and die). */
+    fun move(state: GameState, move: Move): GameState = move(state, move.pawn, move.owner, move.roll)
+
     /**
      * The current player moves pawn [pawn] (of [owner], a partner they roll for, or their own for null) by the roll
-     * awaiting a move, capturing any opponent it lands on. They roll again after a roll-again roll, a capture, or a pawn
-     * brought home (as the rules give), unless that move ended their part in the game; otherwise play passes on. A run of
-     * roll-again rolls carries on through a roll earned another way.
+     * awaiting a move (with two dice, by [die], or the first die with a move for it), capturing any opponent it lands on.
+     * With a die still to move and a move for it, the player moves again. Once the roll's dice are moved, they roll again
+     * after a roll-again roll, a capture, or a pawn brought home (as the rules give), unless that move ended their part in
+     * the game; otherwise play passes on. A run of roll-again rolls carries on through a roll earned another way.
      *
      * A player with every pawn home is placed then, or in a team game with their team once every partner's are too.
      */
-    fun move(state: GameState, pawn: Int, owner: Int? = null): GameState {
+    fun move(state: GameState, pawn: Int, owner: Int? = null, die: Int? = null): GameState {
         val phase = state.phase
         check(phase is TurnPhase.AwaitingMove) { "Not waiting for a move: $phase" }
-        val move = requireNotNull(phase.moves.firstOrNull { it.pawn == pawn && it.owner == owner }) { "Pawn $pawn has no legal move for ${phase.roll}" }
+        val move = requireNotNull(phase.moves.firstOrNull { it.pawn == pawn && it.owner == owner && (die == null || it.roll == die) }) {
+            "Pawn $pawn has no legal move for ${phase.dice}"
+        }
+        val used = move.roll ?: phase.roll
         val player = state.current
         val whose = move.ownerIn(state)
         var players = state.players
@@ -188,18 +221,28 @@ object LudoEngine {
                 phase = TurnPhase.Finished,
                 rollAgainRun = 0,
                 rollingAgain = false,
-                lastEvent = GameEvent.Moved(player, phase.roll, move, finished),
+                lastEvent = GameEvent.Moved(player, used, move, finished),
             )
         }
         // The mover plays on unless they're placed, or home with no partner's pawns to roll for.
         val playsOn = player !in next.finishingOrder && (!players[player].isFinished(board) || (rules.teams != null && rules.rollForPartners))
-        val rollsAgain = playsOn && (
-            phase.roll in rules.rollAgainRolls ||
-                (rules.rollAgainOnCapture && move.captures.isNotEmpty()) ||
-                (rules.rollAgainOnHome && move.to == board.homeProgress)
-            )
+        val earned = phase.earned ||
+            (rules.rollAgainOnCapture && move.captures.isNotEmpty()) ||
+            (rules.rollAgainOnHome && move.to == board.homeProgress)
+        // Another die to move, with a move for it: the same roll goes on.
+        val left = phase.dice.toMutableList().apply { remove(used) }
+        if (playsOn && left.isNotEmpty()) {
+            val moves = movesForDice(next, left)
+            if (moves.isNotEmpty()) {
+                return next.copy(
+                    phase = TurnPhase.AwaitingMove(left.first(), moves, dice = left, earned = earned, rolled = phase.rolled),
+                    lastEvent = GameEvent.Moved(player, used, move, finished),
+                )
+            }
+        }
+        val rollsAgain = playsOn && earned
         next = if (rollsAgain) next.copy(rollingAgain = true) else nextPlayer(next)
-        return next.copy(lastEvent = GameEvent.Moved(player, phase.roll, move, finished, rollsAgain))
+        return next.copy(lastEvent = GameEvent.Moved(player, used, move, finished, rollsAgain))
     }
 
     /**

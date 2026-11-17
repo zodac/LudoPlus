@@ -76,3 +76,14 @@ Two pawns each (Phase 9). **Earns no achievement** (`GameMode.earnsAchievements`
 so nothing needs a guard: `GameAchievementsTest` plays one out and checks nothing was recorded. If it ever earns them,
 the Pawn count family (every "all but one" and "every pawn" achievement) and the Track length family's turn thresholds
 need the audit first: a Quick game is about half as long.
+
+## Two Dice (a mode)
+
+Two dice, each moved on its own (Phase 9). **Earns no achievement** (`GameMode.earnsAchievements` false; the
+maintainer, 2026-11-18): `GameAchievementsTest` plays one out and checks nothing was recorded. If it ever earns them,
+the Rolls family needs the audit first (every 6 and roll-again achievement: a run is of doubles, and each roll is two
+values), and the Track length family's turn thresholds (a turn moves about twice as far).
+
+## Custom modes (New Game)
+
+A base mode with house rules: their games, as any with house rules, earn nothing, so nothing needs a guard.

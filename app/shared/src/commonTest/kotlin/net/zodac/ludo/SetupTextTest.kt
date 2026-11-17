@@ -6,6 +6,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
@@ -149,5 +157,36 @@ class SetupTextTest : UiTest() {
         compose.waitForIdle()
         compose.onNodeWithText("1 enabled").assertExists()
         compose.onNodeWithText("Off the Leaderboard and Statistics, and no achievements").assertExists()
+    }
+
+    @Test
+    fun `a custom mode - made with a name and a house rule - picked - its rules said on the House Rules card - and deleted after asking`() = uiTest(SCREEN) {
+        val viewModel = gameViewModel(records = GameRecordRepository(InMemoryGameResultDao(finishedGame = true)))
+        show(viewModel)
+        compose.onNodeWithText("New Custom Mode").performScrollTo().performClick()
+        compose.waitForIdle()
+        // Nothing to save until it has a name and a house rule.
+        compose.onNodeWithText("Give it a name.").assertExists()
+        compose.onNode(hasText("Save") and hasClickAction()).assertIsNotEnabled()
+        compose.onNode(hasSetTextAction() and hasText("Name")).performTextInput("Classic")
+        compose.onNodeWithText("There's a mode by that name already.").assertExists()
+        compose.onNode(hasSetTextAction() and hasText("Name")).performTextReplacement("Cut-Throat")
+        compose.onNodeWithText("Switch on a house rule: without one, it's just Classic.").assertExists()
+        compose.onNode(hasText("Must Capture") and isToggleable()).performScrollTo().performClick()
+        compose.onNode(hasText("Blockades") and isToggleable()).performScrollTo().performClick()
+        compose.onNode(hasText("Save") and hasClickAction()).assertIsEnabled().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Cut-Throat").assertExists()
+        compose.onNodeWithText("Classic, with Blockades and Must Capture").assertExists()
+        compose.onNodeWithText("Set by Cut-Throat: Blockades and Must Capture.").assertExists()
+        compose.onNodeWithText("Delete").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Delete Cut-Throat?").assertExists()
+        compose.onNodeWithText("It goes from New Game for good.").assertExists()
+        compose.onAllNodes(hasText("Delete") and hasClickAction()).onLast().performClick()
+        compose.waitForIdle()
+        assertEquals(emptyList(), viewModel.setupForm.setup.value.customModes)
+        compose.onAllNodesWithText("Cut-Throat").assertCountEquals(0)
     }
 }

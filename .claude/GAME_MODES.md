@@ -8,8 +8,11 @@ achievement audit (what each mode or house rule blocks or guards) is in `GAME_MO
 | --- | --- | --- | --- |
 | `CLASSIC` | `classic` | The classic rules (`IMPLEMENTATION.md`, "The classic rules"). The default | Yes |
 | `QUICK` | `quick` | Two pawns each (`pawnsPerPlayer = 2`) | No |
+| `TWO_DICE` | `two_dice` | Two dice, each moved on its own (`dice = 2`); doubles roll again, not 6s (`rollAgainOnDoubles`, `rollAgainRolls` empty) | No |
 
-Two dice is next (the maintainer, 2026-11-18): each die moved on its own, one after the other, on any pawns.
+**Custom modes** (`model/CustomMode.kt`) are the player's own: a built-in base and house rules, saved under a name
+(`DESIGN.md`, "Game modes"). They are data in the settings, not `GameMode` entries: a game of one is its base mode's,
+with the house rules on.
 
 ## The one rule: a mode is data
 
@@ -19,7 +22,7 @@ Two dice is next (the maintainer, 2026-11-18): each die moved on its own, one af
 
 - `GameMode` fields: `id` (stored, permanent once released), `displayName`, `description` (New Game's one line: say
     what's different), `rules`, and `earnsAchievements` (only Classic, until modes get their own achievements).
-- `GameRules` fields: the board (`forPlayers` swaps it by count), `pawnsPerPlayer`, `dieFaces`, the yard-exit and
+- `GameRules` fields: the board (`forPlayers` swaps it by count), `pawnsPerPlayer`, `dieFaces`, `dice`, the yard-exit and
     roll-again rolls, the roll-again limit, the capture and home rolls, the house rules' fields, the teams' fields, and
     `stopAtFirstWinner`. Each is a doc comment stating its rule.
 - **House rules** (`model/HouseRule.kt`) are modifiers: each is one `GameRules` change on top of any mode

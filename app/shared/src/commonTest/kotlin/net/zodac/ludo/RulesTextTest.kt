@@ -142,6 +142,17 @@ class RulesTextTest : UiTest() {
             ),
             diagram = null,
         ),
+        Page(
+            "Two Dice",
+            "Two Dice",
+            listOf(
+                "Two Dice rolls two dice at once. Move a pawn by each die, one after the other, in either order: the same pawn twice, or two pawns. Tap a die to pick the one your next move uses.",
+                "A 6 on either die brings a pawn out of the yard, and the other die can move it on. If a die has no move, it's lost.",
+                "Roll a double and you roll again once both dice are moved, but three doubles in a row end your turn. A capture, or a pawn brought home, still earns another roll.",
+                "Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.",
+            ),
+            diagram = null,
+        ),
     )
 
     /** Each group's tab, and its pages. */

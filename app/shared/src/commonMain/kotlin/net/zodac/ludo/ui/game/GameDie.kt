@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.dp
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.game_die_cd
+import net.zodac.ludo.resources.game_die_select_action
 import net.zodac.ludo.resources.game_die_showing_cd
 import net.zodac.ludo.resources.game_roll_action
 import net.zodac.ludo.ui.common.stringResource
@@ -61,9 +62,22 @@ val LocalDieLongPress = compositionLocalOf<(() -> Unit)?> { null }
  * Each new [roll] (any value that changes with every roll) tumbles it through random faces, turning, onto [value],
  * unless the Die roll motion is off ([MotionGroup.DIE_ROLL]). A style that tumbles itself (the D20, the Egg) turns
  * through its own solid instead, from the tumble's clock ([LocalDieTumbleMillis]). TalkBack hears only the result.
+ *
+ * One of two dice ([TwoDice]) says which it is in its [description], and is faded once [used]. While [onSelect] is set
+ * it is a button choosing the die the next move uses, ringed in violet once [selected].
  */
 @Composable
-fun GameDie(value: Int?, roll: Any?, canRoll: Boolean, onRoll: () -> Unit, modifier: Modifier = Modifier) {
+fun GameDie(
+    value: Int?,
+    roll: Any?,
+    canRoll: Boolean,
+    onRoll: () -> Unit,
+    modifier: Modifier = Modifier,
+    description: String? = null,
+    used: Boolean = false,
+    selected: Boolean = false,
+    onSelect: (() -> Unit)? = null,
+) {
     val style = LocalGameVisualTheme.current.diceStyle
     val firstRoll = remember { roll }
     val reduce = groupReduceMotion(MotionGroup.DIE_ROLL)
@@ -73,30 +87,39 @@ fun GameDie(value: Int?, roll: Any?, canRoll: Boolean, onRoll: () -> Unit, modif
     LaunchedEffect(roll) { tumble.animateTo(1f, tween(DIE_TUMBLE_MILLIS, easing = LinearEasing)) }
     val tumbling = tumble.value < 1f
     val tumbleFace = if (tumbling && !style.tumblesItself) faces[(tumble.value * TUMBLE_FACES).toInt().coerceAtMost(TUMBLE_FACES - 1)] else null
-    val description = if (value == null) stringResource(Res.string.game_die_cd) else stringResource(Res.string.game_die_showing_cd, value)
+    val spoken = description ?: if (value == null) stringResource(Res.string.game_die_cd) else stringResource(Res.string.game_die_showing_cd, value)
     val rollLabel = stringResource(Res.string.game_roll_action)
+    val selectLabel = stringResource(Res.string.game_die_select_action)
+    // A tap rolls while it can; otherwise, where it can, it picks this die.
+    val tap = when {
+        canRoll -> onRoll
+        onSelect != null -> onSelect
+        else -> null
+    }
+    val tapLabel = if (canRoll) rollLabel else selectLabel
     val longPress = LocalDieLongPress.current
     val dieShape = RoundedCornerShape(style.cornerPercent)
     val ringShape = RoundedCornerShape(style.cornerPercent + RING_CORNER_EXTRA_PERCENT)
     Box(
         modifier = modifier
             .clearAndSetSemantics {
-                contentDescription = description
-                if (canRoll) {
+                contentDescription = spoken
+                if (tap != null) {
                     role = Role.Button
-                    onClick(label = rollLabel) { onRoll(); true }
+                    onClick(label = tapLabel) { tap(); true }
                 }
             }
-            .then(if (canRoll) Modifier.border(ROLLABLE_RING_WIDTH, Primary, ringShape) else Modifier)
+            .then(if (canRoll || selected) Modifier.border(ROLLABLE_RING_WIDTH, Primary, ringShape) else Modifier)
             .clip(ringShape)
             .then(
                 when {
-                    // Debug builds only: a tap still rolls when it may.
-                    longPress != null -> Modifier.combinedClickable(onClick = { if (canRoll) onRoll() }, onLongClick = longPress)
-                    canRoll -> Modifier.clickable(onClickLabel = rollLabel, role = Role.Button, onClick = onRoll)
+                    // Debug builds only: a tap still rolls (or picks) when it may.
+                    longPress != null -> Modifier.combinedClickable(onClick = { tap?.invoke() }, onLongClick = longPress)
+                    tap != null -> Modifier.clickable(onClickLabel = tapLabel, role = Role.Button, onClick = tap)
                     else -> Modifier
                 },
             )
+            .graphicsLayer { alpha = if (used) USED_DIE_ALPHA else 1f }
             .padding(RING_ROOM),
         contentAlignment = Alignment.Center,
     ) {
@@ -112,6 +135,9 @@ fun GameDie(value: Int?, roll: Any?, canRoll: Boolean, onRoll: () -> Unit, modif
         }
     }
 }
+
+/** How faint a die already moved is, of two. */
+private const val USED_DIE_ALPHA = 0.35f
 
 /** How much rounder the violet ring's corners are than the die's, as it sits a little way out from them. */
 private const val RING_CORNER_EXTRA_PERCENT = 4

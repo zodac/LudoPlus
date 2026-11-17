@@ -94,6 +94,7 @@ val GameMode.color: Color
     get() = when (this) {
         GameMode.CLASSIC -> Primary
         GameMode.QUICK -> Color(0xFF8FE3B0)
+        GameMode.TWO_DICE -> Color(0xFFFFC27A)
     }
 
 // ---------------------------------------------------------------------------------------------

@@ -1,9 +1,16 @@
 package net.zodac.ludo.ui.setup
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import net.zodac.ludo.ui.icons.Symbols
+import net.zodac.ludo.ui.common.spokenList
+import net.zodac.ludo.ui.common.LudoPlusDialog
+import net.zodac.ludo.model.CustomMode
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -56,14 +63,22 @@ import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.TeamMode
 import net.zodac.ludo.resources.Res
+import net.zodac.ludo.resources.common_cancel
 import net.zodac.ludo.resources.common_cpu_cd
 import net.zodac.ludo.resources.common_default_player_name
+import net.zodac.ludo.resources.setup_custom_delete
+import net.zodac.ludo.resources.setup_custom_delete_message
+import net.zodac.ludo.resources.setup_custom_delete_title
+import net.zodac.ludo.resources.setup_custom_edit
+import net.zodac.ludo.resources.setup_custom_mode_description
+import net.zodac.ludo.resources.setup_custom_new
 import net.zodac.ludo.resources.setup_difficulty_easy
 import net.zodac.ludo.resources.setup_difficulty_hard
 import net.zodac.ludo.resources.setup_difficulty_medium
 import net.zodac.ludo.resources.setup_game_mode
 import net.zodac.ludo.resources.setup_house_rules
 import net.zodac.ludo.resources.setup_house_rules_active_note
+import net.zodac.ludo.resources.setup_house_rules_custom
 import net.zodac.ludo.resources.setup_house_rules_description
 import net.zodac.ludo.resources.setup_house_rules_locked
 import net.zodac.ludo.resources.setup_names_unique
@@ -186,7 +201,7 @@ fun GameSetupScreen(
                     ScrollingColumn(
                         modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) { GameCards(setup = setup, form = viewModel.setupForm) }
+                    ) { GameCards(setup = setup, viewModel = viewModel) }
                     actions()
                 }
             }
@@ -203,7 +218,7 @@ fun GameSetupScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             playerCards()
-            GameCards(setup = setup, form = viewModel.setupForm)
+            GameCards(setup = setup, viewModel = viewModel)
         }
         actions()
     }
@@ -246,10 +261,21 @@ private fun PlayerCards(
 
 /** The form's second half: teams, the game mode, and the house rules. */
 @Composable
-private fun GameCards(setup: GameSetupState, form: GameSetupForm) {
+private fun GameCards(setup: GameSetupState, viewModel: GameViewModel) {
+    val form = viewModel.setupForm
     SetupCard(title = stringResource(Res.string.setup_teams)) { TeamsChoice(setup, form) }
-    SetupCard(title = stringResource(Res.string.setup_game_mode)) {
-        GameModeSelector(selected = setup.gameMode, onSelect = form::setGameMode)
+    SetupCard(title = stringResource(Res.string.setup_game_mode)) { GameModeChoice(setup, viewModel) }
+    // A custom mode sets the house rules itself: the card says which, in place of the switches.
+    val custom = setup.customMode
+    if (custom != null) {
+        SetupCard(title = stringResource(Res.string.setup_house_rules), modifier = Modifier.semantics(mergeDescendants = true) {}) {
+            Text(
+                text = stringResource(Res.string.setup_house_rules_custom, custom.name, houseRuleList(custom.houseRules)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        return
     }
     // Until a first game is finished, a note in place of the picker; the picks are kept, but not played.
     if (!setup.houseRulesUnlocked) {
@@ -604,14 +630,90 @@ private fun PlayerCountSelector(selected: Int, onSelect: (Int) -> Unit) {
     )
 }
 
+/** A pick on the Game Mode card: a built-in mode, or one of the player's own. */
+private sealed interface ModeOption {
+    data class BuiltIn(val mode: GameMode) : ModeOption
+
+    data class Custom(val mode: CustomMode) : ModeOption
+}
+
+/**
+ * The mode picker: every built-in mode, then (once house rules are unlocked) the player's custom modes, each a name and
+ * one line (a custom mode's: its base and house rules). Under it, a button that makes a custom mode, and while one is
+ * picked, its Edit and Delete; Delete asks first.
+ */
 @Composable
-private fun GameModeSelector(selected: GameMode, onSelect: (GameMode) -> Unit) {
+private fun GameModeChoice(setup: GameSetupState, viewModel: GameViewModel) {
+    val form = viewModel.setupForm
+    val custom = setup.customMode
+    val options = GameMode.entries.map(ModeOption::BuiltIn) + if (setup.houseRulesUnlocked) setup.customModes.map(ModeOption::Custom) else emptyList()
     ChoicePicker(
         title = stringResource(Res.string.setup_game_mode),
-        options = GameMode.entries,
-        selected = selected,
-        onSelect = onSelect,
-        label = { stringResource(it.displayName) },
-        description = { stringResource(it.description) },
+        options = options,
+        selected = custom?.let(ModeOption::Custom) ?: ModeOption.BuiltIn(setup.gameMode),
+        onSelect = { option ->
+            when (option) {
+                is ModeOption.BuiltIn -> form.setGameMode(option.mode)
+                is ModeOption.Custom -> form.selectCustomMode(option.mode.id)
+            }
+        },
+        label = { option ->
+            when (option) {
+                is ModeOption.BuiltIn -> stringResource(option.mode.displayName)
+                is ModeOption.Custom -> option.mode.name
+            }
+        },
+        description = { option ->
+            when (option) {
+                is ModeOption.BuiltIn -> stringResource(option.mode.description)
+                is ModeOption.Custom -> stringResource(Res.string.setup_custom_mode_description, stringResource(option.mode.base.displayName), houseRuleList(option.mode.houseRules))
+            }
+        },
     )
+    if (!setup.houseRulesUnlocked) return
+    // The custom mode being made or changed (null for none), and the one waiting to be deleted.
+    var editing by remember { mutableStateOf<EditorOpen?>(null) }
+    var deleting by remember { mutableStateOf<CustomMode?>(null) }
+    // Wrapping at a large font rather than running off the card.
+    FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
+        if (custom != null) {
+            TextButton(onClick = { editing = EditorOpen(custom) }) { Text(stringResource(Res.string.setup_custom_edit)) }
+            TextButton(onClick = { deleting = custom }) { Text(stringResource(Res.string.setup_custom_delete)) }
+        }
+        TextButton(onClick = { editing = EditorOpen(null) }) { Text(stringResource(Res.string.setup_custom_new)) }
+    }
+    editing?.let { open ->
+        CustomModeEditor(
+            editing = open.mode,
+            existing = setup.customModes,
+            onSave = { mode ->
+                editing = null
+                viewModel.saveCustomMode(mode)
+            },
+            onDismiss = { editing = null },
+        )
+    }
+    deleting?.let { mode ->
+        LudoPlusDialog(
+            icon = Symbols.DeleteForever,
+            title = stringResource(Res.string.setup_custom_delete_title, mode.name),
+            message = stringResource(Res.string.setup_custom_delete_message),
+            confirmLabel = stringResource(Res.string.setup_custom_delete),
+            onConfirm = {
+                deleting = null
+                viewModel.deleteCustomMode(mode.id)
+            },
+            dismissLabel = stringResource(Res.string.common_cancel),
+            onDismiss = { deleting = null },
+            onDismissRequest = { deleting = null },
+        )
+    }
 }
+
+/** The editor, open on [mode] (null for a new one). */
+private class EditorOpen(val mode: CustomMode?)
+
+/** [houseRules]' names as a list ("Blockades, Must Capture, and Free Start"), in [HouseRule]'s order. */
+@Composable
+private fun houseRuleList(houseRules: Set<HouseRule>): String =
+    spokenList(HouseRule.entries.filter { it in houseRules }.map { stringResource(it.title) })

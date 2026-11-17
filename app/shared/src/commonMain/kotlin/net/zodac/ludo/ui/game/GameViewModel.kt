@@ -41,6 +41,7 @@ import net.zodac.ludo.game.TutorialScript
 import net.zodac.ludo.game.TutorialStep
 import net.zodac.ludo.game.localHourOfDay
 import net.zodac.ludo.game.nowEpochMillis
+import net.zodac.ludo.model.CustomMode
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
@@ -201,19 +202,20 @@ class GameViewModel(
         val setup = setupForm.setup.value
         if (setup.duplicateNameSlots(defaultName).isNotEmpty()) return false
         val players = setupForm.playerConfigs(defaultName)
-        val rollOff = RollOff.roll(players.size, setup.gameMode.rules.dieFaces, random)
+        val mode = setup.playedMode
+        val rollOff = RollOff.roll(players.size, mode.rules.dieFaces, random)
         cpuTurn?.cancel()
         val previousGame = _game.value?.state
         val startedAt = now()
         playMark = elapsedMillis().takeIf { foreground.value }
         val started = StartedGame(
-            mode = setup.gameMode,
+            mode = mode,
             players = players,
             state = GameState.new(
-                setup.gameMode,
+                mode,
                 players.size,
                 first = rollOff.first,
-                rules = setup.gameMode.rules.forPlayers(players.size).copy(
+                rules = mode.rules.forPlayers(players.size).copy(
                     stopAtFirstWinner = stopAtFirstWinner.value,
                     teams = setup.teams,
                     partnerCaptures = setup.partnerCaptures,
@@ -222,6 +224,7 @@ class GameViewModel(
             ),
             rollOff = rollOff,
             startedAtEpochMillis = startedAt,
+            customName = setup.customMode?.name,
         )
         // A game with house rules earns nothing.
         tracker = if (started.earnsAchievements) AchievementTracker(players) else null
@@ -230,6 +233,24 @@ class GameViewModel(
         viewModelScope.launch { setup.saveTo(settingsRepository) }
         playCpuTurn()
         return true
+    }
+
+    /** Keeps [mode] among the player's custom modes, picked on the form, and saves them all at once. */
+    fun saveCustomMode(mode: CustomMode) {
+        setupForm.saveCustomMode(mode)
+        saveCustomModes()
+    }
+
+    /** Forgets the custom mode [id], and saves the rest at once. */
+    fun deleteCustomMode(id: String) {
+        setupForm.deleteCustomMode(id)
+        saveCustomModes()
+    }
+
+    private fun saveCustomModes() {
+        val modes = setupForm.setup.value.customModes
+        // Written even if the screen is left at once; one that fails costs the change, not the app.
+        viewModelScope.launch { withContext(NonCancellable) { orNullOnFailure { settingsRepository.setCustomModes(modes) } } }
     }
 
     /**
@@ -265,23 +286,23 @@ class GameViewModel(
     }
 
     /**
-     * The current player moves [pawn] (a partner's, [owner]'s, when they roll for one), if it's a person's turn and that
-     * pawn has a legal move. In the tutorial, only the move step's own pawn, once the step is shown.
+     * The current player moves [pawn] (a partner's, [owner]'s, when they roll for one; with two dice, by [die]), if it's a
+     * person's turn and that pawn has a legal move. In the tutorial, only the move step's own pawn, once the step is shown.
      */
-    fun move(pawn: Int, owner: Int? = null) {
+    fun move(pawn: Int, owner: Int? = null, die: Int? = null) {
         val game = _game.value ?: return
         val phase = game.state.phase
-        if (phase !is TurnPhase.AwaitingMove || game.currentIsCpu || phase.moves.none { it.pawn == pawn && it.owner == owner }) return
+        if (phase !is TurnPhase.AwaitingMove || game.currentIsCpu || phase.moves.none { it.pawn == pawn && it.owner == owner && (die == null || it.roll == die) }) return
         val progress = tutorialProgress
         if (progress != null) {
             val step = progress.current as? TutorialStep.Move ?: return
             if (step.pawn != pawn || progress.shown.value != step) return
         }
-        update(LudoEngine.move(game.state, pawn, owner))
+        update(LudoEngine.move(game.state, pawn, owner, die))
     }
 
-    /** The current player makes [move] ([move] by pawn). */
-    fun move(move: Move) = move(move.pawn, move.owner)
+    /** The current player makes [move] ([move] by pawn, owner, and die). */
+    fun move(move: Move) = move(move.pawn, move.owner, move.roll)
 
     private fun update(state: GameState) {
         val game = _game.value ?: return
@@ -363,7 +384,8 @@ class GameViewModel(
     private fun rolled(state: GameState): GameState {
         val picked = _nextRoll.value ?: return LudoEngine.roll(state, random)
         _nextRoll.value = null
-        return LudoEngine.applyRoll(state, picked)
+        // With two dice, the pick is the first; the second is fair.
+        return LudoEngine.applyDice(state, listOf(picked) + List(state.rules.dice - 1) { random.nextInt(1, state.rules.dieFaces + 1) })
     }
 
     /** Whether this is the guided game: see [tutorial]. */
@@ -479,7 +501,7 @@ class GameViewModel(
                 is TurnPhase.AwaitingMove -> {
                     val strategy = CpuStrategy.of(now.players[now.state.current].difficulty)
                     val choice = strategy.choose(now.state, phase.moves, random)
-                    LudoEngine.move(now.state, choice.pawn, choice.owner)
+                    LudoEngine.move(now.state, choice)
                 }
                 TurnPhase.Finished -> return@launch
             }
@@ -534,6 +556,8 @@ data class StartedGame(
     val startedAtEpochMillis: Long = 0,
     val playMillis: Long = 0,
     val finishMillis: Map<Int, Long> = emptyMap(),
+    /** A custom mode's name ([net.zodac.ludo.model.CustomMode]), the game shown under it: null for a built-in mode. */
+    val customName: String? = null,
 ) {
     /** Whether the player whose turn it is is the computer. */
     val currentIsCpu: Boolean get() = players[state.current].type == PlayerType.AI

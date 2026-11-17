@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.zodac.ludo.model.BoardGeometry
+import net.zodac.ludo.model.CustomMode
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.HouseRule
@@ -69,6 +70,11 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         fun setHouseRules(houseRules: Set<HouseRule>) {
             prefs[HOUSE_RULES_KEY] = houseRules.map { it.id }.toSet()
         }
+
+        /** The custom mode New Game has picked, by id, or none for a built-in mode ([setGameMode]'s). */
+        fun setCustomModeChoice(id: String?) {
+            if (id == null) prefs.remove(CUSTOM_MODE_KEY) else prefs[CUSTOM_MODE_KEY] = id
+        }
     }
 
     /** Settings no version reads any more, removed at launch. None yet. */
@@ -113,7 +119,16 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
         /** The house rules the setup form last had on: none until it's chosen, any this app doesn't know dropped. */
         val houseRules: Set<HouseRule> get() = prefs[HOUSE_RULES_KEY].orEmpty().mapNotNull { storedIdOf<HouseRule>(it) }.toSet()
+
+        /** The player's custom modes, in the order they were made ([CustomModesJson]). */
+        val customModes: List<CustomMode> get() = prefs[CUSTOM_MODES_KEY]?.let(CustomModesJson::decode).orEmpty()
+
+        /** The custom mode New Game last picked, by id: null for a built-in mode. */
+        val customModeId: String? get() = prefs[CUSTOM_MODE_KEY]
     }
+
+    /** Keeps [modes] as the player's custom modes, replacing those kept before. */
+    suspend fun setCustomModes(modes: List<CustomMode>) = set(CUSTOM_MODES_KEY, CustomModesJson.encode(modes))
 
     val confirmBeforeLeavingGame: Flow<Boolean> = read(CONFIRM_BEFORE_LEAVING_GAME_KEY, default = true)
 
@@ -226,6 +241,8 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val PARTNER_CAPTURES_KEY = booleanPreferencesKey("partner_captures")
         val ROLL_FOR_PARTNERS_KEY = booleanPreferencesKey("roll_for_partners")
         val HOUSE_RULES_KEY = stringSetPreferencesKey("house_rules")
+        val CUSTOM_MODES_KEY = stringPreferencesKey("custom_modes")
+        val CUSTOM_MODE_KEY = stringPreferencesKey("custom_mode")
         val PLAY_SECONDS_KEY = intPreferencesKey("play_seconds")
 
         // Stored ids: permanent once released. The die's and background's keys are DiceFive's.

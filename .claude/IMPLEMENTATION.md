@@ -18,7 +18,7 @@ reorders them.
 | 6 | Achievements | Done |
 | 7 | Styles | Done |
 | 8 | 2-8 players | Done |
-| 9 | Game modes and modifiers | In progress |
+| 9 | Game modes and modifiers | Done |
 | 10 | Google Play: Play Console, Play Games, and the store listing | Not started |
 | 11 | In-app purchases | Not started |
 | 12 | Netplay | Not started |
@@ -372,12 +372,16 @@ count but 4 has a board of its own; one player on two colours was dropped.
     stays off the Leaderboard and out of Statistics, and earns no achievements. Must Capture, Guarded Starts (a start
     square safe only for its own colour), Free Start, Three Tries, Out on a 1, Blockades, No Capture Roll, No Home Roll,
     and Endless 6s.
-- [ ] Modes: rule sets that are data on `GameMode`, never `if (mode == X)` (`GAME_MODES.md`). Decided with the
+- [x] Modes: rule sets that are data on `GameMode`, never `if (mode == X)` (`GAME_MODES.md`). Decided with the
     maintainer (2026-11-18): each mode has its own Leaderboard and Statistics page, and earns no achievements until the
     review of the list adds any; a short track and power-up squares weren't picked.
     - [x] Quick: two pawns each.
-    - [ ] Two dice: each die moved on its own, one after the other, on any pawns (the same pawn twice allowed).
-- [ ] Custom game modes: a player-built set of modifiers, saved and named.
+    - [x] Two Dice: each die moved on its own, one after the other, on any pawns (the same pawn twice allowed); a 6 on
+        either die brings a pawn out with that die; doubles roll again, three in a row end the turn; a capture or a pawn
+        home still earns a roll (the maintainer, 2026-11-18).
+- [x] Custom game modes (the maintainer, 2026-11-18): a base mode and at least one house rule, named and saved, listed
+    in New Game's mode picker after the built-in modes, with New, Edit, and Delete on the card. As any game with house
+    rules, their games count towards nothing (`DESIGN.md`, "Custom modes").
 
 ## Phase 10: Google Play
 

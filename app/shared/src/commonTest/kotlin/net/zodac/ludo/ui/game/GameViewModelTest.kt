@@ -32,6 +32,8 @@ import net.zodac.ludo.game.GameEvent
 import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.model.BoardGeometry
+import net.zodac.ludo.model.CustomMode
+import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
@@ -297,6 +299,48 @@ class GameViewModelTest {
         assertEquals(emptySet(), locked.state.rules.houseRules)
         runCurrent()
         assertEquals(setOf(HouseRule.BLOCKADES), SettingsRepository(prefs).snapshot().houseRules)
+    }
+
+    @Test
+    fun `a custom mode saved is picked - plays its base with its house rules under its name - is kept - and once deleted leaves its base`() = runTest(dispatcher) {
+        val prefs = InMemoryPreferences()
+        fun viewModel(finished: Boolean = true) =
+            GameViewModel(SettingsRepository(prefs), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao(finishedGame = finished)))
+        val viewModel = viewModel()
+        runCurrent()
+        val mode = CustomMode("custom_1", "Cut-Throat", GameMode.QUICK, setOf(HouseRule.MUST_CAPTURE))
+        viewModel.setupForm.setHouseRule(HouseRule.BLOCKADES, on = true)
+        viewModel.saveCustomMode(mode)
+        assertEquals(mode, viewModel.setupForm.setup.value.customMode)
+        assertTrue(viewModel.startGame { "Player $it" })
+        val game = assertNotNull(viewModel.game.value)
+        assertEquals(GameMode.QUICK, game.mode)
+        assertEquals("Cut-Throat", game.customName)
+        // Its own house rules, not those switched on for the built-in modes.
+        assertEquals(setOf(HouseRule.MUST_CAPTURE), game.state.rules.houseRules)
+        assertEquals(2, game.state.rules.pawnsPerPlayer)
+        runCurrent()
+
+        // Kept, and picked, next time.
+        val again = viewModel()
+        runCurrent()
+        assertEquals(listOf(mode), again.setupForm.setup.value.customModes)
+        assertEquals(mode, again.setupForm.setup.value.customMode)
+        assertEquals(setOf(HouseRule.BLOCKADES), again.setupForm.setup.value.houseRules)
+        // Locked, as house rules are until a game is finished: its base, plain.
+        val locked = viewModel(finished = false)
+        runCurrent()
+        assertNull(locked.setupForm.setup.value.customMode)
+        assertTrue(locked.startGame { "Player $it" })
+        assertEquals(GameMode.QUICK, locked.state.mode)
+        assertEquals(emptySet(), locked.state.rules.houseRules)
+        assertNull(assertNotNull(locked.game.value).customName)
+
+        again.deleteCustomMode("custom_1")
+        runCurrent()
+        assertEquals(GameMode.QUICK, again.setupForm.setup.value.gameMode)
+        assertNull(again.setupForm.setup.value.customMode)
+        assertEquals(emptyList(), SettingsRepository(prefs).snapshot().customModes)
     }
 
     @Test

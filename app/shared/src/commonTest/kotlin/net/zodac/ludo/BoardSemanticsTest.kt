@@ -58,7 +58,7 @@ class BoardSemanticsTest : UiTest() {
     private var backs = 0
 
     private fun show(state: GameState) {
-        val game = StartedGame(GameMode.CLASSIC, players, state, RollOff(listOf(mapOf(0 to 6, 1 to 1, 2 to 1, 3 to 1)), 0))
+        val game = StartedGame(state.mode, players, state, RollOff(listOf(mapOf(0 to 6, 1 to 1, 2 to 1, 3 to 1)), 0))
         showcase.show {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
                 LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it.pawn }, onBack = { backs++ }, onResults = {}) }
@@ -105,6 +105,46 @@ class BoardSemanticsTest : UiTest() {
             "Square 5, Red blockade, Red pawn 1, 52 squares from home, Red pawn 2, 52 squares from home",
             "Square 15, Green pawn 1, 55 squares from home",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
+    }
+
+    @Test
+    fun `two dice - each named with its face - one picked for the next move - the prompt naming it - and the die left after a move`() = uiTest(TestScreen(411, 891)) {
+        val new = GameState.new(GameMode.TWO_DICE, 4)
+        val rolled = LudoEngine.applyDice(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = if (i == 0) listOf(10, Y, Y, Y) else listOf(Y, Y, Y, Y)) }), listOf(3, 5))
+        var state = rolled
+        val picks = mutableListOf<Move>()
+        val game = { StartedGame(GameMode.TWO_DICE, players, state, RollOff(listOf(mapOf(0 to 6, 1 to 1, 2 to 1, 3 to 1)), 0)) }
+        showcase.show {
+            CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
+                LudoPlusTheme { GameContent(game(), onRoll = {}, onMove = { picks += it }, onBack = {}, onResults = {}) }
+            }
+        }
+        compose.onNodeWithContentDescription("First die showing 3, selected").assertExists()
+        compose.onNodeWithContentDescription("Second die showing 5").assert(onClickLabel("Use this die")).performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Second die showing 5, selected").assertExists()
+        val prompt = compose.onNodeWithContentDescription("Alex rolled 3 and 5. Pick a pawn to move 5.")
+        // TalkBack is offered each die's move; the board, the picked die's.
+        assertEquals(
+            listOf("Move Red pawn 1 3 squares", "Move Red pawn 1 5 squares"),
+            prompt.fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label },
+        )
+        compose.onNodeWithContentDescription("Square 11, Red pawn 1, 46 squares from home").assert(onClickLabel("Move Red pawn 1 5 squares"))
+            .performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(listOf(Move(0, 10, 15, roll = 5)), picks)
+
+        state = LudoEngine.move(rolled, picks.single())
+        show(state)
+        compose.onNodeWithContentDescription("Alex has 3 left. Pick a pawn to move.").assertExists()
+        compose.onNodeWithContentDescription("Second die showing 5, moved").assertExists()
+        compose.onNodeWithContentDescription("First die showing 3").assertExists()
+
+        // Before a roll, either die rolls both.
+        state = new
+        show(state)
+        compose.onNodeWithContentDescription("Alex, tap the dice to roll.").assertExists()
+        compose.onNodeWithContentDescription("First die").assert(onClickLabel("Roll"))
+        compose.onNodeWithContentDescription("Second die").assert(onClickLabel("Roll"))
     }
 
     @Test

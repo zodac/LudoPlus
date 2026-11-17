@@ -145,29 +145,32 @@ class GameAchievementsTest {
     }
 
     @Test
-    fun `a Quick game earns nothing - started or played out`() = runTest(dispatcher) {
-        val store = InMemoryAchievementStore()
-        val viewModel = viewModel(store, hour = 2)
-        viewModel.setupForm.setGameMode(GameMode.QUICK)
-        viewModel.startGame { "Player $it" }
-        runCurrent()
-        val state = { assertNotNull(viewModel.game.value).state }
-        assertEquals(2, state().rules.pawnsPerPlayer)
-        while (!state().isFinished) {
-            if (state().current != 0) {
-                advanceTimeBy(1_000)
+    fun `a Quick or Two Dice game earns nothing - started or played out - two dice's moves made die by die`() = runTest(dispatcher) {
+        for (mode in listOf(GameMode.QUICK, GameMode.TWO_DICE)) {
+            val store = InMemoryAchievementStore()
+            val viewModel = viewModel(store, hour = 2)
+            viewModel.setupForm.setGameMode(mode)
+            viewModel.startGame { "Player $it" }
+            runCurrent()
+            val state = { assertNotNull(viewModel.game.value).state }
+            assertEquals(mode.rules.pawnsPerPlayer, state().rules.pawnsPerPlayer)
+            assertEquals(mode.rules.dice, state().rules.dice)
+            while (!state().isFinished) {
+                if (state().current != 0) {
+                    advanceTimeBy(1_000)
+                    runCurrent()
+                    continue
+                }
+                when (val phase = state().phase) {
+                    is TurnPhase.AwaitingMove -> viewModel.move(phase.moves.first())
+                    else -> viewModel.roll()
+                }
                 runCurrent()
-                continue
-            }
-            when (val phase = state().phase) {
-                is TurnPhase.AwaitingMove -> viewModel.move(phase.moves.first().pawn)
-                else -> viewModel.roll()
             }
             runCurrent()
+            assertEquals(emptySet(), store.unlocked, "$mode")
+            assertEquals(emptyMap(), store.mutableState.value.counters, "$mode")
         }
-        runCurrent()
-        assertEquals(emptySet(), store.unlocked)
-        assertEquals(emptyMap(), store.mutableState.value.counters)
     }
 
     @Test

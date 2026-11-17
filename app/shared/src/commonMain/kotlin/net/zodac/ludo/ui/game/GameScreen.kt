@@ -67,14 +67,22 @@ import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.common_default_player_name
+import net.zodac.ludo.resources.game_die_first_cd
+import net.zodac.ludo.resources.game_die_second_cd
+import net.zodac.ludo.resources.game_die_selected_spoken
+import net.zodac.ludo.resources.game_die_showing_named_cd
+import net.zodac.ludo.resources.game_die_used_spoken
 import net.zodac.ludo.resources.game_event_all_home
 import net.zodac.ludo.resources.game_event_capture
 import net.zodac.ludo.resources.game_event_finished
 import net.zodac.ludo.resources.game_event_first
 import net.zodac.ludo.resources.game_event_home
 import net.zodac.ludo.resources.game_event_no_move
+import net.zodac.ludo.resources.game_event_no_move_dice
+import net.zodac.ludo.resources.game_event_no_move_dice_tries
 import net.zodac.ludo.resources.game_event_no_move_tries
 import net.zodac.ludo.resources.game_event_team_finished
+import net.zodac.ludo.resources.game_event_three_doubles
 import net.zodac.ludo.resources.game_event_three_sixes
 import net.zodac.ludo.resources.game_over_results
 import net.zodac.ludo.resources.game_over_team_winner
@@ -84,12 +92,18 @@ import net.zodac.ludo.resources.game_player_place
 import net.zodac.ludo.resources.game_player_team_spoken
 import net.zodac.ludo.resources.game_player_turn_spoken
 import net.zodac.ludo.resources.game_prompt_cpu_move
+import net.zodac.ludo.resources.game_prompt_cpu_move_dice
+import net.zodac.ludo.resources.game_prompt_cpu_move_die_left
 import net.zodac.ludo.resources.game_prompt_cpu_roll
 import net.zodac.ludo.resources.game_prompt_cpu_roll_again
 import net.zodac.ludo.resources.game_prompt_move
+import net.zodac.ludo.resources.game_prompt_move_dice
+import net.zodac.ludo.resources.game_prompt_move_die_left
 import net.zodac.ludo.resources.game_prompt_move_partner
 import net.zodac.ludo.resources.game_prompt_roll
 import net.zodac.ludo.resources.game_prompt_roll_again
+import net.zodac.ludo.resources.game_prompt_roll_again_dice
+import net.zodac.ludo.resources.game_prompt_roll_dice
 import net.zodac.ludo.resources.game_tutorial_coach_name
 import net.zodac.ludo.resources.game_tutorial_part
 import net.zodac.ludo.ui.common.BackHandler
@@ -290,14 +304,22 @@ fun GameContent(
         started.state.players.indexOfFirst { it.seat == seat }.takeIf { it >= 0 }?.let { started.players[it].colour }
     }
     val phase = started.state.phase
-    val allMoves = if (phase is TurnPhase.AwaitingMove && !started.currentIsCpu) phase.moves else emptyList()
+    val humanMoves = if (phase is TurnPhase.AwaitingMove && !started.currentIsCpu) phase.moves else emptyList()
     // In the tutorial, only the step's own move: its pawn alone is ringed, and the only one a tap or TalkBack can move.
-    val moves = if (tutorial == null) allMoves else allMoves.filter { it.pawn == (tutorial.step as? TutorialStep.Move)?.pawn }
+    val allMoves = if (tutorial == null) humanMoves else humanMoves.filter { it.pawn == (tutorial.step as? TutorialStep.Move)?.pawn }
+    // With two dice, the die a tap on a pawn moves by: the one tapped, or at first the first with a move. The board rings
+    // only its moves; TalkBack is offered every die's.
+    var pickedDie by remember(phase) { mutableStateOf<Int?>(null) }
+    val dieValues = allMoves.mapNotNull { it.roll }.distinct()
+    val selectedDie = pickedDie?.takeIf { it in dieValues } ?: dieValues.firstOrNull()
+    val pick: (Int) -> Unit = { pickedDie = it }
+    val dice = DiceChoice(selectedDie, onSelect = pick.takeIf { dieValues.size > 1 })
+    val moves = allMoves.filter { it.roll == null || it.roll == selectedDie }
     val rollStep = tutorial?.step is TutorialStep.Roll
     val players = @Composable { if (tutorial == null) PlayerCards(started, columns = 2) else TutorialCoachCard(tutorial) }
     val background = LocalGameVisualTheme.current.background
     ScreenScaffold(
-        title = stringResource(started.mode.displayName),
+        title = started.customName ?: stringResource(started.mode.displayName),
         onBack = onBack,
         driftingDice = false,
         wide = true,
@@ -319,14 +341,14 @@ fun GameContent(
                     board(Modifier.size(minOf(height, width - SIDE_PANEL_WIDTH)))
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         players()
-                        TurnPanel(started, moves, seatColours, onRoll, onMove, onResults, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep)
+                        TurnPanel(started, allMoves, seatColours, onRoll, onMove, onResults, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
                     }
                 }
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     players()
                     board(Modifier.fillMaxWidth())
-                    TurnPanel(started, moves, seatColours, onRoll, onMove, onResults, dieSize = 72.dp, tutorial = tutorial, rollStep = rollStep)
+                    TurnPanel(started, allMoves, seatColours, onRoll, onMove, onResults, dieSize = 72.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
                 }
             }
         }
@@ -502,6 +524,7 @@ private fun TurnPanel(
     dieSize: Dp,
     tutorial: TutorialView? = null,
     rollStep: Boolean = false,
+    dice: DiceChoice = DiceChoice(),
 ) {
     val state = game.state
     val name = { index: Int -> game.players[index].name }
@@ -519,22 +542,27 @@ private fun TurnPanel(
     }
     val phase = state.phase
     val roll = (phase as? TurnPhase.AwaitingMove)?.roll ?: lastRoll(state.lastEvent)
+    val canRoll = phase == TurnPhase.AwaitingRoll && !game.currentIsCpu && (tutorial == null || rollStep)
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        GameDie(
-            value = roll,
-            roll = state.lastEvent.takeIf { it !is GameEvent.Moved },
-            canRoll = phase == TurnPhase.AwaitingRoll && !game.currentIsCpu && (tutorial == null || rollStep),
-            onRoll = onRoll,
-            modifier = Modifier
-                .then(if (rollStep) Modifier.tutorialOutline(rememberTutorialPulse()) else Modifier)
-                .size(dieSize),
-        )
+        if (state.rules.dice > 1) {
+            TwoDice(state, canRoll, onRoll, dice, dieSize)
+        } else {
+            GameDie(
+                value = roll,
+                roll = state.lastEvent.takeIf { it !is GameEvent.Moved },
+                canRoll = canRoll,
+                onRoll = onRoll,
+                modifier = Modifier
+                    .then(if (rollStep) Modifier.tutorialOutline(rememberTutorialPulse()) else Modifier)
+                    .size(dieSize),
+            )
+        }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            StatusLines(game, moves, seatColours, onMove, tutorial = tutorial != null)
+            StatusLines(game, moves, seatColours, onMove, tutorial = tutorial != null, selectedDie = dice.selected)
         }
     }
 }
@@ -546,6 +574,7 @@ private fun ColumnScope.StatusLines(
     seatColours: List<PlayerColour?>,
     onMove: (Move) -> Unit,
     tutorial: Boolean = false,
+    selectedDie: Int? = null,
 ) {
     val state = game.state
     val name = { index: Int -> game.players[index].name }
@@ -554,9 +583,13 @@ private fun ColumnScope.StatusLines(
         // The tutorial's parts start with no roll-off: the coach says who's playing.
         event == null && tutorial -> null
         event == null -> stringResource(Res.string.game_event_first, name(game.rollOff.first))
+        event is GameEvent.NoMove && event.second != null && event.triesLeft > 0 ->
+            pluralStringResource(Res.plurals.game_event_no_move_dice_tries, event.triesLeft, name(event.player), event.roll, event.second, event.triesLeft)
+        event is GameEvent.NoMove && event.second != null -> stringResource(Res.string.game_event_no_move_dice, name(event.player), event.roll, event.second)
         event is GameEvent.NoMove && event.triesLeft > 0 ->
             pluralStringResource(Res.plurals.game_event_no_move_tries, event.triesLeft, name(event.player), event.roll, event.triesLeft)
         event is GameEvent.NoMove -> stringResource(Res.string.game_event_no_move, name(event.player), event.roll)
+        event is GameEvent.RollAgainLimit && event.second != null -> stringResource(Res.string.game_event_three_doubles, name(event.player))
         event is GameEvent.RollAgainLimit -> stringResource(Res.string.game_event_three_sixes, name(event.player))
         event is GameEvent.Moved && event.finished -> finishedLine(game, event.move.owner ?: event.player)
 
@@ -569,13 +602,21 @@ private fun ColumnScope.StatusLines(
     }
     val phase = state.phase
     val current = name(state.current)
+    val twoDice = phase is TurnPhase.AwaitingMove && state.rules.dice > 1
     val prompt = when {
+        // Two dice: the roll, or the die left, and the die a pawn moves by.
+        twoDice && phase.dice.size > 1 && game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_move_dice, current, phase.rolled[0], phase.rolled[1])
+        twoDice && game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_move_die_left, current, phase.roll)
+        twoDice && phase.dice.size > 1 -> stringResource(Res.string.game_prompt_move_dice, current, phase.rolled[0], phase.rolled[1], selectedDie ?: phase.roll)
+        twoDice -> stringResource(Res.string.game_prompt_move_die_left, current, phase.roll)
         phase is TurnPhase.AwaitingMove && game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_move, current, phase.roll)
         phase is TurnPhase.AwaitingMove && phase.moves.all { it.owner != null } -> stringResource(Res.string.game_prompt_move_partner, current, phase.roll)
         phase is TurnPhase.AwaitingMove -> stringResource(Res.string.game_prompt_move, current, phase.roll)
         game.currentIsCpu && state.rollingAgain -> stringResource(Res.string.game_prompt_cpu_roll_again, current)
         game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_roll, current)
+        state.rollingAgain && state.rules.dice > 1 -> stringResource(Res.string.game_prompt_roll_again_dice, current)
         state.rollingAgain -> stringResource(Res.string.game_prompt_roll_again, current)
+        state.rules.dice > 1 -> stringResource(Res.string.game_prompt_roll_dice, current)
         else -> stringResource(Res.string.game_prompt_roll, current)
     }
     Text(
@@ -600,6 +641,64 @@ private fun ColumnScope.StatusLines(
             if (actions.isNotEmpty()) customActions = actions
         },
     )
+}
+
+/** With two dice, the die the next move uses ([selected]), and while there's a choice, how to pick another ([onSelect]). */
+class DiceChoice(val selected: Int? = null, val onSelect: ((Int) -> Unit)? = null)
+
+/**
+ * Two dice side by side, each a little smaller than one die, showing the roll: the one awaiting its moves
+ * ([TurnPhase.AwaitingMove.rolled]), or the last one rolled, kept until the next. A die already moved is faded; while
+ * both are still to move, a tap on one picks it for the next move (ringed), and TalkBack hears "First die showing 3,
+ * selected". Before a roll, a tap on either rolls both.
+ */
+@Composable
+private fun TwoDice(state: GameState, canRoll: Boolean, onRoll: () -> Unit, choice: DiceChoice, dieSize: Dp) {
+    val phase = state.phase as? TurnPhase.AwaitingMove
+    val current = phase?.rolled ?: lastDice(state.lastEvent)
+    var kept by remember { mutableStateOf(current) }
+    LaunchedEffect(current) { if (current != null) kept = current }
+    val shown = current ?: kept
+    // Which of the roll's dice are still to move: a double's first, of two the same.
+    val left = phase?.dice?.toMutableList()
+    val used = List(2) { index -> left != null && shown != null && !left.remove(shown[index]) }
+    val selectedIndex = shown?.indices?.firstOrNull { !used[it] && shown[it] == choice.selected }
+    val tumble = state.lastEvent.takeIf { it !is GameEvent.Moved }
+    val names = listOf(Res.string.game_die_first_cd, Res.string.game_die_second_cd)
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        for (index in 0..1) {
+            val value = shown?.get(index)
+            val description = joinClauses(
+                listOfNotNull(
+                    value?.let { stringResource(Res.string.game_die_showing_named_cd, stringResource(names[index]), it) } ?: stringResource(names[index]),
+                    stringResource(Res.string.game_die_used_spoken).takeIf { used[index] },
+                    stringResource(Res.string.game_die_selected_spoken).takeIf { index == selectedIndex && choice.onSelect != null },
+                ),
+            )
+            GameDie(
+                value = value,
+                roll = tumble,
+                canRoll = canRoll,
+                onRoll = onRoll,
+                modifier = Modifier.size(dieSize * TWO_DICE_SCALE),
+                description = description,
+                used = used[index],
+                selected = index == selectedIndex && choice.onSelect != null,
+                onSelect = choice.onSelect?.takeIf { !used[index] && value != null && index != selectedIndex }?.let { pick -> { pick(value!!) } },
+            )
+        }
+    }
+}
+
+/** How big each of two dice is, of one die's size. */
+private const val TWO_DICE_SCALE = 0.8f
+
+/** The two dice the last action showed, for them to keep showing until the next: null for a move, which shows none. */
+private fun lastDice(event: GameEvent?): List<Int>? = when (event) {
+    is GameEvent.Rolled -> event.second?.let { listOf(event.roll, it) }
+    is GameEvent.NoMove -> event.second?.let { listOf(event.roll, it) }
+    is GameEvent.RollAgainLimit -> event.second?.let { listOf(event.roll, it) }
+    else -> null
 }
 
 /** The roll the last action showed, for the die to keep showing until the next. */

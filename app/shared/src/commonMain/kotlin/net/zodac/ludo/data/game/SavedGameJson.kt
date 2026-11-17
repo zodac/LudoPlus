@@ -20,6 +20,7 @@ import net.zodac.ludo.data.objOrNull
 import net.zodac.ludo.data.objectList
 import net.zodac.ludo.data.parseJson
 import net.zodac.ludo.data.string
+import net.zodac.ludo.data.stringOrNull
 import net.zodac.ludo.data.stringList
 import net.zodac.ludo.data.toJson
 import net.zodac.ludo.game.GameEvent
@@ -65,6 +66,8 @@ object SavedGameJson {
         put("finishMillis", JsonObject(game.finishMillis.entries.associate { (player, millis) -> player.toString() to JsonNumber(millis) }))
         put("players", JsonArray(game.players.map(::encodePlayer)))
         put("rollOff", encodeRollOff(game.rollOff))
+        // A custom mode's name, for the game to be shown under; absent for a built-in mode.
+        game.customName?.let { put("customName", it) }
         if (game.state.rules.stopAtFirstWinner) put("stopAtFirstWinner", true)
         // The house rules on, in their own order; absent for none.
         if (game.state.rules.hasHouseRules) put("houseRules", JsonArray(HouseRule.entries.filter { it in game.state.rules.houseRules }.map { JsonString(it.id) }))
@@ -109,6 +112,7 @@ object SavedGameJson {
             startedAtEpochMillis = obj.long("startedAt"),
             playMillis = playMillis,
             finishMillis = finishMillis,
+            customName = obj.stringOrNull("customName"),
         )
     }
 
@@ -161,8 +165,15 @@ object SavedGameJson {
             ),
         )
         put("current", state.current)
-        // The roll waiting for a move, or null while waiting for a roll; a finished game is never saved.
-        put("roll", (state.phase as? TurnPhase.AwaitingMove)?.roll)
+        // The roll waiting for a move, or null while waiting for a roll; a finished game is never saved. With two dice, the
+        // dice still to move, and whether the roll has earned another once they are.
+        val waiting = state.phase as? TurnPhase.AwaitingMove
+        put("roll", waiting?.roll)
+        if (waiting != null && state.rules.dice > 1) {
+            put("dice", jsonInts(waiting.dice))
+            put("rolled", jsonInts(waiting.rolled))
+            if (waiting.earned) put("earned", true)
+        }
         put("rollAgainRun", state.rollAgainRun)
         if (state.rollingAgain) put("rollingAgain", true)
         if (state.yardTriesUsed > 0) put("yardTriesUsed", state.yardTriesUsed)
@@ -218,10 +229,15 @@ object SavedGameJson {
         require(waiting.rollAgainRun >= 0 && rules.rollAgainLimit?.let { waiting.rollAgainRun < it } != false) { "Rolled again too often" }
         require(waiting.yardTriesUsed in 0..<rules.yardTries) { "Tried to leave the yard too often" }
         val roll = obj.intOrNull("roll") ?: return waiting
-        require(roll in 1..rules.dieFaces) { "A roll of $roll" }
-        val moves = LudoEngine.legalMoves(waiting, roll)
-        require(moves.isNotEmpty()) { "A roll of $roll waiting for a move has none" }
-        return waiting.copy(phase = TurnPhase.AwaitingMove(roll, moves))
+        val dice = if (rules.dice > 1) obj.array("dice").ints() else listOf(roll)
+        require(dice.isNotEmpty() && dice.size <= rules.dice && dice.first() == roll && dice.all { it in 1..rules.dieFaces }) { "A roll of $dice" }
+        val moves = LudoEngine.movesForDice(waiting, dice)
+        require(moves.isNotEmpty()) { "A roll of $dice waiting for a move has none" }
+        // One die's roll has earned another if it's a roll-again roll; two dice say so.
+        val earned = if (rules.dice > 1) obj.flag("earned") else roll in rules.rollAgainRolls
+        val rolled = if (rules.dice > 1) obj.array("rolled").ints() else dice
+        require(rolled.size == rules.dice && dice.all { it in rolled }) { "Dice $dice aren't of the roll $rolled" }
+        return waiting.copy(phase = TurnPhase.AwaitingMove(roll, moves, dice = dice, earned = earned, rolled = rolled))
     }
 
     private fun encodeEvent(event: GameEvent): JsonObject = buildJsonObject {
@@ -234,6 +250,13 @@ object SavedGameJson {
         put("kind", kind)
         put("player", event.player)
         put("roll", roll)
+        val second = when (event) {
+            is GameEvent.Rolled -> event.second
+            is GameEvent.NoMove -> event.second
+            is GameEvent.RollAgainLimit -> event.second
+            is GameEvent.Moved -> null
+        }
+        second?.let { put("second", it) }
         if (event is GameEvent.NoMove && event.triesLeft > 0) put("triesLeft", event.triesLeft)
         if (event is GameEvent.Moved) {
             put("pawn", event.move.pawn)
@@ -241,6 +264,7 @@ object SavedGameJson {
             put("to", event.move.to)
             put("captures", JsonArray(event.move.captures.map { jsonInts(listOf(it.player, it.pawn)) }))
             event.move.owner?.let { put("owner", it) }
+            event.move.roll?.let { put("die", it) }
             put("finished", event.finished)
             if (event.rollsAgain) put("rollsAgain", true)
         }
@@ -251,9 +275,9 @@ object SavedGameJson {
         require(player in 0..<playerCount) { "No player $player acted" }
         val roll = obj.int("roll")
         return when (val kind = obj.string("kind")) {
-            "rolled" -> GameEvent.Rolled(player, roll)
-            "noMove" -> GameEvent.NoMove(player, roll, triesLeft = obj.intOrNull("triesLeft") ?: 0)
-            "rollAgainLimit" -> GameEvent.RollAgainLimit(player, roll)
+            "rolled" -> GameEvent.Rolled(player, roll, obj.intOrNull("second"))
+            "noMove" -> GameEvent.NoMove(player, roll, triesLeft = obj.intOrNull("triesLeft") ?: 0, second = obj.intOrNull("second"))
+            "rollAgainLimit" -> GameEvent.RollAgainLimit(player, roll, obj.intOrNull("second"))
             "moved" -> GameEvent.Moved(
                 player = player,
                 roll = roll,
@@ -266,6 +290,7 @@ object SavedGameJson {
                         PawnRef(pair[0], pair[1])
                     },
                     owner = obj.intOrNull("owner")?.also { require(it in 0..<playerCount) { "No player $it owns the pawn" } },
+                    roll = obj.intOrNull("die"),
                 ),
                 finished = obj.boolean("finished"),
                 rollsAgain = obj.flag("rollsAgain"),

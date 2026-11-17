@@ -126,6 +126,36 @@ class SavedGameJsonTest {
     }
 
     @Test
+    fun `every state of random Two Dice games comes back as it was saved - a die left to move too - with house rules mixed in`() {
+        val random = Random(17)
+        var dieLeft = 0
+        repeat(20) { index ->
+            val houseRules = if (index % 2 == 0) emptySet() else HouseRule.entries.filter { random.nextBoolean() }.toSet()
+            var state = GameState.new(GameMode.TWO_DICE, 4, first = 1, rules = GameMode.TWO_DICE.rules.withHouseRules(houseRules))
+            while (!state.isFinished) {
+                val saved = game(state).copy(mode = GameMode.TWO_DICE)
+                assertEquals(saved, SavedGameJson.decode(SavedGameJson.encode(saved)))
+                if ((state.phase as? TurnPhase.AwaitingMove)?.dice?.size == 1) dieLeft++
+                state = when (val phase = state.phase) {
+                    is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random))
+                    else -> LudoEngine.roll(state, random)
+                }
+            }
+        }
+        assert(dieLeft > 0) { "No die left to move was saved" }
+    }
+
+    @Test
+    fun `a custom mode's game comes back under its name - and a built-in mode's has none written`() {
+        val rules = GameMode.CLASSIC.rules.withHouseRules(setOf(HouseRule.BLOCKADES))
+        val saved = game(GameState.new(GameMode.CLASSIC, 4, rules = rules)).copy(customName = "Cut-Throat")
+        val json = SavedGameJson.encode(saved)
+        assertTrue("\"customName\":\"Cut-Throat\"" in json)
+        assertEquals(saved, SavedGameJson.decode(json))
+        assertFalse("customName" in SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4))))
+    }
+
+    @Test
     fun `house rules are written by id - and one this app doesn't know fails the read`() {
         val rules = GameMode.CLASSIC.rules.withHouseRules(setOf(HouseRule.GUARDED_STARTS, HouseRule.NO_CAPTURE_ROLL))
         val json = SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4, rules = rules)))

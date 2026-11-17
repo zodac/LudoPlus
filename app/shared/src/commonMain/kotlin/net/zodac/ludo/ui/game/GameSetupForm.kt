@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.update
 import net.zodac.ludo.data.settings.SettingsRepository
 import net.zodac.ludo.game.AiNameGenerator
 import net.zodac.ludo.model.BoardGeometry
+import net.zodac.ludo.model.CustomMode
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.HouseRule
@@ -47,9 +48,19 @@ data class GameSetupState(
     val houseRules: Set<HouseRule> = emptySet(),
     /** Whether the House Rules card is open to the player: once a first game is finished (`GameRecordRepository.hasFinishedGame`). */
     val houseRulesUnlocked: Boolean = false,
+    /** The player's custom modes ([CustomMode]), in the order they were made. */
+    val customModes: List<CustomMode> = emptyList(),
+    /** The custom mode picked, by id, or null for [gameMode] itself, which is then the custom mode's base. */
+    val customModeId: String? = null,
 ) {
-    /** The house rules a game started now plays: none while they're locked. */
-    val playedHouseRules: Set<HouseRule> get() = if (houseRulesUnlocked) houseRules else emptySet()
+    /** The custom mode a game started now plays: none while house rules are locked, as custom modes are too. */
+    val customMode: CustomMode? get() = customModes.firstOrNull { it.id == customModeId }?.takeIf { houseRulesUnlocked }
+
+    /** The mode a game started now plays: the custom mode's base, or the mode picked. */
+    val playedMode: GameMode get() = customMode?.base ?: gameMode
+
+    /** The house rules a game started now plays: the custom mode's, or those switched on, and none while they're locked. */
+    val playedHouseRules: Set<HouseRule> get() = customMode?.houseRules ?: if (houseRulesUnlocked) houseRules else emptySet()
 
     /** Each player's team for the game this would start, or null for none ([TeamMode.teamsFor]). */
     val teams: List<Int>? get() = teamMode.teamsFor(playerCount)
@@ -73,6 +84,7 @@ data class GameSetupState(
             setPlayerCount(playerCount)
             setTeams(teamMode, partnerCaptures, rollForPartners)
             setHouseRules(houseRules)
+            setCustomModeChoice(customModeId)
             for (slot in allSlots) {
                 setPlayerName(slot.slot, slot.name)
                 setPlayerType(slot.slot, slot.type)
@@ -119,6 +131,8 @@ class GameSetupForm {
             rollForPartners = saved.rollForPartners,
             houseRules = saved.houseRules,
             houseRulesUnlocked = houseRulesUnlocked,
+            customModes = saved.customModes,
+            customModeId = saved.customModeId?.takeIf { id -> saved.customModes.any { it.id == id } },
         )
         _setupRestored.value = true
     }
@@ -178,8 +192,32 @@ class GameSetupForm {
         updateSlot(slot) { it.copy(difficulty = difficulty) }
     }
 
+    /** Picks a built-in mode, putting any custom mode away. */
     fun setGameMode(gameMode: GameMode) {
-        _setup.update { it.copy(gameMode = gameMode) }
+        _setup.update { it.copy(gameMode = gameMode, customModeId = null) }
+    }
+
+    /** Picks the custom mode [id]: its base becomes the mode picked under it. */
+    fun selectCustomMode(id: String) {
+        _setup.update { state ->
+            val mode = state.customModes.firstOrNull { it.id == id } ?: return@update state
+            state.copy(gameMode = mode.base, customModeId = id)
+        }
+    }
+
+    /** Keeps [mode] (replacing the one with its id, or after the rest if it's new) and picks it. */
+    fun saveCustomMode(mode: CustomMode) {
+        _setup.update { state ->
+            val modes = if (state.customModes.any { it.id == mode.id }) state.customModes.map { if (it.id == mode.id) mode else it } else state.customModes + mode
+            state.copy(customModes = modes, gameMode = mode.base, customModeId = mode.id)
+        }
+    }
+
+    /** Forgets the custom mode [id]; if it was picked, its base is left picked. */
+    fun deleteCustomMode(id: String) {
+        _setup.update { state ->
+            state.copy(customModes = state.customModes.filter { it.id != id }, customModeId = state.customModeId.takeIf { it != id })
+        }
     }
 
     /** The players a game started now has: each unnamed Human under [defaultName], each CPU under a name generated now. */

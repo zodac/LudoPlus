@@ -181,6 +181,14 @@
     <!-- The die under the board: TalkBack's name for it before anyone has rolled, then with the roll it shows, and its action. -->
     <string name="game_die_cd">Die</string>
     <string name="game_die_showing_cd">Die showing %1$d</string>
+    <!-- Two dice (the Two Dice mode): each named, then what it shows (%1$s the name, %2$d the face), then whether it's been moved, and whether it's the one the next move uses. -->
+    <string name="game_die_first_cd">First die</string>
+    <string name="game_die_second_cd">Second die</string>
+    <string name="game_die_showing_named_cd">%1$s showing %2$d</string>
+    <string name="game_die_used_spoken">moved</string>
+    <string name="game_die_selected_spoken">selected</string>
+    <!-- A die's action while it can be picked for the next move. -->
+    <string name="game_die_select_action">Use this die</string>
     <string name="game_roll_action">Roll</string>
     <!-- A player's card above the board, as TalkBack says it after their name: how many of their pawns are home (drawn as dots), that it's their turn, and their place once all their pawns are home (%1$s is "1st", "2nd"...). -->
     <plurals name="game_player_pawns_home_spoken">
@@ -194,11 +202,20 @@
     <string name="game_prompt_cpu_roll">%1$s is rolling.</string>
     <!-- The same, when the last move earned another roll in the same turn (a 6, a capture, or a pawn home). -->
     <string name="game_prompt_roll_again">%1$s, roll again: tap the die.</string>
+    <!-- The same two with two dice (the Two Dice mode). -->
+    <string name="game_prompt_roll_dice">%1$s, tap the dice to roll.</string>
+    <string name="game_prompt_roll_again_dice">%1$s, roll again: tap the dice.</string>
     <string name="game_prompt_cpu_roll_again">%1$s rolls again.</string>
     <string name="game_prompt_move">%1$s rolled %2$d. Pick a pawn to move.</string>
     <!-- A team game: the player has every pawn home and moves a partner's. -->
     <string name="game_prompt_move_partner">%1$s rolled %2$d. Pick a partner's pawn to move.</string>
     <string name="game_prompt_cpu_move">%1$s rolled %2$d.</string>
+    <!-- Two dice: %2$d and %3$d are the dice; %4$d the one the next move uses (picked by tapping a die). -->
+    <string name="game_prompt_move_dice">%1$s rolled %2$d and %3$d. Pick a pawn to move %4$d.</string>
+    <!-- Two dice, one moved: %2$d is the die left. -->
+    <string name="game_prompt_move_die_left">%1$s has %2$d left. Pick a pawn to move.</string>
+    <string name="game_prompt_cpu_move_dice">%1$s rolled %2$d and %3$d.</string>
+    <string name="game_prompt_cpu_move_die_left">%1$s has %2$d left.</string>
     <!-- The line above it, saying what just happened when it matters. %1$s is the player who acted, %2$d their roll. -->
     <string name="game_event_first">%1$s rolled highest, so goes first.</string>
     <string name="game_event_no_move">%1$s rolled %2$d and had no move.</string>
@@ -208,6 +225,14 @@
         <item quantity="other">%1$s rolled %2$d and had no move: %3$d more tries.</item>
     </plurals>
     <string name="game_event_three_sixes">%1$s rolled a third 6 in a row, so the turn passed.</string>
+    <!-- Two dice: %2$d and %3$d are the dice. -->
+    <string name="game_event_no_move_dice">%1$s rolled %2$d and %3$d and had no move.</string>
+    <!-- Two dice, with the Three Tries house rule: %4$d is how many rolls are left this turn. -->
+    <plurals name="game_event_no_move_dice_tries">
+        <item quantity="one">%1$s rolled %2$d and %3$d and had no move: %4$d more try.</item>
+        <item quantity="other">%1$s rolled %2$d and %3$d and had no move: %4$d more tries.</item>
+    </plurals>
+    <string name="game_event_three_doubles">%1$s rolled a third double in a row, so the turn passed.</string>
     <!-- %2$s is the captured pawns' owner, %3$d how many of their pawns went back to the yard. -->
     <plurals name="game_event_capture">
         <item quantity="one">%1$s captured %3$d of %2$s's pawns.</item>
@@ -405,6 +430,27 @@
     <string name="setup_house_rules_active_note">Off the Leaderboard and Statistics, and no achievements</string>
     <!-- In place of the picker until a first game is finished. -->
     <string name="setup_house_rules_locked">Finish a game to unlock house rules</string>
+    <!-- In place of the picker while a custom mode is picked: %1$s is its name, %2$s its house rules' names as a list. -->
+    <string name="setup_house_rules_custom">Set by %1$s: %2$s.</string>
+    <!-- Custom modes (model/CustomMode.kt), on the Game Mode card once house rules are unlocked. A custom mode's line in the picker: %1$s is its base mode, %2$s its house rules' names as a list. -->
+    <string name="setup_custom_mode_description">%1$s, with %2$s</string>
+    <string name="setup_custom_new">New Custom Mode</string>
+    <string name="setup_custom_edit">Edit</string>
+    <string name="setup_custom_delete">Delete</string>
+    <!-- Asked before a custom mode is deleted: %1$s is its name. -->
+    <string name="setup_custom_delete_title">Delete %1$s?</string>
+    <string name="setup_custom_delete_message">It goes from New Game for good.</string>
+    <!-- The page that makes or changes a custom mode. -->
+    <string name="setup_custom_editor_new_title">New Custom Mode</string>
+    <string name="setup_custom_editor_edit_title">Edit Custom Mode</string>
+    <string name="setup_custom_name">Name</string>
+    <string name="setup_custom_name_hint">My Rules</string>
+    <string name="setup_custom_base">Based On</string>
+    <string name="setup_custom_save">Save</string>
+    <!-- Why it can't be saved yet, under the form: %1$s is the base mode's name. -->
+    <string name="setup_custom_need_name">Give it a name.</string>
+    <string name="setup_custom_name_taken">There's a mode by that name already.</string>
+    <string name="setup_custom_need_rule">Switch on a house rule: without one, it's just %1$s.</string>
     <!-- Each house rule: its name, and one line saying what it changes, in the picker and on the Rules page. -->
     <string name="house_rule_no_capture_roll">No Capture Roll</string>
     <string name="house_rule_no_capture_roll_description">Capturing a pawn doesn't earn another roll.</string>
@@ -837,6 +883,8 @@
     <string name="mode_classic_description">The classic rules: roll a 6 to leave the yard, and race all four pawns home</string>
     <string name="mode_quick">Quick</string>
     <string name="mode_quick_description">The classic rules with two pawns each, for a shorter race</string>
+    <string name="mode_two_dice">Two Dice</string>
+    <string name="mode_two_dice_description">Roll two dice and move by each in turn. A 6 on either brings a pawn out, and doubles roll again</string>
     <string name="player_colour_yellow">Yellow</string>
     <string name="settings_motion_die_roll">Die roll</string>
     <string name="settings_motion_pawn_move">Pawn moves</string>
@@ -865,6 +913,9 @@
     <string name="rules_winning_3">With *Stop at first winner* on in Settings, the game ends as soon as one player has every pawn home. Everyone else is placed by how far their pawns have come.</string>
     <!-- The Game Modes pages: a page a mode beyond Classic, titled by its name (mode_*). -->
     <string name="rules_quick_1">Quick plays the classic rules with two pawns each instead of four, for a shorter race. Pick it under *Game Mode* on New Game.</string>
+    <string name="rules_two_dice_1">Two Dice rolls two dice at once. Move a pawn by each die, one after the other, in either order: the same pawn twice, or two pawns. Tap a die to pick the one your next move uses.</string>
+    <string name="rules_two_dice_2">A 6 on either die brings a pawn out of the yard, and the other die can move it on. If a die has no move, it's lost.</string>
+    <string name="rules_two_dice_3">Roll a double and you roll again once both dice are moved, but three doubles in a row end your turn. A capture, or a pawn brought home, still earns another roll.</string>
     <string name="rules_modes_records">Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.</string>
     <!-- The House Rules pages: an introduction, then each house rule (house_rule_*) as a line of its own (rules_house_rule_line), grouped by what they change. -->
     <string name="rules_house_rules_title">House Rules</string>
