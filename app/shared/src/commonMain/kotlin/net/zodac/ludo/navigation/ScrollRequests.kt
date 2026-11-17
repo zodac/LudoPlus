@@ -4,6 +4,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import net.zodac.ludo.app.UnlockedStyle
 
 /**
  * Where a long-pressed banner asks a list screen to scroll to and flash what it named - see
@@ -42,6 +43,16 @@ open class ScrollRequests<T : Any> {
  */
 data class AchievementScrollRequest(val achievementId: String, val animate: Boolean)
 
+/**
+ * The styles a long-pressed styles banner names, for the Styles page to flash their categories' fields, or a category's
+ * page (when they're all of one category) to bring them into view and flash them.
+ * [animate] is false when the screen wasn't already open - see [AchievementScrollRequest]. Not a data class: two
+ * requests for the same styles are still two requests, each to be scrolled to again.
+ */
+class StyleScrollRequest(val styles: List<UnlockedStyle>, val animate: Boolean)
+
 /** The Achievements screen's: scroll to one row and flash it. */
 object AchievementScrollRequests : ScrollRequests<AchievementScrollRequest>()
 
+/** The Styles pages': flash the newly unlocked styles - see [StyleScrollRequest]. */
+object StyleScrollRequests : ScrollRequests<StyleScrollRequest>()

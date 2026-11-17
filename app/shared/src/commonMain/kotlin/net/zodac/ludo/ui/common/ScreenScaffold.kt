@@ -1,5 +1,6 @@
 package net.zodac.ludo.ui.common
 
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -134,6 +135,9 @@ fun TwoPanes(
  * arrow lines up with the content's start edge (see [PageTopBar]). [onTitleCrowded] is told when the actions push the
  * title off the bar's centre or onto two lines, so a page can make them smaller.
  * The whole page, app bar included, sees [LocalLandscapePage].
+ *
+ * [underlay] is drawn over the backdrop and under the content, from the foot of the app bar to the bottom of the screen:
+ * the game screen's background style. It doesn't fade in with the content.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -150,6 +154,7 @@ fun ScreenScaffold(
     startActions: @Composable RowScope.() -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     onTitleCrowded: () -> Unit = {},
+    underlay: (@Composable BoxScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     BrandBackdrop(modifier = modifier, driftingDice = driftingDice) {
@@ -180,6 +185,9 @@ fun ScreenScaffold(
                 val reduceMotion = LocalReduceMotion.current
                 val contentAlpha = remember { Animatable(if (reduceMotion) 1f else 0f) }
                 PacedEffect(Unit) { contentAlpha.animateTo(1f, tween(PAGE_CONTENT_FADE_IN_MILLIS)) }
+                if (underlay != null) {
+                    Box(modifier = Modifier.fillMaxSize().padding(top = innerPadding.calculateTopPadding()), content = underlay)
+                }
                 Box(modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha.value }) {
                     if (scrollable) {
                         // The content goes straight into PageColumn's viewport-tall column rather than a

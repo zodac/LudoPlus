@@ -12,10 +12,10 @@ import net.zodac.ludo.model.PawnPosition
 data class PawnMark(val player: Int, val pawns: List<Int>, val centre: Offset, val radius: Float, val home: Boolean = false)
 
 /** How big a lone pawn is, in squares across; pawns of several colours on one square share it, each a quarter. */
-private const val PAWN_RADIUS = 0.38f
+internal const val PAWN_RADIUS = 0.38f
 /** A pawn home: sized so four stand side by side along a triangle's base (`BoardLayout.homeSpot`), all but touching. */
 const val HOME_PAWN_RADIUS = 0.22f
-private const val YARD_PAWN_RADIUS = 0.5f
+internal const val YARD_PAWN_RADIUS = 0.5f
 private const val SHARED_PAWN_RADIUS = 0.24f
 private const val SHARED_OFFSET = 0.24f
 

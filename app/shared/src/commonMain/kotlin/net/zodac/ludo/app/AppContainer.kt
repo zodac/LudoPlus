@@ -1,5 +1,9 @@
 package net.zodac.ludo.app
 
+import net.zodac.ludo.data.settings.savedStylesFlow
+import net.zodac.ludo.data.settings.SavedStyles
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.Flow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.room.RoomDatabase
 import kotlin.coroutines.cancellation.CancellationException
@@ -27,7 +31,7 @@ import net.zodac.ludo.data.settings.SettingsRepository
  * the UI through [LocalAppContainer]: the ViewModel factories take their repositories from here,
  * rather than each one reaching for an Android `Context` to build its own.
  *
- * The settings, the game in progress, the game records, and the achievements for now. The repositories for online play
+ * The settings, the game in progress, the game records, the achievements, and the saved styles for now. The repositories for online play
  * and purchases join it in their phases of `.claude/IMPLEMENTATION.md`.
  */
 class AppContainer(
@@ -41,11 +45,27 @@ class AppContainer(
     /** The time the app is in front of the player, counted into [SettingsRepository.playSeconds]: resumed and paused by the app. */
     val playTime: PlayTimeTracker = PlayTimeTracker(settingsRepository::addPlaySeconds, scope)
 
+    /** Debug builds only: the Styles page's "pretend all styles are owned" switch, for this run of the app. */
+    val pretendOwnsAllStyles = MutableStateFlow(false)
+
+    /**
+     * Whether every style is unlocked without its achievements: in a debug build only, while [pretendOwnsAllStyles]. The
+     * "Unlock all styles" purchase joins it in Phase 11.
+     */
+    val ownsAllStyles: Flow<Boolean> = pretendOwnsAllStyles.map { pretend -> pretend && buildInfo.isDebug }
+
+    /** The saved Styles picks and what unlocks them, kept loaded for the process, so a screen has them as it opens. */
+    val savedStyles: StateFlow<SavedStyles?> =
+        savedStylesFlow(settingsRepository, achievementsRepository, ownsAllStyles).stateIn(scope, SharingStarted.Eagerly, null)
+
     /** The one way an achievement is earned, shared by every screen - see [AchievementUnlocker]. */
-    val achievementUnlocker: AchievementUnlocker = AchievementUnlocker(achievementsRepository)
+    val achievementUnlocker: AchievementUnlocker = AchievementUnlocker(achievementsRepository, ownsAllStyles)
 
     /** The Achievements page's Unearned switch, loaded with the container so the page opens already filtered: null until then. */
     val lockedOnlyAchievements: StateFlow<Boolean?> = settingsRepository.lockedOnlyAchievements.stateIn(scope, SharingStarted.Eagerly, null)
+
+    /** The Styles page's Unlocked switch, loaded with the container so the page opens already filtered: null until then. */
+    val unlockedOnlyStyles: StateFlow<Boolean?> = settingsRepository.unlockedOnlyStyles.stateIn(scope, SharingStarted.Eagerly, null)
 
     private val mutableDatabaseFailure = MutableStateFlow<String?>(null)
 

@@ -16,7 +16,7 @@ reorders them.
 | 4 | Saving, Game Over, Statistics, and the Leaderboard | Done |
 | 5 | Rules, tutorial, sound, and polish (to 1.0.0) | In progress |
 | 6 | Achievements | Done |
-| 7 | Styles | Not started |
+| 7 | Styles | In progress |
 | 8 | 2-8 players | Not started |
 | 9 | Game modes and modifiers | Not started |
 | 10 | Google Play: Play Console, Play Games, and the store listing | Not started |
@@ -301,9 +301,29 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 
 ## Phase 7: Styles
 
-- [ ] The style categories, re-cast for Ludo: **board**, **pawns**, **die** (DiceFive's D6 styles, kept),
+Decided with the maintainer (2026-11-17):
+
+- **Order.** Slice 1 brings back DiceFive's style system (registry, saved picks, the Styles screen, unlocks and their
+    banners) with the die and background art, and a Classic-only board and pawns. Later slices add the board and pawn
+    families, each approved from renders.
+- **Die.** All 35 of DiceFive's families, D20 included (drawn showing 1-6).
+- **Boards.** Classic, Wood, Stone, Neon, Ocean, Starry, Paper, and Retro. Each keeps the four player colours readable;
+    a family changes the track, safe squares, surround, and texture. A board shares its unlock with the die and
+    background of the same name.
+- **Pawns.** Classic, Counter, Cone, Peg, Gem, Glass, and Animal (one animal per family, tinted). Pawns always take their
+    player's colour; a family changes shape and material.
+
+- [ ] The style categories, re-cast for Ludo: **board**, **pawns**, **die** (DiceFive's styles, kept),
     **background** (kept). Unlocks are tied to achievements, as in DiceFive.
-- [ ] The Styles screen's previews show a corner of the board with pawns.
+    - [x] Slice 1 (2026-11-18, awaiting the maintainer's review from renders): the registry and saved picks for the four
+        categories, DiceFive's 35 die families (fonts and licences back) and 20 backgrounds, Classic board and pawns
+        (today's art, moved to `ui/style/BoardStyles.kt` and `PawnStyles.kt`), the Styles page and category pages, the
+        menu's Styles button, unlock banners and the achievement rows' reward star and tip, the Die decoration motion
+        group, and the game drawing the picks. DiceFive's locks on its own achievements remapped (`DESIGN.md`, "Table
+        art"). The "Unlock all styles" button waits for Phase 11; a debug build's pretend switch stands in.
+    - [ ] Board families: Wood, Stone, Neon, Ocean, Starry, Paper, and Retro, each approved from renders.
+    - [ ] Pawn families: Counter, Cone, Peg, Gem, Glass, and Animal, each approved from renders.
+- [x] The Styles screen's previews show a corner of the board with pawns (`BoardCornerPreview`).
 - [ ] `STYLE_ART.md` rewritten for board and pawn art.
 
 ## Phase 8: 2-8 players

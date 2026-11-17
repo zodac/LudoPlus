@@ -1,5 +1,8 @@
 package net.zodac.ludo.app
 
+import net.zodac.ludo.game.style.styleRewards
+import net.zodac.ludo.game.style.stylesUnlockedByCount
+import org.jetbrains.compose.resources.StringResource
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -15,7 +18,33 @@ sealed interface AchievementEvent {
 
     /** Moved closer to being earned, from [previous] to [current] out of the target, so the banner can climb between them. */
     data class Progressed(val achievement: Achievement, val previous: Int, val current: Int) : AchievementEvent
+
+    /**
+     * [earnedBy] unlocked [styles], which share one banner: every style one update's count unlocked, or every style
+     * (or hidden colour) behind one particular achievement.
+     */
+    data class StylesUnlocked(val styles: List<UnlockedStyle>, val earnedBy: StylesEarnedBy) : AchievementEvent {
+        init {
+            require(styles.isNotEmpty()) { "A styles banner needs a style" }
+        }
+    }
 }
+
+/** What unlocked the styles on a [AchievementEvent.StylesUnlocked] banner. */
+sealed interface StylesEarnedBy {
+
+    /** Earning [achievementCount] achievements met their count lock. */
+    data class Count(val achievementCount: Int) : StylesEarnedBy
+
+    /** Earning [achievement], which they're locked behind. */
+    data class OneAchievement(val achievement: Achievement) : StylesEarnedBy
+}
+
+/**
+ * A style a [AchievementEvent.StylesUnlocked] names: its [name] and what one of its category is called - "'Frosted'
+ * dice". With [hiddenColours], it's that many hidden colours of the style that were unlocked, not the style itself.
+ */
+data class UnlockedStyle(val name: StringResource, val categoryNoun: StringResource, val hiddenColours: Int = 0)
 
 /**
  * Where banners are announced, and where the banner host listens.
@@ -43,10 +72,33 @@ object AchievementEvents {
 }
 
 /**
- * Puts everything a recorded [update] earned up as banners: each unlock, then each progress nudge. Call it only once
+ * Puts everything a recorded [update] earned up as banners: each unlock, followed by a styles banner for whatever
+ * styles are locked behind that achievement ([styleRewards]); then one banner for any styles its unlocks brought
+ * within reach by count (see [stylesUnlockedByCount]) - however many, and from however many categories - then each
+ * progress nudge. A player who [ownsAllStyles] gets no styles banners: every style is already theirs. Call it only once
  * [update] is stored, so a banner can never outlive what it announces.
  */
-fun announce(update: AchievementUpdate) {
-    update.newlyUnlocked.forEach { AchievementEvents.emit(AchievementEvent.Unlocked(it)) }
+fun announce(update: AchievementUpdate, ownsAllStyles: Boolean) {
+    update.newlyUnlocked.forEach { achievement ->
+        AchievementEvents.emit(AchievementEvent.Unlocked(achievement))
+        val rewards = achievement.styleRewards
+        if (rewards.isNotEmpty() && !ownsAllStyles) {
+            AchievementEvents.emit(
+                AchievementEvent.StylesUnlocked(
+                    rewards.map { UnlockedStyle(it.styleName, it.categoryNoun, it.hiddenColours) },
+                    StylesEarnedBy.OneAchievement(achievement),
+                ),
+            )
+        }
+    }
+    val styles = if (ownsAllStyles) emptyList() else stylesUnlockedByCount(update.countedUnlocksBefore, update.countedUnlocksAfter)
+    if (styles.isNotEmpty()) {
+        AchievementEvents.emit(
+            AchievementEvent.StylesUnlocked(
+                styles.map { UnlockedStyle(it.styleName, it.categoryNoun) },
+                StylesEarnedBy.Count(update.countedUnlocksAfter),
+            ),
+        )
+    }
     update.progressed.forEach { AchievementEvents.emit(AchievementEvent.Progressed(it.achievement, it.previous, it.current)) }
 }

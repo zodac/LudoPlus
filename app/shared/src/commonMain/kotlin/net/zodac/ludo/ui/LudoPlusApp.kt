@@ -1,5 +1,7 @@
 package net.zodac.ludo.ui
 
+import net.zodac.ludo.navigation.StyleScrollRequests
+import net.zodac.ludo.navigation.StyleScrollRequest
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -142,6 +144,19 @@ fun LudoPlusApp(
                             AchievementScrollRequests.request(AchievementScrollRequest(achievement.id, animate = alreadyOnAchievements))
                             if (!alreadyOnAchievements) {
                                 pageCover.change(reduceMotion) { navController.navigate(Screen.ACHIEVEMENTS) }
+                            }
+                        },
+                        onStylesSelected = { styles ->
+                            val target = Screen.stylesBannerTarget(styles)
+                            val alreadyThere = navController.currentDestination?.route == target
+                            // Before navigating, for the same reason as the achievement request above.
+                            StyleScrollRequests.request(StyleScrollRequest(styles, animate = alreadyThere))
+                            if (!alreadyThere) {
+                                pageCover.change(reduceMotion) {
+                                    // Back to the Styles page if it's open under this page; otherwise a fresh one.
+                                    if (!navController.popBackStack(Screen.STYLES, inclusive = false)) navController.navigate(Screen.STYLES)
+                                    if (target != Screen.STYLES) navController.navigate(target)
+                                }
                             }
                         },
                     ) {

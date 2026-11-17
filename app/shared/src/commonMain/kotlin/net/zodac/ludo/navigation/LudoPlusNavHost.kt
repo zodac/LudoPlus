@@ -1,5 +1,11 @@
 package net.zodac.ludo.navigation
 
+import net.zodac.ludo.ui.styles.StylesWarmUp
+import androidx.compose.foundation.layout.BoxWithConstraints
+import net.zodac.ludo.ui.styles.StylesViewModel
+import net.zodac.ludo.ui.styles.StylesScreen
+import net.zodac.ludo.ui.styles.StyleCategoryScreen
+import net.zodac.ludo.game.style.StyleCategory
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.Box
@@ -95,17 +101,26 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
     composable(Screen.MENU) {
         // Null until the saved game's file has been read, so Play doesn't change shape under the player's finger.
         val hasInProgressGame by container.inProgressGameRepository.hasInProgressGame.collectAsStateWithLifecycle(initialValue = null)
-        MenuScreen(
-            hasInProgressGame = hasInProgressGame,
-            // Straight to the board, which brings the saved game back itself (see below).
-            onContinue = { navigate(Screen.PLAY_GAME) },
-            onNewGame = { navigate(Screen.PLAY_GRAPH) },
-            onAchievements = { navigate(Screen.ACHIEVEMENTS) },
-            onLeaderboard = { navigate(Screen.LEADERBOARD) },
-            onStatistics = { navigate(Screen.STATISTICS) },
-            onRules = { navigate(Screen.RULES) },
-            onSettings = { navigate(Screen.SETTINGS) },
-        )
+        val savedStyles by container.savedStyles.collectAsStateWithLifecycle()
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            // Under the menu, which is opaque: runs the Styles page's drawing code once while the menu idles, so opening
+            // Styles isn't the first time it runs - see StylesWarmUp. Never what the page cover waits on.
+            CompositionLocalProvider(LocalPageCover provides null) {
+                StylesWarmUp(picks = savedStyles, width = maxWidth)
+            }
+            MenuScreen(
+                hasInProgressGame = hasInProgressGame,
+                // Straight to the board, which brings the saved game back itself (see below).
+                onContinue = { navigate(Screen.PLAY_GAME) },
+                onNewGame = { navigate(Screen.PLAY_GRAPH) },
+                onAchievements = { navigate(Screen.ACHIEVEMENTS) },
+                onLeaderboard = { navigate(Screen.LEADERBOARD) },
+                onStatistics = { navigate(Screen.STATISTICS) },
+                onStyles = { navigate(Screen.STYLES) },
+                onRules = { navigate(Screen.RULES) },
+                onSettings = { navigate(Screen.SETTINGS) },
+            )
+        }
     }
 
     navigation(startDestination = Screen.PLAY_SETUP, route = Screen.PLAY_GRAPH) {
@@ -181,5 +196,21 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
     }
     composable(Screen.ACHIEVEMENTS) {
         AchievementsScreen(viewModel = viewModel(factory = AchievementsViewModel.factory(container)), onBack = navigateUp)
+    }
+    composable(Screen.STYLES) {
+        StylesScreen(
+            viewModel = viewModel(factory = StylesViewModel.factory(container)),
+            onBack = navigateUp,
+            onOpenCategory = { category -> navigate(Screen.styleCategory(category)) },
+        )
+    }
+    for (category in StyleCategory.entries) {
+        composable(Screen.styleCategory(category)) {
+            StyleCategoryScreen(
+                viewModel = viewModel(factory = StylesViewModel.factory(container)),
+                category = category,
+                onBack = navigateUp,
+            )
+        }
     }
 }

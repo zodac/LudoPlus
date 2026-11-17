@@ -4,10 +4,11 @@
 > from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
 > <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
 >
-> **Achievements (Phase 6).** "The achievements list" and "Achievement banners" hold for Ludo Plus, except: no style
-> star, styles banner, or online count button yet (Phases 7 and 10), and no row tips or dialogs (DiceFive's mode limits,
-> style rewards, and missing-entry lists), so each row is one TalkBack item with no action: its title, description, and
-> when it was earned or how far along it is. The Easter Eggs' fixed colours are Big Fan's red heart, Are You A
+> **Achievements (Phase 6) and Styles (Phase 7).** "The achievements list", "Achievement banners", "Style locks", and
+> "The Styles screen" hold for Ludo Plus, except: no online count button yet (Phase 10), and no row dialogs (DiceFive's
+> mode limits and missing-entry lists). A row is one TalkBack item: its title, description, and when it was earned or
+> how far along it is, then, for a style reward, the reward's sentence, with the action "Show which style this
+> unlocks", whose tap shows that sentence as a tip. The Easter Eggs' fixed colours are Big Fan's red heart, Are You A
 > Developer?'s cyan, and Midnight Run's moon; Completionist keeps its crystal trophy.
 
 Achievements, banners, Styles, Leaderboard and menu decisions. The general rules are in `UI.md`, the game screen is in
@@ -145,7 +146,7 @@ The constants are at the top of `AchievementBannerHost.kt`:
     - The achievement's own banner keeps its star.
     - **None for an owner of every style** (the purchase, `PURCHASES.md`): `AchievementUnlocker` reads `ownsAllStyles` as
         it announces, and only the unlock and progress banners show. The star stays on rows and unlock banners.
-    - One achievement's styles of one name are named once ("'Starry' dice, mat and background"), so they fit the two
+    - One achievement's styles of one name are named once ("'Starry' die and background"), so they fit the two
         lines in Spanish.
     - TalkBack hears every style unlocked (`StylesUnlockedBannerSemanticsTest`).
 
@@ -166,49 +167,21 @@ A lock is on the style (`StyleGroup.unlock`, in the registry), not the colour: o
 available. `StyleRegistryTest` keeps the counts within what can be earned.
 
 - **Behind a specific achievement**, shown padlocked:
-    - Googly dice (Completionist);
-    - Glitch dice and background (Big Fan);
-    - Maths dice (The Solution);
-    - Wireframe dice and mat (Are You A Developer?);
-    - Devil dice (Bad Omen);
-    - Starry dice, mat and background (Rolling The Midnight Dice);
-    - the Floating Dice background (Not Those Dice!: the menu's backdrop as a table background);
-    - the Martini cup (Shaken, Not Tapped);
-    - the D20 dice (Nat 20 or Critical Success, `AnyAchievement`).
-- **Secret colours** (`StyleVariant.secretAchievement`) are left out entirely until earned:
-    - the Irish Multicolour dice (Luck Of The Irish);
-    - the white and black D20 (Nat 20) and the blue D20 (Critical Success);
-    - the Flowerpot's plant-stage pots (Green Fingers);
-    - the Top Hat with its rabbit always out (The Magician's Secret);
-    - the gold Egg dice (Eggcellent Discovery).
-- **The golden egg.** With Egg dice (any colour but gold) and the Chicken cup, even once earned, each human-rolled
-    die has a 1-in-500 chance of landing golden (`GameEngine.GOLDEN_EGG_ONE_IN`). Any mode or modifier except D20, whose dice are
-    drawn as D20s.
-    - The roll: `Die.isGolden`, set by `GameEngine.rollDice(goldenOneIn = ...)` from `performRoll`. It's saved with the
-        game and drawn as `GoldenEggDiceStyle`.
-    - Only player 1 earns it, and only once the dice have landed.
-- **On the Achievements screen**, a row follows the same rule as Styles: a tap shows a short tooltip, a long press
-    opens a dialog. The tooltip **stays until the row is tapped again**, like the game screen's totals tip. It holds,
-    in this order, which modes can earn it, for an achievement deliberately kept out of some mode
-    (`Achievement.limitedModes`, unless it has a `mode`, whose description names its modes), the style reward line and,
-    for a collection row, how many are missing ("Modes with no game finished yet: 4 left"). The dialog says the same,
-    with a collection row's list under it. A row with none of them has no gesture.
-    - The mode line always names the modes that can earn it, never those that can't: "Can only be earned in the
-        'Standard' and 'Tricolour' modes", however long the list. It leaves out the modes it's kept out of and the ones
-        whose rules rule it out (`impossibleIn`). Each mode's name stays on one line.
-    - **No mode line** for an impossibility alone (Scratched can't be earned without a 5x box, but nothing keeps it out
-        of a mode that has one), once it's earned, ever for a hidden row, or in the Game Modes category, whose
-        descriptions name their mode.
-    - **Rewards.** One sentence on the tooltip ("Earn this to unlock 'Starry' dice, mat, and background": one style's
-        items named once, as the unlock banner does). For several, the dialog puts "Earn this to unlock:" over a
-        `BulletedList` (`ui/common`): one style a line, after a drawn round bullet, capitalised and without "the"
-        ("'Starry' dice style"). The bullet and its gap are in sp, so they grow with the font, and a wrapped line hangs
-        clear of the bullets.
+    - Googly die (Completionist);
+    - Glitch die and background (Big Fan);
+    - Maths die (Number Cruncher);
+    - Wireframe die (Are You A Developer?);
+    - Devil die (Too Much Of A Good Thing);
+    - Starry die and background (Midnight Run).
+- **Secret colours** (`StyleVariant.secretAchievement`) are left out entirely until earned. None yet: DiceFive's (the
+    Irish Multicolour, the D20 colours, the gold Egg) are ordinary colours in Ludo Plus.
+- **On the Achievements screen**, a row whose achievement unlocks a style reads the reward's sentence with the row
+    ("Earn this to unlock the 'Maths' die style"; one style's items named once, as the unlock banner does: "'Starry'
+    die and background"), and a tap shows it as a tooltip that **stays until the row is tapped again**. Its action is
+    "Show which style this unlocks". A row with no style behind it has no gesture.
     - Rows and banners carry `StyleRewardStar`, **a badge over the icon's corner, never in the text row** (which would
-        wrap titles).
-    - The star is decorative to TalkBack: the row's action says "Show which style this unlocks", and the banner says
-        "Unlocks a style".
-    - Superuser mode's long press takes precedence over both.
+        wrap titles). The star is decorative to TalkBack: the banner says "Unlocks a style".
+    - Superuser mode's long press takes precedence.
 - **On the Styles screen**, a locked tile shows its first colour under a scrim, with a faded padlock.
     - A tap shows a tooltip with the core requirement ("23 achievements needed").
     - A long press opens a dialog with progress. That dialog is TalkBack's one action, since tooltips aren't announced.
@@ -230,7 +203,8 @@ it's earned, so the total doesn't hint at it.
 - Each field's heading carries its own `46/96` at its end. Title and count turn brand gold (`primary`) once every one is
     unlocked.
 
-**The Styles page** (`StylesScreen`): three rows of two fields (two rows of three in landscape), filling the page.
+**The Styles page** (`StylesScreen`): two rows of two fields (Board, Pawns, Die, and Background), in portrait and
+landscape, filling the page.
 
 - Each field is one grey `Card`, the whole of it the button: the category's name in New Game's small grey heading
     (`titleSmall`, `onSurfaceVariant`), the count at the heading's end; the pick's preview (`StylePickPreview`); and the
@@ -239,13 +213,13 @@ it's earned, so the total doesn't hint at it.
 - Portrait: the names along the bottom, under the preview. Landscape, where a card is wide and short: beside it, so
     the preview has the card's height.
 - The preview is the pick's tile, still: no badge or dots, scaled to fill its room (`MIN_PREVIEW_SCALE`..
-    `MAX_PREVIEW_SCALE`), from the room's start, so every preview lines up with its heading whatever its shape. A
-    frame's tab and a box's corner are centred in it (they sit high in a gallery tile, clear of its dots). Its words (a
-    frame's "You 24") scale with it, not with the font.
+    `MAX_PREVIEW_SCALE`), from the room's start, so every preview lines up with its heading whatever its shape. The
+    Board and Pawns previews are a corner of the board (`BoardCornerPreview`), each in its pick with the player's pick
+    of the other.
 - Rejected on review: a blue field inside the card as New Game's pickers (wasted space; then the previews too small),
     no cards (the art bare on the backdrop), a tight card round the art alone, the chevron on the art's edge, the names
     under the preview in landscape (the previews tiny), and centred previews (the narrow cup stood apart).
-- TalkBack: each field is one button - "Dice, button, Ocean, Deep. 60 of 99 unlocked", action "Choose Dice"
+- TalkBack: each field is one button - "Die, button, Ocean, Deep. 60 of 101 unlocked", action "Choose Die"
     (`common_picker_state_spoken`, `common_picker_choose_action`); the heading is cleared.
 - Large fonts (only above 100%): a row's headings put their counts on a second line if any one doesn't fit; titles and
     names shrink to their 100% size before ellipsising; and where the fields would be shorter than their words and a
@@ -272,41 +246,29 @@ opening already scrolled to them (`LocalStyleTileJump`), or sliding there if it 
 (`StyleScrollRequest.animate`). Styles of several categories open the
 Styles page, those fields flashed; opening one hands the request on (`CategoryFocus`), so its styles flash there.
 
-**Unlock All** (the purchase, `PURCHASES.md`) is a tonal button at the Styles page's app bar end: the purchase's mark
-(`UnlockAllStylesIcon`) and "Unlock All". No price: Play's sheet shows it.
+**Unlock All** (the purchase, `PURCHASES.md`) comes back in Phase 11, from `5423b6c`: a tonal button at the Styles page's
+app bar end (`UnlockAllStylesButton`, `UnlockAllStylesIcon`, `UnlockAllStylesButtonTest`).
 
-- For sale: enabled. A tap opens a dialog first (the mark, "Unlock All", what it unlocks, and that every style
-    can be earned for free, so paying is a shortcut and a way to support Ludo Plus); its Continue opens Play's sheet,
-    Cancel or back nothing. Play not yet answered: disabled. A payment pending: disabled, "Payment
-    pending". Owned (bought, cached or a debug build's pretence) or no store: no button.
-- **The title never moves for it.** `PageTopBar` tells the page when the actions push its title off-centre or onto two
-    lines (`onTitleCrowded`); the button then drops its words for that screen size, font scale and label, leaving the
-    mark (a 320dp phone at 1.3x font; "Payment pending" until about 411dp).
-- TalkBack: "Unlock all styles, button", with "Payment pending" as its state; the drawn words are cleared. It comes
-    before the first field. A purchase completing on the page toasts "All styles unlocked" (`UnlockAllStylesButtonTest`).
 - Debug builds: 5 taps on the Styles page's unlocked count pretend every style is owned (`DESIGN.md`, "Superuser modes").
 
 **Tiles.**
 
 - One tile per family. A long press opens a row of previews, one per colour. Colour names are spoken, not shown.
-- Picking a cup shakes and tips it (`CupPickShake`); picking a die rolls it through six faces (`DicePickRoll`). These
-    are only visual.
+- Picking a die rolls it through six faces (`DicePickRoll`). It's only visual.
 - The pick's tile is ringed in gold (a 3dp `primary` border, against 1dp `outline` on the others), and nothing else:
     no badge over the art, which it hid.
 - Tiles are radio buttons: style and colour name, selected state, and position in the set.
 - **Spacing** (`TileSpacing`, from the card's width): each tile takes its preview's width (a longer name spills into
     the gaps); the gap is `TILE_SPACING` (12dp), closing to `GALLERY_MIN_TILE_SPACING` (4dp) when that fits one more
-    tile; sides are `TILES_SIDE_PADDING` (8dp). On a 360dp phone this fits four dice, cups or backgrounds, and three
-    mats, frames or boxes (`StyleCategoryPageTest`).
-- **Tile sizes.** Mats are 97x65dp (the tray's shape, cut 10% so three fit). Backgrounds are 72x80dp (the board's
-    shape). Boxes are 97x76dp like frames, a corner of a scorecard at 62% of compact boxes (`BoxPreview`). Cups are
-    72x88dp: at 96dp their five lines scrolled a 360x800dp phone under its status bar. The cups "Treasure Chest" and
-    "Picnic Basket" were renamed "Treasure" and "Picnic" so their names fit.
+    tile; sides are `TILES_SIDE_PADDING` (8dp). On a 360dp phone this fits four dice or backgrounds
+    (`StyleCategoryPageTest`), and three boards or pawns.
+- **Tile sizes.** Dice are 72x72dp. Backgrounds are 72x80dp (a phone's game screen, a little taller than wide). Boards
+    and pawns are 97x76dp, so three fit across: a corner of the board, `CORNER_VIEW_WIDTH` (9) squares across.
 - **Fitting the screen** (decided 2026-11-10): only at a larger font or display size (`isDisplayZoomed`: the screen's
     density above `PlatformServices.defaultDensity`), a category page that would scroll draws its tiles smaller to fit
     (`fittedTileScale`): smaller dp, the same sp, so the names keep their size, and a smaller tile can gain a column.
-    No smaller than a cup's 64dp from 88dp (`MIN_TILE_FIT_SCALE`), nor any tile under the 48dp touch target (a mat
-    stops at 48/65); where even that doesn't fit, full size and scrolling. At the device's own sizes a long category
+    No smaller than 64/88 of its size (`MIN_TILE_FIT_SCALE`), nor any tile under the 48dp touch target; where even that
+    doesn't fit, full size and scrolling. At the device's own sizes a long category
     (the dice) scrolls at full size, by the maintainer's choice. Worked out for every tile, shown or not, so the
     Unlocked switch never resizes them.
 

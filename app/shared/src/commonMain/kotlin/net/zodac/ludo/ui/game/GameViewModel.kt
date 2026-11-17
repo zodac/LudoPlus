@@ -1,5 +1,6 @@
 package net.zodac.ludo.ui.game
 
+import net.zodac.ludo.data.settings.SavedStyles
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -74,6 +75,8 @@ class GameViewModel(
     private val localHour: (epochMillis: Long) -> Int = ::localHourOfDay,
     /** Whether this is a debug build: superuser mode ([onDieLongPressed]) never activates without it. */
     private val isDebugBuild: Boolean = false,
+    /** The player's Styles picks ([net.zodac.ludo.app.AppContainer.savedStyles]): null until loaded, or none at all in a test. */
+    val savedStyles: StateFlow<SavedStyles?> = MutableStateFlow(null),
 ) : ViewModel() {
 
     private var pacing = GamePacing()
@@ -484,6 +487,7 @@ class GameViewModel(
                     records = container.gameRecordRepository,
                     achievements = container.achievementUnlocker,
                     isDebugBuild = container.buildInfo.isDebug,
+                    savedStyles = container.savedStyles,
                 )
             }
         }
@@ -497,6 +501,7 @@ class GameViewModel(
                     records = container.gameRecordRepository,
                     tutorial = script,
                     achievements = container.achievementUnlocker,
+                    savedStyles = container.savedStyles,
                 )
             }
         }

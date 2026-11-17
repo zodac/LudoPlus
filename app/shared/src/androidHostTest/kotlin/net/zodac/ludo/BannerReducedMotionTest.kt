@@ -46,6 +46,7 @@ class BannerReducedMotionTest : UiTest() {
                     AchievementBannerHost(
                         isOnGameScreen = { false },
                         onAchievementSelected = {},
+                        onStylesSelected = {},
                     ) { Box(Modifier.fillMaxSize()) }
                 }
             }

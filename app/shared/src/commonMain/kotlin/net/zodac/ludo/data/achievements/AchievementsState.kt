@@ -1,6 +1,7 @@
 package net.zodac.ludo.data.achievements
 
 import net.zodac.ludo.model.Achievement
+import net.zodac.ludo.model.AchievementCategory
 import net.zodac.ludo.model.AchievementCounter
 
 /**
@@ -13,6 +14,13 @@ data class AchievementsState(
 ) {
 
     fun isUnlocked(achievement: Achievement): Boolean = achievement in unlockedAt
+
+    /**
+     * How many counted achievements have been earned - every one but an Easter Egg, as the Achievements page totals
+     * them: the number a style's achievement-count lock is measured against.
+     */
+    val countedUnlocks: Int
+        get() = unlockedAt.keys.count { it.category != AchievementCategory.EASTER_EGGS }
 
     fun counter(counter: AchievementCounter): Int = counters[counter] ?: 0
 

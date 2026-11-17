@@ -1,9 +1,9 @@
 # Ludo Plus: design reference
 
 > **Partly inherited from DiceFive.** Phase 0 of `IMPLEMENTATION.md` removed DiceFive's dice game. Sections on what
-> is still in the app (the stack, errors and the crash page, settings, achievements, distribution, and the release
-> pipeline) hold;
-> sections on the dice, the scorecard, modes, the CPU, styles, scores, and saved games describe the code
+> is still in the app (the stack, errors and the crash page, settings, achievements, styles, distribution, and the
+> release pipeline) hold;
+> sections on the dice, the scorecard, modes, the CPU, scores, and saved games describe the code
 > in commit `5423b6c` (`git show 5423b6c:<path>`), for bringing a feature back in its phase. Rewrite a section for
 > Ludo Plus when the code it describes is.
 
@@ -519,90 +519,66 @@ they open on, then **Combined**, every mode's games together, last (a divider af
 
 ## Table art (Styles)
 
-There are six independently saved categories (`ui/style/`), bundled as `GameVisualTheme`:
+Four independently saved categories (`ui/style/`), bundled as `GameVisualTheme` and provided to the game screen as
+`LocalGameVisualTheme` from the app's saved picks (`AppContainer.savedStyles`):
 
-- dice (`DiceStyle`)
-- cups (`DiceCupStyle`)
-- mats (`DiceMat`)
-- backgrounds (`TableBackground`)
-- frames (`ScoreFrame`, around the active player's tab)
-- boxes (`ScoreBoxStyle`, the scorecard's boxes and its Totals and Undo buttons)
+- boards (`BoardStyle`): the board under the pawns, and the spot a home pawn stands on
+- pawns (`PawnStyle`): one pawn, always in its player's colour
+- die (`DiceStyle`): the one die, its face and any tumble of its own
+- backgrounds (`TableBackground`): the game screen behind the board, from the foot of the app bar down
+    (`ScreenScaffold`'s `underlay`)
 
-**Frames** are drawn in the active player's own colour behind their tab (`ScoreFrames.kt`, in dp), and stay 1.5dp off the
-text (`ScoreFrameClearanceTest`). One made of many parts (the wreaths, Starry, Nautical, Marquee) is `painted`: drawn once
-per colour and tab size, then stamped, as the tab redraws every frame while a score counts up. The wreath goes all the
-way round the tab, thinning its inward leaves beside the name, and `FrameCoverageTest` holds those frames to filling the
-band along every edge. Unlocks run from Floral at 10 to Marquee at 100, with Nautical at 15 as part of the water set and
-Starry at 45, which opens by count and not with the Starry dice, mat and background (Rolling The Midnight Dice).
+The Styles page's fields and the category pages are in `UI_SCREENS.md`. The Rules diagrams always draw the Classic
+board and pawns.
 
-**Boxes** (`ScoreBoxes.kt`) colour the scorecard: an open box, D20's two halves (`BoxTone`), and a scored box, each a
-`BoxPaint` (fill, rim, and the ink its glyph takes), with an optional mark font, shape, and texture. What a box *means*
-stays the same in every style: the gold of a good pick, the last scored box's outline, a disabled box's dashed outline,
-and the dark discs of the run and 5x badges. A lit glyph on a light style (Paper, White Marble) takes a darker gold
-(`goldOn`). Totals and Undo are drawn as open boxes (`boxSurface`). `ScoreBoxesTest` holds every style to readable
-marks (3:1 on both ends of each fill), halves that differ, and a scored box unlike an open one. Families named like a dice
-style open with it (Wood 10, Gems and Stone 65, Neon and RGB 100); Paper 5, Chalkboard 20, Pixel 75. RGB's strip is lit on
-the RGB dice's clock, D20's second half half a turn of the hues from the first, and goes out once scored. Neon's glow
-pulses on the Neon dice's beat, each box on its own, its core steady. Both move only at High, like their dice
-(`MovingBoxArt`; `BoxStylesMotionTest`).
+**Boards and pawns** keep the players' colours readable: a board style changes the track, the safe squares' marks, the
+surround, and the texture, never which colour a seat is; a pawn style changes shape and material, never whose it is. A
+board or pawn tile on the Styles page is a corner of the board (`BoardCornerPreview`): seat 0's yard with three pawns,
+one on its start square, and the next seat's pawn on the track, in the default seat colours, the tile's style drawn
+with the player's pick of the other. Only Classic exists of each so far; the families to come are in
+`IMPLEMENTATION.md`, Phase 7.
+
+**The die** is DiceFive's 35 families, D20 included (drawn showing 1-6). `GameDie` draws the style's face, turning
+through random faces as it tumbles; a style that tumbles itself (the D20, the Egg, the Bestagon) is handed the tumble's
+clock (`LocalDieTumbleMillis`) instead. Before the first roll it's the style's body colour with no face. The violet ring
+while it can be rolled is drawn round the style, not by it.
+
+**Backgrounds** are DiceFive's 20 families. One that moves (the Ocean's Waves, Floating Dice)
+runs on the Background decoration group; a die's own sparkle or glow on the Die group (`MotionGroup.DICE`).
 
 Each category is two lists in the same order:
 
 - **The registry** (`game/style/StyleRegistries.kt`, pure): `StyleGroup`s (a shape or pattern, one tile on the Styles
     screen) of `StyleVariant`s, with every id, name and lock. Anything that decides what a player may use (the unlocker,
-    the resets, achievements) reads only this, through `StyleCategory.registry`.
+    achievements) reads only this, through `StyleCategory.registry`.
 - **The art** (`ui/style/StyleCatalog.kt`): each variant's `StyleArt` (swatch and drawing). `StyleCatalog` joins it to
     the registry by id into the Styles screen's `StyleFamily`s of `StyleColour`s, and refuses a mismatch at load.
 
-- **Ids** are the family's string key, then the colour's (`classic_gold`, `bestagons_honeycomb`). `StyleRegistryTest`
-    enforces this.
-    - **One exception: a style folded into another family keeps the id it was released with.** The Beaker cups are
-        colours of Glass (`Beaker Blue`, `Beaker Green`) but are still `beaker_blue` and `beaker_green`, because ids are
-        permanent. They're listed in the test.
-- **A style with a counterpart of the same name is unlocked by the same thing** in every category that has one: Stone
-    (dice, mat, background) opens at 65 achievements, Circuit at 80, Neon at 100, Meadow at 75. `StyleRegistryTest` checks
-    every family name across dice, cups, mats and backgrounds.
-- **The water set opens together, at 15 achievements** (`WATER_SET_UNLOCK`): the Ocean dice, mat and background, the
-    Fishbowl cup and the Nautical frame. No count lock is above 100, and the 50 and 100 locks are fixed points.
-    - The Ocean background's Waves roll (`TwinkleClock`); its Lagoon is painted once. The dice, mat and Lagoon share
-        `drawWaveCrests` and `paintCaustics` (`OceanArt.kt`).
-    - The Fishbowl's clownfish swims a rail (`clownfishOnRail`) as a turning solid, its face always swinging towards the
-        viewer. Its three rocks roll with the water's lagging tilt, and its fronds lean back against the bowl's tilt and
-        swing with the slosh.
-- **The Classic family** comes first in every category and is free. Its first colour is the default: ivory dice, the
-    gold casino shaker (the launcher icon's cup), the blue mat with the icon's gold ring, the icon's lit navy felt, a
-    plain ring.
-- **Locks.** Every other family is locked behind an achievement count (`StyleUnlock.AchievementCount`) or a specific
-    achievement (`SpecificAchievement`, `AnyAchievement`).
-    - A colour can also be secret (`StyleVariant.secretAchievement`): not offered at all until earned.
-    - Every lock takes a `StyleAccess`: the achievements, and `ownsAllStyles`, the "Unlock all styles" purchase
-        (`PURCHASES.md`), which meets every lock and secret colour.
-    - A locked saved pick draws the default but stays saved. Resetting achievements resets the picks it locks; an
-        owner's are kept.
-    - Which styles and colours are locked, and how locks look, is in `UI_SCREENS.md`, "Style locks".
-- **Tricolour** draws a die in the player's style recoloured (`DiceStyle.recoloured`). Its pips and held ring always
-    use the palette's readable colours.
-- **Held-dice slots** belong to the mat (`slotSocketBrush`, `slotSocketBorder`).
-- **Cups** draw inside `CupCanvas`, which handles the shared shake, pour and pivot.
-    - The view is side-on from about 22 degrees (`CUP_VIEW_SQUASH`), on a `CupShape` grid: TALL 58x84, MEDIUM 66x76,
-        SQUAT 76x66.
-    - Liquids, plants and loose pupils share physics.
-    - A few cups draw their own canvas and never tip: Treasure Chest, Volcano, Chicken, Picnic Basket, Shipping
-        container.
-    - The cup contract is in `STYLE_ART.md`.
-- **Easter eggs in the art:**
-    - The Top Hat's rabbit peeks out after a quiet spell.
-    - The Flowerpot grows a sunflower over the current player's rolls. It blooms only for one who uses every roll of
-        every turn, in any mode, with no roll modifier. Green Fingers is earned only with that growing pot picked as the cup
-        (not the fixed-stage pots it unlocks).
-    - Egg dice (any colour but gold) with the Chicken cup roll a golden egg one time in 500, earned or not, in any
-        mode or modifier except D20 (its dice are drawn as D20s).
-    - Naming player 1 "Ireland" or "Éire" turns Tricolour green, white and orange.
-    - The menu logo's dice roll when tapped, and its googly pupils follow the phone.
-    - Seven quick taps on the Settings version pill (each within 1.5s) earn Are You A Developer?, which unlocks the
-        Wireframe dice and mat. Raw taps, so TalkBack announces no button.
-    - Starting a new game (not resuming one) between midnight and 6am on the phone's clock (`localHourOfDay`) earns
-        Rolling The Midnight Dice, which unlocks the Starry dice, mat and background.
+- **Ids** are the family's string key, then the colour's (`classic_ivory`, `ocean_lagoon`), and permanent once
+    released. `StyleRegistryTest` enforces this. The die's and background's are DiceFive's, as are their saved keys
+    (`dice_style_id`, `table_background_id`); the board's and pawns' are `board_style_id` and `pawn_style_id`.
+- **The Classic family** comes first in every category and is free. Its first colour is the default: the cream board,
+    glossy pawns, the ivory die, and the navy felt.
+- **A style with a counterpart of the same name is unlocked by the same thing** in every category that has one:
+    Stone opens at 65 achievements, Neon and RGB at 100, the water set (the Ocean die and background) at 15
+    (`WATER_SET_UNLOCK`). `StyleRegistryTest` checks every family name across the categories.
+- **Locks.** Every other family is locked behind a count of achievements (`StyleUnlock.AchievementCount`) or one
+    achievement (`SpecificAchievement`).
+    - A count is of **counted** achievements: every one but an Easter Egg (`AchievementsState.countedUnlocks`), as the
+        Achievements page totals them. No count lock is above 100.
+    - The styles DiceFive locked behind its own achievements (2026-11-17): the Starry die and background open with
+        Midnight Run; Devil with Too Much Of A Good Thing; Maths with Number Cruncher; D20 and the Floating Dice
+        background at 55, the one count no other style uses (`D20_UNLOCK`). The Irish, golden Egg, and D20 colours
+        that DiceFive kept secret are ordinary colours of their families. Googly (Completionist), Glitch (Big Fan), and
+        Wireframe (Are You A Developer?) keep their achievements.
+    - A colour can still be secret (`StyleVariant.secretAchievement`): not offered at all until earned. None is yet.
+    - Every lock takes a `StyleAccess`: the achievements, and `ownsAllStyles`, which meets every lock. Until the
+        purchase (Phase 11), only a debug build's pretend switch sets it: five taps on the Styles page's unlocked count.
+    - A locked saved pick draws the default but stays saved.
+- **Unlock banners.** Earning a style's achievement, or crossing its count, puts up a styles banner after the unlock
+    (`announce`); a long press opens the one category's page its styles are in, or the Styles page with their fields
+    flashed (`Screen.stylesBannerTarget`). An achievement that unlocks a style wears a star on its row and banner, and
+    its row's tap shows which (read with the row by TalkBack).
 
 ## Sound, haptics and motion
 

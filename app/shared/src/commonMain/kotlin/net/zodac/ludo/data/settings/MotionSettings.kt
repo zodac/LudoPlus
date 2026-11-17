@@ -22,10 +22,12 @@ enum class FrameRate(override val id: String, val framesPerSecond: Int?) : Store
  * The groups of the app's motion, each with a [FrameRate] of its own in [MotionSettings]. [key] names its saved setting
  * (`motion_<key>`), so it's permanent once released.
  *
- * [decoration] is what moves on its own while nothing is happening ([BACKGROUND]: the menu's backdrop, and later the
- * board's and pawns' moving styles). Off, each holds the still pose it has under reduced motion.
+ * [decoration] is what moves on its own while nothing is happening ([DICE]: the die style's own sparkle or glow;
+ * [BACKGROUND]: the menu's backdrop and the game's background style). Off, each holds the still pose it has under
+ * reduced motion.
  */
 enum class MotionGroup(val key: String) {
+    DICE("dice"),
     BACKGROUND("background"),
 
     /**
@@ -49,7 +51,7 @@ enum class MotionGroup(val key: String) {
 
     companion object {
         /** The decoration groups, one for each kind of art that moves on its own. */
-        val decoration: List<MotionGroup> = listOf(BACKGROUND)
+        val decoration: List<MotionGroup> = listOf(DICE, BACKGROUND)
 
         /** The game's own motion beside the die and the pawns: what the "Animations" levels set together. */
         val gameplay: List<MotionGroup> = listOf(MENUS, BANNERS, CELEBRATIONS)

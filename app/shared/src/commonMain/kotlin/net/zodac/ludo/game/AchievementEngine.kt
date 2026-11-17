@@ -2,6 +2,7 @@ package net.zodac.ludo.game
 
 import net.zodac.ludo.data.achievements.AchievementsState
 import net.zodac.ludo.model.Achievement
+import net.zodac.ludo.model.AchievementCategory
 import net.zodac.ludo.model.AchievementCounter
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
@@ -19,8 +20,13 @@ data class AchievementUpdate(
     val counters: Map<AchievementCounter, Int> = emptyMap(),
     val progressed: List<AchievementProgress> = emptyList(),
     val unlockedAtMillis: Long = 0L,
+    /** [AchievementsState.countedUnlocks] before this update - what a style's count lock is measured against. */
+    val countedUnlocksBefore: Int = 0,
 ) {
     val isEmpty: Boolean get() = newlyUnlocked.isEmpty() && counters.isEmpty() && progressed.isEmpty()
+
+    /** [AchievementsState.countedUnlocks] once this update is recorded: Easter Eggs aren't counted. */
+    val countedUnlocksAfter: Int get() = countedUnlocksBefore + newlyUnlocked.count { it.category != AchievementCategory.EASTER_EGGS }
 
     fun unlockedAt(): Map<Achievement, Long> = newlyUnlocked.associateWith { unlockedAtMillis }
 }
@@ -121,7 +127,7 @@ object AchievementEngine {
             newlyUnlocked += Achievement.COMPLETIONIST
         }
         val progressed = Achievement.entries.mapNotNull { progressEvent(it, counters, before, newlyUnlocked) }
-        return AchievementUpdate(newlyUnlocked, counters, progressed, now)
+        return AchievementUpdate(newlyUnlocked, counters, progressed, now, countedUnlocksBefore = before.countedUnlocks)
     }
 
     /** How far along [achievement] is with [counters], capped at its target. */

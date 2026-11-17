@@ -123,6 +123,7 @@
     <string name="menu_achievements">Achievements</string>
     <string name="menu_leaderboard">Leaderboard</string>
     <string name="menu_statistics">Statistics</string>
+    <string name="menu_styles">Styles</string>
     <string name="menu_rules">Rules</string>
     <string name="menu_settings">Settings</string>
     <string name="menu_play">Play</string>
@@ -444,6 +445,8 @@
     <string name="achievements_banner_resumed_spoken">Resumed</string>
     <!-- An unlock banner read aloud: its title, then its description. -->
     <string name="achievements_banner_unlocked_spoken">Achievement earned: %1$s. %2$s</string>
+    <!-- The same, for an achievement that also unlocks a style. -->
+    <string name="achievements_banner_unlocked_style_spoken">Achievement earned: %1$s. %2$s. Unlocks a style</string>
     <!-- A progress banner read aloud: the title, then how far along. -->
     <string name="achievements_banner_progress_spoken">%1$s: %2$s of %3$s</string>
 
@@ -760,4 +763,215 @@
     <string name="rules_capture_diagram_cd">Diagram: Red rolls 4 and lands on Green's pawn, sending it back to Green's yard. Blue's pawn is safe on a star square.</string>
     <string name="rules_winning_diagram_cd">Diagram: a red pawn 3 squares from home needs exactly 3 to get there. Another red pawn is already home.</string>
 
+
+    <!-- Styles (Phase 7) -->
+    <string name="styles_requirement_free">Always available</string>
+    <plurals name="styles_requirement_count">
+        <item quantity="one">`%1$d` achievement needed</item>
+        <item quantity="other">`%1$d` achievements needed</item>
+    </plurals>
+    <string name="styles_requirement_specific">`%1$s` achievement needed</string>
+    <string name="styles_requirement_any">`%1$s` or `%2$s` achievement needed</string>
+    <string name="styles_unlock_free">%1$s is always available.</string>
+    <plurals name="styles_unlock_count">
+        <item quantity="one">Earn `%1$d` achievement to unlock %2$s. You've earned `%3$d` so far.</item>
+        <item quantity="other">Earn `%1$d` achievements to unlock %2$s. You've earned `%3$d` so far.</item>
+    </plurals>
+    <string name="styles_unlock_specific">Earn `%1$s` to unlock %2$s.</string>
+    <string name="styles_unlock_any">Earn `%1$s` or `%2$s` to unlock %3$s.</string>
+    <string name="styles_name_with_variant">%1$s (%2$s)</string>
+    <string name="style_family_bestagon">Bestagon</string>
+    <string name="style_family_bestagons">Bestagons</string>
+    <string name="style_family_brick">Brick</string>
+    <string name="style_family_cake">Cake</string>
+    <string name="style_family_christmas">Christmas</string>
+    <string name="style_family_circuit">Circuit</string>
+    <string name="style_family_classic">Classic</string>
+    <string name="style_family_d20">D20</string>
+    <string name="style_family_devil">Devil</string>
+    <string name="style_family_egg">Egg</string>
+    <string name="style_family_floating_dice">Floating Dice</string>
+    <string name="style_family_frosted">Frosted</string>
+    <string name="style_family_games">Games</string>
+    <string name="style_family_garden">Garden</string>
+    <string name="style_family_gems">Gems</string>
+    <string name="style_family_gingham">Gingham</string>
+    <string name="style_family_glitch">Glitch</string>
+    <string name="style_family_glitter">Glitter</string>
+    <string name="style_family_googly">Googly</string>
+    <string name="style_family_lcd">LCD</string>
+    <string name="style_family_leather">Leather</string>
+    <string name="style_family_maths">Maths</string>
+    <string name="style_family_meadow">Meadow</string>
+    <string name="style_family_metal">Metal</string>
+    <string name="style_family_misprint">Misprint</string>
+    <string name="style_family_multicolour">Multicolour</string>
+    <string name="style_family_neon">Neon</string>
+    <string name="style_family_ocean">Ocean</string>
+    <string name="style_family_world">World</string>
+    <string name="style_family_numeral">Numeral</string>
+    <string name="style_family_obsidian">Obsidian</string>
+    <string name="style_family_pinstripe">Pinstripe</string>
+    <string name="style_family_planks">Planks</string>
+    <string name="style_family_retro">Retro</string>
+    <string name="style_family_rgb">RGB</string>
+    <string name="style_family_ribbon">Ribbon</string>
+    <string name="style_family_spotlight">Spotlight</string>
+    <string name="style_family_starry">Starry</string>
+    <string name="style_family_stone">Stone</string>
+    <string name="style_family_sunburst">Sunburst</string>
+    <string name="style_family_tally">Tally</string>
+    <string name="style_family_text">Text</string>
+    <string name="style_family_wireframe">Wireframe</string>
+    <string name="style_family_wood">Wood</string>
+    <string name="style_colour_amber">Amber</string>
+    <string name="style_colour_arabic">Arabic</string>
+    <string name="style_colour_arabic_green">Arabic Green</string>
+    <string name="style_colour_deep">Deep</string>
+    <string name="style_colour_lagoon">Lagoon</string>
+    <string name="style_colour_basalt">Basalt</string>
+    <string name="style_colour_baubles">Baubles</string>
+    <string name="style_colour_black">Black</string>
+    <string name="style_colour_black_marble">Black Marble</string>
+    <string name="style_colour_blue">Blue</string>
+    <string name="style_colour_blueprint">Blueprint</string>
+    <string name="style_colour_bronze">Bronze</string>
+    <string name="style_colour_brown">Brown</string>
+    <string name="style_colour_charcoal">Charcoal</string>
+    <string name="style_colour_chinese">Chinese</string>
+    <string name="style_colour_chocolate">Chocolate</string>
+    <string name="style_colour_crimson">Crimson</string>
+    <string name="style_colour_cyan">Cyan</string>
+    <string name="style_colour_digits">Digits</string>
+    <string name="style_colour_emerald">Emerald</string>
+    <string name="style_colour_forestry">Forestry</string>
+    <string name="style_colour_gift">Gift</string>
+    <string name="style_colour_gold">Gold</string>
+    <string name="style_colour_granite">Granite</string>
+    <string name="style_colour_green">Green</string>
+    <string name="style_colour_green_and_purple">Green &amp; Purple</string>
+    <string name="style_colour_green_mono">Green Mono</string>
+    <string name="style_colour_honey">Honey</string>
+    <string name="style_colour_ice">Ice</string>
+    <string name="style_colour_indigo">Indigo</string>
+    <string name="style_colour_irish">Irish</string>
+    <string name="style_colour_cream">Cream</string>
+    <string name="style_colour_gloss">Gloss</string>
+    <string name="style_colour_ivory">Ivory</string>
+    <string name="style_colour_ivory_serif">Ivory Serif</string>
+    <string name="style_colour_japanese">Japanese</string>
+    <string name="style_colour_japanese_black">Japanese Black</string>
+    <string name="style_colour_latin_american">Latin American</string>
+    <string name="style_colour_lava">Lava</string>
+    <string name="style_colour_limestone">Limestone</string>
+    <string name="style_colour_manzu">Manzu</string>
+    <string name="style_colour_maple">Maple</string>
+    <string name="style_colour_menu">Menu</string>
+    <string name="style_colour_midnight">Midnight</string>
+    <string name="style_colour_mixed">Mixed</string>
+    <string name="style_colour_navy">Navy</string>
+    <string name="style_colour_neon">Neon</string>
+    <string name="style_colour_night">Night</string>
+    <string name="style_colour_oak">Oak</string>
+    <string name="style_colour_orange_and_teal">Orange &amp; Teal</string>
+    <string name="style_colour_oxblood">Oxblood</string>
+    <string name="style_colour_pencil">Pencil</string>
+    <string name="style_colour_pink">Pink</string>
+    <string name="style_colour_pink_and_blue">Pink &amp; Blue</string>
+    <string name="style_colour_pinzu">Pinzu</string>
+    <string name="style_colour_poker">Poker</string>
+    <string name="style_colour_purple">Purple</string>
+    <string name="style_colour_purple_script">Purple Script</string>
+    <string name="style_colour_rainbow">Rainbow</string>
+    <string name="style_colour_red">Red</string>
+    <string name="style_colour_red_block">Red Block</string>
+    <string name="style_colour_ripple">Ripple</string>
+    <string name="style_colour_roman">Roman</string>
+    <string name="style_colour_roman_blue">Roman Blue</string>
+    <string name="style_colour_rose_gold">Rose Gold</string>
+    <string name="style_colour_sandstone">Sandstone</string>
+    <string name="style_colour_screen">Screen</string>
+    <string name="style_colour_silver">Silver</string>
+    <string name="style_colour_slate">Slate</string>
+    <string name="style_colour_snowcap">Snowcap</string>
+    <string name="style_colour_soil">Soil</string>
+    <string name="style_colour_sozu">Sozu</string>
+    <string name="style_colour_starlight">Starlight</string>
+    <string name="style_colour_strawberry">Strawberry</string>
+    <string name="style_colour_swirl">Swirl</string>
+    <string name="style_colour_tan">Tan</string>
+    <string name="style_colour_teal_plain">Teal Plain</string>
+    <string name="style_colour_tricolour">Tricolour</string>
+    <string name="style_colour_vanilla">Vanilla</string>
+    <string name="style_colour_walnut">Walnut</string>
+    <string name="style_colour_wave">Wave</string>
+    <string name="style_colour_waves">Waves</string>
+    <string name="style_colour_western">Western</string>
+    <string name="style_colour_white">White</string>
+    <string name="style_colour_white_marble">White Marble</string>
+    <string name="style_colour_white_rainbow">White Rainbow</string>
+    <string name="style_colour_white_wave">White Wave</string>
+    <string name="style_colour_yellow">Yellow</string>
+    <string name="style_noun_dice">die</string>
+    <string name="style_noun_board">board</string>
+    <string name="style_noun_pawns">pawn</string>
+    <string name="style_noun_background">background</string>
+    <string name="style_variant_colour">colour</string>
+    <string name="style_variant_finish">finish</string>
+    <string name="styles_reward_style">the '%1$s' %2$s style</string>
+    <plurals name="styles_reward_hidden_colours">
+        <item quantity="one">the hidden '%1$s' %2$s colour</item>
+        <item quantity="other">the hidden '%1$s' %2$s colours</item>
+    </plurals>
+    <string name="styles_category_board">Board</string>
+    <string name="styles_category_pawns">Pawns</string>
+    <string name="styles_category_dice">Die</string>
+    <string name="styles_unlocked_count">%1$d of %2$d unlocked</string>
+    <string name="styles_unlocked_count_short">%1$d of %2$d</string>
+    <string name="styles_category_count">%1$d/%2$d</string>
+    <string name="styles_unlocked_only">Unlocked</string>
+    <string name="styles_select_action">Select</string>
+    <string name="styles_choose_variant_action">Choose %1$s %2$s</string>
+    <string name="styles_family_colour_cd">%1$s, %2$s</string>
+    <string name="styles_locked_spoken">Locked</string>
+    <string name="styles_show_unlock_action">Show how to unlock %1$s</string>
+    <!-- The announcement's two sentences: %1$s the one above, %2$s the achievements earned. -->
+    <string name="achievements_styles_unlocked_announce_join">%1$s. %2$s</string>
+    <!-- Chosen by how many styles were unlocked. %1$s is all of them, joined into a list. -->
+    <plurals name="achievements_styles_unlocked_announcement">
+        <item quantity="one">Style unlocked: %1$s</item>
+        <item quantity="other">Styles unlocked: %1$s</item>
+    </plurals>
+    <!-- Chosen by how many achievements are earned (%1$d), which the text shows. -->
+    <plurals name="achievements_styles_unlocked_earned">
+        <item quantity="one">Earned %1$d achievement</item>
+        <item quantity="other">Earned %1$d achievements</item>
+    </plurals>
+    <!-- What unlocked a style locked behind one achievement: %1$s is the achievement's title. -->
+    <string name="achievements_styles_unlocked_earned_achievement">Earned '%1$s'</string>
+    <!-- The same, as TalkBack says it, without the quote marks. -->
+    <string name="achievements_styles_unlocked_earned_achievement_spoken">Earned %1$s</string>
+    <!-- Chosen by how many more styles there are than the two named. %1$s is the two named, %2$d the rest. -->
+    <plurals name="achievements_styles_unlocked_more">
+        <item quantity="one">%1$s and %2$d more</item>
+        <item quantity="other">%1$s and %2$d more</item>
+    </plurals>
+    <!-- One unlocked style as the banner names it: %1$s is its name ("Frosted"), %2$s what it is ("dice", "mat"). -->
+    <string name="achievements_styles_unlocked_named">'%1$s' %2$s</string>
+    <!-- %1$d is how many achievements are earned, %2$s the style as named above. -->
+    <string name="achievements_styles_unlocked_one">the %1$s style</string>
+    <!-- One unlocked style as TalkBack says it, without the quote marks the banner draws round it. -->
+    <string name="achievements_styles_unlocked_spoken_style">%1$s %2$s</string>
+    <!-- Both forms are used with the number of styles unlocked, which the text doesn't show. -->
+    <plurals name="achievements_styles_unlocked_title">
+        <item quantity="one">Style Unlocked</item>
+        <item quantity="other">Styles Unlocked</item>
+    </plurals>
+    <!-- The banner's description: %1$s is the line above, %2$s the styles - the one style, the two styles, or the two and how many more. -->
+    <string name="achievements_styles_unlocked_with">%1$s: %2$s</string>
+    <string name="achievements_reward_locked">Earn this to unlock %1$s</string>
+    <!-- TalkBack's name for tapping the star on an achievement. -->
+    <string name="achievements_reward_show_action">Show which style this unlocks</string>
+    <!-- The tooltip on an unlocked achievement's star. %1$s is what it unlocked, from styles_reward_*. -->
+    <string name="achievements_reward_unlocked">You've unlocked %1$s!</string>
 </resources>

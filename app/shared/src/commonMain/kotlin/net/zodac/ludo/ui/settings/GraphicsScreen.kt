@@ -69,6 +69,7 @@ import net.zodac.ludo.resources.settings_orientation_device
 import net.zodac.ludo.resources.settings_orientation_landscape
 import net.zodac.ludo.resources.settings_orientation_portrait
 import net.zodac.ludo.resources.styles_category_background
+import net.zodac.ludo.resources.styles_category_dice
 import net.zodac.ludo.resources.styles_title
 import net.zodac.ludo.ui.common.FittedSegmentedChoiceRow
 import net.zodac.ludo.ui.common.HoldPageCover
@@ -198,6 +199,7 @@ private fun idleTimeoutSpoken(timeout: IdleTimeout): String =
 /** Each [MotionGroup]'s row in the Advanced graphics settings: its icon and name - a style's as the Styles page names it. */
 private val MotionGroup.icon: ImageVector
     get() = when (this) {
+        MotionGroup.DICE -> Symbols.AutoAwesome
         MotionGroup.BACKGROUND -> Symbols.Wallpaper
         MotionGroup.MENUS -> Symbols.SportsEsports
         MotionGroup.BANNERS -> Symbols.MilitaryTech
@@ -209,6 +211,7 @@ private val MotionGroup.icon: ImageVector
 @Composable
 private fun MotionGroup.title(): String = stringResource(
     when (this) {
+        MotionGroup.DICE -> Res.string.styles_category_dice
         MotionGroup.BACKGROUND -> Res.string.styles_category_background
         MotionGroup.MENUS -> Res.string.settings_motion_menus
         MotionGroup.BANNERS -> Res.string.settings_motion_banners

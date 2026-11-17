@@ -45,7 +45,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalAccessibilityManager
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -71,7 +70,8 @@ import kotlinx.coroutines.launch
 import net.zodac.ludo.app.AchievementEvent
 import net.zodac.ludo.app.AchievementEvents
 import net.zodac.ludo.app.LocalAppContainer
-import net.zodac.ludo.data.settings.MotionGroup
+import net.zodac.ludo.app.UnlockedStyle
+import net.zodac.ludo.game.style.unlocksStyle
 import net.zodac.ludo.model.Achievement
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.achievements_banner_pause_action
@@ -80,11 +80,14 @@ import net.zodac.ludo.resources.achievements_banner_progress_spoken
 import net.zodac.ludo.resources.achievements_banner_resume_action
 import net.zodac.ludo.resources.achievements_banner_resumed_spoken
 import net.zodac.ludo.resources.achievements_banner_unlocked_spoken
+import net.zodac.ludo.resources.achievements_banner_unlocked_style_spoken
 import net.zodac.ludo.resources.achievements_progress
 import net.zodac.ludo.ui.common.CONTENT_MAX_WIDTH
 import net.zodac.ludo.ui.common.ConfigureOverlayDialogWindow
-import net.zodac.ludo.ui.common.GroupMotion
 import net.zodac.ludo.ui.common.LocalReduceMotion
+import androidx.compose.ui.platform.LocalDensity
+import net.zodac.ludo.data.settings.MotionGroup
+import net.zodac.ludo.ui.common.GroupMotion
 import net.zodac.ludo.ui.common.PacedEffect
 import net.zodac.ludo.ui.common.ShrinkThenWrapText
 import net.zodac.ludo.ui.common.ShrinkToLinesText
@@ -178,8 +181,9 @@ private data class BannerItem(val key: Long, val event: AchievementEvent)
  * real dialog itself.
  *
  * Long-pressing the front banner asks [onAchievementSelected] to take the player to that
- * achievement on the Achievements screen (see `AchievementScrollRequests`, which is how the
- * request actually reaches that screen - this host has no reference to it, only to the
+ * achievement on the Achievements screen - or, for a styles banner, [onStylesSelected] to open the
+ * Styles screen (see `AchievementScrollRequests` and `StyleScrollRequests`, which is how the
+ * request actually reaches those screens - this host has no reference to it, only to the
  * `NavHostController` its caller wires [onAchievementSelected] up to). Mid-game, with the
  * "confirm before leaving" setting on, and only while the game's own screen is in front
  * ([isOnGameScreen] - a saved game elsewhere, or the Achievements page itself, has nothing being
@@ -192,6 +196,7 @@ fun AchievementBannerHost(
     modifier: Modifier = Modifier,
     isOnGameScreen: () -> Boolean,
     onAchievementSelected: (Achievement) -> Unit,
+    onStylesSelected: (List<UnlockedStyle>) -> Unit,
     content: @Composable () -> Unit,
 ) {
     val banners = remember { mutableStateListOf<BannerItem>() }
@@ -244,7 +249,7 @@ fun AchievementBannerHost(
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 // Display order only, not the underlying list (removal below still targets `banners`
-                // directly) - a real unlock always sits in front of a progress nudge, wherever in the
+                // directly) - a real unlock (an achievement, or styles) always sits in front of a progress nudge, wherever in the
                 // arrival order it actually landed. sortedBy is stable, so within each of the two
                 // groups, `banners`' own order - oldest-still-queued first, since new arrivals are
                 // inserted at the front of it, not appended (see the collector above) - is preserved.
@@ -274,6 +279,7 @@ fun AchievementBannerHost(
                                             val open: () -> Unit = when (val event = item.event) {
                                                 is AchievementEvent.Unlocked -> ({ onAchievementSelected(event.achievement) })
                                                 is AchievementEvent.Progressed -> ({ onAchievementSelected(event.achievement) })
+                                                is AchievementEvent.StylesUnlocked -> ({ onStylesSelected(event.styles) })
                                             }
                                             if (isOnGameScreen() && hasInProgressGame && confirmBeforeLeavingGame) {
                                                 leaveConfirmation.request(onLeave = open)
@@ -516,6 +522,7 @@ private fun BannerSlot(
         when (val event = item.event) {
             is AchievementEvent.Unlocked -> UnlockedBanner(event.achievement)
             is AchievementEvent.Progressed -> ProgressBanner(event.achievement, event.previous, event.current, interactive)
+            is AchievementEvent.StylesUnlocked -> StylesUnlockedBanner(event)
         }
         Surface(
             shape = CircleShape,
@@ -620,7 +627,7 @@ private fun UnlockedBanner(achievement: Achievement) {
     Surface(
         modifier = Modifier.fillMaxWidth().announced(
             stringResource(
-                Res.string.achievements_banner_unlocked_spoken,
+                if (achievement.unlocksStyle) Res.string.achievements_banner_unlocked_style_spoken else Res.string.achievements_banner_unlocked_spoken,
                 title,
                 description.text,
             ),
@@ -649,10 +656,48 @@ private fun UnlockedBanner(achievement: Achievement) {
                         modifier = Modifier.size(22.dp),
                     )
                 }
+                if (achievement.unlocksStyle) StyleRewardStar(tint = defaultIconTint)
             }
             Column(modifier = Modifier.weight(1f)) {
                 BannerTitle(title)
                 BannerDescription(description)
+            }
+        }
+    }
+}
+
+/**
+ * Earned enough achievements to unlock one or more styles by count - one banner however many styles,
+ * from however many categories, a single update unlocked. Unmistakably not an achievement: the
+ * tertiary container rather than the primary one, and the style star (the badge an achievement that
+ * unlocks a style wears - see [StyleRewardStar]) is the icon itself, in a circle rather than the
+ * achievement's square. Same footprint (padding, 40dp icon, a one-line title and two-line
+ * description) as [UnlockedBanner], so the stack doesn't change height when the two mix.
+ */
+@Composable
+private fun StylesUnlockedBanner(event: AchievementEvent.StylesUnlocked) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().announced(stylesUnlockedAnnouncement(event)),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        border = BorderStroke(1.dp, BANNER_BORDER_COLOR),
+        shadowElevation = 6.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier.size(40.dp).border(width = 1.dp, color = LocalContentColor.current, shape = CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(imageVector = Symbols.Star, contentDescription = null, modifier = Modifier.size(24.dp))
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                BannerTitle(stylesUnlockedTitle(event))
+                BannerDescription(AnnotatedString(stylesUnlockedDescription(event)))
             }
         }
     }

@@ -41,9 +41,8 @@ import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.game.BoardLayout
 import net.zodac.ludo.ui.game.GameDie
 import net.zodac.ludo.ui.game.HOME_PAWN_RADIUS
-import net.zodac.ludo.ui.game.drawBoard
-import net.zodac.ludo.ui.game.drawHomeSpot
-import net.zodac.ludo.ui.game.drawPawn
+import net.zodac.ludo.ui.style.ClassicBoardStyle
+import net.zodac.ludo.ui.style.ClassicPawnStyle
 import net.zodac.ludo.ui.theme.BoardInk
 import net.zodac.ludo.ui.theme.color
 import org.jetbrains.compose.resources.StringResource
@@ -173,12 +172,12 @@ fun RulesDiagram(kind: RulesDiagramKind, modifier: Modifier = Modifier) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val unit = size.width / view.width
             translate(-view.left * unit, -view.top * unit) {
-                drawBoard(unit, colours)
+                with(ClassicBoardStyle) { drawBoard(unit, colours) }
                 for (arrow in diagram.arrows) drawArrow(arrow, unit)
                 for (pawn in diagram.pawns) {
                     val colour = colours[pawn.seat].let { if (pawn.ghost) it.copy(alpha = 0.35f) else it }
-                    if (pawn.home) drawHomeSpot(pawn.centre * unit, pawn.radius * unit)
-                    drawPawn(pawn.centre * unit, pawn.radius * unit, colour, ringed = false)
+                    if (pawn.home) with(ClassicBoardStyle) { drawHomeSpot(pawn.centre * unit, pawn.radius * unit) }
+                    with(ClassicPawnStyle) { drawPawn(pawn.centre * unit, pawn.radius * unit, colour, ringed = false) }
                 }
             }
         }

@@ -145,3 +145,43 @@ val CrystalTrophyWhite = Color(0xFFFFFFFF)
 val CrystalTrophyIce = Color(0xFFCDEFFF)
 val CrystalTrophyCyan = Color(0xFF8EC5EC)
 val CrystalTrophyViolet = Color(0xFF6F7FD8)
+
+// Styles: the die and background art brought back from DiceFive (5423b6c), for ui.style. Deliberately not colour roles:
+// the table is a rendered object, not app chrome. The navy felt is the default background.
+val FeltNavyGlow = Color(0xFF2A5590)
+val FeltNavyTop = Color(0xFF1C3D66)
+val FeltNavyBottom = Color(0xFF0B1E3A)
+// The Classic oak die and brown background: honey-oak with off-white pips (mid-tone enough that the gold held ring
+// still stands off the face), and dark stained wood.
+val BarrelDiceTop = Color(0xFFC8894A)
+val BarrelDiceBottom = Color(0xFF7A4A22)
+val BarrelDicePipColor = Color(0xFFFFF6E8)
+val BarrelBackgroundTop = Color(0xFF3A2314)
+val BarrelBackgroundBottom = Color(0xFF1C1009)
+val FireBackgroundTop = Color(0xFF7A130D)
+val FireBackgroundBottom = Color(0xFF3D0805)
+// The Classic die's red, yellow, and blue (DieColourPalette): DiceFive's Tricolour dice. "Swatch" is the colour's dot
+// on the Styles page.
+val TricolourRedDiceTop = Color(0xFFEF5350)
+val TricolourRedDiceBottom = Color(0xFF9A1B1B)
+val TricolourRedPipColor = Color(0xFFFFF4EF)
+// The yellow die's face and its own held ring have swapped shades from every other die: its face
+// is drawn in GoldAccent/GoldAccentDim (the colour every OTHER die's held ring uses) and its own
+// held ring uses what used to be its face colour instead - see TricolourYellowHeldRing and
+// DieColourPalette.heldRing. The original same-hue pairing made a held yellow die's ring vanish
+// against its own face.
+val TricolourYellowDiceTop = GoldAccent
+val TricolourYellowDiceBottom = GoldAccentDim
+val TricolourYellowPipColor = Color(0xFF3A2A05)
+val TricolourYellowHeldRing = Color(0xFFFFE66B)
+val TricolourBlueDiceTop = Color(0xFF5C9CEB)
+val TricolourBlueDiceBottom = Color(0xFF173E8C)
+val TricolourBluePipColor = Color(0xFFF1F6FF)
+val TricolourRedSwatch = Color(0xFFE53935)
+val TricolourYellowSwatch = Color(0xFFFDD835)
+val TricolourBlueSwatch = Color(0xFF1E88E5)
+val IrishWhiteDiceBottom = Color(0xFFD8D8D8)
+val IrishWhitePipColor = Color(0xFF262626)
+val IrishGreenSwatch = Color(0xFF169B62)
+val IrishWhiteSwatch = Color(0xFFFFFFFF)
+val IrishOrangeSwatch = Color(0xFFFF883E)

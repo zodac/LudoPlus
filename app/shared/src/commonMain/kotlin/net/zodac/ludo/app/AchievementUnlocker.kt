@@ -1,5 +1,8 @@
 package net.zodac.ludo.app
 
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.zodac.ludo.data.achievements.AchievementStore
@@ -17,7 +20,11 @@ import net.zodac.ludo.model.Achievement
  * Every read-decide-write runs one at a time - this unlocker's own, and inside [AchievementStore.locked] every
  * screen's: two overlapping would each read "not unlocked yet" and both announce the same achievement.
  */
-class AchievementUnlocker(private val store: AchievementStore, private val now: () -> Long = ::nowEpochMillis) {
+class AchievementUnlocker(
+    private val store: AchievementStore,
+    private val ownsAllStyles: Flow<Boolean> = flowOf(false),
+    private val now: () -> Long = ::nowEpochMillis,
+) {
 
     private val lock = Mutex()
 
@@ -34,7 +41,7 @@ class AchievementUnlocker(private val store: AchievementStore, private val now: 
             val update = decide(store.current())
             if (!update.isEmpty) {
                 store.record(update.unlockedAt(), update.counters)
-                announce(update)
+                announce(update, ownsAllStyles.first())
             }
             update
         }

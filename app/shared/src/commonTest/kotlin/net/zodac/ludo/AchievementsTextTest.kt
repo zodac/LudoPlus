@@ -83,7 +83,7 @@ class AchievementsTextTest : UiTest() {
         fun showBannerHost() = showcase.show {
             CompositionLocalProvider(LocalAppContainer provides inMemoryAppContainer()) {
                 LudoPlusTheme {
-                    AchievementBannerHost(isOnGameScreen = { false }, onAchievementSelected = {}) { Box(Modifier.fillMaxSize()) }
+                    AchievementBannerHost(isOnGameScreen = { false }, onAchievementSelected = {}, onStylesSelected = {}) { Box(Modifier.fillMaxSize()) }
                 }
             }
         }
@@ -203,5 +203,23 @@ class AchievementsTextTest : UiTest() {
         switch.performClick()
         compose.waitForIdle()
         assertEquals(firstRowTop, compose.onNodeWithText("The Journey Begins").getUnclippedBoundsInRoot().top)
+    }
+
+    @Test
+    fun `a row whose achievement unlocks a style reads the style with it - and a tap shows it`() = uiTest {
+        showAchievements(achievementsViewModel())
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Number Cruncher"))
+        val reward = "Earn this to unlock the 'Maths' die style"
+        val row = compose.onNode(hasContentDescription(reward) and SemanticsMatcher.keyIsDefined(SemanticsActions.OnClick))
+        assertEquals("Show which style this unlocks", row.fetchSemanticsNode().config[SemanticsActions.OnClick].label)
+        // Heard, not seen, until the tap shows it as a tip.
+        compose.onNodeWithText(reward).assertDoesNotExist()
+        row.performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText(reward).assertExists()
+        // A row with no style behind it has no tap at all.
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Who Made This?"))
+        val plain = compose.onNode(hasText("Who Made This?")).fetchSemanticsNode()
+        assertTrue(SemanticsActions.OnClick !in plain.config)
     }
 }

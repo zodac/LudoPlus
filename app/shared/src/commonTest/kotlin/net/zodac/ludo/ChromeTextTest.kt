@@ -40,12 +40,12 @@ class ChromeTextTest : UiTest() {
                 LudoPlusTheme {
                     MenuScreen(
                         hasInProgressGame = hasInProgressGame,
-                        onContinue = {}, onNewGame = {}, onAchievements = {}, onLeaderboard = {}, onStatistics = {}, onRules = {}, onSettings = {},
+                        onContinue = {}, onNewGame = {}, onAchievements = {}, onLeaderboard = {}, onStatistics = {}, onStyles = {}, onRules = {}, onSettings = {},
                     )
                 }
             }
             if (hasInProgressGame) {
-                listOf("Leaderboard", "Statistics", "Rules", "Settings", "New Game", "Continue").forEach { compose.onNodeWithText(it).assertExists() }
+                listOf("Leaderboard", "Statistics", "Styles", "Rules", "Settings", "New Game", "Continue").forEach { compose.onNodeWithText(it).assertExists() }
                 compose.onAllNodesWithText("Play").assertCountEquals(0)
             } else {
                 compose.onNodeWithText("Play").assertExists()

@@ -60,6 +60,7 @@ class BannerHoldTimeoutTest : UiTest() {
                     AchievementBannerHost(
                         isOnGameScreen = { false },
                         onAchievementSelected = {},
+                        onStylesSelected = {},
                     ) { Box(Modifier.fillMaxSize()) }
                 }
             }

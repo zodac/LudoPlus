@@ -36,6 +36,7 @@ import net.zodac.ludo.resources.menu_play
 import net.zodac.ludo.resources.menu_rules
 import net.zodac.ludo.resources.menu_settings
 import net.zodac.ludo.resources.menu_statistics
+import net.zodac.ludo.resources.menu_styles
 import net.zodac.ludo.ui.common.AppLogo
 import net.zodac.ludo.ui.common.BrandBackdrop
 import net.zodac.ludo.ui.common.LocalLandscapePage
@@ -70,6 +71,7 @@ fun MenuScreen(
     onAchievements: () -> Unit,
     onLeaderboard: () -> Unit,
     onStatistics: () -> Unit,
+    onStyles: () -> Unit,
     onRules: () -> Unit,
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -91,6 +93,7 @@ fun MenuScreen(
                 stringResource(Res.string.menu_achievements) to onAchievements,
                 stringResource(Res.string.menu_leaderboard) to onLeaderboard,
                 stringResource(Res.string.menu_statistics) to onStatistics,
+                stringResource(Res.string.menu_styles) to onStyles,
                 stringResource(Res.string.menu_rules) to onRules,
                 stringResource(Res.string.menu_settings) to onSettings,
             )
@@ -217,6 +220,7 @@ private fun MenuScreenPreview() {
             onAchievements = {},
             onLeaderboard = {},
             onStatistics = {},
+            onStyles = {},
             onRules = {},
             onSettings = {},
         )
@@ -234,6 +238,7 @@ private fun MenuScreenInProgressPreview() {
             onAchievements = {},
             onLeaderboard = {},
             onStatistics = {},
+            onStyles = {},
             onRules = {},
             onSettings = {},
         )

@@ -1,5 +1,12 @@
 package net.zodac.ludo.ui.game
 
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
+import net.zodac.ludo.ui.style.visualTheme
+import net.zodac.ludo.ui.style.TableBackground
+import net.zodac.ludo.ui.style.LocalGameVisualTheme
+import net.zodac.ludo.ui.style.GameVisualTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -165,7 +172,13 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
     val window = LocalWindowInfo.current.containerSize
     val sideways = window.width > window.height
     LaunchedEffect(sideways) { if (sideways) viewModel.onShownSideways() }
-    CompositionLocalProvider(LocalDieLongPress provides viewModel::onDieLongPressed.takeIf { viewModel.hasSuperuserMode }) {
+    // The player's picks on the Styles page, or the defaults until they've loaded.
+    val picks by viewModel.savedStyles.collectAsStateWithLifecycle()
+    val theme = remember(picks) { picks?.visualTheme ?: GameVisualTheme() }
+    CompositionLocalProvider(
+        LocalDieLongPress provides viewModel::onDieLongPressed.takeIf { viewModel.hasSuperuserMode },
+        LocalGameVisualTheme provides theme,
+    ) {
         GameContent(
             started,
             onRoll = viewModel::roll,
@@ -273,7 +286,14 @@ fun GameContent(
     val moves = if (tutorial == null) allMoves else allMoves.filter { it.pawn == (tutorial.step as? TutorialStep.Move)?.pawn }
     val rollStep = tutorial?.step is TutorialStep.Roll
     val players = @Composable { if (tutorial == null) PlayerCards(started, columns = 2) else TutorialCoachCard(tutorial) }
-    ScreenScaffold(title = stringResource(started.mode.displayName), onBack = onBack, driftingDice = false, wide = true) {
+    val background = LocalGameVisualTheme.current.background
+    ScreenScaffold(
+        title = stringResource(started.mode.displayName),
+        onBack = onBack,
+        driftingDice = false,
+        wide = true,
+        underlay = { TableBackgroundFill(background) },
+    ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val (width, height) = maxWidth to maxHeight
             val board = @Composable { modifier: Modifier ->
@@ -302,6 +322,14 @@ fun GameContent(
             }
         }
     }
+}
+
+/** [background] filling the room it's given: its brush, and over it any decoration it draws, running while it's shown. */
+@Composable
+private fun BoxScope.TableBackgroundFill(background: TableBackground) {
+    Box(modifier = Modifier.matchParentSize().background(background.scoreAreaBrush))
+    background.Animate()
+    Canvas(modifier = Modifier.matchParentSize()) { with(background) { drawScoreAreaDecoration() } }
 }
 
 /** The tutorial's coach card, in place of the players: as tall as its longest words need, so it never changes height. */

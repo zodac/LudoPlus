@@ -3,6 +3,11 @@
 > **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
 > from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
 > <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
+>
+> **Phase 7, slice 1 (2026-11-18).** The working method, the drawing techniques, the shared painters, and the heavy-art
+> rules hold for Ludo Plus's die and background art, which came back from `5423b6c`. The cups, mats, and frames went
+> (Ludo Plus has none). Board and pawn art (`ui/style/BoardStyles.kt`, `PawnStyles.kt`) is Phase 7's next slices,
+> when this doc is rewritten for it.
 
 The working method and the drawing techniques. Elsewhere:
 

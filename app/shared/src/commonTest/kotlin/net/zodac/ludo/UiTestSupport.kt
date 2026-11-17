@@ -1,5 +1,13 @@
 package net.zodac.ludo
 
+import org.jetbrains.compose.resources.getString
+import net.zodac.ludo.app.UnlockedStyle
+import net.zodac.ludo.ui.style.StyleFamily
+import net.zodac.ludo.ui.style.StyleCatalog
+import net.zodac.ludo.ui.style.TableArt
+import net.zodac.ludo.ui.styles.StylesViewModel
+import net.zodac.ludo.data.settings.SavedStyles
+import kotlinx.coroutines.flow.StateFlow
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.app.BuildInfo
 import net.zodac.ludo.data.InMemoryPreferences
@@ -38,3 +46,16 @@ internal fun inMemoryAppContainer(
     achievementsRepository = achievements,
     buildInfo = BuildInfo(versionName = "1.0.0", isDebug = false),
 )
+
+/** A Styles view model over in-memory repositories; [saved] stands in for the app's own copy of the picks, as the container passes it. */
+internal fun stylesViewModel(
+    saved: StateFlow<SavedStyles?>? = null,
+    settings: SettingsRepository = SettingsRepository(InMemoryPreferences()),
+) = StylesViewModel(settings, InMemoryAchievementStore(), saved)
+
+/** The family of this catalogue called [name] in the test's language. */
+internal suspend fun <T : TableArt> StyleCatalog<T>.familyNamed(name: String): StyleFamily<T> =
+    families.first { getString(it.name) == name }
+
+/** A banner's entry for the style [name] of this catalogue. */
+internal suspend fun StyleCatalog<*>.unlockedStyle(name: String): UnlockedStyle = UnlockedStyle(familyNamed(name).name, noun)

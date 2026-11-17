@@ -148,6 +148,29 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun setScreenOrientation(orientation: ScreenOrientation) = set(SCREEN_ORIENTATION_KEY, orientation.id)
 
+    // Style ids, not the ui.style types themselves - this is the data layer, and resolving an id to its art is
+    // ui.style's job (StyleCatalog). The defaults are DefaultStyleIds, which the default styles themselves are given.
+    val boardStyleId: Flow<String> = read(BOARD_STYLE_ID_KEY, default = DefaultStyleIds.BOARD)
+
+    suspend fun setBoardStyleId(id: String) = set(BOARD_STYLE_ID_KEY, id)
+
+    val pawnStyleId: Flow<String> = read(PAWN_STYLE_ID_KEY, default = DefaultStyleIds.PAWNS)
+
+    suspend fun setPawnStyleId(id: String) = set(PAWN_STYLE_ID_KEY, id)
+
+    val diceStyleId: Flow<String> = read(DICE_STYLE_ID_KEY, default = DefaultStyleIds.DICE)
+
+    suspend fun setDiceStyleId(id: String) = set(DICE_STYLE_ID_KEY, id)
+
+    val tableBackgroundId: Flow<String> = read(TABLE_BACKGROUND_ID_KEY, default = DefaultStyleIds.TABLE_BACKGROUND)
+
+    suspend fun setTableBackgroundId(id: String) = set(TABLE_BACKGROUND_ID_KEY, id)
+
+    /** The Styles screen's Unlocked filter: only unlocked styles shown. */
+    val unlockedOnlyStyles: Flow<Boolean> = read(UNLOCKED_ONLY_STYLES_KEY, default = false)
+
+    suspend fun setUnlockedOnlyStyles(unlockedOnly: Boolean) = set(UNLOCKED_ONLY_STYLES_KEY, unlockedOnly)
+
     /**
      * The seconds the app has been in front of the player, as [net.zodac.ludo.app.PlayTimeTracker] saves them: Statistics'
      * time played. Not cleared by anything the player can reset. (DiceFive kept it with the achievements' counters; it
@@ -170,6 +193,13 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val SCREEN_ORIENTATION_KEY = stringPreferencesKey("screen_orientation")
         val GAME_MODE_KEY = stringPreferencesKey("game_mode")
         val PLAY_SECONDS_KEY = intPreferencesKey("play_seconds")
+
+        // Stored ids: permanent once released. The die's and background's keys are DiceFive's.
+        val BOARD_STYLE_ID_KEY = stringPreferencesKey("board_style_id")
+        val PAWN_STYLE_ID_KEY = stringPreferencesKey("pawn_style_id")
+        val DICE_STYLE_ID_KEY = stringPreferencesKey("dice_style_id")
+        val TABLE_BACKGROUND_ID_KEY = stringPreferencesKey("table_background_id")
+        val UNLOCKED_ONLY_STYLES_KEY = booleanPreferencesKey("unlocked_only_styles")
 
         // The Advanced graphics settings' groups and Pause when idle, each set only once the player changes one (setMotionSettings).
         fun motionKey(group: MotionGroup) = stringPreferencesKey("motion_${group.key}")

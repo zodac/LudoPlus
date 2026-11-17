@@ -1,5 +1,16 @@
 package net.zodac.ludo.ui.achievements
 
+import net.zodac.ludo.resources.achievements_styles_unlocked_named
+import net.zodac.ludo.resources.achievements_reward_show_action
+import net.zodac.ludo.resources.achievements_reward_locked
+import net.zodac.ludo.resources.achievements_reward_unlocked
+import androidx.compose.foundation.clickable
+import net.zodac.ludo.ui.common.rememberAppTooltipState
+import net.zodac.ludo.ui.common.AppTooltip
+import net.zodac.ludo.ui.common.spokenList
+import net.zodac.ludo.ui.style.description
+import net.zodac.ludo.game.style.unlocksStyle
+import net.zodac.ludo.game.style.styleRewards
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
@@ -684,112 +695,130 @@ private fun AchievementRow(
         label = "achievementRowFlashInk", // i18n: not translated - an animation label, not shown
     )
     fun ink(normal: Color): Color = lerp(normal, flashInk, flash)
+    // The style(s) it unlocks: a tap's tip, and read with the row by TalkBack. Not while superuser mode holds the row.
+    val rewardMessage = rewardTooltipMessage(item.achievement, unlocked)?.takeUnless { superuserModeActive }
+    val tooltipState = rememberAppTooltipState(persistent = true)
+    val scope = rememberCoroutineScope()
+    val showReward = stringResource(Res.string.achievements_reward_show_action)
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            // One stop for TalkBack: the title, the description (or "???"), and when it was earned or how far along.
-            .semantics(mergeDescendants = true) {}
-            .pointerInput(superuserModeActive, item.achievement) {
-                if (!superuserModeActive) return@pointerInput
-                val touchSlop = viewConfiguration.touchSlop
-                // One awaitEachGesture per press, so no event slips through between the down and
-                // the tracking below; launch/cancel aren't suspending, so they can run against the
-                // outer coroutineScope from inside it.
-                coroutineScope {
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        var tickCount = 0
-                        val tickJob = launch {
-                            while (isActive) {
-                                lifecycle.delayWhileResumed(AchievementsViewModel.SUPERUSER_TICK_MILLIS)
-                                tickCount++
-                                onSuperuserLongPressTick(item.achievement, tickCount)
+    AppTooltip(message = rewardMessage.orEmpty(), state = tooltipState, enabled = false) {
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                // One stop for TalkBack: the title, the description (or "???"), when it was earned or how far along, and the
+                // style it unlocks.
+                .semantics(mergeDescendants = true) {}
+                .then(
+                    if (rewardMessage != null) {
+                        Modifier.clickable(onClickLabel = showReward) { scope.launch { tooltipState.show() } }
+                    } else {
+                        Modifier
+                    },
+                )
+                .pointerInput(superuserModeActive, item.achievement) {
+                    if (!superuserModeActive) return@pointerInput
+                    val touchSlop = viewConfiguration.touchSlop
+                    // One awaitEachGesture per press, so no event slips through between the down and
+                    // the tracking below; launch/cancel aren't suspending, so they can run against the
+                    // outer coroutineScope from inside it.
+                    coroutineScope {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            var tickCount = 0
+                            val tickJob = launch {
+                                while (isActive) {
+                                    lifecycle.delayWhileResumed(AchievementsViewModel.SUPERUSER_TICK_MILLIS)
+                                    tickCount++
+                                    onSuperuserLongPressTick(item.achievement, tickCount)
+                                }
                             }
+                            // Cancels the ticking the moment this stops reading as "holding one spot"
+                            // - either the finger has dragged far enough to be a scroll of the list
+                            // underneath it, not a stationary long press, or an ancestor (the
+                            // LazyColumn's own scroll gesture) has already consumed the change, which
+                            // is exactly what happens once a real scroll takes over. Without this, a
+                            // press that started a long press but turned into a scroll (scrolling to
+                            // see the next row while a finger happened to land on this one first) kept
+                            // ticking the whole ride down the list, firing lock/unlock ticks against
+                            // whichever row it started on.
+                            do {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                if (change.isConsumed || (change.position - down.position).getDistance() > touchSlop) break
+                            } while (event.changes.any { it.pressed })
+                            tickJob.cancel()
                         }
-                        // Cancels the ticking the moment this stops reading as "holding one spot"
-                        // - either the finger has dragged far enough to be a scroll of the list
-                        // underneath it, not a stationary long press, or an ancestor (the
-                        // LazyColumn's own scroll gesture) has already consumed the change, which
-                        // is exactly what happens once a real scroll takes over. Without this, a
-                        // press that started a long press but turned into a scroll (scrolling to
-                        // see the next row while a finger happened to land on this one first) kept
-                        // ticking the whole ride down the list, firing lock/unlock ticks against
-                        // whichever row it started on.
-                        do {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                            if (change.isConsumed || (change.position - down.position).getDistance() > touchSlop) break
-                        } while (event.changes.any { it.pressed })
-                        tickJob.cancel()
                     }
-                }
-            },
-        colors = CardDefaults.cardColors(
-            containerColor = animateColorAsState(
-                targetValue = if (highlighted) {
-                    GoldAccent
-                    // Earned ones are lifted off the page; the rest stay at the page's own level.
-                } else if (unlocked) {
-                    MaterialTheme.colorScheme.secondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surfaceContainer
                 },
-                animationSpec = tween(ROW_FLASH_TRANSITION_MILLIS),
-                label = "achievementRowFlash", // i18n: not translated - an animation label, not shown
-            ).value,
-        ),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            colors = CardDefaults.cardColors(
+                containerColor = animateColorAsState(
+                    targetValue = if (highlighted) {
+                        GoldAccent
+                        // Earned ones are lifted off the page; the rest stay at the page's own level.
+                    } else if (unlocked) {
+                        MaterialTheme.colorScheme.secondaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainer
+                    },
+                    animationSpec = tween(ROW_FLASH_TRANSITION_MILLIS),
+                    label = "achievementRowFlash", // i18n: not translated - an animation label, not shown
+                ).value,
+            ),
         ) {
-            val tint = ink(
-                if (unlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Box(modifier = Modifier.size(40.dp)) {
-                Box(
-                    modifier = Modifier.fillMaxSize().border(width = 1.dp, color = tint),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = if (unlocked) item.achievement.icon else LOCKED_ACHIEVEMENT_ICON,
-                        contentDescription = null,
-                        tint = if (unlocked) item.achievement.iconTintOrUnspecified(tint) else tint,
-                        modifier = Modifier.size(22.dp),
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val tint = ink(
+                    if (unlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Box(modifier = Modifier.size(40.dp)) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().border(width = 1.dp, color = tint),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = if (unlocked) item.achievement.icon else LOCKED_ACHIEVEMENT_ICON,
+                            contentDescription = null,
+                            tint = if (unlocked) item.achievement.iconTintOrUnspecified(tint) else tint,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                    if (item.achievement.unlocksStyle) StyleRewardStar(tint = tint)
                 }
-            }
 
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                // One line at titleSmall when it fits, stepped down to the 12sp floor, then wrapped (the banner's one line is its own rule).
-                ShrinkThenWrapText(
-                    text = stringResource(item.achievement.title),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = ink(LocalContentColor.current),
-                )
-                Text(
-                    text = tooltipMarkup(
-                        if (item.achievement.visibility == AchievementVisibility.HIDDEN && !unlocked) {
-                            stringResource(Res.string.achievements_hidden_description)
-                        } else {
-                            stringResource(item.achievement.description)
-                        },
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = ink(MaterialTheme.colorScheme.onSurfaceVariant),
-                )
-
-                when {
-                    item.unlockedAt != null -> Text(
-                        text = stringResource(Res.string.achievements_unlocked_at, timestamp(item.unlockedAt)),
-                        style = MaterialTheme.typography.labelSmall,
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    // One line at titleSmall when it fits, stepped down to the 12sp floor, then wrapped (the banner's one line is its own rule).
+                    ShrinkThenWrapText(
+                        text = stringResource(item.achievement.title),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = ink(LocalContentColor.current),
+                    )
+                    Text(
+                        text = tooltipMarkup(
+                            if (item.achievement.visibility == AchievementVisibility.HIDDEN && !unlocked) {
+                                stringResource(Res.string.achievements_hidden_description)
+                            } else {
+                                stringResource(item.achievement.description)
+                            },
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
                         color = ink(MaterialTheme.colorScheme.onSurfaceVariant),
-                        modifier = Modifier.padding(top = 2.dp),
                     )
 
-                    item.achievement.hasProgressBar -> ProgressRow(item, ::ink)
+                    when {
+                        item.unlockedAt != null -> Text(
+                            text = stringResource(Res.string.achievements_unlocked_at, timestamp(item.unlockedAt)),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ink(MaterialTheme.colorScheme.onSurfaceVariant),
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+
+                        item.achievement.hasProgressBar -> ProgressRow(item, ::ink)
+                    }
+                    // Heard, not seen: the tip shows it on a tap.
+                    if (rewardMessage != null) Box(modifier = Modifier.semantics { contentDescription = rewardMessage })
                 }
             }
         }
@@ -835,4 +864,20 @@ private fun Modifier.hiddenUnderPinnedHeader(listState: LazyListState, key: Any)
         hiddenHeight >= size.height -> Unit
         else -> clipRect(top = hiddenHeight) { this@drawWithContent.drawContent() }
     }
+}
+
+/**
+ * The sentence naming the style(s) an achievement unlocks, or null for one that unlocks none: several in one list, one
+ * style's items named once ("'Starry' die and background"), as the unlock banner names them.
+ */
+@Composable
+private fun rewardTooltipMessage(achievement: Achievement, unlocked: Boolean): String? {
+    val rewards = achievement.styleRewards
+    if (rewards.isEmpty()) return null
+    val names = if (rewards.size > 1 && rewards.all { it.styleName == rewards[0].styleName && it.hiddenColours == 0 }) {
+        stringResource(Res.string.achievements_styles_unlocked_named, stringResource(rewards[0].styleName), spokenList(rewards.map { stringResource(it.categoryNoun) }))
+    } else {
+        spokenList(rewards.map { it.description() })
+    }
+    return stringResource(if (unlocked) Res.string.achievements_reward_unlocked else Res.string.achievements_reward_locked, names)
 }
