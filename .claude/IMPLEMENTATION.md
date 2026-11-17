@@ -71,6 +71,9 @@ Sources: [Wikipedia, "Ludo"](https://en.wikipedia.org/wiki/Ludo),
     6.
 - **Rolling a 6** gives another roll after the move. A 6 with no legal move passes the turn like any other roll
     (the maintainer, 2026-11-17), and a 6 that brings the player's last pawn home gives no roll.
+- **A capture, or a pawn brought home,** also gives another roll (one, however many pawns are captured), but not the
+    move that brings the player's last pawn home. Classic since 2026-11-17 (the maintainer, for the tutorial): they
+    were Phase 9 modifiers. A roll earned this way doesn't break or add to a run of 6s; it is part of the same turn.
 - **Three 6s in a row** end the turn: the third 6 isn't moved. This is the commonest house rule, so it's on in
     Classic. Turning it off is a modifier.
 - **No legal move** (say, everything in the yard and no 6): the turn passes.
@@ -92,7 +95,7 @@ Sources: [Wikipedia, "Ludo"](https://en.wikipedia.org/wiki/Ludo),
 
 ### Modifiers for Phase 9 (common house rules)
 
-- Bonus roll for a capture, and for bringing a pawn home.
+- No bonus roll for a capture, or for bringing a pawn home (`GameRules.rollAgainOnCapture`, `rollAgainOnHome`).
 - Leave the yard on a 1 or a 6, or on any roll while no pawn is out.
 - Three tries to roll a 6 while every pawn is in the yard.
 - Blockades: two pawns of one colour on a square can't be passed or captured (from Parcheesi, also called Pachisi).
@@ -212,7 +215,8 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     die's tumble or the pawn's move and capture slide, unless those motion groups are off. DiceFive's `CpuTurns` was
     about its dice cup, so only its pacing idea came back.
 - [x] A tournament test (`CpuTournamentTest`, 1,000 two-player games a pairing, seeded apart from the tuning): Medium
-    beats Easy 89%, Hard beats Medium 57%, Hard beats Easy 93%; each must beat the one below at least 55%.
+    beats Easy 89%, Hard beats Medium 57%, Hard beats Easy 93%; each must beat the one below at least 55%. With rolls
+    again for captures and pawns home (2026-11-17): 90%, 57%, and 94%.
 
 ## Phase 4: Saving, Game Over, Statistics, and the Leaderboard
 

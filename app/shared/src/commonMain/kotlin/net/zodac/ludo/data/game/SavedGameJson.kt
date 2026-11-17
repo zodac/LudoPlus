@@ -144,6 +144,7 @@ object SavedGameJson {
         // The roll waiting for a move, or null while waiting for a roll; a finished game is never saved.
         put("roll", (state.phase as? TurnPhase.AwaitingMove)?.roll)
         put("rollAgainRun", state.rollAgainRun)
+        if (state.rollingAgain) put("rollingAgain", true)
         put("finishingOrder", jsonInts(state.finishingOrder))
         state.lastEvent?.let { put("lastEvent", encodeEvent(it)) }
     }
@@ -182,6 +183,7 @@ object SavedGameJson {
             current = current,
             phase = TurnPhase.AwaitingRoll,
             rollAgainRun = obj.int("rollAgainRun"),
+            rollingAgain = obj.flag("rollingAgain"),
             finishingOrder = finishingOrder,
             lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
         )
@@ -209,6 +211,7 @@ object SavedGameJson {
             put("to", event.move.to)
             put("captures", JsonArray(event.move.captures.map { jsonInts(listOf(it.player, it.pawn)) }))
             put("finished", event.finished)
+            if (event.rollsAgain) put("rollsAgain", true)
         }
     }
 
@@ -233,6 +236,7 @@ object SavedGameJson {
                     },
                 ),
                 finished = obj.boolean("finished"),
+                rollsAgain = obj.flag("rollsAgain"),
             )
             else -> throw JsonParseException("Unknown event \"$kind\"")
         }

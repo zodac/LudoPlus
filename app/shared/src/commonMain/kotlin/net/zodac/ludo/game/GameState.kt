@@ -18,6 +18,8 @@ data class GameState(
     val phase: TurnPhase,
     /** How many of [GameRules.rollAgainRolls] the current player has rolled in a row this turn. */
     val rollAgainRun: Int = 0,
+    /** Whether the current player's next roll carries on their turn: they earned it with their last move. */
+    val rollingAgain: Boolean = false,
     /** The players who have brought every pawn home, by index, first place first. Every player once [TurnPhase.Finished]. */
     val finishingOrder: List<Int> = emptyList(),
     /** What the last action did, for the screen to show and say. Null before the first roll. */
@@ -112,6 +114,9 @@ sealed interface GameEvent {
     /** [player] rolled [roll], the roll-again roll that ran out [GameRules.rollAgainLimit], so their turn ended unmoved. */
     data class RollAgainLimit(override val player: Int, val roll: Int) : GameEvent
 
-    /** [player] moved with [roll]. [finished] is true if that brought their last pawn home. */
-    data class Moved(override val player: Int, val roll: Int, val move: Move, val finished: Boolean) : GameEvent
+    /**
+     * [player] moved with [roll]. [finished] is true if that brought their last pawn home; [rollsAgain] if the move earned
+     * them another roll (a roll-again roll, a capture, or a pawn home, as the rules give).
+     */
+    data class Moved(override val player: Int, val roll: Int, val move: Move, val finished: Boolean, val rollsAgain: Boolean = false) : GameEvent
 }

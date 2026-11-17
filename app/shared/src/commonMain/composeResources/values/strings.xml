@@ -177,6 +177,9 @@
     <!-- The line under the die saying what to do now. %1$s is the player's name, %2$d the roll. -->
     <string name="game_prompt_roll">%1$s, tap the die to roll.</string>
     <string name="game_prompt_cpu_roll">%1$s is rolling.</string>
+    <!-- The same, when the last move earned another roll in the same turn (a 6, a capture, or a pawn home). -->
+    <string name="game_prompt_roll_again">%1$s, roll again: tap the die.</string>
+    <string name="game_prompt_cpu_roll_again">%1$s rolls again.</string>
     <string name="game_prompt_move">%1$s rolled %2$d. Pick a pawn to move.</string>
     <string name="game_prompt_cpu_move">%1$s rolled %2$d.</string>
     <!-- The line above it, saying what just happened when it matters. %1$s is the player who acted, %2$d their roll. -->
@@ -396,16 +399,18 @@
     <string name="rules_turn_tab">Your Turn</string>
     <string name="rules_turn_1">Roll the die, then move one of your pawns that many squares.</string>
     <string name="rules_turn_2">Only a 6 brings a pawn out of the yard, onto its start square.</string>
-    <string name="rules_turn_3">Roll a 6 and you roll again. Roll three 6s in a row and your turn ends.</string>
+    <string name="rules_turn_3">Roll a 6 and you roll again. So does capturing a pawn, or bringing one home. Roll three 6s in a row and your turn ends.</string>
     <string name="rules_turn_4">If none of your pawns can move, your turn passes.</string>
     <string name="rules_capture_title">Captures</string>
     <string name="rules_capture_tab">Captures</string>
     <string name="rules_capture_1">Land on a rival's pawns to send them back to their yard.</string>
     <string name="rules_capture_2">Start squares and star squares are safe: nobody can be captured there.</string>
     <string name="rules_capture_3">Your own pawns can share a square, and any pawn can pass any other.</string>
+    <string name="rules_capture_4">Every capture earns you another roll.</string>
     <string name="rules_winning_title">Winning</string>
     <string name="rules_winning_tab">Winning</string>
     <string name="rules_winning_1">A pawn needs the exact roll to reach home.</string>
+    <string name="rules_winning_home_roll">Bringing a pawn home earns you another roll, unless it was your last.</string>
     <string name="rules_winning_2">The first player to bring all four pawns home wins, and everyone else plays on for the places.</string>
     <string name="rules_winning_3">With *Stop at first winner* on in Settings, the game ends as soon as one player has every pawn home. Everyone else is placed by how far their pawns have come.</string>
     <!-- Each Rules card's diagram (ui/rules/RulesDiagram.kt), spoken by TalkBack as one image. The diagrams show the default colours: Red, Green, Yellow, and Blue. -->

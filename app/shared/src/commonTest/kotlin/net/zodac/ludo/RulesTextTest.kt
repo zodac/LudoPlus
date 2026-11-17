@@ -56,7 +56,7 @@ class RulesTextTest : UiTest() {
             listOf(
                 "Roll the die, then move one of your pawns that many squares.",
                 "Only a 6 brings a pawn out of the yard, onto its start square.",
-                "Roll a 6 and you roll again. Roll three 6s in a row and your turn ends.",
+                "Roll a 6 and you roll again. So does capturing a pawn, or bringing one home. Roll three 6s in a row and your turn ends.",
                 "If none of your pawns can move, your turn passes.",
             ),
             "Diagram: the die shows 6, so a red pawn comes out of its yard onto its start square.",
@@ -68,6 +68,7 @@ class RulesTextTest : UiTest() {
                 "Land on a rival's pawns to send them back to their yard.",
                 "Start squares and star squares are safe: nobody can be captured there.",
                 "Your own pawns can share a square, and any pawn can pass any other.",
+                "Every capture earns you another roll.",
             ),
             "Diagram: Red rolls 4 and lands on Green's pawn, sending it back to Green's yard. Blue's pawn is safe on a star square.",
         ),
@@ -76,6 +77,7 @@ class RulesTextTest : UiTest() {
             "Winning",
             listOf(
                 "A pawn needs the exact roll to reach home.",
+                "Bringing a pawn home earns you another roll, unless it was your last.",
                 "The first player to bring all four pawns home wins, and everyone else plays on for the places.",
                 "With Stop at first winner on in Settings, the game ends as soon as one player has every pawn home. Everyone else is placed by how far their pawns have come.",
             ),

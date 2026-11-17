@@ -71,6 +71,17 @@ class SavedGameJsonTest {
     }
 
     @Test
+    fun `a roll earned mid-turn comes back as earned`() {
+        // Red brings a pawn out with a 6: the next roll carries on the turn.
+        val sixed = GameState.new(GameMode.CLASSIC, 4).let { LudoEngine.move(LudoEngine.applyRoll(it, 6), 0) }
+        assertTrue(sixed.rollingAgain)
+        val json = SavedGameJson.encode(game(sixed))
+        assertTrue("\"rollingAgain\":true" in json)
+        assertTrue("\"rollsAgain\":true" in json)
+        assertEquals(sixed, SavedGameJson.decode(json).state)
+    }
+
+    @Test
     fun `a game saved by a newer app isn't read`() {
         val json = SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4))).replace("\"version\":1", "\"version\":2")
         assertFailsWith<IllegalArgumentException> { SavedGameJson.decode(json) }

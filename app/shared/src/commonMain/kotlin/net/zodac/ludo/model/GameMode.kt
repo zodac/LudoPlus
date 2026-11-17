@@ -54,6 +54,10 @@ data class GameRules(
     val yardExitRolls: Set<Int> = setOf(6),
     /** The rolls that give the player another roll after their move. A roll with no legal move gives none. */
     val rollAgainRolls: Set<Int> = setOf(6),
+    /** Whether a move that captures gives the player another roll (one, however many pawns it captures). */
+    val rollAgainOnCapture: Boolean = true,
+    /** Whether a move that brings a pawn home gives the player another roll, unless it was their last. */
+    val rollAgainOnHome: Boolean = true,
     /**
      * Rolling one of [rollAgainRolls] this many times in a row ends the turn: the last of them isn't moved. Null for a
      * run that never ends.

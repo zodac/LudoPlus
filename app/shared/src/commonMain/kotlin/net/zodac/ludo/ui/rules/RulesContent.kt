@@ -9,6 +9,7 @@ import net.zodac.ludo.resources.rules_board_title
 import net.zodac.ludo.resources.rules_capture_1
 import net.zodac.ludo.resources.rules_capture_2
 import net.zodac.ludo.resources.rules_capture_3
+import net.zodac.ludo.resources.rules_capture_4
 import net.zodac.ludo.resources.rules_capture_tab
 import net.zodac.ludo.resources.rules_capture_title
 import net.zodac.ludo.resources.rules_group_gameplay
@@ -25,6 +26,7 @@ import net.zodac.ludo.resources.rules_turn_title
 import net.zodac.ludo.resources.rules_winning_1
 import net.zodac.ludo.resources.rules_winning_2
 import net.zodac.ludo.resources.rules_winning_3
+import net.zodac.ludo.resources.rules_winning_home_roll
 import net.zodac.ludo.resources.rules_winning_tab
 import net.zodac.ludo.resources.rules_winning_title
 import org.jetbrains.compose.resources.StringResource
@@ -67,12 +69,12 @@ private val GAMEPLAY = RulesGroup(
         RulesPage(
             Res.string.rules_capture_title,
             Res.string.rules_capture_tab,
-            texts(Res.string.rules_capture_1, Res.string.rules_capture_2, Res.string.rules_capture_3) + RulesDiagramBlock(RulesDiagramKind.CAPTURE),
+            texts(Res.string.rules_capture_1, Res.string.rules_capture_2, Res.string.rules_capture_3, Res.string.rules_capture_4) + RulesDiagramBlock(RulesDiagramKind.CAPTURE),
         ),
         RulesPage(
             Res.string.rules_winning_title,
             Res.string.rules_winning_tab,
-            texts(Res.string.rules_winning_1, Res.string.rules_winning_2, Res.string.rules_winning_3) + RulesDiagramBlock(RulesDiagramKind.WINNING),
+            texts(Res.string.rules_winning_1, Res.string.rules_winning_home_roll, Res.string.rules_winning_2, Res.string.rules_winning_3) + RulesDiagramBlock(RulesDiagramKind.WINNING),
         ),
     ),
 )

@@ -65,8 +65,10 @@ import net.zodac.ludo.resources.game_player_place
 import net.zodac.ludo.resources.game_player_turn_spoken
 import net.zodac.ludo.resources.game_prompt_cpu_move
 import net.zodac.ludo.resources.game_prompt_cpu_roll
+import net.zodac.ludo.resources.game_prompt_cpu_roll_again
 import net.zodac.ludo.resources.game_prompt_move
 import net.zodac.ludo.resources.game_prompt_roll
+import net.zodac.ludo.resources.game_prompt_roll_again
 import net.zodac.ludo.data.settings.MotionGroup
 import net.zodac.ludo.ui.common.BackHandler
 import net.zodac.ludo.ui.common.groupReduceMotion
@@ -351,7 +353,9 @@ private fun ColumnScope.StatusLines(game: StartedGame, moves: List<Move>, seatCo
     val prompt = when {
         phase is TurnPhase.AwaitingMove && game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_move, current, phase.roll)
         phase is TurnPhase.AwaitingMove -> stringResource(Res.string.game_prompt_move, current, phase.roll)
+        game.currentIsCpu && state.rollingAgain -> stringResource(Res.string.game_prompt_cpu_roll_again, current)
         game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_roll, current)
+        state.rollingAgain -> stringResource(Res.string.game_prompt_roll_again, current)
         else -> stringResource(Res.string.game_prompt_roll, current)
     }
     Text(

@@ -220,6 +220,60 @@ class LudoEngineTest {
     }
 
     @Test
+    fun `a capture gives another roll - one however many pawns it takes - and the turn is still counted once`() {
+        // Green's 4 lands on square 20, where two of red's pawns stand.
+        val captured = game(listOf(20, 20, Y, Y), listOf(3, Y, Y, Y), current = GREEN).roll(4).move(0)
+        assertEquals(GREEN, captured.current)
+        assertEquals(TurnPhase.AwaitingRoll, captured.phase)
+        assertTrue(captured.rollingAgain)
+        assertEquals(GameEvent.Moved(GREEN, 4, Move(0, 3, 7, listOf(PawnRef(RED, 0), PawnRef(RED, 1))), finished = false, rollsAgain = true), captured.lastEvent)
+        // One roll, not two: the next roll's move passes the turn on.
+        val next = captured.roll(2).move(0)
+        assertEquals(YELLOW, next.current)
+        assertEquals(1, next.players[GREEN].turns)
+
+        // Off in the rules, a capture passes the turn like any other move.
+        val plain = game(listOf(20, Y, Y, Y), listOf(3, Y, Y, Y), current = GREEN, rules = GameRules(rollAgainOnCapture = false)).roll(4).move(0)
+        assertEquals(YELLOW, plain.current)
+        assertEquals(false, (plain.lastEvent as GameEvent.Moved).rollsAgain)
+    }
+
+    @Test
+    fun `bringing a pawn home gives another roll - but not the last pawn, which finishes the player`() {
+        val home = game(listOf(53, 10, Y, Y)).roll(3).move(0)
+        assertEquals(RED, home.current)
+        assertTrue(home.rollingAgain)
+        assertEquals(true, (home.lastEvent as GameEvent.Moved).rollsAgain)
+
+        val last = game(listOf(HOME, HOME, HOME, 53)).roll(3).move(3)
+        assertEquals(GREEN, last.current)
+        assertEquals(false, last.rollingAgain)
+        assertEquals(false, (last.lastEvent as GameEvent.Moved).rollsAgain)
+
+        // Off in the rules, a pawn home passes the turn.
+        assertEquals(GREEN, game(listOf(53, 10, Y, Y), rules = GameRules(rollAgainOnHome = false)).roll(3).move(0).current)
+    }
+
+    @Test
+    fun `a roll earned by a capture keeps the run of 6s going - a 6 that captures is one roll again, not two`() {
+        val board = GameRules().board
+        // A 6 that captures (green's pawn on square 6) earns one roll again, counted in the run of 6s.
+        val greenOn6 = 6 - board.startSquare(GREEN) + board.trackLength
+        val sixCaptures = game(listOf(0, Y, Y, Y), listOf(greenOn6, Y, Y, Y)).roll(6).move(0)
+        assertEquals(1, sixCaptures.players[RED].captures)
+        assertEquals(1, sixCaptures.rollAgainRun)
+        assertEquals(GREEN, sixCaptures.roll(6).move(0).roll(6).current, "the third 6 still ends the turn")
+        // A 6, then a capture with a 4, then a 6: the 4 broke the run, so this 6 is the first of a new one.
+        val greenOn10 = 10 - board.startSquare(GREEN) + board.trackLength
+        val broken = game(listOf(0, Y, Y, Y), listOf(greenOn10, Y, Y, Y)).roll(6).move(0).roll(4).move(0)
+        assertEquals(listOf(10, Y, Y, Y), broken.players[RED].pawns)
+        assertEquals(RED, broken.current)
+        assertEquals(0, broken.rollAgainRun)
+        assertEquals(1, broken.roll(6).move(0).rollAgainRun)
+        assertEquals(1, broken.players[RED].turns)
+    }
+
+    @Test
     fun `an action the rules don't allow throws`() {
         assertFailsWith<IllegalStateException> { game().move(0) }
         val rolled = game(listOf(10, Y, Y, Y)).roll(3)

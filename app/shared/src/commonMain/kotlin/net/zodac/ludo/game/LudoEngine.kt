@@ -23,7 +23,7 @@ object LudoEngine {
         val rules = state.rules
         val player = state.current
         // The first roll of a turn starts it; a roll again continues it.
-        val started = if (state.rollAgainRun == 0) {
+        val started = if (!state.rollingAgain) {
             state.copy(players = state.players.replace(player) { it.copy(turns = it.turns + 1) })
         } else {
             state
@@ -61,7 +61,8 @@ object LudoEngine {
 
     /**
      * The current player moves pawn [pawn] by the roll awaiting a move, capturing any opponent it lands on. They roll
-     * again after a roll-again roll, unless that move finished them; otherwise play passes on.
+     * again after a roll-again roll, a capture, or a pawn brought home (as the rules give), unless that move finished
+     * them; otherwise play passes on. A run of roll-again rolls carries on through a roll earned another way.
      */
     fun move(state: GameState, pawn: Int): GameState {
         val phase = state.phase
@@ -92,11 +93,18 @@ object LudoEngine {
                 finishingOrder = next.finishingOrder + placedAsTheyStand(next, unfinished),
                 phase = TurnPhase.Finished,
                 rollAgainRun = 0,
+                rollingAgain = false,
                 lastEvent = GameEvent.Moved(player, phase.roll, move, finished),
             )
         }
-        next = if (!finished && phase.roll in state.rules.rollAgainRolls) next else nextPlayer(next)
-        return next.copy(lastEvent = GameEvent.Moved(player, phase.roll, move, finished))
+        val rules = state.rules
+        val rollsAgain = !finished && (
+            phase.roll in rules.rollAgainRolls ||
+                (rules.rollAgainOnCapture && move.captures.isNotEmpty()) ||
+                (rules.rollAgainOnHome && move.to == state.board.homeProgress)
+            )
+        next = if (rollsAgain) next.copy(rollingAgain = true) else nextPlayer(next)
+        return next.copy(lastEvent = GameEvent.Moved(player, phase.roll, move, finished, rollsAgain))
     }
 
     /** The opponents' pawns a pawn of the current player would capture on landing at progress [to]. */
@@ -135,7 +143,7 @@ object LudoEngine {
         do {
             next = (next + 1) % state.players.size
         } while (next in state.finishingOrder)
-        return state.copy(current = next, phase = TurnPhase.AwaitingRoll, rollAgainRun = 0)
+        return state.copy(current = next, phase = TurnPhase.AwaitingRoll, rollAgainRun = 0, rollingAgain = false)
     }
 
     private inline fun <T> List<T>.replace(index: Int, change: (T) -> T): List<T> =
