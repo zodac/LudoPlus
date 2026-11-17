@@ -69,3 +69,10 @@ Modifiers (Phase 9, `DESIGN.md`, "Modifiers"). **A game with any house rule on e
 here first: Endless 6s takes Too Much Of A Good Thing away, Free Start, Out on a 1, and Three Tries change the
 yard-exit family (Locked Out, Off The Mark), Blockades and Guarded Starts the capture family, and No Capture Roll and
 No Home Roll the roll counts.
+
+## Quick (a mode)
+
+Two pawns each (Phase 9). **Earns no achievement** (`GameMode.earnsAchievements` false; the maintainer, 2026-11-18),
+so nothing needs a guard: `GameAchievementsTest` plays one out and checks nothing was recorded. If it ever earns them,
+the Pawn count family (every "all but one" and "every pawn" achievement) and the Track length family's turn thresholds
+need the audit first: a Quick game is about half as long.

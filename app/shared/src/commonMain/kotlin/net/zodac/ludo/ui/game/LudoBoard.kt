@@ -76,11 +76,13 @@ fun LudoBoard(
     val motion = rememberMoveMotion(state)
     val theme = LocalGameVisualTheme.current
     val layout = BoardLayout.of(state.board)
+    // Read here, so the board's layer below holds a number rather than the state, which changes every move.
+    val pawns = state.rules.pawnsPerPlayer
     Box(modifier = modifier.aspectRatio(1f)) {
-        // The board on a layer of its own, which reads only the style and the seats' colours: it's drawn again when they
-        // change, not on every frame of a move.
+        // The board on a layer of its own, which reads only the style, the seats' colours, and the pawn count: it's drawn
+        // again when they change, not on every frame of a move.
         Canvas(modifier = Modifier.fillMaxSize()) {
-            with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours) }
+            with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours, pawns) }
         }
         Canvas(
             modifier = Modifier
@@ -170,11 +172,11 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
     val owner = move.owner ?: event.player
     val seat = state.players[owner].seat
     val path = if (move.from == PawnPosition.YARD_PROGRESS) {
-        listOf(layout.yardSpot(seat, move.pawn), layout.centreOf(seat, PawnPosition.of(0, state.board), 0))
+        listOf(layout.yardSpotOf(seat, move.pawn, state.rules.pawnsPerPlayer), layout.centreOf(seat, PawnPosition.of(0, state.board), 0))
     } else {
         (move.from..move.to).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn) }
     }
-    val captured = move.captures.map { it to layout.yardSpot(state.players[it.player].seat, it.pawn) }
+    val captured = move.captures.map { it to layout.yardSpotOf(state.players[it.player].seat, it.pawn, state.rules.pawnsPerPlayer) }
     return MovingPawn(owner, move.pawn, path, captured, path.last())
 }
 

@@ -131,8 +131,21 @@ class RulesTextTest : UiTest() {
         ),
     )
 
+    /** The Game Modes group's pages: a mode each beyond Classic. */
+    private val modePages = listOf(
+        Page(
+            "Quick",
+            "Quick",
+            listOf(
+                "Quick plays the classic rules with two pawns each instead of four, for a shorter race. Pick it under Game Mode on New Game.",
+                "Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.",
+            ),
+            diagram = null,
+        ),
+    )
+
     /** Each group's tab, and its pages. */
-    private val groups = listOf("Gameplay" to pages, "House Rules" to houseRulePages)
+    private val groups = listOf("Gameplay" to pages, "Game Modes" to modePages, "House Rules" to houseRulePages)
 
     @Test
     fun `How to Play's button starts the tutorial`() = uiTest(TestScreen(360, 800)) {

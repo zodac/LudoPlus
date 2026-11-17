@@ -145,6 +145,20 @@ class GameRecordRepositoryTest {
     }
 
     @Test
+    fun `a Quick game has its own Leaderboard - and Statistics adds up every mode's games or one mode's`() = runTest {
+        val repository = GameRecordRepository(InMemoryGameResultDao())
+        repository.recordGame(game(order = listOf(0, 1, 2, 3)))
+        val quick = game(order = listOf(0, 1, 2, 3), turns = listOf(25, 30, 31, 32)).let { it.copy(mode = GameMode.QUICK) }
+        repository.recordGame(quick)
+        assertEquals(listOf(40), repository.leaderboard(GameMode.CLASSIC, playerCount = 4).map { it.turns })
+        assertEquals(listOf(25), repository.leaderboard(GameMode.QUICK, playerCount = 4).map { it.turns })
+        assertEquals(listOf(2, 2), repository.playerStatistics().map { it.totals.gamesPlayed })
+        assertEquals(listOf(1, 1), repository.playerStatistics(mode = GameMode.QUICK).map { it.totals.gamesPlayed })
+        assertEquals(25, repository.playerStatistics(mode = GameMode.QUICK).first().totals.fewestTurnsToWin)
+        assertEquals(emptyList(), repository.playerStatistics(playerCount = 2, mode = GameMode.QUICK))
+    }
+
+    @Test
     fun `Statistics add each player's games up - wins, streaks, and figures - one player whatever the name's case`() = runTest {
         val repository = GameRecordRepository(InMemoryGameResultDao())
         // Alex: win, win, loss, win, win, win (best run 3, and 3 now); "ALEX" in the last game is the same player.

@@ -47,6 +47,12 @@ sealed interface BoardLayout {
     /** The centre of the yard spot [slot] (0-3) of [seat]. */
     fun yardSpot(seat: Int, slot: Int): Offset
 
+    /**
+     * Where [seat]'s pawn [pawn] waits in its yard, of a game of [pawns] each: its own spot, or with two pawns, opposite
+     * corners (the first spot and the last), so the pair sits balanced in the yard's four.
+     */
+    fun yardSpotOf(seat: Int, pawn: Int, pawns: Int): Offset = yardSpot(seat, if (pawns == 2) pawn * 3 else pawn)
+
     /** How big a yard spot is drawn, across from its centre. */
     val yardSpotRadius: Float
 

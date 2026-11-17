@@ -90,7 +90,7 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
     /** Over everything, [extent] wide. */
     protected open fun DrawScope.drawFinish(extent: Size, unit: Float) = Unit
 
-    final override fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>) {
+    final override fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>, pawns: Int) {
         val board = layout.geometry
         val extent = Size(unit * layout.size, unit * layout.size)
         fun seat(seat: Int) = seatTone(seatColours.getOrNull(seat) ?: BoardEmptySeat)
@@ -104,7 +104,7 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
             for (index in 0..<board.homeColumnLength) {
                 drawBoardSquare(layout.homeColumnSquare(s, index), unit) { drawSquare(it, unit, seat(s), seat = true) }
             }
-            val spots = (0..<YARD_SPOTS).map { layout.yardSpot(s, it) * unit }
+            val spots = (0..<pawns).map { layout.yardSpotOf(s, it, pawns) * unit }
             if (layout is ClassicBoardLayout) {
                 drawYard(layout.yardOrigin(s).let { Offset(it.column * unit, it.row * unit) }, unit, seat(s), spots)
             } else {
@@ -129,9 +129,6 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
         drawCircle(line, radius * 1.12f, spot, style = Stroke(maxOf(0.75.dp.toPx(), radius * 0.07f)))
     }
 }
-
-/** How many spots a yard has. */
-private const val YARD_SPOTS = 4
 
 /**
  * Draws [square] with [draw], which draws a whole square [unit] across from the top-left it's given: turned to the

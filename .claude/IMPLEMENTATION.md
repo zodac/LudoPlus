@@ -372,9 +372,11 @@ count but 4 has a board of its own; one player on two colours was dropped.
     stays off the Leaderboard and out of Statistics, and earns no achievements. Must Capture, Guarded Starts (a start
     square safe only for its own colour), Free Start, Three Tries, Out on a 1, Blockades, No Capture Roll, No Home Roll,
     and Endless 6s.
-- [ ] Modes: rule sets that are data on `GameMode`, never `if (mode == X)`. The maintainer wants two dice (each die
-    for a different pawn, or both for one) and Quick (2 or 3 pawns); a short track and power-up squares weren't picked
-    (2026-11-18).
+- [ ] Modes: rule sets that are data on `GameMode`, never `if (mode == X)` (`GAME_MODES.md`). Decided with the
+    maintainer (2026-11-18): each mode has its own Leaderboard and Statistics page, and earns no achievements until the
+    review of the list adds any; a short track and power-up squares weren't picked.
+    - [x] Quick: two pawns each.
+    - [ ] Two dice: each die moved on its own, one after the other, on any pawns (the same pawn twice allowed).
 - [ ] Custom game modes: a player-built set of modifiers, saved and named.
 
 ## Phase 10: Google Play

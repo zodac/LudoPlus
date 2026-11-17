@@ -84,16 +84,17 @@ class RulesScreenAccessibilityTest : UiTest() {
         // Play's Play the Tutorial. The chevrons only repeat what the tabs (and their "1 of 5") already give TalkBack, so
         // they're kept out of it, and the diagrams are pictures, not buttons.
         val allTabs = compose.onAllNodes(isTab).fetchSemanticsNodes()
-        assertEquals(2 + 5, allTabs.size)
+        assertEquals(3 + 5, allTabs.size)
         assertEquals(allTabs.size + 2, compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.OnClick)).fetchSemanticsNodes().size)
 
         // Each row says how many tabs it has, and each tab its place in it: the groups', then the group's pages'.
-        for ((tabs, count) in listOf(allTabs.take(2) to 2, allTabs.drop(2) to 5)) {
+        for ((tabs, count) in listOf(allTabs.take(3) to 3, allTabs.drop(3) to 5)) {
             val row = generateSequence(tabs.first().parent) { it.parent }.first { SemanticsProperties.CollectionInfo in it.config }
             assertEquals(count, row.config[SemanticsProperties.CollectionInfo].columnCount)
             assertEquals(tabs.indices.toList(), tabs.map { it.config[SemanticsProperties.CollectionItemInfo].columnIndex })
         }
         compose.onNode(isTab and hasText("Gameplay")).assertIsSelected()
+        compose.onNode(isTab and hasText("Game Modes")).assertExists()
         compose.onNode(isTab and hasText("House Rules")).assertExists()
 
         // The footer says which page, and is announced when it changes.

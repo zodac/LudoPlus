@@ -27,6 +27,7 @@ import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.game.TutorialScript
 import net.zodac.ludo.model.Achievement
 import net.zodac.ludo.model.AchievementCounter
+import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.HouseRule
 
 /** The game screen's view model earns achievements from the game it plays, each step once - and the tutorial only its own. */
@@ -126,6 +127,32 @@ class GameAchievementsTest {
         assertEquals(null, state().rules.rollAgainLimit)
         assertTrue(viewModel(store, saved).resumeGame())
         runCurrent()
+        while (!state().isFinished) {
+            if (state().current != 0) {
+                advanceTimeBy(1_000)
+                runCurrent()
+                continue
+            }
+            when (val phase = state().phase) {
+                is TurnPhase.AwaitingMove -> viewModel.move(phase.moves.first().pawn)
+                else -> viewModel.roll()
+            }
+            runCurrent()
+        }
+        runCurrent()
+        assertEquals(emptySet(), store.unlocked)
+        assertEquals(emptyMap(), store.mutableState.value.counters)
+    }
+
+    @Test
+    fun `a Quick game earns nothing - started or played out`() = runTest(dispatcher) {
+        val store = InMemoryAchievementStore()
+        val viewModel = viewModel(store, hour = 2)
+        viewModel.setupForm.setGameMode(GameMode.QUICK)
+        viewModel.startGame { "Player $it" }
+        runCurrent()
+        val state = { assertNotNull(viewModel.game.value).state }
+        assertEquals(2, state().rules.pawnsPerPlayer)
         while (!state().isFinished) {
             if (state().current != 0) {
                 advanceTimeBy(1_000)

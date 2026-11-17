@@ -129,8 +129,11 @@ interface TableBackground : TableArt {
  * a seat is.
  */
 interface BoardStyle : TableArt {
-    /** The board of [layout] itself, no pawns, at [unit] pixels a square, in [seatColours] by seat. */
-    fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>)
+    /**
+     * The board of [layout] itself, no pawns, at [unit] pixels a square, in [seatColours] by seat, each yard with a spot
+     * for each of [pawns] pawns ([BoardLayout.yardSpotOf]).
+     */
+    fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>, pawns: Int = YARD_SPOTS)
 
     /** The spot a pawn that is home stands on, under it: it lifts the pawn off its own colour's triangle. */
     fun DrawScope.drawHomeSpot(centre: Offset, radius: Float)
@@ -157,3 +160,6 @@ data class GameVisualTheme(
 )
 
 val LocalGameVisualTheme = staticCompositionLocalOf { GameVisualTheme() }
+
+/** How many spots a yard has: one for each of the classic four pawns. */
+const val YARD_SPOTS = 4

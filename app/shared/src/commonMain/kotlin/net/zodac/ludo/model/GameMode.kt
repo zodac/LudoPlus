@@ -3,6 +3,8 @@ package net.zodac.ludo.model
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.mode_classic
 import net.zodac.ludo.resources.mode_classic_description
+import net.zodac.ludo.resources.mode_quick
+import net.zodac.ludo.resources.mode_quick_description
 import org.jetbrains.compose.resources.StringResource
 
 /**
@@ -20,6 +22,11 @@ enum class GameMode(
     /** One line for the setup screen, saying what's different about this mode. */
     val description: StringResource,
     val rules: GameRules,
+    /**
+     * Whether its games earn achievements. Every mode's games count on its own Leaderboard and in Statistics; only
+     * Classic's earn achievements until modes have their own (the maintainer, 2026-11-18).
+     */
+    val earnsAchievements: Boolean = false,
 ) : StoredId {
     /** The classic rules, for four players (`.claude/IMPLEMENTATION.md`, "The classic rules"). */
     CLASSIC(
@@ -27,6 +34,15 @@ enum class GameMode(
         displayName = Res.string.mode_classic,
         description = Res.string.mode_classic_description,
         rules = GameRules(),
+        earnsAchievements = true,
+    ),
+
+    /** The classic rules, two pawns each: a shorter race. */
+    QUICK(
+        id = "quick",
+        displayName = Res.string.mode_quick,
+        description = Res.string.mode_quick_description,
+        rules = GameRules(pawnsPerPlayer = 2),
     ),
     ;
 

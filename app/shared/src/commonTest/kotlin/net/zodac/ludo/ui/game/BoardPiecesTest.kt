@@ -35,6 +35,12 @@ class BoardPiecesTest {
     }
 
     @Test
+    fun `in a Quick game the two yard pawns wait on opposite corners of the yard's four spots`() {
+        val marks = pawnMarks(GameState.new(GameMode.QUICK, 4)).filter { it.player == 1 }
+        assertEquals(listOf(ClassicBoardLayout.yardSpot(1, 0), ClassicBoardLayout.yardSpot(1, 3)), marks.sortedBy { it.pawns.single() }.map { it.centre })
+    }
+
+    @Test
     fun `colours sharing a safe square take a quarter each`() {
         // Red's 8th step and green's 47th both land on the star on square 8.
         val marks = pawnMarks(state(listOf(8, Y, Y, Y), listOf(47, Y, Y, Y)))

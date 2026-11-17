@@ -328,6 +328,15 @@
     <string name="stats_count_all">All</string>
     <!-- What a screen reader says for it. -->
     <string name="stats_count_all_spoken">All games</string>
+    <!-- The first of Statistics' modes (shown as stats_count_all), as a screen reader says it: every mode's games. -->
+    <string name="stats_mode_all_spoken">All modes</string>
+    <!-- Statistics with no games of the mode picked. %1$s is the mode's name (mode_*). -->
+    <string name="stats_empty_mode">No %1$s games yet.</string>
+    <!-- Statistics with no games of the mode and count picked. %1$s is the mode's name, %2$d the count (2 to 8). -->
+    <plurals name="stats_empty_mode_players">
+        <item quantity="one">No %1$s games with %2$d player yet.</item>
+        <item quantity="other">No %1$s games with %2$d players yet.</item>
+    </plurals>
     <!-- The time the app has been in front of the player, over every player's statistics (ui/records/PlayTime.kt): "Time played: 3d 4h 12m". Seconds for the first minute, then minutes, then hours and minutes, then days too. Spoken in words, without a part that's zero. -->
     <string name="stats_play_time">Time played: %1$s</string>
     <string name="stats_play_time_seconds">%1$ds</string>
@@ -796,8 +805,9 @@
     <string name="rules_title">Rules</string>
     <!-- The pill at the foot: which page of its group (rules_group_*) is showing. Spoken as rules_page_in_group_spoken. -->
     <string name="rules_page_count">%1$d of %2$d</string>
-    <!-- The groups of pages, in the top tab row (shown once there's more than one): the classic rules, then the house rules. Keep them short. -->
+    <!-- The groups of pages, in the top tab row (shown once there's more than one): the classic rules, the other modes, then the house rules. Keep them short. -->
     <string name="rules_group_gameplay">Gameplay</string>
+    <string name="rules_group_modes">Game Modes</string>
     <string name="rules_group_house_rules">House Rules</string>
     <!-- The footer read aloud: the group of pages (rules_group_*), then which of its pages is showing. -->
     <string name="rules_page_in_group_spoken">%1$s, page %2$d of %3$d</string>
@@ -825,6 +835,8 @@
     <!-- Ludo Plus: the game modes, the placeholder game screen (Phase 0 of .claude/IMPLEMENTATION.md), and the rules. -->
     <string name="mode_classic">Classic</string>
     <string name="mode_classic_description">The classic rules: roll a 6 to leave the yard, and race all four pawns home</string>
+    <string name="mode_quick">Quick</string>
+    <string name="mode_quick_description">The classic rules with two pawns each, for a shorter race</string>
     <string name="player_colour_yellow">Yellow</string>
     <string name="settings_motion_die_roll">Die roll</string>
     <string name="settings_motion_pawn_move">Pawn moves</string>
@@ -851,6 +863,9 @@
     <string name="rules_winning_home_roll">Bringing a pawn home earns you another roll, unless it was your last.</string>
     <string name="rules_winning_2">The first player to bring all four pawns home wins, and everyone else plays on for the places.</string>
     <string name="rules_winning_3">With *Stop at first winner* on in Settings, the game ends as soon as one player has every pawn home. Everyone else is placed by how far their pawns have come.</string>
+    <!-- The Game Modes pages: a page a mode beyond Classic, titled by its name (mode_*). -->
+    <string name="rules_quick_1">Quick plays the classic rules with two pawns each instead of four, for a shorter race. Pick it under *Game Mode* on New Game.</string>
+    <string name="rules_modes_records">Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.</string>
     <!-- The House Rules pages: an introduction, then each house rule (house_rule_*) as a line of its own (rules_house_rule_line), grouped by what they change. -->
     <string name="rules_house_rules_title">House Rules</string>
     <string name="rules_house_rules_tab">About</string>

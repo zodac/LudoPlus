@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.zodac.ludo.data.records.GameResult
+import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.gameover_captures
 import net.zodac.ludo.resources.gameover_turns
@@ -65,19 +66,22 @@ private val MIN_NAME_WIDTH = 80.sp
 private val ROW_CHROME = 56.dp
 
 /**
- * The Leaderboard: the mode's fastest wins for the player count picked (2 to 8; at first, the count New Game last
- * started), fewest turns first and then most captures, the top three ranked in gold, silver, and bronze. Where a name hasn't room beside the number columns (a large font), each row is two lines: the
+ * The Leaderboard: the fastest wins for the mode and player count picked (2 to 8; at first, the mode and count New Game
+ * last started), fewest turns first and then most captures, the top three ranked in gold, silver, and bronze. Where a name hasn't room beside the number columns (a large font), each row is two lines: the
  * rank and name, then its turns and captures. A screen reader reads each row as one: its rank, name, turns, and captures.
  */
 @Composable
 fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit) {
     val rows by viewModel.rows.collectAsStateWithLifecycle()
+    val mode by viewModel.mode.collectAsStateWithLifecycle()
     val playerCount by viewModel.playerCount.collectAsStateWithLifecycle()
     ScreenScaffold(title = stringResource(Res.string.leaderboard_title), onBack = onBack, scrollable = true) {
         // Nothing until the board is read, so the empty card never flashes up before a board that has rows.
         val board = rows ?: return@ScreenScaffold HoldPageCover()
         val count = playerCount ?: return@ScreenScaffold HoldPageCover()
-        val modeName = stringResource(viewModel.mode.displayName)
+        val shownMode = mode ?: return@ScreenScaffold HoldPageCover()
+        val modeName = stringResource(shownMode.displayName)
+        ModeRow(options = GameMode.entries, selected = shownMode, onSelect = { viewModel.selectMode(it!!) })
         Text(
             text = stringResource(Res.string.leaderboard_heading, modeName),
             style = MaterialTheme.typography.titleMedium,

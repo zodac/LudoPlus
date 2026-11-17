@@ -2,6 +2,7 @@ package net.zodac.ludo.ui.rules
 
 import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.resources.Res
+import net.zodac.ludo.resources.mode_quick
 import net.zodac.ludo.resources.rules_board_1
 import net.zodac.ludo.resources.rules_board_2
 import net.zodac.ludo.resources.rules_board_3
@@ -15,6 +16,7 @@ import net.zodac.ludo.resources.rules_capture_tab
 import net.zodac.ludo.resources.rules_capture_title
 import net.zodac.ludo.resources.rules_group_gameplay
 import net.zodac.ludo.resources.rules_group_house_rules
+import net.zodac.ludo.resources.rules_group_modes
 import net.zodac.ludo.resources.rules_house_captures_tab
 import net.zodac.ludo.resources.rules_house_captures_title
 import net.zodac.ludo.resources.rules_house_rolling_tab
@@ -30,6 +32,8 @@ import net.zodac.ludo.resources.rules_how_to_play_2
 import net.zodac.ludo.resources.rules_how_to_play_tab
 import net.zodac.ludo.resources.rules_how_to_play_title
 import net.zodac.ludo.resources.rules_how_to_play_tutorial
+import net.zodac.ludo.resources.rules_modes_records
+import net.zodac.ludo.resources.rules_quick_1
 import net.zodac.ludo.resources.rules_turn_1
 import net.zodac.ludo.resources.rules_turn_2
 import net.zodac.ludo.resources.rules_turn_3
@@ -125,8 +129,14 @@ private val HOUSE_RULES = RulesGroup(
     ),
 )
 
+/** The game modes beyond Classic: a page each. */
+private val GAME_MODES = RulesGroup(
+    Res.string.rules_group_modes,
+    listOf(RulesPage(Res.string.mode_quick, Res.string.mode_quick, texts(Res.string.rules_quick_1, Res.string.rules_modes_records))),
+)
+
 /** The groups of pages, in the top tab row's order. */
-internal val RULES_GROUPS: List<RulesGroup> = listOf(GAMEPLAY, HOUSE_RULES)
+internal val RULES_GROUPS: List<RulesGroup> = listOf(GAMEPLAY, GAME_MODES, HOUSE_RULES)
 
 /** Every page, group after group: the pager's pages. */
 internal val RULES_PAGES: List<RulesPage> = RULES_GROUPS.flatMap { it.pages }

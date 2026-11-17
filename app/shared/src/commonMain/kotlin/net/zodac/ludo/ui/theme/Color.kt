@@ -93,6 +93,7 @@ val PlayerColour.color: Color
 val GameMode.color: Color
     get() = when (this) {
         GameMode.CLASSIC -> Primary
+        GameMode.QUICK -> Color(0xFF8FE3B0)
     }
 
 // ---------------------------------------------------------------------------------------------

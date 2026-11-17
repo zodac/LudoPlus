@@ -97,10 +97,13 @@ class GameRecordRepository(
 
     /**
      * Every player's Statistics, in name order: names differing only by case are one player, shown by the spelling of
-     * their latest game. Only games of [playerCount] count, or every game for null, and never one with house rules.
+     * their latest game. Only games of [playerCount] and [mode] count, or of every count or mode for null, and never one with
+     * house rules.
      */
-    suspend fun playerStatistics(playerCount: Int? = null): List<PlayerStatistics> {
-        val rows = dao.allByPlayer().filter { !it.houseRules && (playerCount == null || it.playerCount == playerCount) }
+    suspend fun playerStatistics(playerCount: Int? = null, mode: GameMode? = null): List<PlayerStatistics> {
+        val rows = dao.allByPlayer().filter {
+            !it.houseRules && (playerCount == null || it.playerCount == playerCount) && (mode == null || it.gameModeId == mode.id)
+        }
         return withContext(computeContext) { rows.groupBy { it.playerKey }.values.map(::statisticsOf) }
     }
 }

@@ -2,8 +2,8 @@
 
 > **Partly inherited from DiceFive.** Phase 0 of `IMPLEMENTATION.md` removed DiceFive's dice game. Sections on what
 > is still in the app (the stack, errors and the crash page, settings, achievements, styles, distribution, and the
-> release pipeline) hold;
-> sections on the dice, the scorecard, modes, the CPU, scores, and saved games describe the code
+> release pipeline) hold, and so do Game modes and Modifiers (rewritten in Phase 9);
+> sections on the dice, the scorecard, the CPU, scores, and saved games describe the code
 > in commit `5423b6c` (`git show 5423b6c:<path>`), for bringing a feature back in its phase. Rewrite a section for
 > Ludo Plus when the code it describes is.
 
@@ -160,22 +160,17 @@ The first criterion that differs decides it. If all match, it's a true tie with 
 
 ## Game modes
 
-`model/GameMode.kt`. **Every rule that can differ between modes is a field on the mode. There is never an
-`if (mode == X)`.** A box's own scoring is fixed (`ScoreCategory`); a mode only chooses which boxes are on its card.
-`GAME_MODES.md` covers adding or changing a mode.
+`model/GameMode.kt`. **Every rule that can differ between modes is a field on the mode's `GameRules`; there is never
+an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 
-| Mode       | Rules beyond Standard                                                                                                                                                                          | Leaderboard |
-|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|
-| Standard   | The official rules.                                                                                                                                                                            | Yes         |
-| Tricolour  | Dice also land red, yellow or blue. Four colour boxes: Reds/Yellows/Blues (40 for all five that colour) and Coloured House (25, a joker free-fill like Full House).                            | Yes         |
-| Third Wind | Every box scored three times (39 turns). One upper bonus, tripled (189 earns 105). The joker starts once the 5x box's three slots are used with a 50 among them.                               | No          |
-| Stud       | Seven dice rolled, five hold slots; only the held hand scores. A box can be scored with fewer held, and `HandCompletion` completes the hand.                                                   | No          |
-| D20        | Twenty-sided dice, five rolls. A box per number 1-20 plus a wildcard per half. A 75 bonus per half (at 150 and 400). No 5x, no lower section, no Extended Scores. Always drawn in a D20 style. | No          |
-| Hit List   | Twelve targets drawn per game plus the Alibi. Hits, exact hits (double) and partial hits. No Extended Scores.                                                                                  | No          |
-| Quickfire  | 5x plus three random upper and three random lower boxes are off each game: six turns. The upper bonus threshold scales to the upper boxes left.                                                | No          |
+| Mode | Rules beyond Classic | Leaderboard and Statistics | Achievements |
+| --- | --- | --- | --- |
+| Classic | The classic rules | Yes | Yes |
+| Quick | Two pawns each; each yard draws two spots, on opposite corners (the maintainer, 2026-11-18) | Yes, its own | No |
 
-A mode off the Leaderboard still records its games for Statistics and career points. The Leaderboard's drop-down
-lists it as a board of its own.
+Every mode has its own Leaderboard (one a player count) and its own Statistics page. Only Classic earns achievements
+(`GameMode.earnsAchievements`) until the maintainer's review of the list adds any for a mode (2026-11-18). The Rules
+screen has a Game Modes group, a page a mode beyond Classic.
 
 ## Modifiers
 
@@ -400,6 +395,10 @@ can't is a page saying so, with the stack trace to report. The app never just cl
 
 ## Leaderboard and Statistics
 
+**By mode** (Phase 9, 2026-11-18): a row of modes under each page's heading (`ModeRow`, each said by its name). The
+Leaderboard opens at the mode New Game last started; Statistics opens on "All" (spoken "All modes", every mode's
+games), and can show one mode's.
+
 **By player count** (Phase 8, 2026-11-18). Each record keeps its game's `playerCount`, and both pages have a row of
 counts under their heading (`ui/records/PlayerCountRow.kt`, TalkBack "4 players"). The Leaderboard has a board a count,
 2 to 8 (a bigger board's lap is longer, so turns only compare within a count), opening at the count New Game last
@@ -419,8 +418,9 @@ the monotonic clock, and saves at each pause and every five minutes while resume
 `AchievementsState`, so it never moves achievement flows or a game's counter write, and out of `changeStamp`, so it
 goes with the next save that has something else to send. It started at zero in the version that added it.
 
-Both pages pick what they show from a drop-down at the top: a page for each game mode, Standard's first and the one
-they open on, then **Combined**, every mode's games together, last (a divider after Standard and before Combined).
+The rest of this section is DiceFive's (its drop-down of mode pages and Combined, from `5423b6c`); Ludo's pages pick
+by the mode and count rows above. Both pages picked what they showed from a drop-down at the top: a page for each game
+mode, Standard's first and the one they opened on, then **Combined**, every mode's games together, last.
 
 - **Leaderboard** (`ScoresScreen`). The drop-down (`ModePage`) picks a board. The pick is the
     `leaderboard_choice` preference (the mode's id, or `combined`), restored on every open and carried in the cloud save

@@ -109,6 +109,23 @@ class SavedGameJsonTest {
     }
 
     @Test
+    fun `every state of random Quick games comes back as it was saved - two pawns each`() {
+        val random = Random(13)
+        repeat(20) {
+            var state = GameState.new(GameMode.QUICK, 4, first = 2)
+            assertTrue(state.players.all { it.pawns.size == 2 })
+            while (!state.isFinished) {
+                val saved = game(state).copy(mode = GameMode.QUICK)
+                assertEquals(saved, SavedGameJson.decode(SavedGameJson.encode(saved)))
+                state = when (val phase = state.phase) {
+                    is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random).pawn)
+                    else -> LudoEngine.roll(state, random)
+                }
+            }
+        }
+    }
+
+    @Test
     fun `house rules are written by id - and one this app doesn't know fails the read`() {
         val rules = GameMode.CLASSIC.rules.withHouseRules(setOf(HouseRule.GUARDED_STARTS, HouseRule.NO_CAPTURE_ROLL))
         val json = SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4, rules = rules)))

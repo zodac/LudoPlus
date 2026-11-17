@@ -24,7 +24,7 @@ object ClassicBoardStyle : BoardStyle, Swatched {
     override val swatch: Color = BoardIvory
 
     /** The board itself, no pawns: squares, yards, start squares, stars, home columns, and the centre. */
-    override fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>) {
+    override fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>, pawns: Int) {
         val board = layout.geometry
         val line = BoardInk.copy(alpha = 0.45f)
         val lineWidth = 1.dp.toPx()
@@ -52,8 +52,8 @@ object ClassicBoardStyle : BoardStyle, Swatched {
             } else {
                 drawPath(layout.yardCourt(seat).map { it * unit }.toPath(), BoardIvory)
             }
-            for (slot in 0..3) {
-                drawCircle(colour.copy(alpha = 0.45f), unit * layout.yardSpotRadius, layout.yardSpot(seat, slot) * unit)
+            for (pawn in 0..<pawns) {
+                drawCircle(colour.copy(alpha = 0.45f), unit * layout.yardSpotRadius, layout.yardSpotOf(seat, pawn, pawns) * unit)
             }
             // Home: the seat's part of the centre.
             shape(layout.homeArea(seat), colour)

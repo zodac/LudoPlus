@@ -21,11 +21,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlin.math.roundToInt
 import net.zodac.ludo.data.records.PlayerStatistics
 import net.zodac.ludo.data.records.RecordTotals
+import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.stats_best_streak
 import net.zodac.ludo.resources.stats_captures
 import net.zodac.ludo.resources.stats_current_streak
 import net.zodac.ludo.resources.stats_empty
+import net.zodac.ludo.resources.stats_empty_mode
+import net.zodac.ludo.resources.stats_empty_mode_players
 import net.zodac.ludo.resources.stats_empty_players
 import net.zodac.ludo.resources.stats_fewest_turns
 import net.zodac.ludo.resources.stats_games
@@ -43,22 +46,32 @@ import net.zodac.ludo.ui.common.pluralStringResource
 import net.zodac.ludo.ui.common.stringResource
 
 /**
- * Statistics: the time played in the app ([LivePlayTimeLine]), the player counts (all, or 2 to 8), then a card per
- * person, in name order, adding up every game they've played of the count picked. A screen reader reads the name as a heading, then each figure with its label as one.
+ * Statistics: the time played in the app ([LivePlayTimeLine]), the modes (all, or one) and the player counts (all, or 2
+ * to 8), then a card per person, in name order, adding up every game they've played of the mode and count picked. A screen reader reads the name as a heading, then each figure with its label as one.
  */
 @Composable
 fun StatisticsScreen(viewModel: StatisticsViewModel, onBack: () -> Unit) {
     val players by viewModel.players.collectAsStateWithLifecycle()
     val playerCount by viewModel.playerCount.collectAsStateWithLifecycle()
+    val mode by viewModel.mode.collectAsStateWithLifecycle()
     ScreenScaffold(title = stringResource(Res.string.stats_title), onBack = onBack, scrollable = true) {
         // Every player's and none, at the top whether anyone has a card or not.
         LivePlayTimeLine(viewModel.readPlaySeconds)
         // Nothing until the figures are read, so the empty card never flashes up before players who have some.
         val all = players ?: return@ScreenScaffold HoldPageCover()
+        ModeRow(options = listOf(null) + GameMode.entries, selected = mode, onSelect = viewModel::selectMode)
         PlayerCountRow(options = listOf(null) + PLAYER_COUNTS, selected = playerCount, onSelect = viewModel::selectPlayerCount)
         if (all.isEmpty()) {
             val count = playerCount
-            EmptyStateCard(if (count == null) stringResource(Res.string.stats_empty) else pluralStringResource(Res.plurals.stats_empty_players, count, count))
+            val modeName = mode?.let { stringResource(it.displayName) }
+            EmptyStateCard(
+                when {
+                    count == null && modeName == null -> stringResource(Res.string.stats_empty)
+                    count == null -> stringResource(Res.string.stats_empty_mode, modeName!!)
+                    modeName == null -> pluralStringResource(Res.plurals.stats_empty_players, count, count)
+                    else -> pluralStringResource(Res.plurals.stats_empty_mode_players, count, modeName, count)
+                },
+            )
             return@ScreenScaffold
         }
         all.forEach { PlayerCard(it) }

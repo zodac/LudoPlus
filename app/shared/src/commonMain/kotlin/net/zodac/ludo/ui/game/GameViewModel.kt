@@ -538,8 +538,11 @@ data class StartedGame(
     /** Whether the player whose turn it is is the computer. */
     val currentIsCpu: Boolean get() = players[state.current].type == PlayerType.AI
 
-    /** Whether the game earns achievements: not with any house rule on ([net.zodac.ludo.model.GameRules.hasHouseRules]). */
-    val earnsAchievements: Boolean get() = !state.rules.hasHouseRules
+    /**
+     * Whether the game earns achievements: in a mode that earns them ([GameMode.earnsAchievements]), and with no house
+     * rule on ([net.zodac.ludo.model.GameRules.hasHouseRules]).
+     */
+    val earnsAchievements: Boolean get() = mode.earnsAchievements && !state.rules.hasHouseRules
 }
 
 /** Milliseconds from a fixed, unspecified start that the wall clock's changes don't move: for measuring play time. */
