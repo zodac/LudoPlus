@@ -105,3 +105,8 @@ val IvoryDiceBottom = Color(0xFFD9C9A3)
 
 /** The die's pips. */
 val DicePipColor = Color(0xFF2B2118)
+
+/** The results page's trophy and fireworks. */
+val GoldAccent = Color(0xFFFFCC55)
+val GoldAccentDim = Color(0xFFB8862A)
+val CupRimGold = Color(0xFFC79A4B)

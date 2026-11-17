@@ -12,6 +12,7 @@ import net.zodac.ludo.data.intOrNull
 import net.zodac.ludo.data.ints
 import net.zodac.ludo.data.jsonInts
 import net.zodac.ludo.data.long
+import net.zodac.ludo.data.longs
 import net.zodac.ludo.data.obj
 import net.zodac.ludo.data.objOrNull
 import net.zodac.ludo.data.objectList
@@ -53,6 +54,8 @@ object SavedGameJson {
         put("mode", game.mode.id)
         put("startedAt", game.startedAtEpochMillis)
         put("playMillis", game.playMillis)
+        // Each finished player's finish time, keyed by player index.
+        put("finishMillis", JsonObject(game.finishMillis.entries.associate { (player, millis) -> player.toString() to JsonNumber(millis) }))
         put("players", JsonArray(game.players.map(::encodePlayer)))
         put("rollOff", encodeRollOff(game.rollOff))
         put("state", encodeState(game.state))
@@ -68,7 +71,21 @@ object SavedGameJson {
         val state = decodeState(obj.obj("state"), mode, players.size)
         val playMillis = obj.long("playMillis")
         require(playMillis >= 0) { "Negative play time" }
-        return StartedGame(mode, players, state, rollOff, startedAtEpochMillis = obj.long("startedAt"), playMillis = playMillis)
+        val finishMillis = obj.obj("finishMillis").longs().entries.associate { (player, millis) ->
+            val index = player.toIntOrNull()?.takeIf { it in players.indices } ?: throw JsonParseException("No player \"$player\"")
+            require(state.players[index].isFinished(state.board) && millis in 0..playMillis) { "Player $index's finish time doesn't fit" }
+            index to millis
+        }
+        require(finishMillis.keys == state.finishingOrder.toSet()) { "A finished player has no finish time" }
+        return StartedGame(
+            mode,
+            players,
+            state,
+            rollOff,
+            startedAtEpochMillis = obj.long("startedAt"),
+            playMillis = playMillis,
+            finishMillis = finishMillis,
+        )
     }
 
     private fun encodePlayer(player: PlayerConfig): JsonObject = buildJsonObject {

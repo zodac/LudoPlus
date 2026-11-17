@@ -20,10 +20,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -53,7 +57,8 @@ import net.zodac.ludo.resources.game_event_first
 import net.zodac.ludo.resources.game_event_home
 import net.zodac.ludo.resources.game_event_no_move
 import net.zodac.ludo.resources.game_event_three_sixes
-import net.zodac.ludo.resources.game_over_menu
+import net.zodac.ludo.resources.common_default_player_name
+import net.zodac.ludo.resources.game_over_results
 import net.zodac.ludo.resources.game_over_winner
 import net.zodac.ludo.resources.game_player_pawns_home_spoken
 import net.zodac.ludo.resources.game_player_place
@@ -66,6 +71,7 @@ import net.zodac.ludo.data.settings.MotionGroup
 import net.zodac.ludo.ui.common.BackHandler
 import net.zodac.ludo.ui.common.groupReduceMotion
 import net.zodac.ludo.ui.common.ScreenScaffold
+import net.zodac.ludo.ui.common.delayWhileResumed
 import net.zodac.ludo.ui.common.joinClauses
 import net.zodac.ludo.ui.common.ordinal
 import net.zodac.ludo.ui.common.pluralStringResource
@@ -75,9 +81,13 @@ import net.zodac.ludo.ui.theme.color
 /** The narrowest the side panel beside the board gets in landscape. */
 private val SIDE_PANEL_WIDTH = 280.dp
 
+/** What the game screen shows of a finished game: the board until the results come up, then the results, or the board again to review. */
+private enum class FinishedView { BOARD, RESULTS, REVIEW }
+
 /**
  * The game screen: the players across the top, the board, and the die with a line saying what just happened and what
- * to do now. In landscape the players, die, and lines sit beside the board.
+ * to do now. In landscape the players, die, and lines sit beside the board. Once the game is over and its last move has
+ * played out, the results ([GameOverScreen]).
  */
 @Composable
 fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit) {
@@ -102,10 +112,41 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit) {
     val held = leaveConfirmation.isShowing
     LaunchedEffect(held) { viewModel.setHeld(held) }
     GameFeedback(started.state)
-    GameContent(started, onRoll = viewModel::roll, onMove = viewModel::move, onBack = leave, onBackToMenu = onBackToMenu)
+
+    // Each game's own: Play Again starts these afresh.
+    val gameKey = started.startedAtEpochMillis
+    var finishedView by rememberSaveable(gameKey) { mutableStateOf(FinishedView.BOARD) }
+    // Only a game seen finishing here is celebrated, once.
+    var celebrate by rememberSaveable(gameKey) { mutableStateOf(!started.state.isFinished) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(gameKey, started.state.isFinished) {
+        if (!started.state.isFinished || finishedView != FinishedView.BOARD) return@LaunchedEffect
+        // The last move plays out first, and a beat after it.
+        if (celebrate) lifecycle.delayWhileResumed(pacing.waitAfter(started.state.lastEvent))
+        finishedView = FinishedView.RESULTS
+    }
+    if (started.state.isFinished && finishedView == FinishedView.RESULTS) {
+        val defaultNames = (1..started.players.size).map { stringResource(Res.string.common_default_player_name, it) }
+        GameOverScreen(
+            game = started,
+            onBackToMenu = onBackToMenu,
+            onPlayAgain = { viewModel.startGame { defaultNames[it - 1] } },
+            onReviewBoard = { finishedView = FinishedView.REVIEW },
+            celebrate = celebrate,
+            onCelebrated = { celebrate = false },
+        )
+        return
+    }
+    GameContent(
+        started,
+        onRoll = viewModel::roll,
+        onMove = viewModel::move,
+        onBack = leave,
+        onResults = { finishedView = FinishedView.RESULTS },
+    )
 }
 
-/** The sounds and vibrations for each thing that happens: the die landing, a pawn moved, a capture, and the win. */
+/** The sounds and vibrations for each thing that happens: the die landing, a pawn moved, and a capture. The win's are the results page's. */
 @Composable
 private fun GameFeedback(state: GameState) {
     val sounds = rememberSoundEffects()
@@ -119,7 +160,6 @@ private fun GameFeedback(state: GameState) {
             is GameEvent.Moved -> {
                 sounds.playMove()
                 if (event.move.captures.isEmpty()) haptics.playMoveTick() else haptics.playCaptureBuzz()
-                if (state.isFinished) sounds.playCelebration()
             }
         }
     }
@@ -127,10 +167,10 @@ private fun GameFeedback(state: GameState) {
 
 /**
  * The game screen's content for [started]: rolling calls [onRoll], a tap on a movable pawn [onMove], the back arrow
- * [onBack], and the finished game's button [onBackToMenu].
+ * [onBack], and the finished game's button [onResults].
  */
 @Composable
-fun GameContent(started: StartedGame, onRoll: () -> Unit, onMove: (pawn: Int) -> Unit, onBack: () -> Unit, onBackToMenu: () -> Unit) {
+fun GameContent(started: StartedGame, onRoll: () -> Unit, onMove: (pawn: Int) -> Unit, onBack: () -> Unit, onResults: () -> Unit) {
     val seatColours = List(started.state.board.seats) { seat -> started.players.getOrNull(seat)?.colour }
     val phase = started.state.phase
     val moves = if (phase is TurnPhase.AwaitingMove && !started.currentIsCpu) phase.moves else emptyList()
@@ -151,14 +191,14 @@ fun GameContent(started: StartedGame, onRoll: () -> Unit, onMove: (pawn: Int) ->
                     board(Modifier.size(minOf(height, width - SIDE_PANEL_WIDTH)))
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         PlayerCards(started, columns = 2)
-                        TurnPanel(started, moves, seatColours, onRoll, onMove, onBackToMenu, dieSize = 64.dp)
+                        TurnPanel(started, moves, seatColours, onRoll, onMove, onResults, dieSize = 64.dp)
                     }
                 }
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     PlayerCards(started, columns = 2)
                     board(Modifier.fillMaxWidth())
-                    TurnPanel(started, moves, seatColours, onRoll, onMove, onBackToMenu, dieSize = 72.dp)
+                    TurnPanel(started, moves, seatColours, onRoll, onMove, onResults, dieSize = 72.dp)
                 }
             }
         }
@@ -239,7 +279,7 @@ private fun PawnsHomeDots(home: Int, total: Int, colour: Color, modifier: Modifi
     }
 }
 
-/** The die, and the lines saying what just happened and what to do now; once the game is over, the winner. */
+/** The die, and the lines saying what just happened and what to do now; once the game is over, the winner and the way back to the results. */
 @Composable
 private fun TurnPanel(
     game: StartedGame,
@@ -247,7 +287,7 @@ private fun TurnPanel(
     seatColours: List<PlayerColour?>,
     onRoll: () -> Unit,
     onMove: (Int) -> Unit,
-    onBackToMenu: () -> Unit,
+    onResults: () -> Unit,
     dieSize: Dp,
 ) {
     val state = game.state
@@ -260,7 +300,7 @@ private fun TurnPanel(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.semantics { heading() },
             )
-            Button(onClick = onBackToMenu) { Text(stringResource(Res.string.game_over_menu)) }
+            Button(onClick = onResults) { Text(stringResource(Res.string.game_over_results)) }
         }
         return
     }

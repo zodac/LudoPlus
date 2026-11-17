@@ -183,6 +183,8 @@ class GameViewModelTest {
             }
         }
         assertNotNull(viewModel.state.winner)
+        // Every player placed has a finish time, the last too.
+        assertEquals(viewModel.state.finishingOrder.toSet(), assertNotNull(viewModel.game.value).finishMillis.keys)
         runCurrent()
         // Gone, not left to be found unreadable: the menu stops offering Continue at once.
         assertFalse(saved.hasInProgressGame.first())

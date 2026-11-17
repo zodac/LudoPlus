@@ -58,7 +58,7 @@ class BoardSemanticsTest : UiTest() {
         val game = StartedGame(GameMode.CLASSIC, players, state, RollOff(listOf(mapOf(0 to 6, 1 to 1, 2 to 1, 3 to 1)), 0))
         showcase.show {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
-                LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it }, onBack = { backs++ }, onBackToMenu = {}) }
+                LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it }, onBack = { backs++ }, onResults = {}) }
             }
         }
     }
@@ -135,6 +135,6 @@ class BoardSemanticsTest : UiTest() {
         compose.onNodeWithText("Sam, tap the die to roll.").assertExists()
         show(state().copy(phase = TurnPhase.Finished, finishingOrder = listOf(1, 0, 3, 2)))
         compose.onNodeWithText("Gambit wins!").assertExists()
-        compose.onNodeWithText("Back to menu").assertExists()
+        compose.onNodeWithText("Results").assertExists()
     }
 }

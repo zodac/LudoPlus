@@ -32,6 +32,8 @@ class SavedGameJsonTest {
         rollOff = RollOff(listOf(mapOf(0 to 6, 1 to 6, 2 to 3, 3 to 1), mapOf(0 to 2, 1 to 5)), first = 1),
         startedAtEpochMillis = 1_763_000_000_123,
         playMillis = 98_765,
+        // Every finished player's, as the game keeps them.
+        finishMillis = state.finishingOrder.associateWith { 1_000L * (it + 1) },
     )
 
     @Test
@@ -76,8 +78,9 @@ class SavedGameJsonTest {
             json.replace("\"current\":0", "\"current\":4"),
             // A roll waiting for a move when no pawn can make one (all in the yard on a 3).
             json.replace("\"roll\":null", "\"roll\":3"),
-            // A player placed who hasn't finished.
+            // A player placed who hasn't finished, and a finish time for a player who hasn't.
             json.replace("\"finishingOrder\":[]", "\"finishingOrder\":[2]"),
+            json.replace("\"finishMillis\":{}", "\"finishMillis\":{\"2\":5}"),
         )
         broken.forEachIndexed { index, text ->
             check(text != json || index == 0) { "Replacement $index didn't match" }
@@ -89,7 +92,7 @@ class SavedGameJsonTest {
     fun `the format is stable`() {
         val json = SavedGameJson.encode(game(LudoEngine.applyRoll(GameState.new(GameMode.CLASSIC, 4, first = 1), 4)))
         assertEquals(
-            "{\"version\":1,\"mode\":\"classic\",\"startedAt\":1763000000123,\"playMillis\":98765,\"players\":[" +
+            "{\"version\":1,\"mode\":\"classic\",\"startedAt\":1763000000123,\"playMillis\":98765,\"finishMillis\":{},\"players\":[" +
                 "{\"slot\":1,\"type\":\"HUMAN\",\"name\":\"Ada \\\"Quote\\\" é\",\"difficulty\":\"MEDIUM\",\"colour\":\"BLUE\"}," +
                 "{\"slot\":2,\"type\":\"AI\",\"name\":\"Bot\",\"difficulty\":\"HARD\",\"colour\":\"RED\"}," +
                 "{\"slot\":3,\"type\":\"AI\",\"name\":\"Cog\",\"difficulty\":\"EASY\",\"colour\":\"GREEN\"}," +

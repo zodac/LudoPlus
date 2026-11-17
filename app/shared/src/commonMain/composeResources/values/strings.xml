@@ -189,9 +189,41 @@
     <string name="game_event_home">%1$s brought a pawn home.</string>
     <!-- %2$s is the place: "1st", "2nd"... -->
     <string name="game_event_finished">%1$s has every pawn home, in %2$s place.</string>
-    <!-- Once every place is decided (the results page comes later). -->
+    <!-- The finished board, reviewed from the results page: the winner, and the button back to the results. -->
     <string name="game_over_winner">%1$s wins!</string>
-    <string name="game_over_menu">Back to menu</string>
+    <string name="game_over_results">Results</string>
+
+    <!-- The results page (ui/game/GameOverScreen.kt) -->
+    <string name="gameover_title">Game Over</string>
+    <string name="gameover_winner">Winner</string>
+    <string name="gameover_review">Review Board</string>
+    <string name="gameover_main_menu">Main Menu</string>
+    <string name="gameover_play_again">Play Again</string>
+    <!-- What a player did, joined into one line: "23 turns, 4 captures". -->
+    <plurals name="gameover_turns">
+        <item quantity="one">%1$d turn</item>
+        <item quantity="other">%1$d turns</item>
+    </plurals>
+    <plurals name="gameover_captures">
+        <item quantity="one">%1$d capture</item>
+        <item quantity="other">%1$d captures</item>
+    </plurals>
+    <!-- How many of their own pawns were sent back to their yard. -->
+    <plurals name="gameover_captured">
+        <item quantity="one">%1$d captured</item>
+        <item quantity="other">%1$d captured</item>
+    </plurals>
+    <!-- How far into the game a player was placed (brought their last pawn home, or for the last, when the game ended), under their name. %1$s is a duration below. -->
+    <string name="gameover_finished_in">Finished in %1$s</string>
+    <!-- A duration: %1$d minutes and %2$d seconds. -->
+    <string name="gameover_duration_minutes">%1$dm %2$ds</string>
+    <!-- A duration: %1$d hours and %2$d minutes. -->
+    <string name="gameover_duration_hours">%1$dh %2$dm</string>
+    <!-- For the player who didn't finish, in place of their turns. The quantity is %2$d, the pawns each player has. -->
+    <plurals name="gameover_pawns_home">
+        <item quantity="one">%1$d of %2$d pawn home</item>
+        <item quantity="other">%1$d of %2$d pawns home</item>
+    </plurals>
     <!-- The confirmation before leaving a game that isn't over. It stays saved, for the menu's Continue. -->
     <string name="game_leave_title">Leave game?</string>
     <string name="game_leave_message">Your progress is saved, so you can continue this game later.</string>

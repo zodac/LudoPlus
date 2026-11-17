@@ -101,12 +101,18 @@ class GameViewModel(
         }
     }
 
-    /** [game] with the time played since [playMark] added, which then counts from now; none once it's over. */
+    /**
+     * [game] with the time played since [playMark] added, which then counts from now (none once it's over), and that
+     * time noted for any player who has just been placed: the last one too, as the game ends.
+     */
     private fun withPlayTime(game: StartedGame): StartedGame {
-        val mark = playMark ?: return game
-        val time = elapsedMillis()
-        playMark = time.takeUnless { game.state.isFinished }
-        return game.copy(playMillis = game.playMillis + (time - mark))
+        val timed = playMark?.let { mark ->
+            val time = elapsedMillis()
+            playMark = time.takeUnless { game.state.isFinished }
+            game.copy(playMillis = game.playMillis + (time - mark))
+        } ?: game
+        val finished = timed.state.finishingOrder.filter { it !in timed.finishMillis }
+        return if (finished.isEmpty()) timed else timed.copy(finishMillis = timed.finishMillis + finished.associateWith { timed.playMillis })
     }
 
     /** Makes [game] the one being played, with its play time brought up to date, and saves it, or clears the save once it's over. */
@@ -223,6 +229,8 @@ class GameViewModel(
 /**
  * A game being played: its [mode], its [players] in seat order (each sits at the seat of their index), its [state], and
  * the [rollOff] that chose who went first. It started at [startedAtEpochMillis], and has been on screen for [playMillis].
+ * [finishMillis] holds, for each player placed, the [playMillis] when they were: when they brought every pawn home, or
+ * for the last, when the game ended.
  */
 data class StartedGame(
     val mode: GameMode,
@@ -231,6 +239,7 @@ data class StartedGame(
     val rollOff: RollOff,
     val startedAtEpochMillis: Long = 0,
     val playMillis: Long = 0,
+    val finishMillis: Map<Int, Long> = emptyMap(),
 ) {
     /** Whether the player whose turn it is is the computer. */
     val currentIsCpu: Boolean get() = players[state.current].type == PlayerType.AI
