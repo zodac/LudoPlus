@@ -158,6 +158,10 @@
     <string name="game_square_track_spoken">Square %1$d</string>
     <string name="game_square_start_spoken">%1$s start</string>
     <string name="game_square_safe_spoken">safe</string>
+    <!-- With the Guarded Starts house rule, a start square instead of "safe". %1$s is its colour (player_colour_*). -->
+    <string name="game_square_safe_for_spoken">safe for %1$s</string>
+    <!-- With the Blockades house rule, two or more of one player's pawns on a square. %1$s is their colour. -->
+    <string name="game_square_blockade_spoken">%1$s blockade</string>
     <string name="game_square_column_spoken">%1$s home column, square %2$d</string>
     <string name="game_square_yard_spoken">%1$s yard</string>
     <string name="game_square_home_spoken">Home</string>
@@ -198,6 +202,11 @@
     <!-- The line above it, saying what just happened when it matters. %1$s is the player who acted, %2$d their roll. -->
     <string name="game_event_first">%1$s rolled highest, so goes first.</string>
     <string name="game_event_no_move">%1$s rolled %2$d and had no move.</string>
+    <!-- With the Three Tries house rule, a roll that didn't bring a pawn out: %3$d is how many rolls are left this turn. -->
+    <plurals name="game_event_no_move_tries">
+        <item quantity="one">%1$s rolled %2$d and had no move: %3$d more try.</item>
+        <item quantity="other">%1$s rolled %2$d and had no move: %3$d more tries.</item>
+    </plurals>
     <string name="game_event_three_sixes">%1$s rolled a third 6 in a row, so the turn passed.</string>
     <!-- %2$s is the captured pawns' owner, %3$d how many of their pawns went back to the yard. -->
     <plurals name="game_event_capture">
@@ -381,6 +390,31 @@
     <!-- Two switches under the choice while teams are on. -->
     <string name="setup_partner_captures">Partners can capture each other</string>
     <string name="setup_roll_for_partners">Roll for a partner once your pawns are home</string>
+    <!-- The setup form's House Rules card (model/HouseRule.kt): a picker of switches, the modifiers. Closed, it shows how many are on (common_modifiers_*) over the description, or the note while any is on. -->
+    <string name="setup_house_rules">House Rules</string>
+    <string name="setup_house_rules_description">Common changes to the classic rules, in any mix</string>
+    <string name="setup_house_rules_active_note">Off the Leaderboard and Statistics, and no achievements</string>
+    <!-- In place of the picker until a first game is finished. -->
+    <string name="setup_house_rules_locked">Finish a game to unlock house rules</string>
+    <!-- Each house rule: its name, and one line saying what it changes, in the picker and on the Rules page. -->
+    <string name="house_rule_no_capture_roll">No Capture Roll</string>
+    <string name="house_rule_no_capture_roll_description">Capturing a pawn doesn't earn another roll.</string>
+    <string name="house_rule_no_home_roll">No Home Roll</string>
+    <string name="house_rule_no_home_roll_description">Bringing a pawn home doesn't earn another roll.</string>
+    <string name="house_rule_endless_sixes">Endless 6s</string>
+    <string name="house_rule_endless_sixes_description">Three 6s in a row don't end your turn: keep rolling while the 6s come.</string>
+    <string name="house_rule_exit_on_one">Out on a 1</string>
+    <string name="house_rule_exit_on_one_description">A 1 brings a pawn out of the yard, as well as a 6.</string>
+    <string name="house_rule_free_start">Free Start</string>
+    <string name="house_rule_free_start_description">While none of your pawns is on the board, any roll brings one out of the yard.</string>
+    <string name="house_rule_three_tries">Three Tries</string>
+    <string name="house_rule_three_tries_description">While none of your pawns is on the board, roll up to three times to bring one out.</string>
+    <string name="house_rule_blockades">Blockades</string>
+    <string name="house_rule_blockades_description">Two of your pawns on one square make a blockade: no other player's pawn can pass it or land on it.</string>
+    <string name="house_rule_must_capture">Must Capture</string>
+    <string name="house_rule_must_capture_description">If a move can capture, you have to make a capture.</string>
+    <string name="house_rule_guarded_starts">Guarded Starts</string>
+    <string name="house_rule_guarded_starts_description">A start square is safe only for its own colour. Other pawns there can be captured.</string>
     <!-- The setup form's card choosing how many play, 2 to 8. -->
     <string name="setup_players">Players</string>
     <!-- What a screen reader says for each of the Players card's numbers. -->
@@ -762,8 +796,9 @@
     <string name="rules_title">Rules</string>
     <!-- The pill at the foot: which page of its group (rules_group_*) is showing. Spoken as rules_page_in_group_spoken. -->
     <string name="rules_page_count">%1$d of %2$d</string>
-    <!-- The groups of pages, in the top tab row (shown once there's more than one): for now only the rules themselves. Keep them short. -->
+    <!-- The groups of pages, in the top tab row (shown once there's more than one): the classic rules, then the house rules. Keep them short. -->
     <string name="rules_group_gameplay">Gameplay</string>
+    <string name="rules_group_house_rules">House Rules</string>
     <!-- The footer read aloud: the group of pages (rules_group_*), then which of its pages is showing. -->
     <string name="rules_page_in_group_spoken">%1$s, page %2$d of %3$d</string>
 
@@ -816,6 +851,19 @@
     <string name="rules_winning_home_roll">Bringing a pawn home earns you another roll, unless it was your last.</string>
     <string name="rules_winning_2">The first player to bring all four pawns home wins, and everyone else plays on for the places.</string>
     <string name="rules_winning_3">With *Stop at first winner* on in Settings, the game ends as soon as one player has every pawn home. Everyone else is placed by how far their pawns have come.</string>
+    <!-- The House Rules pages: an introduction, then each house rule (house_rule_*) as a line of its own (rules_house_rule_line), grouped by what they change. -->
+    <string name="rules_house_rules_title">House Rules</string>
+    <string name="rules_house_rules_tab">About</string>
+    <string name="rules_house_rules_1">House rules are common changes to the classic rules. Switch them on in *House Rules* on New Game, in any mix.</string>
+    <string name="rules_house_rules_2">A game with any house rule on doesn't count towards the Leaderboard or Statistics, and earns no achievements.</string>
+    <string name="rules_house_rolling_title">Rolling Again</string>
+    <string name="rules_house_rolling_tab">Rolling</string>
+    <string name="rules_house_yard_title">Leaving the Yard</string>
+    <string name="rules_house_yard_tab">The Yard</string>
+    <string name="rules_house_captures_title">Captures and Blockades</string>
+    <string name="rules_house_captures_tab">Captures</string>
+    <!-- %1$s is a house rule's name (house_rule_*), already in *italics*, %2$s what it changes (house_rule_*_description). -->
+    <string name="rules_house_rule_line">%1$s: %2$s</string>
     <!-- Each Rules card's diagram (ui/rules/RulesDiagram.kt), spoken by TalkBack as one image. The diagrams show the default colours: Red, Green, Yellow, and Blue. -->
     <string name="rules_board_diagram_cd">Diagram: Red's route. From its start square, a pawn goes a lap of the track clockwise, then up Red's home column to home in the middle.</string>
     <string name="rules_turn_diagram_cd">Diagram: the die shows 6, so a red pawn comes out of its yard onto its start square.</string>

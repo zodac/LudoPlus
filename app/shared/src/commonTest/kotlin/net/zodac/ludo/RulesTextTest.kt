@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -87,6 +88,52 @@ class RulesTextTest : UiTest() {
         ),
     )
 
+    /** The House Rules group's pages: what they are, then every house rule, its name in italics before what it changes. */
+    private val houseRulePages = listOf(
+        Page(
+            "About",
+            "House Rules",
+            listOf(
+                "House rules are common changes to the classic rules. Switch them on in House Rules on New Game, in any mix.",
+                "A game with any house rule on doesn't count towards the Leaderboard or Statistics, and earns no achievements.",
+            ),
+            diagram = null,
+        ),
+        Page(
+            "Rolling",
+            "Rolling Again",
+            listOf(
+                "No Capture Roll: Capturing a pawn doesn't earn another roll.",
+                "No Home Roll: Bringing a pawn home doesn't earn another roll.",
+                "Endless 6s: Three 6s in a row don't end your turn: keep rolling while the 6s come.",
+            ),
+            diagram = null,
+        ),
+        Page(
+            "The Yard",
+            "Leaving the Yard",
+            listOf(
+                "Out on a 1: A 1 brings a pawn out of the yard, as well as a 6.",
+                "Free Start: While none of your pawns is on the board, any roll brings one out of the yard.",
+                "Three Tries: While none of your pawns is on the board, roll up to three times to bring one out.",
+            ),
+            diagram = null,
+        ),
+        Page(
+            "Captures",
+            "Captures and Blockades",
+            listOf(
+                "Must Capture: If a move can capture, you have to make a capture.",
+                "Guarded Starts: A start square is safe only for its own colour. Other pawns there can be captured.",
+                "Blockades: Two of your pawns on one square make a blockade: no other player's pawn can pass it or land on it.",
+            ),
+            diagram = null,
+        ),
+    )
+
+    /** Each group's tab, and its pages. */
+    private val groups = listOf("Gameplay" to pages, "House Rules" to houseRulePages)
+
     @Test
     fun `How to Play's button starts the tutorial`() = uiTest(TestScreen(360, 800)) {
         resetRulesPageMemory()
@@ -101,7 +148,7 @@ class RulesTextTest : UiTest() {
     }
 
     @Test
-    fun `the Rules screen's words - its title, and every page's tab, title, paragraphs, and diagram`() = uiTest(TestScreen(360, 800)) {
+    fun `the Rules screen's words - its title, and every group's tab - and every page's tab, title, paragraphs, and diagram`() = uiTest(TestScreen(360, 800)) {
         resetRulesPageMemory()
         compose.setContent {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
@@ -109,14 +156,21 @@ class RulesTextTest : UiTest() {
             }
         }
         compose.onAllNodesWithText("Rules").assertCountEquals(1)
-        compose.onAllNodes(isTab).assertCountEquals(pages.size)
-        for (page in pages) {
-            compose.onNode(isTab and hasText(page.tab)).performScrollTo().performClick()
+        for ((group, groupPages) in groups) {
+            compose.onNode(isTab and hasText(group)).performScrollTo().performClick()
             compose.waitForIdle()
-            compose.onNode(isHeading and hasText(page.title)).performScrollTo()
-            page.paragraphs.forEach { compose.onNodeWithText(it).performScrollTo() }
-            // The diagram is one image, described in words.
-            page.diagram?.let { compose.onNodeWithContentDescription(it).performScrollTo().assert(isImage) }
+            // A tab a group, then a tab a page of the group showing.
+            compose.onAllNodes(isTab).assertCountEquals(groups.size + groupPages.size)
+            for (page in groupPages) {
+                compose.onNode(isTab and hasText(page.tab)).performScrollTo().performClick()
+                compose.waitForIdle()
+                // A page's title heads it, in view as it opens. (Scrolling to it never settled on a group's last page, the
+                // pager still: the test's scroll, not the screen.)
+                compose.onNode(isHeading and hasText(page.title)).assertIsDisplayed()
+                page.paragraphs.forEach { compose.onNodeWithText(it).performScrollTo() }
+                // The diagram is one image, described in words.
+                page.diagram?.let { compose.onNodeWithContentDescription(it).performScrollTo().assert(isImage) }
+            }
         }
         // The diagrams' dice are part of their pictures, not dice of their own.
         compose.onAllNodesWithContentDescription("Die showing", substring = true).assertCountEquals(0)

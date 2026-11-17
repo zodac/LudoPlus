@@ -1,9 +1,22 @@
 package net.zodac.ludo.data.records
 
-/** [GameResultDao] over a list, for tests: the same filters and order as the real queries (`GameResultDaoTest` checks those). */
-class InMemoryGameResultDao : GameResultDao {
+/**
+ * [GameResultDao] over a list, for tests: the same filters and order as the real queries (`GameResultDaoTest` checks those).
+ * With [finishedGame], it starts with one game recorded, as after a first finished game (New Game's house rules unlocked).
+ */
+class InMemoryGameResultDao(finishedGame: Boolean = false) : GameResultDao {
     private val rows = mutableListOf<GameResult>()
     private var nextId = 1L
+
+    init {
+        if (finishedGame) {
+            rows += GameResult(
+                id = nextId++, playerName = "Earlier", playerKey = "earlier", isPrimaryPlayer = true, gameModeId = "classic", playerCount = 4,
+                endedAtEpochMillis = 0, playMillis = 0, place = 1, won = true, finishMillis = 0, turns = 80, captures = 0, timesCaptured = 0,
+                pawnsHome = 4,
+            )
+        }
+    }
 
     override suspend fun insertGame(results: List<GameResult>) {
         results.forEach { rows += it.copy(id = nextId++) }

@@ -78,7 +78,41 @@ data class GameRules(
      * Otherwise their turns pass them by.
      */
     val rollForPartners: Boolean = true,
+    /** Whether any roll brings a pawn out of the yard while none of the player's pawns is on the board (track or column). */
+    val freeStart: Boolean = false,
+    /**
+     * How many rolls a player gets for a move while none of their pawns is on the board (each in the yard or home): a roll
+     * with no legal move, with tries left, rolls again in the same turn. 1 for a single roll.
+     */
+    val yardTries: Int = 1,
+    /**
+     * Whether two or more pawns of one player on a track square make a blockade: no other player's pawn may pass it, or
+     * land on it (so none is captured). Its own player's pawns pass and join it.
+     */
+    val blockades: Boolean = false,
+    /** Whether a roll with a move that captures allows only such moves. */
+    val mustCapture: Boolean = false,
+    /**
+     * Whether a start square is safe only for pawns of its own seat: any other pawn landed on there is captured, by any
+     * pawn, its own seat's leaving the yard included. Otherwise it's safe for every pawn.
+     */
+    val guardedStarts: Boolean = false,
+    /** The house rules these rules were made with ([withHouseRules]): empty for a mode's own rules. */
+    val houseRules: Set<HouseRule> = emptySet(),
 ) {
+    /** Whether any house rule is on: such a game stays off the Leaderboard and out of Statistics, and earns no achievements. */
+    val hasHouseRules: Boolean get() = houseRules.isNotEmpty()
+
+    /**
+     * Whether a pawn of [seat] on the absolute track [square] is safe from capture: a star square, or a start square
+     * (with [guardedStarts], only its own seat's).
+     */
+    fun isSafeFor(seat: Int, square: Int): Boolean = when {
+        !board.isSafe(square) -> false
+        guardedStarts && square % board.seatSpacing == 0 -> square == board.startSquare(seat)
+        else -> true
+    }
+
     /** [player]'s team: their own, alone, in a game without teams. */
     fun teamOf(player: Int): Int = teams?.get(player) ?: TEAMLESS + player
 
@@ -93,6 +127,7 @@ data class GameRules(
         require(dieFaces > 1) { "A die needs two faces" }
         require((yardExitRolls + rollAgainRolls).all { it in 1..dieFaces }) { "Every special roll must be on the die" }
         require(rollAgainLimit == null || rollAgainLimit > 0) { "A run of rolls again ends after one roll or more" }
+        require(yardTries > 0) { "A player has a roll or more to leave the yard" }
         require(teams == null || teams.all { it >= 0 } && teams.toSet().size >= 2) { "A team game needs two teams or more" }
     }
 

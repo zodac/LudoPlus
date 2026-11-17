@@ -22,9 +22,11 @@ import net.zodac.ludo.game.PawnRef
 import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.TeamMode
+import net.zodac.ludo.model.withHouseRules
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.platform.SilentPlatformServices
 import net.zodac.ludo.ui.game.GameContent
@@ -87,6 +89,22 @@ class BoardSemanticsTest : UiTest() {
                 it.startsWith("Square ") || it.contains(" yard,") || it.contains(" home column, square ") || it.startsWith("Home,")
             } ?: false
         }).assertCountEquals(4 + 52 + 20 + 1)
+    }
+
+    @Test
+    fun `with house rules - a guarded start is safe for its colour alone - and a blockade is said as one`() = uiTest(TestScreen(411, 891)) {
+        val rules = GameMode.CLASSIC.rules.withHouseRules(setOf(HouseRule.GUARDED_STARTS, HouseRule.BLOCKADES))
+        val new = GameState.new(GameMode.CLASSIC, 4, rules = rules)
+        // Red's two pawns 4 steps on make a blockade on square 5; green's 1 step on is alone on square 15.
+        val pawns = listOf(listOf(4, 4, Y, Y), listOf(1, Y, Y, Y))
+        show(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }) }))
+        listOf(
+            "Square 1, Red start, safe for Red, empty",
+            "Square 14, Green start, safe for Green, empty",
+            "Square 9, safe, empty",
+            "Square 5, Red blockade, Red pawn 1, 52 squares from home, Red pawn 2, 52 squares from home",
+            "Square 15, Green pawn 1, 55 squares from home",
+        ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
     }
 
     @Test

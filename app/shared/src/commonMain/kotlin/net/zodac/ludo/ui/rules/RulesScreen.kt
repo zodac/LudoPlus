@@ -97,6 +97,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import net.zodac.ludo.resources.app_name
 import net.zodac.ludo.resources.Res
+import net.zodac.ludo.resources.rules_house_rule_line
 import net.zodac.ludo.resources.rules_page_count
 import net.zodac.ludo.resources.rules_page_in_group_spoken
 import net.zodac.ludo.resources.rules_title
@@ -444,6 +445,15 @@ private fun RulesBlockView(block: RulesBlock, onStartTutorial: () -> Unit) {
             modifier = Modifier.padding(bottom = BLOCK_GAP).fillMaxWidth().heightIn(min = MAIN_ACTION_HEIGHT),
         ) {
             Text(text = stringResource(Res.string.rules_tutorial_start), style = MaterialTheme.typography.titleMedium)
+        }
+        is RulesHouseRule -> {
+            val line = stringResource(Res.string.rules_house_rule_line, "*${stringResource(block.rule.title)}*", stringResource(block.rule.description))
+            Text(
+                text = remember(line) { parseInlineMarkup(line) },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = BLOCK_GAP),
+            )
         }
         is RulesDiagramBlock -> Box(modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = BLOCK_GAP), contentAlignment = Alignment.Center) {
             RulesDiagram(block.kind)

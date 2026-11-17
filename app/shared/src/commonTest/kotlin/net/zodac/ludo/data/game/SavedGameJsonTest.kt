@@ -13,10 +13,12 @@ import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.TeamMode
+import net.zodac.ludo.model.withHouseRules
 import net.zodac.ludo.ui.game.StartedGame
 
 class SavedGameJsonTest {
@@ -86,6 +88,38 @@ class SavedGameJsonTest {
     }
 
     @Test
+    fun `every state of random games with house rules comes back as it was saved - tries to leave the yard too`() {
+        val random = Random(11)
+        var tries = 0
+        repeat(30) {
+            // A random mix each game, every house rule on in some.
+            val houseRules = HouseRule.entries.filter { random.nextBoolean() }.toSet()
+            var state = GameState.new(GameMode.CLASSIC, 4, first = 1, rules = GameMode.CLASSIC.rules.withHouseRules(houseRules))
+            while (!state.isFinished) {
+                val saved = game(state)
+                assertEquals(saved, SavedGameJson.decode(SavedGameJson.encode(saved)))
+                if (state.yardTriesUsed > 0) tries++
+                state = when (val phase = state.phase) {
+                    is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random).pawn)
+                    else -> LudoEngine.roll(state, random)
+                }
+            }
+        }
+        assert(tries > 0) { "No try to leave the yard was saved" }
+    }
+
+    @Test
+    fun `house rules are written by id - and one this app doesn't know fails the read`() {
+        val rules = GameMode.CLASSIC.rules.withHouseRules(setOf(HouseRule.GUARDED_STARTS, HouseRule.NO_CAPTURE_ROLL))
+        val json = SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4, rules = rules)))
+        assertTrue("\"houseRules\":[\"no_capture_roll\",\"guarded_starts\"]" in json)
+        assertEquals(rules, SavedGameJson.decode(json).state.rules)
+        assertFailsWith<JsonParseException> { SavedGameJson.decode(json.replace("guarded_starts", "nope")) }
+        // None on, none written.
+        assertFalse("houseRules" in SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4))))
+    }
+
+    @Test
     fun `a game stopping at its first winner comes back stopping at it`() {
         val rules = GameMode.CLASSIC.rules.copy(stopAtFirstWinner = true)
         val saved = game(GameState.new(GameMode.CLASSIC, 4, rules = rules))
@@ -109,7 +143,7 @@ class SavedGameJsonTest {
 
     @Test
     fun `a game saved by a newer app isn't read`() {
-        val json = SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4))).replace("\"version\":1", "\"version\":2")
+        val json = SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4))).replace("\"version\":2", "\"version\":3")
         assertFailsWith<IllegalArgumentException> { SavedGameJson.decode(json) }
     }
 
@@ -131,6 +165,8 @@ class SavedGameJsonTest {
             // A player placed who hasn't finished, and a finish time for a player who hasn't.
             json.replace("\"finishingOrder\":[]", "\"finishingOrder\":[2]"),
             json.replace("\"finishMillis\":{}", "\"finishMillis\":{\"2\":5}"),
+            // A try to leave the yard, with no house rule giving one.
+            json.replace("\"rollAgainRun\":0", "\"rollAgainRun\":0,\"yardTriesUsed\":1"),
         )
         broken.forEachIndexed { index, text ->
             check(text != json || index == 0) { "Replacement $index didn't match" }
@@ -142,7 +178,7 @@ class SavedGameJsonTest {
     fun `the format is stable`() {
         val json = SavedGameJson.encode(game(LudoEngine.applyRoll(GameState.new(GameMode.CLASSIC, 4, first = 1), 4)))
         assertEquals(
-            "{\"version\":1,\"mode\":\"classic\",\"startedAt\":1763000000123,\"playMillis\":98765,\"finishMillis\":{},\"players\":[" +
+            "{\"version\":2,\"mode\":\"classic\",\"startedAt\":1763000000123,\"playMillis\":98765,\"finishMillis\":{},\"players\":[" +
                 "{\"slot\":1,\"type\":\"HUMAN\",\"name\":\"Ada \\\"Quote\\\" é\",\"difficulty\":\"MEDIUM\",\"colour\":\"BLUE\"}," +
                 "{\"slot\":2,\"type\":\"AI\",\"name\":\"Bot\",\"difficulty\":\"HARD\",\"colour\":\"RED\"}," +
                 "{\"slot\":3,\"type\":\"AI\",\"name\":\"Cog\",\"difficulty\":\"EASY\",\"colour\":\"GREEN\"}," +

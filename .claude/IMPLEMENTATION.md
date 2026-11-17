@@ -18,7 +18,7 @@ reorders them.
 | 6 | Achievements | Done |
 | 7 | Styles | Done |
 | 8 | 2-8 players | Done |
-| 9 | Game modes and modifiers | Not started |
+| 9 | Game modes and modifiers | In progress |
 | 10 | Google Play: Play Console, Play Games, and the store listing | Not started |
 | 11 | In-app purchases | Not started |
 | 12 | Netplay | Not started |
@@ -367,10 +367,14 @@ count but 4 has a board of its own; one player on two colours was dropped.
 
 ## Phase 9: Game modes and modifiers
 
-- [ ] Modifiers: the house rules above, mixed in on the setup screen. A game with any on stays off the Leaderboard
-    (DiceFive's rule).
-- [ ] Modes: rule sets that are data on `GameMode`, never `if (mode == X)`, such as two dice, a pawn-count
-    variant (2 or 3 pawns, quick), a short-track Quick mode, and power-up squares.
+- [x] Modifiers: the house rules above, mixed in on New Game's House Rules card (`model/HouseRule.kt`, `DESIGN.md`,
+    "Modifiers"). Decided with the maintainer (2026-11-18): every one of them but two dice (a mode); a game with any on
+    stays off the Leaderboard and out of Statistics, and earns no achievements. Must Capture, Guarded Starts (a start
+    square safe only for its own colour), Free Start, Three Tries, Out on a 1, Blockades, No Capture Roll, No Home Roll,
+    and Endless 6s.
+- [ ] Modes: rule sets that are data on `GameMode`, never `if (mode == X)`. The maintainer wants two dice (each die
+    for a different pawn, or both for one) and Quick (2 or 3 pawns); a short track and power-up squares weren't picked
+    (2026-11-18).
 - [ ] Custom game modes: a player-built set of modifiers, saved and named.
 
 ## Phase 10: Google Play

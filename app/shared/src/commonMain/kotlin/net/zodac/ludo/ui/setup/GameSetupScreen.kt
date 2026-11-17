@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.VisualTransformation
@@ -50,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.zodac.ludo.model.BoardGeometry
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.TeamMode
@@ -60,6 +62,10 @@ import net.zodac.ludo.resources.setup_difficulty_easy
 import net.zodac.ludo.resources.setup_difficulty_hard
 import net.zodac.ludo.resources.setup_difficulty_medium
 import net.zodac.ludo.resources.setup_game_mode
+import net.zodac.ludo.resources.setup_house_rules
+import net.zodac.ludo.resources.setup_house_rules_active_note
+import net.zodac.ludo.resources.setup_house_rules_description
+import net.zodac.ludo.resources.setup_house_rules_locked
 import net.zodac.ludo.resources.setup_names_unique
 import net.zodac.ludo.resources.setup_partner_captures
 import net.zodac.ludo.resources.setup_player_count_spoken
@@ -80,6 +86,8 @@ import net.zodac.ludo.ui.common.HoldPageCover
 import net.zodac.ludo.ui.common.LocalLandscapePage
 import net.zodac.ludo.ui.common.MAIN_ACTION_HEIGHT
 import net.zodac.ludo.ui.common.MIN_READABLE_FONT_SIZE
+import net.zodac.ludo.ui.common.ModifierPicker
+import net.zodac.ludo.ui.common.ModifierSetting
 import net.zodac.ludo.ui.common.ScreenScaffold
 import net.zodac.ludo.ui.common.ScrollingColumn
 import net.zodac.ludo.ui.common.SoraFontFamily
@@ -236,13 +244,47 @@ private fun PlayerCards(
     }
 }
 
-/** The form's second half: teams, and the game mode. Modifiers join it in Phase 9 of `.claude/IMPLEMENTATION.md`. */
+/** The form's second half: teams, the game mode, and the house rules. */
 @Composable
 private fun GameCards(setup: GameSetupState, form: GameSetupForm) {
     SetupCard(title = stringResource(Res.string.setup_teams)) { TeamsChoice(setup, form) }
     SetupCard(title = stringResource(Res.string.setup_game_mode)) {
         GameModeSelector(selected = setup.gameMode, onSelect = form::setGameMode)
     }
+    // Until a first game is finished, a note in place of the picker; the picks are kept, but not played.
+    if (!setup.houseRulesUnlocked) {
+        SetupCard(title = stringResource(Res.string.setup_house_rules), enabled = false, modifier = Modifier.semantics(mergeDescendants = true) {}) {
+            Text(
+                text = stringResource(Res.string.setup_house_rules_locked),
+                style = MaterialTheme.typography.bodyMedium,
+                fontStyle = FontStyle.Italic,
+                color = disabledContentColour(),
+            )
+        }
+        return
+    }
+    SetupCard(title = stringResource(Res.string.setup_house_rules)) { HouseRulesPicker(setup, form) }
+}
+
+/**
+ * The house rules ([HouseRule]): a field counting those on, opening a page of a switch each, with what it changes. While
+ * any is on, the field says what the game then doesn't count towards.
+ */
+@Composable
+private fun HouseRulesPicker(setup: GameSetupState, form: GameSetupForm) {
+    ModifierPicker(
+        title = stringResource(Res.string.setup_house_rules),
+        description = stringResource(Res.string.setup_house_rules_description),
+        activeNote = stringResource(Res.string.setup_house_rules_active_note),
+        modifiers = HouseRule.entries.map { rule ->
+            ModifierSetting(
+                title = stringResource(rule.title),
+                description = stringResource(rule.description),
+                enabled = rule in setup.houseRules,
+                onEnabledChange = { on -> form.setHouseRule(rule, on) },
+            )
+        },
+    )
 }
 
 /** The most space between a [SetupCard]'s rows on a landscape page. */

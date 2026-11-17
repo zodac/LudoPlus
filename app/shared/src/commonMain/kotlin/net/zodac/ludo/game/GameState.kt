@@ -20,6 +20,8 @@ data class GameState(
     val rollAgainRun: Int = 0,
     /** Whether the current player's next roll carries on their turn: they earned it with their last move. */
     val rollingAgain: Boolean = false,
+    /** How many of [GameRules.yardTries] the current player has rolled this turn without a move, no pawn on the board. */
+    val yardTriesUsed: Int = 0,
     /** The players who have brought every pawn home, by index, first place first. Every player once [TurnPhase.Finished]. */
     val finishingOrder: List<Int> = emptyList(),
     /** What the last action did, for the screen to show and say. Null before the first roll. */
@@ -135,8 +137,11 @@ sealed interface GameEvent {
     /** [player] rolled [roll] and has a move to make. */
     data class Rolled(override val player: Int, val roll: Int) : GameEvent
 
-    /** [player] rolled [roll] and had no legal move, so the turn passed (even on a roll-again roll). */
-    data class NoMove(override val player: Int, val roll: Int) : GameEvent
+    /**
+     * [player] rolled [roll] and had no legal move. With [triesLeft] (of [GameRules.yardTries]) they roll again;
+     * otherwise the turn passed (even on a roll-again roll).
+     */
+    data class NoMove(override val player: Int, val roll: Int, val triesLeft: Int = 0) : GameEvent
 
     /** [player] rolled [roll], the roll-again roll that ran out [GameRules.rollAgainLimit], so their turn ended unmoved. */
     data class RollAgainLimit(override val player: Int, val roll: Int) : GameEvent

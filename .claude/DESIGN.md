@@ -179,35 +179,47 @@ lists it as a board of its own.
 
 ## Modifiers
 
-Optional extras on top of any mode. **Any modifier takes a game off the Leaderboard and out of Statistics**
-(`GameState.hasModifiers`; `ScoreEntry.playedUnmodified` records it), **and earns no achievement** but the modifiers'
-own: Rainy Day Fund, Bad Omen, and Everything Everywhere All At Once (`Achievement.earnableWithModifiers`). The row is
-still recorded, for the cloud save. The New Game screen's note and each modifier's Rules page say so.
+**House rules** (Phase 9, 2026-11-18): `model/HouseRule.kt`, each one a switch on New Game's House Rules card (the
+`ModifierPicker` from `ui/common/ChoicePicker.kt`), any mix on, all off by default. Each changes one
+`GameRules` field through `HouseRule.applyTo` (`GameRules.withHouseRules`), and the engine, the CPU, and the board
+read only the rules, never which house rules are on. The rules keep the set (`GameRules.houseRules`) for the save and
+the records.
 
-- **Turn Timer.** A whole-turn limit: 30, 60 or 120 seconds, or any typed length from 5 to 999.
-- **Number of Rolls.** 1-9 rolls a turn instead of the mode's (remembered while off).
-- **Stored Rolls.**
-    - A player's unused rolls carry over to their own next turn, optionally capped (an empty cap is no cap).
-    - `GameState.turnRolls` is what the turn started with.
-- **Extended Scores.**
-    - Three extra boxes in their own section, counting toward the total only: Two Pair (the four dice making two
-        different pairs), Evens and Odds.
-    - Locked (with a note, the pick kept) in D20 and Hit List.
-    - Always read a card from `PlayerState.categories`/`GameState.categories` (`categoriesWith`), never
-        `gameMode.categories`.
-- **First Roll Bonus.**
-    - A lower box other than 5x (`ScoreCategory.earnsFirstRollBonus`) scored above zero on a turn's first roll
-        (`GameState.rollEarnsFirstRollBonus`: rolled once, counted from `turnRolls`) takes `ScoreCalculator.FIRST_ROLL_BONUS`
-        (5) more, in the box's own score, so totals and the board's preview include it.
-    - The slots that took it (`PlayerState.firstRollBonusSlots`, saved with the game) are drawn gold (normal weight), like a joker's bonus,
-        and TalkBack adds "with first roll bonus" after them.
-    - Locked (with a note, the pick kept) in D20 and Hit List, which have no such box (`GameMode.allowsFirstRollBonus`).
-    - The CPUs take it when it comes but don't plan for it.
-- **Unlucky Dice.**
-    - After each roll, each rolled die has an `oddsPercent` chance (10-50%) of landing locked in chains, at most
-        `maxDice` (1-5) a roll.
-    - A locked die can't be held or scored, and rerolls with the rest.
-    - Without the modifier, the dice are dealt exactly as before.
+| House rule | `id` | Field | What it changes |
+| --- | --- | --- | --- |
+| No Capture Roll | `no_capture_roll` | `rollAgainOnCapture` | A capture earns no roll |
+| No Home Roll | `no_home_roll` | `rollAgainOnHome` | A pawn home earns no roll |
+| Endless 6s | `endless_sixes` | `rollAgainLimit` | A run of 6s never ends the turn |
+| Out on a 1 | `exit_on_one` | `yardExitRolls` | A 1 leaves the yard too |
+| Free Start | `free_start` | `freeStart` | Any roll leaves the yard while no pawn is on the board |
+| Three Tries | `three_tries` | `yardTries` | Three rolls a turn to leave the yard while no pawn is on the board |
+| Blockades | `blockades` | `blockades` | Two of one player's pawns on a track square can't be passed or landed on by another's |
+| Must Capture | `must_capture` | `mustCapture` | A roll with a capture allows only captures |
+| Guarded Starts | `guarded_starts` | `guardedStarts` | A start square is safe only for its own seat's pawns |
+
+- **On the board.** "On the board" is the track or the home column: not the yard, not home. A Three Tries roll with no
+    move keeps the turn (`GameState.yardTriesUsed`, `GameEvent.NoMove.triesLeft`, "Alex rolled 2 and had no move: 2
+    more tries."), one turn however many tries.
+- **Blockades.** Every other player's pawns, partners' included, are stopped by one, out of the yard too when it
+    stands on their start square; its own player's pass and join it. TalkBack says "Red blockade" on its square
+    (`LudoEngine.blockades`).
+- **Guarded Starts.** A start square no one sits at (2 players on the classic board) is safe for nobody. A pawn
+    leaving its yard captures any other on its start square. TalkBack says "safe for Red" there, not "safe".
+- **Off the record.** A game with any house rule on (`GameRules.hasHouseRules`) stays off the Leaderboard
+    (`playedUnmodified` false) and out of Statistics (`GameResult.houseRules`, database version 2), and earns no
+    achievements: `GameViewModel` keeps no `AchievementTracker` for it, and records nothing at its start, its
+    continuing, or its end (`StartedGame.earnsAchievements`; the maintainer, 2026-11-18). Its rows are still written, so
+    New Game's tutorial link knows a game was finished. The card's note says so while any is on.
+- **Remembered** as the `house_rules` preference (a set of ids; one no longer known is dropped), and saved with the
+    game by id (`SavedGameJson` version 2; an unknown id fails the read).
+- **The CPU** plays every house rule through the legal moves it's offered. Medium and Hard count a pawn in a blockade
+    as safe, and a guarded start as safe only for its own seat's; they don't plan for Three Tries or a blockade's path.
+- **The Rules screen** has a House Rules group: an About page, then the rules by what they change (Rolling, The Yard,
+    Captures), each as its name in italics before its description (`RulesHouseRule`).
+- **Locked until a first game is finished** (the maintainer, 2026-11-18): until a game is recorded
+    (`GameRecordRepository.hasFinishedGame`, read as the form is restored, so nothing changes once it shows), the card
+    is a dimmed note, "Finish a game to unlock house rules", one TalkBack stop. The saved picks are kept and saved, but
+    a game started then plays none (`GameSetupState.playedHouseRules`). Teams and the mode aren't locked.
 
 ## The CPU
 
@@ -394,6 +406,7 @@ counts under their heading (`ui/records/PlayerCountRow.kt`, TalkBack "4 players"
 started; Statistics opens on "All" (every game, spoken "All games") and can show one count's games. Filtered in the
 query and in `playerStatistics`, with no schema change. A team game records each player at their team's place, and
 stays off the Leaderboard (`playedUnmodified` false): a team's win is its players' together, not one player's race.
+A game with house rules is in neither (`GameResult.houseRules`; "Modifiers").
 
 **Time played** is a line at the top of Statistics, on every page and with no players yet: `PlayTimeLine`, seconds
 counting up for the first minute ("42s"), then minutes, hours and minutes ("12h 34m"), and from 24 hours days, hours,

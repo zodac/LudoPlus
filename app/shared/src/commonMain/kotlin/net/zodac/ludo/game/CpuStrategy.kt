@@ -144,11 +144,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
             if (index == me || index in state.finishingOrder || isFriendly(state, me, index)) return@forEachIndexed
             for (roll in 1..state.rules.dieFaces) {
                 val reachable = opponent.pawns.mapNotNull { progress ->
-                    val to = when {
-                        progress == PawnPosition.YARD_PROGRESS -> if (roll in state.rules.yardExitRolls) 0 else null
-                        progress in 0..<board.trackSteps && progress + roll < board.trackSteps -> progress + roll
-                        else -> null
-                    }
+                    val to = LudoEngine.destination(state, index, progress, roll)?.takeIf { it < board.trackSteps }
                     to?.let { exposed[board.trackSquare(opponent.seat, it)] }
                 }
                 loss += (reachable.maxOrNull() ?: 0.0) / state.rules.dieFaces
@@ -158,10 +154,18 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
     }
 }
 
-/** Whether a pawn of [seat] at [progress] is safe: in its yard, its home column, home, or on a safe track square. */
+/**
+ * Whether a pawn of [seat] at [progress] is safe: in its yard, its home column, home, on a track square safe for it, or
+ * where blockades are played, in one: two or more of its seat's pawns on that square in [state].
+ */
 private fun isSafe(state: GameState, seat: Int, progress: Int): Boolean {
     val board = state.board
-    return progress !in 0..<board.trackSteps || board.isSafe(board.trackSquare(seat, progress))
+    if (progress !in 0..<board.trackSteps) return true
+    val square = board.trackSquare(seat, progress)
+    if (state.rules.isSafeFor(seat, square)) return true
+    if (!state.rules.blockades) return false
+    val player = state.players.first { it.seat == seat }
+    return player.pawns.count { it in 0..<board.trackSteps && board.trackSquare(seat, it) == square } >= 2
 }
 
 /** Whether [other]'s pawns can't capture [me]'s: [me] themselves, or a partner where partners don't capture. */

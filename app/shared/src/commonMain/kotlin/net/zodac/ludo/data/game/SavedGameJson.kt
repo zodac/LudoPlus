@@ -4,6 +4,7 @@ import net.zodac.ludo.data.JsonArray
 import net.zodac.ludo.data.JsonNumber
 import net.zodac.ludo.data.JsonObject
 import net.zodac.ludo.data.JsonParseException
+import net.zodac.ludo.data.JsonString
 import net.zodac.ludo.data.array
 import net.zodac.ludo.data.boolean
 import net.zodac.ludo.data.buildJsonObject
@@ -19,6 +20,7 @@ import net.zodac.ludo.data.objOrNull
 import net.zodac.ludo.data.objectList
 import net.zodac.ludo.data.parseJson
 import net.zodac.ludo.data.string
+import net.zodac.ludo.data.stringList
 import net.zodac.ludo.data.toJson
 import net.zodac.ludo.game.GameEvent
 import net.zodac.ludo.game.GameState
@@ -31,25 +33,28 @@ import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.GameRules
+import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.model.PawnPosition
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.StoredId
 import net.zodac.ludo.model.storedIdOf
+import net.zodac.ludo.model.withHouseRules
 import net.zodac.ludo.ui.game.StartedGame
 
 /**
  * The saved form of a game in progress ([StartedGame]), as JSON. Hand-written over the app's own [JsonObject] tree.
  *
- * The rules aren't written: a game follows its mode's ([GameMode.rules]) until modifiers come in Phase 9, which add
- * them under a new [VERSION]. The one setting that changes them, [GameRules.stopAtFirstWinner], is written when on. A roll waiting for a move is written as the roll alone; its moves are worked out again.
+ * The rules aren't written whole: a game follows its mode's ([GameMode.rules]), changed by what is written: the house
+ * rules on, by id ([GameRules.houseRules], from [VERSION] 2), the teams, and [GameRules.stopAtFirstWinner] when on. A
+ * roll waiting for a move is written as the roll alone; its moves are worked out again.
  * Anything that doesn't make a playable game fails [decode] with an [IllegalArgumentException] (a [JsonParseException]
  * for JSON that can't be read).
  */
 object SavedGameJson {
     /** The format written. One from a newer app, with a higher version, isn't read. */
-    const val VERSION = 1
+    const val VERSION = 2
 
     fun encode(game: StartedGame): String = buildJsonObject {
         put("version", VERSION)
@@ -61,6 +66,8 @@ object SavedGameJson {
         put("players", JsonArray(game.players.map(::encodePlayer)))
         put("rollOff", encodeRollOff(game.rollOff))
         if (game.state.rules.stopAtFirstWinner) put("stopAtFirstWinner", true)
+        // The house rules on, in their own order; absent for none.
+        if (game.state.rules.hasHouseRules) put("houseRules", JsonArray(HouseRule.entries.filter { it in game.state.rules.houseRules }.map { JsonString(it.id) }))
         // A team game's teams and their two options; absent for a game without teams.
         game.state.rules.teams?.let { teams ->
             put("teams", jsonInts(teams))
@@ -84,7 +91,7 @@ object SavedGameJson {
             teams = teams,
             partnerCaptures = teams != null && obj.boolean("partnerCaptures"),
             rollForPartners = teams == null || obj.boolean("rollForPartners"),
-        )
+        ).withHouseRules((if ("houseRules" in obj) obj.stringList("houseRules").map { storedId<HouseRule>(it) }.toSet() else emptySet()))
         val state = decodeState(obj.obj("state"), mode, rules, players.size)
         val playMillis = obj.long("playMillis")
         require(playMillis >= 0) { "Negative play time" }
@@ -158,6 +165,7 @@ object SavedGameJson {
         put("roll", (state.phase as? TurnPhase.AwaitingMove)?.roll)
         put("rollAgainRun", state.rollAgainRun)
         if (state.rollingAgain) put("rollingAgain", true)
+        if (state.yardTriesUsed > 0) put("yardTriesUsed", state.yardTriesUsed)
         put("finishingOrder", jsonInts(state.finishingOrder))
         state.lastEvent?.let { put("lastEvent", encodeEvent(it)) }
     }
@@ -203,10 +211,12 @@ object SavedGameJson {
             phase = TurnPhase.AwaitingRoll,
             rollAgainRun = obj.int("rollAgainRun"),
             rollingAgain = obj.flag("rollingAgain"),
+            yardTriesUsed = obj.intOrNull("yardTriesUsed") ?: 0,
             finishingOrder = finishingOrder,
             lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
         )
         require(waiting.rollAgainRun >= 0 && rules.rollAgainLimit?.let { waiting.rollAgainRun < it } != false) { "Rolled again too often" }
+        require(waiting.yardTriesUsed in 0..<rules.yardTries) { "Tried to leave the yard too often" }
         val roll = obj.intOrNull("roll") ?: return waiting
         require(roll in 1..rules.dieFaces) { "A roll of $roll" }
         val moves = LudoEngine.legalMoves(waiting, roll)
@@ -224,6 +234,7 @@ object SavedGameJson {
         put("kind", kind)
         put("player", event.player)
         put("roll", roll)
+        if (event is GameEvent.NoMove && event.triesLeft > 0) put("triesLeft", event.triesLeft)
         if (event is GameEvent.Moved) {
             put("pawn", event.move.pawn)
             put("from", event.move.from)
@@ -241,7 +252,7 @@ object SavedGameJson {
         val roll = obj.int("roll")
         return when (val kind = obj.string("kind")) {
             "rolled" -> GameEvent.Rolled(player, roll)
-            "noMove" -> GameEvent.NoMove(player, roll)
+            "noMove" -> GameEvent.NoMove(player, roll, triesLeft = obj.intOrNull("triesLeft") ?: 0)
             "rollAgainLimit" -> GameEvent.RollAgainLimit(player, roll)
             "moved" -> GameEvent.Moved(
                 player = player,

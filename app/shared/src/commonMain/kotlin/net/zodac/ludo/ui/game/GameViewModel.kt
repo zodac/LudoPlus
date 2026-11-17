@@ -45,6 +45,7 @@ import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.withHouseRules
 
 /**
  * The play graph's state: the setup form, and the game it starts. Shared by the setup screen and the game screen, so a
@@ -187,7 +188,8 @@ class GameViewModel(
         settingsRepository.stopAtFirstWinner.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
-        viewModelScope.launch { setupForm.restore(settingsRepository.snapshot()) }
+        // The house rules unlock with a first finished game; records that can't be read leave them locked.
+        viewModelScope.launch { setupForm.restore(settingsRepository.snapshot(), houseRulesUnlocked = orNullOnFailure { records.hasFinishedGame() } ?: false) }
     }
 
     /**
@@ -203,28 +205,28 @@ class GameViewModel(
         cpuTurn?.cancel()
         val previousGame = _game.value?.state
         val startedAt = now()
-        tracker = AchievementTracker(players)
-        record(AchievementEngine.atGameStart(players, previousGame, localHour(startedAt)))
         playMark = elapsedMillis().takeIf { foreground.value }
-        commit(
-            StartedGame(
-                mode = setup.gameMode,
-                players = players,
-                state = GameState.new(
-                    setup.gameMode,
-                    players.size,
-                    first = rollOff.first,
-                    rules = setup.gameMode.rules.forPlayers(players.size).copy(
-                        stopAtFirstWinner = stopAtFirstWinner.value,
-                        teams = setup.teams,
-                        partnerCaptures = setup.partnerCaptures,
-                        rollForPartners = setup.rollForPartners,
-                    ),
-                ),
-                rollOff = rollOff,
-                startedAtEpochMillis = startedAt,
+        val started = StartedGame(
+            mode = setup.gameMode,
+            players = players,
+            state = GameState.new(
+                setup.gameMode,
+                players.size,
+                first = rollOff.first,
+                rules = setup.gameMode.rules.forPlayers(players.size).copy(
+                    stopAtFirstWinner = stopAtFirstWinner.value,
+                    teams = setup.teams,
+                    partnerCaptures = setup.partnerCaptures,
+                    rollForPartners = setup.rollForPartners,
+                ).withHouseRules(setup.playedHouseRules),
             ),
+            rollOff = rollOff,
+            startedAtEpochMillis = startedAt,
         )
+        // A game with house rules earns nothing.
+        tracker = if (started.earnsAchievements) AchievementTracker(players) else null
+        if (started.earnsAchievements) record(AchievementEngine.atGameStart(players, previousGame, localHour(startedAt)))
+        commit(started)
         viewModelScope.launch { setup.saveTo(settingsRepository) }
         playCpuTurn()
         return true
@@ -239,8 +241,8 @@ class GameViewModel(
         if (_game.value != null) return true
         playMark = elapsedMillis().takeIf { foreground.value }
         _game.value = game
-        tracker = AchievementTracker(game.players)
-        record(AchievementEngine.atGameResume())
+        tracker = if (game.earnsAchievements) AchievementTracker(game.players) else null
+        if (game.earnsAchievements) record(AchievementEngine.atGameResume())
         playCpuTurn()
         return true
     }
@@ -331,7 +333,7 @@ class GameViewModel(
 
     /** The game is on screen with the phone on its side: "Sideways", for a game (never the tutorial). */
     fun onShownSideways() {
-        if (_game.value == null) return
+        if (_game.value?.earnsAchievements != true) return
         record(AchievementEngine.atSideways())
     }
 
@@ -535,6 +537,9 @@ data class StartedGame(
 ) {
     /** Whether the player whose turn it is is the computer. */
     val currentIsCpu: Boolean get() = players[state.current].type == PlayerType.AI
+
+    /** Whether the game earns achievements: not with any house rule on ([net.zodac.ludo.model.GameRules.hasHouseRules]). */
+    val earnsAchievements: Boolean get() = !state.rules.hasHouseRules
 }
 
 /** Milliseconds from a fixed, unspecified start that the wall clock's changes don't move: for measuring play time. */

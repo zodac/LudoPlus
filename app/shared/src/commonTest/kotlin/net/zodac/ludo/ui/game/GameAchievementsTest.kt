@@ -27,6 +27,7 @@ import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.game.TutorialScript
 import net.zodac.ludo.model.Achievement
 import net.zodac.ludo.model.AchievementCounter
+import net.zodac.ludo.model.HouseRule
 
 /** The game screen's view model earns achievements from the game it plays, each step once - and the tutorial only its own. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -48,7 +49,7 @@ class GameAchievementsTest {
     ) = GameViewModel(
         SettingsRepository(InMemoryPreferences()),
         saved,
-        GameRecordRepository(InMemoryGameResultDao()),
+        GameRecordRepository(InMemoryGameResultDao(finishedGame = true)),
         Random(7),
         elapsedMillis = { 0L },
         tutorial = tutorial,
@@ -110,6 +111,36 @@ class GameAchievementsTest {
         assertTrue(viewModel(store, saved).resumeGame())
         runCurrent()
         assertTrue(Achievement.LETS_FINISH_THIS in store.unlocked)
+    }
+
+    @Test
+    fun `a game with house rules earns nothing - started, played out, or continued`() = runTest(dispatcher) {
+        val store = InMemoryAchievementStore()
+        val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
+        val viewModel = viewModel(store, saved, hour = 2)
+        viewModel.setupForm.setHouseRule(HouseRule.ENDLESS_SIXES, on = true)
+        viewModel.startGame { "Player $it" }
+        runCurrent()
+        val state = { assertNotNull(viewModel.game.value).state }
+        assertEquals(setOf(HouseRule.ENDLESS_SIXES), state().rules.houseRules)
+        assertEquals(null, state().rules.rollAgainLimit)
+        assertTrue(viewModel(store, saved).resumeGame())
+        runCurrent()
+        while (!state().isFinished) {
+            if (state().current != 0) {
+                advanceTimeBy(1_000)
+                runCurrent()
+                continue
+            }
+            when (val phase = state().phase) {
+                is TurnPhase.AwaitingMove -> viewModel.move(phase.moves.first().pawn)
+                else -> viewModel.roll()
+            }
+            runCurrent()
+        }
+        runCurrent()
+        assertEquals(emptySet(), store.unlocked)
+        assertEquals(emptyMap(), store.mutableState.value.counters)
     }
 
     @Test

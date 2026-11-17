@@ -1,5 +1,6 @@
 package net.zodac.ludo.ui.rules
 
+import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.rules_board_1
 import net.zodac.ludo.resources.rules_board_2
@@ -13,6 +14,17 @@ import net.zodac.ludo.resources.rules_capture_4
 import net.zodac.ludo.resources.rules_capture_tab
 import net.zodac.ludo.resources.rules_capture_title
 import net.zodac.ludo.resources.rules_group_gameplay
+import net.zodac.ludo.resources.rules_group_house_rules
+import net.zodac.ludo.resources.rules_house_captures_tab
+import net.zodac.ludo.resources.rules_house_captures_title
+import net.zodac.ludo.resources.rules_house_rolling_tab
+import net.zodac.ludo.resources.rules_house_rolling_title
+import net.zodac.ludo.resources.rules_house_rules_1
+import net.zodac.ludo.resources.rules_house_rules_2
+import net.zodac.ludo.resources.rules_house_rules_tab
+import net.zodac.ludo.resources.rules_house_rules_title
+import net.zodac.ludo.resources.rules_house_yard_tab
+import net.zodac.ludo.resources.rules_house_yard_title
 import net.zodac.ludo.resources.rules_how_to_play_1
 import net.zodac.ludo.resources.rules_how_to_play_2
 import net.zodac.ludo.resources.rules_how_to_play_tab
@@ -48,6 +60,9 @@ internal data class RulesText(val text: StringResource) : RulesBlock
 
 /** The button that starts the guided tutorial: see `RulesScreen`'s `onStartTutorial`. */
 internal data object RulesTutorialStart : RulesBlock
+
+/** A house rule, as its name in italics and what it changes. */
+internal data class RulesHouseRule(val rule: HouseRule) : RulesBlock
 
 /** A diagram of part of the board ([RulesDiagram]). */
 internal data class RulesDiagramBlock(val kind: RulesDiagramKind) : RulesBlock
@@ -87,8 +102,31 @@ private val GAMEPLAY = RulesGroup(
     ),
 )
 
-/** The groups of pages, in the top tab row's order. The game modes and the modifiers join the gameplay in Phase 9. */
-internal val RULES_GROUPS: List<RulesGroup> = listOf(GAMEPLAY)
+/** The house rules ([HouseRule]): what they are, then each one, a page for what they change. */
+private val HOUSE_RULES = RulesGroup(
+    Res.string.rules_group_house_rules,
+    listOf(
+        RulesPage(Res.string.rules_house_rules_title, Res.string.rules_house_rules_tab, texts(Res.string.rules_house_rules_1, Res.string.rules_house_rules_2)),
+        RulesPage(
+            Res.string.rules_house_rolling_title,
+            Res.string.rules_house_rolling_tab,
+            listOf(HouseRule.NO_CAPTURE_ROLL, HouseRule.NO_HOME_ROLL, HouseRule.ENDLESS_SIXES).map(::RulesHouseRule),
+        ),
+        RulesPage(
+            Res.string.rules_house_yard_title,
+            Res.string.rules_house_yard_tab,
+            listOf(HouseRule.EXIT_ON_ONE, HouseRule.FREE_START, HouseRule.THREE_TRIES).map(::RulesHouseRule),
+        ),
+        RulesPage(
+            Res.string.rules_house_captures_title,
+            Res.string.rules_house_captures_tab,
+            listOf(HouseRule.MUST_CAPTURE, HouseRule.GUARDED_STARTS, HouseRule.BLOCKADES).map(::RulesHouseRule),
+        ),
+    ),
+)
+
+/** The groups of pages, in the top tab row's order. */
+internal val RULES_GROUPS: List<RulesGroup> = listOf(GAMEPLAY, HOUSE_RULES)
 
 /** Every page, group after group: the pager's pages. */
 internal val RULES_PAGES: List<RulesPage> = RULES_GROUPS.flatMap { it.pages }

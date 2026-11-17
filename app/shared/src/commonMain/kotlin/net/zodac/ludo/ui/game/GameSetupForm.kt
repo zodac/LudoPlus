@@ -9,6 +9,7 @@ import net.zodac.ludo.game.AiNameGenerator
 import net.zodac.ludo.model.BoardGeometry
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
@@ -42,7 +43,14 @@ data class GameSetupState(
     val teamMode: TeamMode = TeamMode.OFF,
     val partnerCaptures: Boolean = false,
     val rollForPartners: Boolean = true,
+    /** The house rules switched on ([HouseRule]): none by default. Kept while locked, but not played ([playedHouseRules]). */
+    val houseRules: Set<HouseRule> = emptySet(),
+    /** Whether the House Rules card is open to the player: once a first game is finished (`GameRecordRepository.hasFinishedGame`). */
+    val houseRulesUnlocked: Boolean = false,
 ) {
+    /** The house rules a game started now plays: none while they're locked. */
+    val playedHouseRules: Set<HouseRule> get() = if (houseRulesUnlocked) houseRules else emptySet()
+
     /** Each player's team for the game this would start, or null for none ([TeamMode.teamsFor]). */
     val teams: List<Int>? get() = teamMode.teamsFor(playerCount)
 
@@ -64,6 +72,7 @@ data class GameSetupState(
             setGameMode(gameMode)
             setPlayerCount(playerCount)
             setTeams(teamMode, partnerCaptures, rollForPartners)
+            setHouseRules(houseRules)
             for (slot in allSlots) {
                 setPlayerName(slot.slot, slot.name)
                 setPlayerType(slot.slot, slot.type)
@@ -84,8 +93,8 @@ class GameSetupForm {
     private val _setupRestored = MutableStateFlow(false)
     val setupRestored: StateFlow<Boolean> = _setupRestored.asStateFlow()
 
-    /** Fills the form from [saved] and flags it restored, in one update. */
-    fun restore(saved: SettingsRepository.Snapshot) {
+    /** Fills the form from [saved], the house rules [houseRulesUnlocked] or not, and flags it restored, in one update. */
+    fun restore(saved: SettingsRepository.Snapshot, houseRulesUnlocked: Boolean) {
         val slots = _setup.value.allSlots.map { slot ->
             var updated = slot.copy(name = (saved.playerNameFor(slot.slot) ?: slot.name).takeNameWidth(NAME_CAP))
             // Slot 1 is always Human, so its type and difficulty are never restored.
@@ -108,6 +117,8 @@ class GameSetupForm {
             teamMode = saved.teamMode,
             partnerCaptures = saved.partnerCaptures,
             rollForPartners = saved.rollForPartners,
+            houseRules = saved.houseRules,
+            houseRulesUnlocked = houseRulesUnlocked,
         )
         _setupRestored.value = true
     }
@@ -132,6 +143,11 @@ class GameSetupForm {
 
     fun setRollForPartners(on: Boolean) {
         _setup.update { it.copy(rollForPartners = on) }
+    }
+
+    /** Switches [rule] on or off. */
+    fun setHouseRule(rule: HouseRule, on: Boolean) {
+        _setup.update { it.copy(houseRules = if (on) it.houseRules + rule else it.houseRules - rule) }
     }
 
     /** How many players the game has: the first [count] slots play. */

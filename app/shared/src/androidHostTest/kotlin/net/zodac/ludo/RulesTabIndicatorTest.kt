@@ -29,6 +29,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.platform.SilentPlatformServices
+import net.zodac.ludo.ui.rules.RULES_GROUPS
 import net.zodac.ludo.ui.rules.RulesScreen
 import net.zodac.ludo.ui.rules.pagerIndicatorLayout
 import net.zodac.ludo.ui.rules.resetRulesPageMemory
@@ -54,8 +55,8 @@ class RulesTabIndicatorTest : UiTest() {
 
     private fun checkIndicatorUnderEachTab() {
         showRules()
-        // The page row's tabs: the group row isn't shown while there's only the one group.
-        val groups = 0
+        // The page row's tabs, after the group row's.
+        val groups = RULES_GROUPS.size
         for (index in 0..2) {
             compose.tapTab(compose.onAllNodes(isTab)[groups + index])
             compose.waitForIdle()
@@ -69,10 +70,11 @@ class RulesTabIndicatorTest : UiTest() {
 
     private fun checkSwipedToTabComesIntoView() {
         showRules()
-        // The page row's last tab, off its end at 360dp, then swiped to page by page.
-        val pages = compose.onAllNodes(isTab).fetchSemanticsNodes().size
-        val lastTab = compose.onAllNodes(isTab)[pages - 1]
-        val row = compose.onNode(hasAnyChild(isTab and hasText(compose.onAllNodes(isTab)[0].fetchSemanticsNode().config[SemanticsProperties.Text].joinToString())))
+        // The page row's last tab (after the group row's), off its end at 360dp, then swiped to page by page.
+        val groups = RULES_GROUPS.size
+        val pages = compose.onAllNodes(isTab).fetchSemanticsNodes().size - groups
+        val lastTab = compose.onAllNodes(isTab)[groups + pages - 1]
+        val row = compose.onNode(hasAnyChild(isTab and hasText(compose.onAllNodes(isTab)[groups].fetchSemanticsNode().config[SemanticsProperties.Text].joinToString())))
         repeat(pages - 1) {
             // The page showing - its neighbours may be composed too, off screen.
             val shownPages = compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange) and hasAnyChild(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)))
@@ -90,7 +92,7 @@ class RulesTabIndicatorTest : UiTest() {
     /** A tap snaps the pages but slides the indicator through the tabs in between, ending under the tapped one. */
     private fun checkTapSlidesTheIndicator() {
         showRules()
-        val groups = 0
+        val groups = RULES_GROUPS.size
         val start = compose.onNodeWithTag("rulesTabIndicator").fetchSemanticsNode().boundsInRoot.center.x
         compose.mainClock.autoAdvance = false
         compose.tapTab(compose.onAllNodes(isTab)[groups + 2])

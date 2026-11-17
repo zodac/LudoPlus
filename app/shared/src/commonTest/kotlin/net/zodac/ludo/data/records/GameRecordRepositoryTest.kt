@@ -10,10 +10,12 @@ import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.TeamMode
+import net.zodac.ludo.model.withHouseRules
 import net.zodac.ludo.ui.game.StartedGame
 
 class GameRecordRepositoryTest {
@@ -121,6 +123,25 @@ class GameRecordRepositoryTest {
         // Sam's team is second, whatever the order its players were placed in.
         assertEquals(0, sam.totals.gamesWon)
         assertEquals(0, repository.leaderboardCount(GameMode.CLASSIC, playerCount = 4))
+    }
+
+    @Test
+    fun `a game with house rules is recorded - but stays off the Leaderboard and out of Statistics`() = runTest {
+        val dao = InMemoryGameResultDao()
+        val repository = GameRecordRepository(dao)
+        val plain = game(order = listOf(0, 1, 2, 3))
+        val housed = plain.copy(state = plain.state.copy(rules = plain.state.rules.withHouseRules(setOf(HouseRule.BLOCKADES))))
+        repository.recordGame(housed)
+        assertEquals(2, dao.count())
+        assertEquals(true, repository.hasFinishedGame())
+        assertEquals(listOf(true, true), dao.allByPlayer().map { it.houseRules })
+        assertEquals(listOf(false, false), dao.allByPlayer().map { it.playedUnmodified })
+        assertEquals(0, repository.leaderboardCount(GameMode.CLASSIC, playerCount = 4))
+        assertEquals(emptyList(), repository.playerStatistics())
+        // A game without them counts as ever.
+        repository.recordGame(plain)
+        assertEquals(1, repository.leaderboardCount(GameMode.CLASSIC, playerCount = 4))
+        assertEquals(listOf(1, 1), repository.playerStatistics().map { it.totals.gamesPlayed })
     }
 
     @Test

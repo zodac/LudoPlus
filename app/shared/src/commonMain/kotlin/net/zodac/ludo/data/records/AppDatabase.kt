@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.room.migration.Migration
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.execSQL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
@@ -16,7 +18,7 @@ import kotlinx.coroutines.IO
  * Every schema change after the first release needs a version bump and a migration in [MIGRATIONS]; the exported
  * schemas in app/shared/schemas/ are what a migration test compares against.
  */
-@Database(entities = [GameResult::class], version = 1, exportSchema = true)
+@Database(entities = [GameResult::class], version = 2, exportSchema = true)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -34,8 +36,15 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
     override fun initialize(): AppDatabase
 }
 
-/** Every migration between released schema versions, oldest first. None yet: version 1 is the first. */
-val MIGRATIONS: Array<Migration> = emptyArray()
+/** Every migration between schema versions, oldest first. */
+val MIGRATIONS: Array<Migration> = arrayOf(
+    // House rules (Phase 9): each game's flag, none before them.
+    object : Migration(1, 2) {
+        override fun migrate(connection: SQLiteConnection) {
+            connection.execSQL("ALTER TABLE `results` ADD COLUMN `houseRules` INTEGER NOT NULL DEFAULT 0")
+        }
+    },
+)
 
 /**
  * Finishes a platform's builder the same way everywhere. No destructive fallback of any kind: a missing migration must

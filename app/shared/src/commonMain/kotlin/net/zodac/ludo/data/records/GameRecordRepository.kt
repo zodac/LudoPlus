@@ -48,8 +48,10 @@ class GameRecordRepository(
                 playerKey = playerNameKey(player.name),
                 isPrimaryPlayer = index == 0,
                 gameModeId = game.mode.id,
-                // A team's win is its players' together, not a race of one: team games stay off the Leaderboard.
-                playedUnmodified = state.rules.teams == null,
+                // A team's win is its players' together, not a race of one: team games stay off the Leaderboard, and so
+                // do games with house rules, which stay out of Statistics too.
+                playedUnmodified = state.rules.teams == null && !state.rules.hasHouseRules,
+                houseRules = state.rules.hasHouseRules,
                 playerCount = game.players.size,
                 endedAtEpochMillis = endedAtEpochMillis,
                 playMillis = game.playMillis,
@@ -95,10 +97,10 @@ class GameRecordRepository(
 
     /**
      * Every player's Statistics, in name order: names differing only by case are one player, shown by the spelling of
-     * their latest game. Only games of [playerCount] count, or every game for null.
+     * their latest game. Only games of [playerCount] count, or every game for null, and never one with house rules.
      */
     suspend fun playerStatistics(playerCount: Int? = null): List<PlayerStatistics> {
-        val rows = dao.allByPlayer().filter { playerCount == null || it.playerCount == playerCount }
+        val rows = dao.allByPlayer().filter { !it.houseRules && (playerCount == null || it.playerCount == playerCount) }
         return withContext(computeContext) { rows.groupBy { it.playerKey }.values.map(::statisticsOf) }
     }
 }

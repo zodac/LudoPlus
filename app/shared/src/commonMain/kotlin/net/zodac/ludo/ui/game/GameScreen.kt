@@ -73,6 +73,7 @@ import net.zodac.ludo.resources.game_event_finished
 import net.zodac.ludo.resources.game_event_first
 import net.zodac.ludo.resources.game_event_home
 import net.zodac.ludo.resources.game_event_no_move
+import net.zodac.ludo.resources.game_event_no_move_tries
 import net.zodac.ludo.resources.game_event_team_finished
 import net.zodac.ludo.resources.game_event_three_sixes
 import net.zodac.ludo.resources.game_over_results
@@ -553,6 +554,8 @@ private fun ColumnScope.StatusLines(
         // The tutorial's parts start with no roll-off: the coach says who's playing.
         event == null && tutorial -> null
         event == null -> stringResource(Res.string.game_event_first, name(game.rollOff.first))
+        event is GameEvent.NoMove && event.triesLeft > 0 ->
+            pluralStringResource(Res.plurals.game_event_no_move_tries, event.triesLeft, name(event.player), event.roll, event.triesLeft)
         event is GameEvent.NoMove -> stringResource(Res.string.game_event_no_move, name(event.player), event.roll)
         event is GameEvent.RollAgainLimit -> stringResource(Res.string.game_event_three_sixes, name(event.player))
         event is GameEvent.Moved && event.finished -> finishedLine(game, event.move.owner ?: event.player)

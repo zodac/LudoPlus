@@ -15,7 +15,9 @@ object LudoEngine {
 
     /**
      * The current player rolls [roll]. A run of roll-again rolls that reaches the rules' limit ends the turn unmoved,
-     * and so does a roll with no legal move, roll-again roll or not. Otherwise the game awaits one of the legal moves.
+     * and so does a roll with no legal move, roll-again roll or not, unless the player has none on the board and tries
+     * left to leave the yard ([net.zodac.ludo.model.GameRules.yardTries]): then they roll again. Otherwise the game
+     * awaits one of the legal moves.
      */
     fun applyRoll(state: GameState, roll: Int): GameState {
         check(state.phase == TurnPhase.AwaitingRoll) { "Not waiting for a roll: ${state.phase}" }
@@ -35,7 +37,23 @@ object LudoEngine {
             return nextPlayer(started).copy(lastEvent = GameEvent.RollAgainLimit(player, roll))
         }
         val moves = legalMoves(started, roll)
-        if (moves.isEmpty()) return nextPlayer(started).copy(lastEvent = GameEvent.NoMove(player, roll))
+        if (moves.isEmpty()) {
+            // With no pawn on the board, a player may have tries left to leave the yard: the turn carries on.
+            val triesLeft = if (movers(started).none { owner -> started.players[owner].pawns.any { it.isOnBoard(started) } }) {
+                rules.yardTries - state.yardTriesUsed - 1
+            } else {
+                0
+            }
+            if (triesLeft > 0) {
+                return started.copy(
+                    rollAgainRun = run,
+                    rollingAgain = true,
+                    yardTriesUsed = state.yardTriesUsed + 1,
+                    lastEvent = GameEvent.NoMove(player, roll, triesLeft),
+                )
+            }
+            return nextPlayer(started).copy(lastEvent = GameEvent.NoMove(player, roll))
+        }
         return started.copy(
             phase = TurnPhase.AwaitingMove(roll, moves),
             rollAgainRun = run,
@@ -45,28 +63,88 @@ object LudoEngine {
 
     /**
      * Every legal move for the current player's [roll], in pawn order: their own pawns, or once every one is home in a
-     * team game that rolls for partners, each partner's still racing, partner by partner.
+     * team game that rolls for partners, each partner's still racing, partner by partner. Where the rules make captures
+     * compulsory and one of them captures, only those that do.
      */
     fun legalMoves(state: GameState, roll: Int): List<Move> {
         val board = state.board
         val me = state.current
-        val owners = if (state.players[me].isFinished(board) && state.rules.rollForPartners) {
+        val blockades = blockades(state)
+        val moves = movers(state).flatMap { owner ->
+            state.players[owner].pawns.mapIndexedNotNull { pawn, from ->
+                val to = destination(state, owner, from, roll) ?: return@mapIndexedNotNull null
+                if (isBlocked(state, blockades, owner, from, to)) return@mapIndexedNotNull null
+                Move(pawn = pawn, from = from, to = to, captures = capturesAt(state, owner, to), owner = owner.takeIf { it != me })
+            }
+        }
+        if (state.rules.mustCapture && moves.any { it.captures.isNotEmpty() }) return moves.filter { it.captures.isNotEmpty() }
+        return moves
+    }
+
+    /**
+     * Where a pawn of [owner] at progress [from] goes with [roll], blockades aside, or null if it can't move: out of the
+     * yard onto its start square on a roll the rules allow, or that many steps on, never past home.
+     */
+    fun destination(state: GameState, owner: Int, from: Int, roll: Int): Int? {
+        val board = state.board
+        return when {
+            from == PawnPosition.YARD_PROGRESS -> if (leavesYard(state, owner, roll)) 0 else null
+            from == board.homeProgress -> null
+            // Exact roll home: a pawn can't overshoot it.
+            from + roll > board.homeProgress -> null
+            else -> from + roll
+        }
+    }
+
+    /** Whether [roll] brings a pawn of [owner] out of the yard: one of the rules' exit rolls, or any with a free start. */
+    private fun leavesYard(state: GameState, owner: Int, roll: Int): Boolean =
+        roll in state.rules.yardExitRolls || (state.rules.freeStart && state.players[owner].pawns.none { it.isOnBoard(state) })
+
+    /** Whether a pawn at [this] progress is on the board: on the track or in its home column, not in the yard or home. */
+    private fun Int.isOnBoard(state: GameState): Boolean = this in 0..<state.board.homeProgress
+
+    /**
+     * Whose pawns the current player moves: their own, or once every one is home in a team game that rolls for
+     * partners, each partner's still racing.
+     */
+    private fun movers(state: GameState): List<Int> {
+        val board = state.board
+        val me = state.current
+        return if (state.players[me].isFinished(board) && state.rules.rollForPartners) {
             state.partnersOf(me).filter { !state.players[it].isFinished(board) }
         } else {
             listOf(me)
         }
-        return owners.flatMap { owner ->
-            state.players[owner].pawns.mapIndexedNotNull { pawn, from ->
-                val to = when {
-                    from == PawnPosition.YARD_PROGRESS -> if (roll in state.rules.yardExitRolls) 0 else null
-                    from == board.homeProgress -> null
-                    // Exact roll home: a pawn can't overshoot it.
-                    from + roll > board.homeProgress -> null
-                    else -> from + roll
-                }
-                to?.let { Move(pawn = pawn, from = from, to = it, captures = capturesAt(state, owner, it), owner = owner.takeIf { it != me }) }
-            }
+    }
+
+    /**
+     * Each track square holding a blockade, to the player whose it is: two or more of one player's pawns there. None
+     * without the rule.
+     */
+    fun blockades(state: GameState): Map<Int, Int> {
+        if (!state.rules.blockades) return emptyMap()
+        val board = state.board
+        val squares = mutableMapOf<Int, Int>()
+        state.players.forEachIndexed { index, player ->
+            player.pawns.filter { it in 0..<board.trackSteps }
+                .groupingBy { board.trackSquare(player.seat, it) }
+                .eachCount()
+                .forEach { (square, count) -> if (count >= 2) squares[square] = index }
         }
+        return squares
+    }
+
+    /**
+     * Whether another player's blockade, of [blockades], stands on a track square a pawn of [owner] would pass or land on
+     * going from progress [from] to [to]: out of the yard, only its start square.
+     */
+    private fun isBlocked(state: GameState, blockades: Map<Int, Int>, owner: Int, from: Int, to: Int): Boolean {
+        if (blockades.isEmpty()) return false
+        val board = state.board
+        val seat = state.players[owner].seat
+        val first = maxOf(from + 1, 0)
+        val last = minOf(to, board.trackSteps - 1)
+        return (first..last).any { progress -> blockades[board.trackSquare(seat, progress)]?.let { it != owner } == true }
     }
 
     /**
@@ -97,7 +175,7 @@ object LudoEngine {
         val board = state.board
         val rules = state.rules
         val finished = players[whose].isFinished(board)
-        var next = state.copy(players = players, phase = TurnPhase.AwaitingRoll)
+        var next = state.copy(players = players, phase = TurnPhase.AwaitingRoll, yardTriesUsed = 0)
         // A team is placed once all of it is home, its players together; a player alone is a team of one.
         val team = rules.teamOf(whose)
         val teamHome = finished && players.indices.filter { rules.teamOf(it) == team }.all { players[it].isFinished(board) }
@@ -124,15 +202,17 @@ object LudoEngine {
         return next.copy(lastEvent = GameEvent.Moved(player, phase.roll, move, finished, rollsAgain))
     }
 
-    /** The pawns a pawn of [owner] would capture on landing at progress [to]: opponents', and partners' if the rules say. */
+    /**
+     * The pawns a pawn of [owner] would capture on landing at progress [to]: opponents', and partners' if the rules say,
+     * those that square isn't safe for.
+     */
     private fun capturesAt(state: GameState, owner: Int, to: Int): List<PawnRef> {
         val board = state.board
-        // Only the shared track has opponents on it, and its safe squares protect them.
+        // Only the shared track has opponents on it.
         if (to !in 0..<board.trackSteps) return emptyList()
         val square = board.trackSquare(state.players[owner].seat, to)
-        if (board.isSafe(square)) return emptyList()
         return state.players.flatMapIndexed { index, other ->
-            if (index == owner || (state.rules.arePartners(owner, index) && !state.rules.partnerCaptures)) {
+            if (index == owner || (state.rules.arePartners(owner, index) && !state.rules.partnerCaptures) || state.rules.isSafeFor(other.seat, square)) {
                 emptyList()
             } else {
                 other.pawns.indices
@@ -167,7 +247,7 @@ object LudoEngine {
         do {
             next = (next + 1) % state.players.size
         } while (next in state.finishingOrder || (skipsHome && state.players[next].isFinished(state.board)))
-        return state.copy(current = next, phase = TurnPhase.AwaitingRoll, rollAgainRun = 0, rollingAgain = false)
+        return state.copy(current = next, phase = TurnPhase.AwaitingRoll, rollAgainRun = 0, rollingAgain = false, yardTriesUsed = 0)
     }
 
     private inline fun <T> List<T>.replace(index: Int, change: (T) -> T): List<T> =

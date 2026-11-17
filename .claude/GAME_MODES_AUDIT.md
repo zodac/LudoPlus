@@ -60,3 +60,12 @@ off the Leaderboard (`GameRecordRepository.recordGame`).
     pawn's move (credited to the player who rolled). Left unguarded, as reported to the maintainer (2026-11-18).
 - **Not yet audited achievement by achievement**: each team-sensitive one's own wording is for the maintainer's
     review.
+
+## House rules (New Game)
+
+Modifiers (Phase 9, `DESIGN.md`, "Modifiers"). **A game with any house rule on earns no achievement** (the maintainer,
+2026-11-18): `GameViewModel` keeps no tracker for it, so nothing is free and nothing needs a guard.
+`GameAchievementsTest` plays one out and checks that nothing was recorded. If that rule changes, audit each house rule
+here first: Endless 6s takes Too Much Of A Good Thing away, Free Start, Out on a 1, and Three Tries change the
+yard-exit family (Locked Out, Off The Mark), Blockades and Guarded Starts the capture family, and No Capture Roll and
+No Home Roll the roll counts.

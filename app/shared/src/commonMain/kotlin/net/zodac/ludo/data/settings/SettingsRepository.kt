@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.map
 import net.zodac.ludo.model.BoardGeometry
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.TeamMode
@@ -63,6 +65,10 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             prefs[PARTNER_CAPTURES_KEY] = partnerCaptures
             prefs[ROLL_FOR_PARTNERS_KEY] = rollForPartners
         }
+
+        fun setHouseRules(houseRules: Set<HouseRule>) {
+            prefs[HOUSE_RULES_KEY] = houseRules.map { it.id }.toSet()
+        }
     }
 
     /** Settings no version reads any more, removed at launch. None yet. */
@@ -104,6 +110,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val teamMode: TeamMode get() = prefs[TEAM_MODE_KEY]?.let { storedIdOf<TeamMode>(it) } ?: TeamMode.OFF
         val partnerCaptures: Boolean get() = prefs[PARTNER_CAPTURES_KEY] ?: false
         val rollForPartners: Boolean get() = prefs[ROLL_FOR_PARTNERS_KEY] ?: true
+
+        /** The house rules the setup form last had on: none until it's chosen, any this app doesn't know dropped. */
+        val houseRules: Set<HouseRule> get() = prefs[HOUSE_RULES_KEY].orEmpty().mapNotNull { storedIdOf<HouseRule>(it) }.toSet()
     }
 
     val confirmBeforeLeavingGame: Flow<Boolean> = read(CONFIRM_BEFORE_LEAVING_GAME_KEY, default = true)
@@ -216,6 +225,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val TEAM_MODE_KEY = stringPreferencesKey("team_mode")
         val PARTNER_CAPTURES_KEY = booleanPreferencesKey("partner_captures")
         val ROLL_FOR_PARTNERS_KEY = booleanPreferencesKey("roll_for_partners")
+        val HOUSE_RULES_KEY = stringSetPreferencesKey("house_rules")
         val PLAY_SECONDS_KEY = intPreferencesKey("play_seconds")
 
         // Stored ids: permanent once released. The die's and background's keys are DiceFive's.

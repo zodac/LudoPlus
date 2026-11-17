@@ -16,6 +16,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.Dp
 import net.zodac.ludo.game.GameState
+import net.zodac.ludo.game.LudoEngine
 import net.zodac.ludo.game.Move
 import net.zodac.ludo.model.PawnPosition
 import net.zodac.ludo.model.PlayerColour
@@ -24,9 +25,11 @@ import net.zodac.ludo.resources.game_move_action
 import net.zodac.ludo.resources.game_move_capture_clause
 import net.zodac.ludo.resources.game_move_home_clause
 import net.zodac.ludo.resources.game_move_out_action
+import net.zodac.ludo.resources.game_square_blockade_spoken
 import net.zodac.ludo.resources.game_square_column_spoken
 import net.zodac.ludo.resources.game_square_empty_spoken
 import net.zodac.ludo.resources.game_square_home_spoken
+import net.zodac.ludo.resources.game_square_safe_for_spoken
 import net.zodac.ludo.resources.game_square_safe_spoken
 import net.zodac.ludo.resources.game_square_start_spoken
 import net.zodac.ludo.resources.game_square_track_spoken
@@ -103,16 +106,27 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
         spots += Spot(layout.yard(seat).bounds(), description, move, move?.let(moveLabels::get))
     }
     // The track, from red's start.
+    val blockades = LudoEngine.blockades(state)
     for (square in 0..<board.trackLength) {
         val here = pawns.filter { (key, _) ->
             val (player, _, position) = key
             position is PawnPosition.Track && board.trackSquare(state.players[player].seat, position.steps) == square
         }
         val startOf = state.players.indexOfFirst { board.startSquare(it.seat) == square }.takeIf { it >= 0 }
+        // A guarded start is safe for its own colour alone; a start square no one sits at, for nobody.
+        val guardedStart = state.rules.guardedStarts && square % board.seatSpacing == 0
+        val safety = when {
+            !board.isSafe(square) -> null
+            !guardedStart -> stringResource(Res.string.game_square_safe_spoken)
+            startOf != null -> stringResource(Res.string.game_square_safe_for_spoken, stringResource(colourOf(startOf).label))
+            else -> null
+        }
+        val blockade = blockades[square]?.let { stringResource(Res.string.game_square_blockade_spoken, stringResource(colourOf(it).label)) }
         val clauses = listOfNotNull(
             stringResource(Res.string.game_square_track_spoken, square + 1),
             startOf?.let { stringResource(Res.string.game_square_start_spoken, stringResource(colourOf(it).label)) },
-            if (board.isSafe(square)) stringResource(Res.string.game_square_safe_spoken) else null,
+            safety,
+            blockade,
         ) + here.map { it.second }.ifEmpty { listOf(empty) }
         val move = state.players.indices.firstNotNullOfOrNull { player -> movableAt(player, here.filter { it.first.first == player }.map { it.first.second }) }
         spots += Spot(layout.trackSquare(square).spotBounds(), joinClauses(clauses), move, move?.let(moveLabels::get))

@@ -1,5 +1,6 @@
 package net.zodac.ludo.data.records
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -27,8 +28,10 @@ data class GameResult(
     val isPrimaryPlayer: Boolean,
     /** The mode's id ([net.zodac.ludo.model.GameMode.id]). */
     val gameModeId: String,
-    /** Whether the game ran under its mode's own rules, no modifier on: only these make the Leaderboard. */
+    /** Whether the game ran under its mode's own rules, without teams or house rules: only these make the Leaderboard. */
     val playedUnmodified: Boolean = true,
+    /** Whether any house rule was on: such a game is in neither the Leaderboard nor Statistics. */
+    @ColumnInfo(defaultValue = "0") val houseRules: Boolean = false,
     val playerCount: Int,
     /** When the game ended, by the wall clock. */
     val endedAtEpochMillis: Long,

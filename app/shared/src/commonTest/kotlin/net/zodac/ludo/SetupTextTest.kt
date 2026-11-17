@@ -16,6 +16,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import net.zodac.ludo.data.records.GameRecordRepository
+import net.zodac.ludo.data.records.InMemoryGameResultDao
+import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.TeamMode
 import net.zodac.ludo.platform.LocalPlatformServices
@@ -121,5 +124,30 @@ class SetupTextTest : UiTest() {
         compose.waitForIdle()
         assertEquals(true, viewModel.setupForm.setup.value.partnerCaptures)
         assertEquals(listOf(0, 1, 2, 0, 1, 2), viewModel.setupForm.setup.value.teams)
+    }
+
+    @Test
+    fun `the House Rules card - locked until a game is finished - then none on - a switch each - and what a game with any on doesn't count towards`() = uiTest(SCREEN) {
+        // Locked: the card is one note, said as one.
+        show(gameViewModel())
+        compose.onNode(hasText("House Rules") and hasText("Finish a game to unlock house rules")).assertExists()
+        compose.onAllNodesWithText("None").assertCountEquals(0)
+
+        val viewModel = gameViewModel(records = GameRecordRepository(InMemoryGameResultDao(finishedGame = true)))
+        show(viewModel)
+        compose.onAllNodesWithText("Finish a game to unlock house rules").assertCountEquals(0)
+        compose.onNodeWithText("House Rules").assertExists()
+        compose.onNodeWithText("None").assertExists()
+        compose.onNodeWithText("Common changes to the classic rules, in any mix").assertExists().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Blockades").assertExists()
+        compose.onNodeWithText("Two of your pawns on one square make a blockade: no other player's pawn can pass it or land on it.").assertExists()
+        compose.onNode(hasText("Must Capture") and isToggleable()).assertIsOff().performClick()
+        compose.waitForIdle()
+        assertEquals(setOf(HouseRule.MUST_CAPTURE), viewModel.setupForm.setup.value.houseRules)
+        compose.onNodeWithText("Done").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("1 enabled").assertExists()
+        compose.onNodeWithText("Off the Leaderboard and Statistics, and no achievements").assertExists()
     }
 }

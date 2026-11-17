@@ -1,5 +1,7 @@
 package net.zodac.ludo.ui.game
 
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -30,6 +32,7 @@ import net.zodac.ludo.game.GameEvent
 import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.model.BoardGeometry
+import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
 
@@ -263,6 +266,37 @@ class GameViewModelTest {
         val again = GameViewModel(SettingsRepository(prefs), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao()))
         runCurrent()
         assertEquals(6, again.setupForm.setup.value.playerCount)
+    }
+
+    @Test
+    fun `the setup form's house rules make the game's rules - and come back next time - any no longer known dropped - locked until a game is finished`() = runTest(dispatcher) {
+        val prefs = InMemoryPreferences()
+        val viewModel = GameViewModel(SettingsRepository(prefs), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao(finishedGame = true)))
+        runCurrent()
+        viewModel.setupForm.setHouseRule(HouseRule.BLOCKADES, on = true)
+        viewModel.setupForm.setHouseRule(HouseRule.MUST_CAPTURE, on = true)
+        viewModel.setupForm.setHouseRule(HouseRule.MUST_CAPTURE, on = false)
+        assertTrue(viewModel.startGame { "Player $it" })
+        assertEquals(setOf(HouseRule.BLOCKADES), viewModel.state.rules.houseRules)
+        assertTrue(viewModel.state.rules.blockades)
+        runCurrent()
+        val again = GameViewModel(SettingsRepository(prefs), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao(finishedGame = true)))
+        runCurrent()
+        assertEquals(setOf(HouseRule.BLOCKADES), again.setupForm.setup.value.houseRules)
+        prefs.edit { it[stringSetPreferencesKey("house_rules")] = setOf("blockades", "retired_rule") }
+        val dropped = GameViewModel(SettingsRepository(prefs), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao(finishedGame = true)))
+        runCurrent()
+        assertEquals(setOf(HouseRule.BLOCKADES), dropped.setupForm.setup.value.houseRules)
+
+        // Until a first game is finished they're locked: kept, but not played.
+        val locked = GameViewModel(SettingsRepository(prefs), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao()))
+        runCurrent()
+        assertFalse(locked.setupForm.setup.value.houseRulesUnlocked)
+        assertEquals(setOf(HouseRule.BLOCKADES), locked.setupForm.setup.value.houseRules)
+        assertTrue(locked.startGame { "Player $it" })
+        assertEquals(emptySet(), locked.state.rules.houseRules)
+        runCurrent()
+        assertEquals(setOf(HouseRule.BLOCKADES), SettingsRepository(prefs).snapshot().houseRules)
     }
 
     @Test
