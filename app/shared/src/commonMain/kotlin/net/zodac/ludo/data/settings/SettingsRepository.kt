@@ -6,12 +6,17 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import net.zodac.ludo.data.Stamped
+import net.zodac.ludo.data.newerOf
+import net.zodac.ludo.game.nowEpochMillis
 import net.zodac.ludo.model.BoardGeometry
 import net.zodac.ludo.model.CustomMode
 import net.zodac.ludo.model.Difficulty
@@ -26,14 +31,29 @@ import net.zodac.ludo.model.storedIdOf
  * The player's settings and the setup form's remembered choices, in the settings preferences file. Every key's name is
  * permanent once released (`CLAUDE.md`, "Stored ids are permanent").
  *
- * The cloud save's stamping of synced keys (DiceFive's) comes back with Play Games, in Phase 10 of
- * `.claude/IMPLEMENTATION.md`.
+ * Every setting but the Graphics page's (the Orientation, the Animations level and its Advanced settings) and the two list
+ * filters goes in the cloud save and progress files ([SYNCED_KEYS]): those are about this device, what it can draw and
+ * how it's held, and how this player likes to browse. Each synced key is stamped with when its value last changed
+ * ([stampKey]), and a merge keeps whichever device set it last.
  */
-class SettingsRepository(private val dataStore: DataStore<Preferences>) {
+class SettingsRepository(
+    private val dataStore: DataStore<Preferences>,
+    private val now: () -> Long = ::nowEpochMillis,
+) {
+
+    /** Every write: [block], then a stamp on each synced key whose value it changed. */
+    private suspend fun edit(block: (MutablePreferences) -> Unit) {
+        dataStore.edit { prefs ->
+            val before = SYNCED_KEYS.map { prefs[it] }
+            block(prefs)
+            val at = now()
+            SYNCED_KEYS.forEachIndexed { index, key -> if (prefs[key] != before[index]) prefs[SYNCED_STAMP_KEYS[index]] = at }
+        }
+    }
 
     /** Several of the setup form's choices in one write. */
     suspend fun batch(block: Batch.() -> Unit) {
-        dataStore.edit { Batch(it).block() }
+        edit { Batch(it).block() }
     }
 
     class Batch internal constructor(private val prefs: MutablePreferences) {
@@ -77,9 +97,46 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         }
     }
 
-    /** Settings no version reads any more, removed at launch. None yet. */
+    /** Emits each time a synced setting changes here, or arrives from a merge: not for the first value. */
+    val syncedChanges: Flow<Unit> =
+        dataStore.data.map { prefs -> SYNCED_STAMP_KEYS.map { prefs[it] } }.distinctUntilChanged().drop(1).map { }
+
+    /** The synced settings, by key name, each with its stamp: every one that is set, or was set and since removed. */
+    suspend fun cloudSettings(): Map<String, Stamped<SettingValue?>> {
+        val prefs = dataStore.data.first()
+        return SYNCED.mapNotNull { synced ->
+            val value = synced.read(prefs)
+            val at = prefs[stampKey(synced.key)]
+            if (value == null && at == null) null else synced.key.name to Stamped(value, at ?: 0)
+        }.toMap()
+    }
+
+    /**
+     * Takes each of the cloud save's [remote] settings that was set later than this device's, keeping its stamp. A key
+     * this build doesn't sync, or a value of the wrong type, is skipped.
+     */
+    suspend fun mergeCloud(remote: Map<String, Stamped<SettingValue?>>) {
+        dataStore.edit { prefs ->
+            for ((name, theirs) in remote) {
+                val synced = SYNCED_BY_NAME[name] ?: continue
+                val ours = Stamped(synced.read(prefs), prefs[stampKey(synced.key)] ?: 0)
+                if (ours == theirs || newerOf(ours, theirs) { it.toString() } !== theirs) continue
+                if (synced.write(prefs, theirs.value)) prefs[stampKey(synced.key)] = theirs.atEpochMillis
+            }
+        }
+    }
+
+    /**
+     * The seconds played that an older version kept here, before they moved to the achievements' counters
+     * ([net.zodac.ludo.model.AchievementCounter.PLAY_SECONDS]): 0 once [forgetRetired] has removed them.
+     */
+    suspend fun legacyPlaySeconds(): Int = dataStore.data.first()[PLAY_SECONDS_KEY] ?: 0
+
+    /**
+     * Removes the settings no version reads any more ([RETIRED_KEYS]). Nothing is written when none is there (DataStore
+     * skips an edit that changes nothing), so it's cheap to run on every launch.
+     */
     suspend fun forgetRetired() {
-        if (RETIRED_KEYS.isEmpty()) return
         dataStore.edit { prefs -> RETIRED_KEYS.forEach { prefs.remove(it) } }
     }
 
@@ -89,7 +146,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     private fun <T> read(key: Preferences.Key<T>, default: T): Flow<T> = read { prefs -> prefs[key] ?: default }
 
     private suspend fun <T> set(key: Preferences.Key<T>, value: T) {
-        dataStore.edit { it[key] = value }
+        edit { it[key] = value }
     }
 
     /** The settings as they are now, read once. */
@@ -215,18 +272,6 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun setUnlockedOnlyStyles(unlockedOnly: Boolean) = set(UNLOCKED_ONLY_STYLES_KEY, unlockedOnly)
 
-    /**
-     * The seconds the app has been in front of the player, as [net.zodac.ludo.app.PlayTimeTracker] saves them: Statistics'
-     * time played. Not cleared by anything the player can reset. (DiceFive kept it with the achievements' counters; it
-     * can move there with them in Phase 6.)
-     */
-    val playSeconds: Flow<Int> = read(PLAY_SECONDS_KEY, default = 0)
-
-    /** Adds [seconds] to [playSeconds], in one read and write. */
-    suspend fun addPlaySeconds(seconds: Int) {
-        dataStore.edit { it[PLAY_SECONDS_KEY] = (it[PLAY_SECONDS_KEY] ?: 0) + seconds }
-    }
-
     private companion object {
         val CONFIRM_BEFORE_LEAVING_GAME_KEY = booleanPreferencesKey("confirm_before_leaving_game")
         val STOP_AT_FIRST_WINNER_KEY = booleanPreferencesKey("stop_at_first_winner")
@@ -243,6 +288,8 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val HOUSE_RULES_KEY = stringSetPreferencesKey("house_rules")
         val CUSTOM_MODES_KEY = stringPreferencesKey("custom_modes")
         val CUSTOM_MODE_KEY = stringPreferencesKey("custom_mode")
+
+        /** Where the seconds played were kept until they moved to the achievements' counters: retired. */
         val PLAY_SECONDS_KEY = intPreferencesKey("play_seconds")
 
         // Stored ids: permanent once released. The die's and background's keys are DiceFive's.
@@ -257,12 +304,89 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val MOTION_IDLE_TIMEOUT_KEY = stringPreferencesKey("motion_idle_timeout")
         val MOTION_KEYS = MotionGroup.entries.map(::motionKey) + MOTION_IDLE_TIMEOUT_KEY
 
-        /** Settings no version reads any more, removed at launch ([forgetRetired]). */
-        val RETIRED_KEYS: List<Preferences.Key<*>> = emptyList()
+        /** Settings no version reads any more, removed at launch ([forgetRetired]). Never in the cloud save. */
+        val RETIRED_KEYS: List<Preferences.Key<*>> = listOf(PLAY_SECONDS_KEY)
 
         fun playerNameKey(slot: Int) = stringPreferencesKey("player_name_$slot")
         fun playerTypeKey(slot: Int) = stringPreferencesKey("player_type_$slot")
         fun playerColourKey(slot: Int) = stringPreferencesKey("player_colour_$slot")
         fun playerDifficultyKey(slot: Int) = stringPreferencesKey("player_difficulty_$slot")
+
+        /**
+         * What the cloud save carries: everything but the Graphics page's settings ([ANIMATION_LEVEL_KEY], [MOTION_KEYS],
+         * [SCREEN_ORIENTATION_KEY]), chosen for this device, and the two list filters ([LOCKED_ONLY_ACHIEVEMENTS_KEY],
+         * [UNLOCKED_ONLY_STYLES_KEY]), a way of browsing.
+         */
+        private val SYNCED: List<SyncedKey<*>> = buildList {
+            listOf(
+                GAME_MODE_KEY, TEAM_MODE_KEY, CUSTOM_MODES_KEY, CUSTOM_MODE_KEY,
+                BOARD_STYLE_ID_KEY, PAWN_STYLE_ID_KEY, DICE_STYLE_ID_KEY, TABLE_BACKGROUND_ID_KEY,
+            ).mapTo(this) { SyncedKey.Text(it) }
+            for (slot in 1..BoardGeometry.MAX_PLAYERS) {
+                listOf(playerNameKey(slot), playerTypeKey(slot), playerColourKey(slot), playerDifficultyKey(slot)).mapTo(this) { SyncedKey.Text(it) }
+            }
+            add(SyncedKey.Number(PLAYER_COUNT_KEY))
+            listOf(
+                PARTNER_CAPTURES_KEY, ROLL_FOR_PARTNERS_KEY, CONFIRM_BEFORE_LEAVING_GAME_KEY, STOP_AT_FIRST_WINNER_KEY, SOUND_ENABLED_KEY,
+                VIBRATION_ENABLED_KEY,
+            ).mapTo(this) { SyncedKey.Flag(it) }
+            add(SyncedKey.TextSet(HOUSE_RULES_KEY))
+        }
+        private val SYNCED_BY_NAME = SYNCED.associateBy { it.key.name }
+
+        /** Each of [SYNCED]'s keys. */
+        val SYNCED_KEYS: List<Preferences.Key<*>> = SYNCED.map { it.key }
+
+        /** Each of [SYNCED_KEYS]' [stampKey], in the same order. */
+        private val SYNCED_STAMP_KEYS = SYNCED_KEYS.map(::stampKey)
+
+        /** When [key] last changed: `synced_at:<key>`. */
+        fun stampKey(key: Preferences.Key<*>) = longPreferencesKey("synced_at:${key.name}")
+    }
+}
+
+/** A setting the cloud save carries: its [key], and its value as the [SettingValue] the cloud save holds. */
+private sealed class SyncedKey<T : Any>(val key: Preferences.Key<T>) {
+
+    /** [stored] as the cloud save holds it. */
+    protected abstract fun valueOf(stored: T): SettingValue
+
+    /** [value] as [key] stores it, or null for a value of another type. */
+    protected abstract fun storedOf(value: SettingValue): T?
+
+    fun read(prefs: Preferences): SettingValue? = prefs[key]?.let(::valueOf)
+
+    /** Sets [key] to [value] (null: removes it). False if [value] isn't [key]'s type, and nothing is written. */
+    fun write(prefs: MutablePreferences, value: SettingValue?): Boolean {
+        if (value == null) {
+            prefs.remove(key)
+            return true
+        }
+        prefs[key] = storedOf(value) ?: return false
+        return true
+    }
+
+    class Text(key: Preferences.Key<String>) : SyncedKey<String>(key) {
+        override fun valueOf(stored: String) = SettingValue.Text(stored)
+
+        override fun storedOf(value: SettingValue) = (value as? SettingValue.Text)?.value
+    }
+
+    class Number(key: Preferences.Key<Int>) : SyncedKey<Int>(key) {
+        override fun valueOf(stored: Int) = SettingValue.Number(stored)
+
+        override fun storedOf(value: SettingValue) = (value as? SettingValue.Number)?.value
+    }
+
+    class Flag(key: Preferences.Key<Boolean>) : SyncedKey<Boolean>(key) {
+        override fun valueOf(stored: Boolean) = SettingValue.Flag(stored)
+
+        override fun storedOf(value: SettingValue) = (value as? SettingValue.Flag)?.value
+    }
+
+    class TextSet(key: Preferences.Key<Set<String>>) : SyncedKey<Set<String>>(key) {
+        override fun valueOf(stored: Set<String>) = SettingValue.TextSet(stored)
+
+        override fun storedOf(value: SettingValue) = (value as? SettingValue.TextSet)?.value
     }
 }

@@ -14,6 +14,15 @@ interface AchievementStore {
 
     suspend fun current(): AchievementsState
 
+    /**
+     * The seconds the app has been in front of the player ([net.zodac.ludo.model.AchievementCounter.PLAY_SECONDS]), on
+     * every device as of the last merge: apart from [state], which it would move every few minutes.
+     */
+    val playSeconds: Flow<Int>
+
+    /** Adds [seconds] to [playSeconds]. */
+    suspend fun addPlaySeconds(seconds: Int)
+
     /** Writes newly unlocked achievements and updated counters in one atomic edit. */
     suspend fun record(unlockedAt: Map<Achievement, Long>, counters: Map<AchievementCounter, Int>)
 

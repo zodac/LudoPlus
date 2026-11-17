@@ -39,7 +39,16 @@ class SavedGameJsonTest {
         playMillis = 98_765,
         // Every finished player's, as the game keeps them.
         finishMillis = state.finishingOrder.associateWith { 1_000L * (it + 1) },
+        id = "0123456789abcdef0123456789abcdef",
+        steps = 17,
     )
+
+    @Test
+    fun `a game saved without an id or steps - by an older build - reads as none`() {
+        val saved = game(GameState.new(GameMode.CLASSIC, 4, first = 1))
+        val older = SavedGameJson.encode(saved).replace(",\"id\":\"0123456789abcdef0123456789abcdef\"", "").replace(",\"steps\":17", "")
+        assertEquals(saved.copy(id = null, steps = 0), SavedGameJson.decode(older))
+    }
 
     @Test
     fun `every state of random games comes back as it was saved`() {
@@ -231,6 +240,7 @@ class SavedGameJsonTest {
                 "{\"slot\":3,\"type\":\"AI\",\"name\":\"Cog\",\"difficulty\":\"EASY\",\"colour\":\"GREEN\"}," +
                 "{\"slot\":4,\"type\":\"HUMAN\",\"name\":\"Dee\",\"difficulty\":\"MEDIUM\",\"colour\":\"YELLOW\"}]," +
                 "\"rollOff\":{\"rounds\":[{\"0\":6,\"1\":6,\"2\":3,\"3\":1},{\"0\":2,\"1\":5}],\"first\":1}," +
+                "\"id\":\"0123456789abcdef0123456789abcdef\",\"steps\":17," +
                 "\"state\":{\"players\":[" +
                 "{\"seat\":0,\"pawns\":[-1,-1,-1,-1],\"turns\":0,\"captures\":0,\"timesCaptured\":0}," +
                 "{\"seat\":1,\"pawns\":[-1,-1,-1,-1],\"turns\":1,\"captures\":0,\"timesCaptured\":0}," +

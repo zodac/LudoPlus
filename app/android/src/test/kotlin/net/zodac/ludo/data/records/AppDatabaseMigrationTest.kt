@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -21,7 +22,7 @@ class AppDatabaseMigrationTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
     @Test
-    fun `a version 1 database opens with its games kept - none with house rules`() = runBlocking {
+    fun `a version 1 database opens with its games kept - none with house rules - each with a uuid of its own`() = runBlocking {
         val file = context.getDatabasePath("migration-test.db").apply {
             parentFile?.mkdirs()
             delete()
@@ -31,7 +32,8 @@ class AppDatabaseMigrationTest {
             db.execSQL(
                 "INSERT INTO results (playerName, playerKey, isPrimaryPlayer, gameModeId, playedUnmodified, playerCount, endedAtEpochMillis, " +
                     "playMillis, place, won, finishMillis, turns, captures, timesCaptured, pawnsHome) " +
-                    "VALUES ('Sam', 'sam', 1, 'classic', 1, 4, 5, 6, 1, 1, 7, 40, 2, 1, 4)",
+                    "VALUES ('Sam', 'sam', 1, 'classic', 1, 4, 5, 6, 1, 1, 7, 40, 2, 1, 4), " +
+                    "('Alex', 'alex', 0, 'classic', 1, 4, 5, 6, 2, 0, 7, 40, 2, 1, 3)",
             )
             db.version = 1
         }
@@ -39,7 +41,10 @@ class AppDatabaseMigrationTest {
         val database = Room.databaseBuilder<AppDatabase>(context, file.absolutePath).buildAppDatabase()
         try {
             val rows = database.gameResultDao().allByPlayer()
-            assertEquals(listOf("Sam" to false), rows.map { it.playerName to it.houseRules })
+            assertEquals(listOf("Alex" to false, "Sam" to false), rows.map { it.playerName to it.houseRules })
+            // Version 3's uuids: one each, random, for the cloud save and progress files to tell rows apart by.
+            assertEquals(2, rows.map { it.uuid }.toSet().size)
+            rows.forEach { assertTrue(it.uuid, Regex("[0-9a-f]{32}").matches(it.uuid)) }
             assertEquals(1, database.gameResultDao().leaderboardCount("classic", playerCount = 4))
         } finally {
             database.close()

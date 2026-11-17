@@ -2,6 +2,7 @@ package net.zodac.ludo.data.records
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 
 /** The [GameResult] rows: a finished game's written together, read back for the Leaderboard and Statistics. */
@@ -29,6 +30,14 @@ interface GameResultDao {
     /** Every row, each player's together, in the order they were played: what Statistics adds up. */
     @Query("SELECT * FROM results ORDER BY playerKey, endedAtEpochMillis, id")
     suspend fun allByPlayer(): List<GameResult>
+
+    /** Every row, oldest first: what the cloud save and a progress file hold. */
+    @Query("SELECT * FROM results ORDER BY endedAtEpochMillis, id")
+    suspend fun all(): List<GameResult>
+
+    /** Another device's rows, in one write: each one this device has already (by its uuid) is left as it is. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMerged(results: List<GameResult>)
 
     @Query("SELECT COUNT(*) FROM results")
     suspend fun count(): Int

@@ -267,6 +267,23 @@ the records.
 Everything is in app-private storage. **Every stored id is permanent once released**, because achievements and modes
 will map to Play Games.
 
+**Ludo Plus today** (Phase 10, 2026-11-18). The rest of this section is DiceFive's, kept for Play Games.
+
+- **Game records**: Room, `ludo.db`, table `results` (`GameResult`), version 3. Each row has a random `uuid` (32 hex
+    digits, unique index), its id on every device; `id` is the device's own. Version 3's migration gives every older row
+    one. A merge inserts rows by uuid, ignoring one already there (`GameRecordRepository.mergeCloud`).
+- **Settings**: every key but the Graphics page's and the two list filters is synced (`SettingsRepository.SYNCED_KEYS`,
+    house rules as a string set), stamped `synced_at:<key>` when it changes, and merged last writer wins.
+- **The saved game**: stamped `saved_at` on every save and clear, never earlier than the last; `finished_id` is the last
+    game finished here. Each game has an id (`StartedGame.id`) and a step count (`steps`, one a state change), saved with
+    it, so of two copies of one game the one with more steps wins (`furtherOn`).
+- **Achievements**: counters `SUM` (a share each device, `counter_share_id` and `counter_shares`) or `LATEST` (the two
+    streaks, stamped `counter_at:<id>`). The time played is the `PLAY_SECONDS` counter, out of `AchievementsState`; an
+    older build's `play_seconds` setting is moved into it at launch, then removed.
+- **The save** (`online/CloudSave`, `CloudSaveCodec` version 1): achievements, records (packed rows: names and modes once
+    each, then one string of rows), the synced settings, and the saved game, gzipped JSON. `CloudSaveMerge` combines two
+    without picking. Progress files carry it now ("Distribution"); Play Games' cloud save will.
+
 - **Scores.**
     - Room, `ludo.db`, `AppDatabase`, with each version's schema exported to `app/shared/schemas/`.
     - Tables:
@@ -741,8 +758,8 @@ Two apps from one source, one per way the app reaches players: product flavours 
 - **Progress files** (`online/ProgressFileCodec`, `ProgressTransfer`; on Android `AndroidProgressFiles`, through the
     system's pickers, with no storage permission).
     - **What's in one**: everything a cloud save holds (`CloudSaveStore.snapshot`), as its own bytes (`CloudSaveCodec`).
-    - **An import is the cloud save's merge from another source**: `CloudSaveStore.merge`, then what the merged totals
-        reach (`unlockReachedTargets`), so the same rules apply (`PLAY_GAMES.md`, "Cloud save"). Nothing is picked or
+    - **An import is a merge**: `CloudSaveStore.merge` (settings, the saved game, achievements, then records), then what
+        the merged counters reach (`unlockReachedTargets`), as the cloud save will (`PLAY_GAMES.md`, "Cloud save"). Nothing is picked or
         thrown away, and importing a file twice changes nothing. A newer app's file is refused whole, with "update the app".
     - **Sealed, not plain**: `Ludo Plus`, a format byte and a random nonce, then the save XORed with an HMAC-SHA256
         keystream, then an HMAC-SHA256 of all of it. A file changed by one bit, or sealed by another build, isn't a progress
@@ -753,12 +770,13 @@ Two apps from one source, one per way the app reaches players: product flavours 
         the key out of the APK, or edits a rooted phone's own data, which no offline app can stop. Neither reaches Play
         Games, as above.
     - Named `LudoPlus-<yyyy-MM-dd>.ludo` (the player's day). Tests: `ProgressFileCodecTest`, `ProgressTransferTest`,
-        `ProgressFilesViewModelTest`, `ProgressFilesSettingsTest`.
+        `ProgressFilesViewModelTest`, `ProgressFilesSettingsTest`, `CloudSaveCodecTest`, `CloudSaveMergeTest`, the stores'
+        `*CloudTest`s, and `AndroidProgressFilesTest` (github).
 - **Settings card** (`ProgressFilesCard`): Export progress and Import progress, each a whole-row button (a compact
     `SettingRow`, its label alone), where the online card would be. Import asks first ("Import progress?"). Under the
-    rows, while an import runs, its step and count over a bar, drawn by the same `StepProgress` as the online card's
-    sync ("Opening the file", then the same four merge steps, `MergeStep`, named the same: `MergeStepTest` keeps the two
-    flows in step), for at least 1s (`IMPORT_SHOWN_MILLIS`, shared out between the steps, so a quick import's bar still
+    rows, while an import runs, its step and count over a bar, drawn by `StepProgress`, which the online card's sync will
+    share ("Opening the file", then the four merge steps, `MergeStep`, "Merging game records (5/5)" last: `MergeStepTest`
+    keeps the flows in step), for at least 1s (`IMPORT_SHOWN_MILLIS`, shared out between the steps, so a quick import's bar still
     visibly runs: the card catches up with the import a step at a time, `nextShownStatus`, counting only while the app
     is in front); then how the last export or import ended, in red if it failed, until the next starts. No toasts. The
     line is a polite live region: TalkBack hears "Importing progress" (not each step), then the outcome.

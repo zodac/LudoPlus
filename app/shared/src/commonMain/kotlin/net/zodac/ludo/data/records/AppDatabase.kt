@@ -18,7 +18,7 @@ import kotlinx.coroutines.IO
  * Every schema change after the first release needs a version bump and a migration in [MIGRATIONS]; the exported
  * schemas in app/shared/schemas/ are what a migration test compares against.
  */
-@Database(entities = [GameResult::class], version = 2, exportSchema = true)
+@Database(entities = [GameResult::class], version = 3, exportSchema = true)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -42,6 +42,14 @@ val MIGRATIONS: Array<Migration> = arrayOf(
     object : Migration(1, 2) {
         override fun migrate(connection: SQLiteConnection) {
             connection.execSQL("ALTER TABLE `results` ADD COLUMN `houseRules` INTEGER NOT NULL DEFAULT 0")
+        }
+    },
+    // The cloud save and progress files (Phase 10): each row's uuid, a random one for every row before them.
+    object : Migration(2, 3) {
+        override fun migrate(connection: SQLiteConnection) {
+            connection.execSQL("ALTER TABLE `results` ADD COLUMN `uuid` TEXT NOT NULL DEFAULT ''")
+            connection.execSQL("UPDATE `results` SET `uuid` = lower(hex(randomblob(16)))")
+            connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_results_uuid` ON `results` (`uuid`)")
         }
     },
 )

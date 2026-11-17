@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlin.random.Random
 import kotlin.time.TimeSource
+import kotlin.uuid.Uuid
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
@@ -153,8 +154,10 @@ class GameViewModel(
 
     /** Makes [game] the one being played, with its play time brought up to date, and saves it, or clears the save once it's over. */
     private fun commit(game: StartedGame) {
-        val wasFinished = _game.value?.state?.isFinished == true
-        val timed = withPlayTime(game)
+        val previous = _game.value
+        val wasFinished = previous?.state?.isFinished == true
+        val stepped = if (previous != null && previous.id == game.id && previous.state != game.state) game.copy(steps = game.steps + 1) else game
+        val timed = withPlayTime(stepped)
         _game.value = timed
         // The tutorial keeps nothing.
         if (tutorial != null) return
@@ -163,7 +166,7 @@ class GameViewModel(
             savedGame.save(timed)
             return
         }
-        savedGame.clear()
+        savedGame.clear(finished = timed)
         if (!wasFinished) {
             val endedAt = now()
             // Written even if the screen is left at once (it starts at once, on the main thread's immediate dispatcher).
@@ -225,6 +228,7 @@ class GameViewModel(
             rollOff = rollOff,
             startedAtEpochMillis = startedAt,
             customName = setup.customMode?.name,
+            id = Uuid.random().toHexString(),
         )
         // A game with house rules earns nothing.
         tracker = if (started.earnsAchievements) AchievementTracker(players) else null
@@ -558,6 +562,13 @@ data class StartedGame(
     val finishMillis: Map<Int, Long> = emptyMap(),
     /** A custom mode's name ([net.zodac.ludo.model.CustomMode]), the game shown under it: null for a built-in mode. */
     val customName: String? = null,
+    /**
+     * The game's own id, random and kept by every copy of it: a merge of two saves tells two copies of one game from two
+     * games by it. Null for a game with none (the tutorial's).
+     */
+    val id: String? = null,
+    /** How many times its [state] has changed since it started: of two copies of one game, the one with more is further on. */
+    val steps: Int = 0,
 ) {
     /** Whether the player whose turn it is is the computer. */
     val currentIsCpu: Boolean get() = players[state.current].type == PlayerType.AI

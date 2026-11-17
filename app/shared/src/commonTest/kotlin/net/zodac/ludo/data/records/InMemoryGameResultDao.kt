@@ -34,6 +34,12 @@ class InMemoryGameResultDao(finishedGame: Boolean = false) : GameResultDao {
     override suspend fun allByPlayer(): List<GameResult> =
         rows.sortedWith(compareBy<GameResult> { it.playerKey }.thenBy { it.endedAtEpochMillis }.thenBy { it.id })
 
+    override suspend fun all(): List<GameResult> = rows.sortedWith(compareBy<GameResult> { it.endedAtEpochMillis }.thenBy { it.id })
+
+    override suspend fun insertMerged(results: List<GameResult>) {
+        results.filter { row -> rows.none { it.uuid == row.uuid } }.distinctBy { it.uuid }.forEach { rows += it.copy(id = nextId++) }
+    }
+
     override suspend fun count(): Int = rows.size
 
     override suspend fun clearAll() = rows.clear()

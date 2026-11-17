@@ -48,6 +48,12 @@ interface PlatformServices {
      */
     val defaultDensity: Float? get() = null
 
+    /**
+     * Where the player keeps progress files ([net.zodac.ludo.online.ProgressFileCodec]): null in a build without them,
+     * which hides Settings' card for them. On Android, the github app's alone (`.claude/DESIGN.md`, "Distribution").
+     */
+    val progressFiles: ProgressFiles? get() = null
+
     /** A short message that shows for a moment and needs no response - each platform's own (a toast, on Android). */
     fun showTransientMessage(message: String)
 

@@ -19,7 +19,7 @@ reorders them.
 | 7 | Styles | Done |
 | 8 | 2-8 players | Done |
 | 9 | Game modes and modifiers | Done |
-| 10 | Google Play: Play Console, Play Games, and the store listing | Not started |
+| 10 | Google Play: Play Console, Play Games, and the store listing | In progress |
 | 11 | In-app purchases | Not started |
 | 12 | Netplay | Not started |
 
@@ -389,9 +389,15 @@ count but 4 has a board of its own; one player on two colours was dropped.
 - [ ] The store listing's hi-res icon, feature graphic (and the README's GIF), and promo video: DiceFive's generators
     are in `5423b6c`; the script keeps their steps, refusing those parts until then (`STORE_ASSETS.md`).
 - [ ] Play Games Services: achievements, the fastest-win leaderboards, cloud save, and sign-in (`PLAY_GAMES.md`).
-- [ ] Progress files (github flavour), restored from `5423b6c` with the cloud save format they share
+    Decided with the maintainer (2026-11-18): a leaderboard for each built-in mode and player count, 2-8 (21 of Play's
+    70), each the turns in a win, fewer better. Play ranks one number, so the local captures tie-break doesn't carry.
+- [x] Progress files (github flavour), restored from `5423b6c` with the cloud save format they share
     (`online/CloudSave*`, `ProgressFileCodec`, `ProgressTransfer`, the Settings card, `AndroidProgressFiles`, and the
     `PROGRESS_FILE_KEY` CI secret): settings, the saved game, and the game records (moved from Phase 4, 2026-11-17).
+    Done first, as the maintainer chose (2026-11-18). The format is Ludo's own, version 1: each game record has a
+    random `uuid` (database version 3), each saved game an id and a step count, and the time played moved to the
+    achievements' counters (`PLAY_SECONDS`), each device's share summed. `OnlineSync`, the account card, and the
+    reset marker come with Play Games.
 - [ ] Store listing, data-safety form, and content rating. Internal testing track, then production.
 
 ## Phase 11: In-app purchases

@@ -68,6 +68,9 @@ object SavedGameJson {
         put("rollOff", encodeRollOff(game.rollOff))
         // A custom mode's name, for the game to be shown under; absent for a built-in mode.
         game.customName?.let { put("customName", it) }
+        // The game's id, for telling its copies apart from other games' in a merge; absent for a game without one.
+        game.id?.let { put("id", it) }
+        put("steps", game.steps)
         if (game.state.rules.stopAtFirstWinner) put("stopAtFirstWinner", true)
         // The house rules on, in their own order; absent for none.
         if (game.state.rules.hasHouseRules) put("houseRules", JsonArray(HouseRule.entries.filter { it in game.state.rules.houseRules }.map { JsonString(it.id) }))
@@ -113,6 +116,8 @@ object SavedGameJson {
             playMillis = playMillis,
             finishMillis = finishMillis,
             customName = obj.stringOrNull("customName"),
+            id = obj.stringOrNull("id"),
+            steps = obj.intOrNull("steps")?.also { require(it >= 0) { "Negative steps" } } ?: 0,
         )
     }
 

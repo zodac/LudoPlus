@@ -122,7 +122,7 @@ internal object StoreState {
         }
         container.settingsRepository.batch { setPlayerName(1, Cast.YOU) }
         // Statistics' time played: about the history's games, and a little more besides (a fresh app has none).
-        container.settingsRepository.addPlaySeconds(STAGED_TIME_PLAYED_SECONDS)
+        container.achievementsRepository.addPlaySeconds(STAGED_TIME_PLAYED_SECONDS)
     }
 
     /** A staged game's time on screen so far, so its results say how long it took. */

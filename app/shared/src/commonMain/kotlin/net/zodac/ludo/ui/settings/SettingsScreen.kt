@@ -34,10 +34,15 @@ import net.zodac.ludo.app.LocalAppContainer
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.about_title
+import net.zodac.ludo.resources.app_name
+import net.zodac.ludo.resources.common_cancel
 import net.zodac.ludo.resources.licences_title
 import net.zodac.ludo.resources.settings_already_developer
 import net.zodac.ludo.resources.settings_confirm_leaving
 import net.zodac.ludo.resources.settings_graphics
+import net.zodac.ludo.resources.settings_import_progress_confirm
+import net.zodac.ludo.resources.settings_import_progress_message
+import net.zodac.ludo.resources.settings_import_progress_title
 import net.zodac.ludo.resources.settings_sound
 import net.zodac.ludo.resources.settings_steps_from_developer
 import net.zodac.ludo.resources.settings_stop_at_first_winner
@@ -47,6 +52,7 @@ import net.zodac.ludo.resources.settings_vibration
 import net.zodac.ludo.ui.common.FooterPill
 import net.zodac.ludo.ui.common.HoldPageCover
 import net.zodac.ludo.ui.common.LocalLandscapePage
+import net.zodac.ludo.ui.common.LudoPlusDialog
 import net.zodac.ludo.ui.common.ScreenScaffold
 import net.zodac.ludo.ui.common.ShrinkThenWrapText
 import net.zodac.ludo.ui.common.TwoPanes
@@ -152,7 +158,10 @@ fun SettingsScreen(
     // Saveable: a rotation with a dialog open shouldn't silently close it.
     var showLicenses by rememberSaveable { mutableStateOf(false) }
     var showAbout by rememberSaveable { mutableStateOf(false) }
+    var showImportConfirmation by rememberSaveable { mutableStateOf(false) }
     val platform = LocalPlatformServices.current
+    val progressFiles = platform.progressFiles
+    val progressFilesStatus by viewModel.progressFilesStatus.collectAsStateWithLifecycle()
     val alreadyDeveloper = stringResource(Res.string.settings_already_developer)
     // Index 0 is steps-away 1: resolved in composition, as the plural form and numerals need it.
     val stepsAway = (1 until SettingsViewModel.VERSION_TAP_TARGET).map { pluralStringResource(Res.plurals.settings_steps_from_developer, it, it) }
@@ -185,6 +194,16 @@ fun SettingsScreen(
                     stringResource(Res.string.settings_stop_at_first_winner),
                     toggles.stopAtFirstWinner,
                     viewModel::setStopAtFirstWinner,
+                )
+            }
+        }
+        // Where the online account's card will be: a build has one or the other, never both (PlatformServices.progressFiles).
+        val progressCard = @Composable {
+            if (progressFiles != null) {
+                ProgressFilesCard(
+                    onExport = { viewModel.exportProgress(progressFiles) },
+                    onImport = { showImportConfirmation = true },
+                    status = progressFilesStatus,
                 )
             }
         }
@@ -224,9 +243,10 @@ fun SettingsScreen(
         }
 
         if (LocalLandscapePage.current) {
-            // Side by side: the switches and About; then the Graphics row and Licences.
+            // Side by side: the progress files, the switches, and About; then the Graphics row and Licences.
             TwoPanes(
                 start = {
+                    progressCard()
                     switchesCard()
                     aboutLink(Modifier.fillMaxWidth())
                 },
@@ -236,6 +256,7 @@ fun SettingsScreen(
                 },
             )
         } else {
+            progressCard()
             switchesCard()
             graphicsCard()
             // Side by side, each taking half the width, so a label that wraps at a large font stays inside its half.
@@ -264,6 +285,22 @@ fun SettingsScreen(
 
     if (showLicenses) {
         LicensesDialog(onDismissRequest = { showLicenses = false })
+    }
+
+    if (showImportConfirmation && progressFiles != null) {
+        LudoPlusDialog(
+            icon = Symbols.FileOpen,
+            title = stringResource(Res.string.settings_import_progress_title),
+            message = stringResource(Res.string.settings_import_progress_message, stringResource(Res.string.app_name)),
+            confirmLabel = stringResource(Res.string.settings_import_progress_confirm),
+            onConfirm = {
+                viewModel.importProgress(progressFiles)
+                showImportConfirmation = false
+            },
+            dismissLabel = stringResource(Res.string.common_cancel),
+            onDismiss = { showImportConfirmation = false },
+            onDismissRequest = { showImportConfirmation = false },
+        )
     }
 
     if (showAbout) {

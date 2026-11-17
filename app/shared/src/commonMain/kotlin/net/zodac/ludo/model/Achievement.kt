@@ -237,7 +237,11 @@ import org.jetbrains.compose.resources.StringResource
  * games" is one stored number, not three. Each moves as the game it counts happens (`AchievementEngine`), never twice
  * for one event.
  */
-enum class AchievementCounter(override val id: String) : StoredId {
+enum class AchievementCounter(
+    override val id: String,
+    /** How the cloud save and progress files combine this counter from several devices. */
+    val cloudMerge: CounterMerge = CounterMerge.SUM,
+) : StoredId {
     /** Games player 1 has finished: counted when they're placed. */
     GAMES_PLAYED("GAMES_PLAYED"),
 
@@ -245,7 +249,7 @@ enum class AchievementCounter(override val id: String) : StoredId {
     GAMES_WON("GAMES_WON"),
 
     /** Player 1's wins in a row: back to 0 the moment another player wins. */
-    WIN_STREAK("WIN_STREAK"),
+    WIN_STREAK("WIN_STREAK", cloudMerge = CounterMerge.LATEST),
 
     /** Opponents' pawns player 1 has captured. */
     CAPTURES("CAPTURES"),
@@ -266,7 +270,23 @@ enum class AchievementCounter(override val id: String) : StoredId {
     LAST_PLACES("LAST_PLACES"),
 
     /** Player 1's losses in a row: up one each time another player wins, back to 0 with a win of theirs. */
-    LOSS_STREAK("LOSS_STREAK"),
+    LOSS_STREAK("LOSS_STREAK", cloudMerge = CounterMerge.LATEST),
+
+    /**
+     * The seconds the app has been in front of the player: Statistics' time played, counted by
+     * `net.zodac.ludo.app.PlayTimeTracker`. No achievement is measured against it, and it stays out of
+     * [net.zodac.ludo.data.achievements.AchievementsState], so its saves never move the achievements.
+     */
+    PLAY_SECONDS("PLAY_SECONDS"),
+}
+
+/** How the cloud save and progress files combine one [AchievementCounter] from several devices. */
+enum class CounterMerge {
+    /** Each device's own share, added up: games played on two phones count on both. */
+    SUM,
+
+    /** The value from the device that wrote it most recently: a streak runs on one timeline, not one per device. */
+    LATEST,
 }
 
 /**

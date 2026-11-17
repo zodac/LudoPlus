@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import kotlin.uuid.Uuid
 
 /**
  * One person's part in one finished game. The computer's players are never recorded. The Leaderboard and Statistics
@@ -16,10 +17,17 @@ import androidx.room.PrimaryKey
         Index(name = "index_results_leaderboard", value = ["gameModeId", "playedUnmodified", "won", "turns", "captures", "endedAtEpochMillis"]),
         // Statistics: each player's games, in the order they were played.
         Index(name = "index_results_player", value = ["playerKey", "endedAtEpochMillis"]),
+        // A merge's rows: one row a uuid, on every device.
+        Index(name = "index_results_uuid", value = ["uuid"], unique = true),
     ],
 )
 data class GameResult(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /**
+     * The row's id on every device, as 32 lower-case hex digits, random: what a merge of two devices' records (the cloud
+     * save, a progress file) tells rows apart by. [id] is this device's alone.
+     */
+    @ColumnInfo(defaultValue = "") val uuid: String = Uuid.random().toHexString(),
     /** The name as it was typed. */
     val playerName: String,
     /** [playerName] as one player is known by, whatever its case ([net.zodac.ludo.model.playerNameKey]). */

@@ -89,6 +89,19 @@ class GameRecordRepository(
     /** Whether any game has been recorded: a person has finished one. */
     suspend fun hasFinishedGame(): Boolean = dao.count() > 0
 
+    /** Every record, oldest first: what the cloud save and a progress file hold. */
+    suspend fun cloudRecords(): List<GameResult> = dao.all()
+
+    /**
+     * Adds another device's [rows] (a merge's), in one write: a row already here (by [GameResult.uuid]) is kept as it is,
+     * so merging the same rows twice adds nothing. Each row's [GameResult.playerKey] is worked out again here.
+     */
+    suspend fun mergeCloud(rows: List<GameResult>) {
+        if (rows.isEmpty()) return
+        dao.insertMerged(rows.map { it.copy(id = 0, playerKey = playerNameKey(it.playerName)) })
+        writeCount.update { it + 1 }
+    }
+
     /** Forgets every game: the Leaderboard and Statistics are both empty after. */
     suspend fun reset() {
         dao.clearAll()

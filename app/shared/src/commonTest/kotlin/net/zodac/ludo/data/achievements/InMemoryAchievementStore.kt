@@ -16,6 +16,13 @@ class InMemoryAchievementStore(initial: AchievementsState = AchievementsState())
 
     override suspend fun current(): AchievementsState = mutableState.value
 
+    private val seconds = MutableStateFlow(0)
+    override val playSeconds: Flow<Int> = seconds
+
+    override suspend fun addPlaySeconds(seconds: Int) {
+        this.seconds.value += seconds
+    }
+
     override suspend fun record(unlockedAt: Map<Achievement, Long>, counters: Map<AchievementCounter, Int>) {
         mutableState.value = AchievementsState(
             unlockedAt = mutableState.value.unlockedAt + unlockedAt.filterKeys { it !in mutableState.value.unlockedAt },

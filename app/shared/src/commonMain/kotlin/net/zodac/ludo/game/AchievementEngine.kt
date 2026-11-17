@@ -131,6 +131,22 @@ object AchievementEngine {
         return AchievementUpdate(newlyUnlocked, counters, progressed, now, countedUnlocksBefore = before.countedUnlocks)
     }
 
+    /**
+     * What [before]'s counters have reached and isn't unlocked yet, with [Achievement.COMPLETIONIST] if that completes
+     * the rest: after a merge, where another device's counts can carry one past its target. No counter moves, and no
+     * progress is announced.
+     */
+    fun evaluateProgress(before: AchievementsState, now: Long): AchievementUpdate {
+        val reached = Achievement.entries.filter { achievement ->
+            val counter = achievement.counter
+            counter != null && !before.isUnlocked(achievement) && before.counter(counter) >= achievement.target
+        }.toMutableList()
+        if (!before.isUnlocked(Achievement.COMPLETIONIST) && (before.unlockedAt.keys + reached).containsAll(Achievement.COMPLETION_REQUIREMENTS)) {
+            reached += Achievement.COMPLETIONIST
+        }
+        return AchievementUpdate(reached, unlockedAtMillis = now, countedUnlocksBefore = before.countedUnlocks)
+    }
+
     /** How far along [achievement] is with [counters], capped at its target. */
     fun progressOf(achievement: Achievement, counters: Map<AchievementCounter, Int>): Int =
         achievement.counter?.let { (counters[it] ?: 0).coerceAtMost(achievement.target) } ?: 0

@@ -24,15 +24,18 @@ import net.zodac.ludo.data.game.InProgressGameRepository
 import net.zodac.ludo.data.records.AppDatabase
 import net.zodac.ludo.data.records.GameRecordRepository
 import net.zodac.ludo.data.records.buildAppDatabase
+import net.zodac.ludo.data.orNullOnFailure
 import net.zodac.ludo.data.settings.SettingsRepository
+import net.zodac.ludo.online.CloudSaveStore
+import net.zodac.ludo.online.LocalCloudSave
 
 /**
  * The app's long-lived objects, built once per process by the platform's entry point and handed to
  * the UI through [LocalAppContainer]: the ViewModel factories take their repositories from here,
  * rather than each one reaching for an Android `Context` to build its own.
  *
- * The settings, the game in progress, the game records, the achievements, and the saved styles for now. The repositories for online play
- * and purchases join it in their phases of `.claude/IMPLEMENTATION.md`.
+ * The settings, the game in progress, the game records, the achievements, the saved styles, and the cloud save's store
+ * over them. The repositories for online play and purchases join it in their phases of `.claude/IMPLEMENTATION.md`.
  */
 class AppContainer(
     val settingsRepository: SettingsRepository,
@@ -40,10 +43,12 @@ class AppContainer(
     val gameRecordRepository: GameRecordRepository,
     val achievementsRepository: AchievementStore,
     val buildInfo: BuildInfo,
+    /** This device's side of a progress file (and, from Play Games, the cloud save): null where nothing can be merged in. */
+    val cloudSave: CloudSaveStore? = null,
     scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
-    /** The time the app is in front of the player, counted into [SettingsRepository.playSeconds]: resumed and paused by the app. */
-    val playTime: PlayTimeTracker = PlayTimeTracker(settingsRepository::addPlaySeconds, scope)
+    /** The time the app is in front of the player, counted into [AchievementStore.playSeconds]: resumed and paused by the app. */
+    val playTime: PlayTimeTracker = PlayTimeTracker(achievementsRepository::addPlaySeconds, scope)
 
     /** Debug builds only: the Styles page's "pretend all styles are owned" switch, for this run of the app. */
     val pretendOwnsAllStyles = MutableStateFlow(false)
@@ -77,8 +82,12 @@ class AppContainer(
     val databaseFailure: StateFlow<String?> = mutableDatabaseFailure.asStateFlow()
 
     init {
-        // Tidies away settings an older version left behind.
-        scope.launch { settingsRepository.forgetRetired() }
+        scope.launch {
+            // The time played an older version kept with the settings joins the counted time first, then the settings an
+            // older version left behind are tidied away, that time among them: not if it couldn't be moved.
+            val moved = orNullOnFailure { settingsRepository.legacyPlaySeconds().let { if (it > 0) achievementsRepository.addPlaySeconds(it) } }
+            if (moved != null) settingsRepository.forgetRetired()
+        }
         scope.launch {
             try {
                 gameRecordRepository.open()
@@ -98,12 +107,17 @@ class AppContainer(
         fun create(dataDir: String, databaseBuilder: RoomDatabase.Builder<AppDatabase>, buildInfo: BuildInfo): AppContainer {
             fun dataStore(file: PreferencesFile) = createPreferencesDataStore("$dataDir/${file.fileName}")
 
+            val settings = SettingsRepository(dataStore(PreferencesFile.SETTINGS))
+            val inProgressGame = InProgressGameRepository(dataStore(PreferencesFile.IN_PROGRESS_GAME))
+            val records = GameRecordRepository(databaseBuilder.buildAppDatabase().gameResultDao(), computeContext = Dispatchers.Default)
+            val achievements = AchievementsRepository(dataStore(PreferencesFile.ACHIEVEMENTS))
             return AppContainer(
-                settingsRepository = SettingsRepository(dataStore(PreferencesFile.SETTINGS)),
-                inProgressGameRepository = InProgressGameRepository(dataStore(PreferencesFile.IN_PROGRESS_GAME)),
-                gameRecordRepository = GameRecordRepository(databaseBuilder.buildAppDatabase().gameResultDao(), computeContext = Dispatchers.Default),
-                achievementsRepository = AchievementsRepository(dataStore(PreferencesFile.ACHIEVEMENTS)),
+                settingsRepository = settings,
+                inProgressGameRepository = inProgressGame,
+                gameRecordRepository = records,
+                achievementsRepository = achievements,
                 buildInfo = buildInfo,
+                cloudSave = LocalCloudSave(achievements, records, settings, inProgressGame),
             )
         }
     }

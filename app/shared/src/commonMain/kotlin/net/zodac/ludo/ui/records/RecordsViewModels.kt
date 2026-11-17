@@ -104,7 +104,7 @@ class StatisticsViewModel(records: GameRecordRepository, val readPlaySeconds: su
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 // The time played: what's saved, and what's counted since.
-                StatisticsViewModel(container.gameRecordRepository) { container.settingsRepository.playSeconds.first() + container.playTime.unsavedSeconds }
+                StatisticsViewModel(container.gameRecordRepository) { container.achievementsRepository.playSeconds.first() + container.playTime.unsavedSeconds }
             }
         }
     }

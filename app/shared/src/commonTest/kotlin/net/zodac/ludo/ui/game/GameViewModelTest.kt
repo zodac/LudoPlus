@@ -154,6 +154,19 @@ class GameViewModelTest {
     }
 
     @Test
+    fun `a game has an id of its own - and counts each change - so a merge can tell how far on a copy is`() = runTest(dispatcher) {
+        val viewModel = started(seedWhere { true }, humans = true)
+        val game = assertNotNull(viewModel.game.value)
+        assertTrue(Regex("[0-9a-f]{32}").matches(assertNotNull(game.id)))
+        val steps = game.steps
+        viewModel.roll()
+        assertEquals(steps + 1, viewModel.game.value?.steps)
+        assertEquals(game.id, viewModel.game.value?.id)
+        // Another game is another id.
+        assertNotEquals(game.id, started(seedWhere { true }, humans = true).game.value?.id)
+    }
+
+    @Test
     fun `with no saved game there is nothing to resume`() = runTest(dispatcher) {
         val viewModel = GameViewModel(SettingsRepository(InMemoryPreferences()), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao()))
         runCurrent()

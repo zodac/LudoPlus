@@ -3,6 +3,7 @@ package net.zodac.ludo.data.records
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import net.zodac.ludo.game.GameState
 import net.zodac.ludo.game.PlayerState
@@ -68,16 +69,19 @@ class GameRecordRepositoryTest {
                 GameResult(
                     id = 1, playerName = "Alex", playerKey = "alex", isPrimaryPlayer = true, gameModeId = "classic", playerCount = 4,
                     endedAtEpochMillis = 5_000, playMillis = 600_000, place = 3, won = false, finishMillis = 300_000, turns = 40, captures = 3,
-                    timesCaptured = 0, pawnsHome = 4,
+                    timesCaptured = 0, pawnsHome = 4, uuid = "",
                 ),
                 GameResult(
                     id = 2, playerName = "Sam", playerKey = "sam", isPrimaryPlayer = false, gameModeId = "classic", playerCount = 4,
                     endedAtEpochMillis = 5_000, playMillis = 600_000, place = 1, won = true, finishMillis = 100_000, turns = 43, captures = 1,
-                    timesCaptured = 3, pawnsHome = 4,
+                    timesCaptured = 3, pawnsHome = 4, uuid = "",
                 ),
             ),
-            rows,
+            // Each row's uuid is its own, random: compared apart.
+            rows.map { it.copy(uuid = "") },
         )
+        assertEquals(2, rows.map { it.uuid }.toSet().size)
+        rows.forEach { assertTrue(Regex("[0-9a-f]{32}").matches(it.uuid), it.uuid) }
         assertEquals(1, repository.writes.value)
     }
 

@@ -557,6 +557,35 @@
     <string name="settings_confirm_leaving">Confirm leaving game</string>
     <!-- Ends a new game as soon as one player has every pawn home; the others are placed as they stand. -->
     <string name="settings_stop_at_first_winner">Stop at first winner</string>
+    <!-- Progress files, in a build with no online game service (the GitHub APK): the player's own copy of their progress, to keep or carry to another device. -->
+    <string name="settings_export_progress">Export progress</string>
+    <!-- What a screen reader says a tap on the export row does (it opens the system's "save as" picker). -->
+    <string name="settings_export_progress_action">Export</string>
+    <string name="settings_import_progress">Import progress</string>
+    <!-- What a screen reader says a tap on the import row does (it opens the "are you sure" dialog). -->
+    <string name="settings_import_progress_action">Import</string>
+    <string name="settings_import_progress_title">Import progress?</string>
+    <!-- %1$s is the app's name. Importing merges: achievements and game records are added together; for each setting and the saved game, whichever was changed last wins. -->
+    <string name="settings_import_progress_message">Choose a file exported from %1$s. Its achievements and game records are added to this device's, and where both have a setting or a saved game, the newer one is kept. This can't be undone.</string>
+    <!-- The dialog's button that opens the system's file picker. -->
+    <string name="settings_import_progress_confirm">Choose File</string>
+    <!-- Under the card's rows once an export or import has finished, in red when it went wrong, until the next starts. %1$s is the app's name. -->
+    <string name="settings_progress_exported">Progress exported</string>
+    <string name="settings_progress_imported">Progress imported</string>
+    <string name="settings_progress_not_a_file">That isn't a %1$s progress file, or it has been changed</string>
+    <string name="settings_progress_newer">That file is from a newer version of %1$s. Update the app, then import it again.</string>
+    <string name="settings_progress_export_failed">Couldn't save the file</string>
+    <string name="settings_progress_import_failed">Couldn't read the file</string>
+    <!-- While an import runs, in place of those, after a spinner and above a progress bar: the step, as online_sync_progress shows it, with online_sync_step_settings, _game, _achievements, and _records for the merges. This is the first step's. -->
+    <string name="settings_progress_step_opening">Opening the file</string>
+    <!-- What a screen reader announces while an import runs, in place of each step. -->
+    <string name="settings_progress_importing_cd">Importing progress</string>
+    <!-- A merge's progress, after a spinner and above a progress bar: %1$s is the step (one of online_sync_step_*), %2$d which step it is, and %3$d how many there are. -->
+    <string name="online_sync_progress">%1$s (%2$d/%3$d)</string>
+    <string name="online_sync_step_settings">Merging settings</string>
+    <string name="online_sync_step_game">Merging the game in progress</string>
+    <string name="online_sync_step_achievements">Merging achievements</string>
+    <string name="online_sync_step_records">Merging game records</string>
 
     <!-- The Styles screen's names, for now only the Graphics page's Styles card and its Background row (the Styles screen itself comes back in Phase 7 of .claude/IMPLEMENTATION.md). -->
     <string name="styles_title">Styles</string>

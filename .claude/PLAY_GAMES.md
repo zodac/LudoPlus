@@ -107,6 +107,10 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
 
 ## Leaderboards
 
+**Ludo Plus (decided 2026-11-18):** a board for each built-in mode and player count, 2-8 (3 modes × 7 = 21 of the 70),
+each the turns in seat 1's win under the mode's own rules, smaller better. Play ranks one number, ties by submission time,
+so the local Leaderboard's captures tie-break doesn't carry. The rest of this section is DiceFive's.
+
 - **7 boards**, one per `GameMode` (`playLeaderboardIds`): larger is better, 0 to `maxPossibleScore`, tamper
     protection on.
 - **Submitted**: seat 1's score, only under the mode's own rules (`isPrimaryPlayer` and `playedUnmodified`; rows over
