@@ -21,11 +21,11 @@ import net.zodac.ludo.platform.SoundEffect
 import net.zodac.ludo.platform.SoundPlayer
 import net.zodac.ludo.ui.common.delayWhileResumed
 
-/** Quieter than the die's landing - full volume read as too sharp for a click that fires on every move. */
-private const val SELECT_VOLUME = 0.35f
+/** Quieter than the die's landing: a step sounds on every square a pawn moves, so full volume would be a clatter. */
+private const val STEP_VOLUME = 0.5f
 
 /**
- * The game's sound effects - the die landing, a pawn moved, and the end-of-game celebration fanfare - played through
+ * The game's sound effects - the die landing, a pawn's steps, a capture, a pawn home, and the end-of-game fanfare - played through
  * the platform's [SoundPlayer]. [release] tears the player down when nothing needs it any more - see
  * [rememberAppSoundEffects], which owns that lifecycle for the whole app.
  */
@@ -57,7 +57,11 @@ class SoundEffects(createPlayer: () -> SoundPlayer) {
 
     fun playDieLanding() = playSound(SoundEffect.DIE_LANDING, 1f)
 
-    fun playMove() = playSound(SoundEffect.SELECT, SELECT_VOLUME)
+    fun playStep() = playSound(SoundEffect.PAWN_STEP, STEP_VOLUME)
+
+    fun playCapture() = playSound(SoundEffect.CAPTURE, 1f)
+
+    fun playHome() = playSound(SoundEffect.PAWN_HOME, 1f)
 
     fun playCelebration() = playSound(SoundEffect.CELEBRATION, 1f)
 

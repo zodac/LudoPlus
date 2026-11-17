@@ -1,6 +1,7 @@
 package net.zodac.ludo.ui.game
 
 import net.zodac.ludo.game.GameEvent
+import net.zodac.ludo.game.Move
 
 /** How long a moving pawn takes over each square, and a captured pawn to slide back to its yard. */
 const val PAWN_STEP_MILLIS = 110
@@ -39,4 +40,23 @@ data class GamePacing(
         /** How long a CPU pauses before each roll and move, so each can be followed. */
         const val THINK_MILLIS = 500L
     }
+}
+
+/** A sound a move makes: a step onto a square, or what its landing does. */
+enum class MoveSound { STEP, CAPTURE, HOME }
+
+/**
+ * When [move]'s sounds play, in milliseconds from its start, for a board whose home is [homeProgress]: a step as the pawn
+ * reaches each square (one hop out of the yard), in time with its move (all at once with [animated] off), the landing's
+ * step taken by a capture's sound or a pawn home's chime when it does either.
+ */
+fun moveSoundCues(move: Move, homeProgress: Int, animated: Boolean): List<Pair<Long, MoveSound>> {
+    val hops = if (move.from < 0) 1 else move.to - move.from
+    val steps = if (animated) (1..hops).map { it * PAWN_STEP_MILLIS.toLong() } else listOf(0L)
+    val landing = when {
+        move.captures.isNotEmpty() -> MoveSound.CAPTURE
+        move.to == homeProgress -> MoveSound.HOME
+        else -> MoveSound.STEP
+    }
+    return steps.dropLast(1).map { it to MoveSound.STEP } + (steps.last() to landing)
 }

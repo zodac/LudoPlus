@@ -174,20 +174,35 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
  */
 class TutorialView(val step: TutorialStep?, val part: Int, val parts: Int, val steps: List<TutorialStep>, val onJump: (Int) -> Unit)
 
-/** The sounds and vibrations for each thing that happens: the die landing, a pawn moved, and a capture. The win's are the results page's. */
+/**
+ * The sounds and vibrations for each thing that happens: the die landing; a pawn's steps square by square, in time with
+ * its move ([moveSoundCues]), then a capture's sound or a pawn home's chime as it lands; and a tick, or a capture's buzz.
+ * The win's are the results page's.
+ */
 @Composable
 private fun GameFeedback(state: GameState) {
     val sounds = rememberSoundEffects()
     val haptics = rememberGameHaptics()
     val event = state.lastEvent
     val firstSeen = remember { event }
+    val animated = !groupReduceMotion(MotionGroup.PAWN_MOVE)
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(event) {
         if (event == null || event === firstSeen) return@LaunchedEffect
         when (event) {
             is GameEvent.Rolled, is GameEvent.NoMove, is GameEvent.RollAgainLimit -> sounds.playDieLanding()
             is GameEvent.Moved -> {
-                sounds.playMove()
                 if (event.move.captures.isEmpty()) haptics.playMoveTick() else haptics.playCaptureBuzz()
+                var elapsed = 0L
+                for ((at, sound) in moveSoundCues(event.move, state.board.homeProgress, animated)) {
+                    lifecycle.delayWhileResumed(at - elapsed)
+                    elapsed = at
+                    when (sound) {
+                        MoveSound.STEP -> sounds.playStep()
+                        MoveSound.CAPTURE -> sounds.playCapture()
+                        MoveSound.HOME -> sounds.playHome()
+                    }
+                }
             }
         }
     }

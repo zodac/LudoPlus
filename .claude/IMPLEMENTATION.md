@@ -261,7 +261,9 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     winning after a roll too big. A coach card in place of the player cards, back and forward between parts, nothing
     kept. Opens from Rules' How to Play and New Game's link (until a first game is finished). Approved from renders
     2026-11-17.
-- [ ] Sounds (licensed, recorded in `app/licensing`, normalised): roll, move step, capture, home, win.
+- [x] Sounds (licensed, recorded in `app/licensing`, normalised): roll (DiceFive's die landing), a step for each square
+    a pawn moves, capture, home, and win (DiceFive's fanfare). The three new clips are CC0 from Freesound, picked by the
+    maintainer 2026-11-17; the hold and unhold clicks (CC-BY) went.
 - [ ] Baseline Profile journeys and benchmarks, restored from `5423b6c` (`app/baselineprofile`, the `baseline-profile`
     job in `android-release.yml`) and written for Ludo's screens (`BENCHMARKS.md`): 60fps while pawns move.
 - [ ] Store-assets generator scenes for Ludo, README gallery, and `assets/full-description.txt`.

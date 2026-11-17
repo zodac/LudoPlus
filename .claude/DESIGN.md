@@ -616,13 +616,10 @@ Each category is two lists in the same order:
 
 ## Sound, haptics and motion
 
-- **Clips.** `cup_shake`, `mat_landing`, `hold`, `unhold` (at 0.35 volume), and `celebration` (a multiplayer game won
-    by a human, with gold fireworks).
-    - The Chicken cup shakes with `cup_shake_chicken` instead of `cup_shake`. A golden egg landing adds
-        `chicken_egg_lay` after `mat_landing`.
-    - A roll with every die held (What Was The Point Of That?) shakes with `empty_cup_shake` and lands with no
-        `mat_landing`.
-    - The choice is `shakeSound`/`landingSounds` (`ui/game/RollSounds.kt`).
+- **Clips** (Ludo Plus): `mat_landing` (the die landing), `pawn_step` (at 0.5 volume, once for each square a pawn moves,
+    in time with it), `capture` and `pawn_home` (in place of the landing's step), and `celebration` (a person's win, with
+    gold fireworks). All CC0 from Freesound, chosen by the maintainer 2026-11-17. The cues are `moveSoundCues`
+    (`ui/game/GamePacing.kt`): with Pawn moves motion off, only the landing's sound.
     - The sources are `app/audio/*.ogg`.
     - They're peak-normalised to -0.8 dBFS by ffmpeg at build time (`scripts/normalize-audio.sh`): never `res/raw/`,
         never hand-adjusted. Android packages Ogg copies (`NormalizeOggAudioTask`). `scripts/tests/normalize-audio-test.sh`

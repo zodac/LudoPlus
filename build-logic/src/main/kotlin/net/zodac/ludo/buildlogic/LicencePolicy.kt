@@ -18,12 +18,11 @@ object LicencePolicy {
         // The SIL Open Font License is copyleft on the font alone (a modified Sora must stay OFL and can't be sold by
         // itself) and places no conditions on the app it's bundled in.
         "OFL-1.1" to listOf("sora", "mathjax-fonts", "andika-font"),
-        // The sound effects' Freesound sources (see app/licensing/asset-sources.json). CC0 asks for nothing; CC-BY asks
-        // for a credit, a link to the source and license, and a note of any changes - all in its libraries/ entry.
-        // Neither places any condition on the app itself. (Never CC-BY-SA - adaptations must stay under it - nor
-        // anything NC, which rules out ads and Pro; neither is allowed here.)
-        "CC0-1.0" to listOf("freesound-588198", "freesound-695731", "freesound-185986", "freesound-596051", "freesound-456803"),
-        "CC-BY-4.0" to listOf("freesound-140147", "freesound-446043"),
+        // The sound effects' Freesound sources (see app/licensing/asset-sources.json), all CC0, which asks for nothing and
+        // places no condition on the app itself. (CC-BY would need a credit, a link, and a note of changes in its
+        // libraries/ entry, and its licence text back in licenses/. Never CC-BY-SA - adaptations must stay under it - nor
+        // anything NC; neither is allowed here.)
+        "CC0-1.0" to listOf("freesound-588198", "freesound-695731", "freesound-596051", "freesound-351518", "freesound-646781", "freesound-717771"),
         // Google's branding guidelines for Play Games, for its controller badge: no pre-approval needed, and no condition on the
         // app's own licence, provided those guidelines are followed.
         "LicenseRef-Google-Play-Games-Branding" to listOf("google-play-games-branding-icons"),

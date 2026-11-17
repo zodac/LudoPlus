@@ -1,5 +1,13 @@
 {
   "_comment": "Where every bundled asset file came from - see README.md. Each key is a path relative to the repository root. Every entry needs a description, a source (where it came from: a URL, or the session/commit that created it) and a license. The app's own work (LicenseRef-LudoPlus-AllRightsReserved - see /LICENSE) also needs its copyright line. A third-party asset instead lists, in \"libraries\", the libraries/ entry for each source it was made from - those carry the license, copyright/credit and source URL, and are what the Licences dialog shows; \"license\" is the license of that source material. The build fails on any asset missing from here, any incomplete entry, and any entry whose file no longer exists.",
+  "app/audio/capture.ogg": {
+    "description": "A capture: a chess piece bouncing, its silence trimmed",
+    "source": "https://freesound.org/s/646781/",
+    "license": "CC0-1.0",
+    "libraries": [
+      "freesound-646781"
+    ]
+  },
   "app/audio/celebration.ogg": {
     "description": "Win celebration fanfare: a remix of two fireworks recordings, modified and volume-normalised",
     "source": "https://freesound.org/s/588198/ and https://freesound.org/s/695731/",
@@ -7,14 +15,6 @@
     "libraries": [
       "freesound-588198",
       "freesound-695731"
-    ]
-  },
-  "app/audio/hold.ogg": {
-    "description": "Die hold click: cut from a mantel clock tick, modified",
-    "source": "https://freesound.org/s/140147/",
-    "license": "CC-BY-4.0",
-    "libraries": [
-      "freesound-140147"
     ]
   },
   "app/audio/mat_landing.ogg": {
@@ -25,12 +25,20 @@
       "freesound-596051"
     ]
   },
-  "app/audio/unhold.ogg": {
-    "description": "Die unhold click: cut from a mantel clock tick, modified",
-    "source": "https://freesound.org/s/140147/",
-    "license": "CC-BY-4.0",
+  "app/audio/pawn_home.ogg": {
+    "description": "A pawn reaching home: a victory chime, its silence trimmed",
+    "source": "https://freesound.org/s/717771/",
+    "license": "CC0-1.0",
     "libraries": [
-      "freesound-140147"
+      "freesound-717771"
+    ]
+  },
+  "app/audio/pawn_step.ogg": {
+    "description": "A pawn's step onto each square it moves: a chess piece set down, its silence trimmed, 50ms of silence added after, and peak-normalised",
+    "source": "https://freesound.org/s/351518/",
+    "license": "CC0-1.0",
+    "libraries": [
+      "freesound-351518"
     ]
   },
   "app/android/src/main/res/drawable/ic_launcher_background.xml": {

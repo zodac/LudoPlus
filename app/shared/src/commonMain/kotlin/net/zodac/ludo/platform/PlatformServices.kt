@@ -89,11 +89,14 @@ enum class SoundEffect {
     /** The die landing on the board. */
     DIE_LANDING,
 
-    /** A pawn picked to move. */
-    SELECT,
+    /** A pawn's step onto a square, once for each square it moves. */
+    PAWN_STEP,
 
-    /** A pawn's pick taken back. */
-    DESELECT,
+    /** A pawn landing on an opponent's and sending it back to its yard. */
+    CAPTURE,
+
+    /** A pawn reaching home. */
+    PAWN_HOME,
 
     /** The winner's fanfare. */
     CELEBRATION,

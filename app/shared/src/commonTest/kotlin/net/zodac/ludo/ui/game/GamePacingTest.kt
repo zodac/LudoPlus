@@ -31,4 +31,23 @@ class GamePacingTest {
         assertEquals(500, still.waitAfter(GameEvent.Rolled(1, 4)))
         assertEquals(500, still.waitAfter(GameEvent.Moved(1, 3, Move(0, 10, 13, listOf(PawnRef(0, 0))), finished = false)))
     }
+
+    @Test
+    fun `a move steps once a square in time with the pawn - its landing a capture's sound or the home chime when it does either`() {
+        val step = PAWN_STEP_MILLIS.toLong()
+        assertEquals(
+            listOf(step to MoveSound.STEP, 2 * step to MoveSound.STEP, 3 * step to MoveSound.STEP),
+            moveSoundCues(Move(0, 10, 13), homeProgress = 56, animated = true),
+        )
+        // Out of the yard is one hop onto the start square.
+        assertEquals(listOf(step to MoveSound.STEP), moveSoundCues(Move(0, -1, 0), homeProgress = 56, animated = true))
+        assertEquals(
+            listOf(step to MoveSound.STEP, 2 * step to MoveSound.CAPTURE),
+            moveSoundCues(Move(0, 10, 12, listOf(PawnRef(1, 0))), homeProgress = 56, animated = true),
+        )
+        assertEquals(listOf(step to MoveSound.STEP, 2 * step to MoveSound.HOME), moveSoundCues(Move(0, 54, 56), homeProgress = 56, animated = true))
+        // With pawn moves still, the landing alone, at once.
+        assertEquals(listOf(0L to MoveSound.HOME), moveSoundCues(Move(0, 54, 56), homeProgress = 56, animated = false))
+        assertEquals(listOf(0L to MoveSound.STEP), moveSoundCues(Move(0, 10, 13), homeProgress = 56, animated = false))
+    }
 }

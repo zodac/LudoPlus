@@ -18,8 +18,8 @@ internal class AndroidSoundPlayer(context: Context) : SoundPlayer {
 
     @VisibleForTesting
     internal val pool: SoundPool = SoundPool.Builder()
-        // Three at once: a pawn's pick, the die landing, and the fanfare can overlap.
-        .setMaxStreams(3)
+        // Four at once: a pawn's steps, its capture or home, the die landing, and the fanfare can overlap.
+        .setMaxStreams(4)
         .setAudioAttributes(
             AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_GAME)
@@ -51,8 +51,9 @@ internal class AndroidSoundPlayer(context: Context) : SoundPlayer {
     private val soundIds: Map<SoundEffect, Int> = SoundEffect.entries.associateWith { effect ->
         val resId = when (effect) {
             SoundEffect.DIE_LANDING -> R.raw.mat_landing
-            SoundEffect.SELECT -> R.raw.hold
-            SoundEffect.DESELECT -> R.raw.unhold
+            SoundEffect.PAWN_STEP -> R.raw.pawn_step
+            SoundEffect.CAPTURE -> R.raw.capture
+            SoundEffect.PAWN_HOME -> R.raw.pawn_home
             SoundEffect.CELEBRATION -> R.raw.celebration
         }
         pool.load(context, resId, 1)
