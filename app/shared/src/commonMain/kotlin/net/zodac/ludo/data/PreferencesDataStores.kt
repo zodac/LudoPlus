@@ -5,11 +5,14 @@ import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.retryWhen
+import kotlinx.coroutines.withContext
 import okio.IOException
 import okio.Path.Companion.toPath
 
@@ -46,8 +49,15 @@ fun createPreferencesDataStore(path: String): DataStore<Preferences> =
  * then no more: a collector kept for the process sees the file if it can be read within those, rather than empty
  * preferences for good. Empty preferences are given at the first failure, so nothing waits on the retries; a retry that
  * reads the file gives what it read.
+ *
+ * Every write is handed to [store] from [writeContext], not the caller's dispatcher. DataStore runs a write's change in
+ * the context it was asked from, one write at a time: a write asked from a dispatcher that never runs it (a finished
+ * test's main thread, under a container kept for the process) would hold up every write after it, for good.
  */
-internal class ResilientDataStore(private val store: DataStore<Preferences>) : DataStore<Preferences> {
+internal class ResilientDataStore(
+    private val store: DataStore<Preferences>,
+    private val writeContext: CoroutineContext = Dispatchers.Default,
+) : DataStore<Preferences> {
 
     override val data: Flow<Preferences> = store.data.retryWhen { cause, attempt ->
         if (cause !is IOException) return@retryWhen false
@@ -59,7 +69,7 @@ internal class ResilientDataStore(private val store: DataStore<Preferences>) : D
 
     override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences =
         try {
-            store.updateData(transform)
+            withContext(writeContext) { store.updateData(transform) }
         } catch (_: IOException) {
             data.first()
         }
