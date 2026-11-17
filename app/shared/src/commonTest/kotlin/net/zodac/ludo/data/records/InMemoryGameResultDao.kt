@@ -40,6 +40,13 @@ class InMemoryGameResultDao(finishedGame: Boolean = false) : GameResultDao {
         results.filter { row -> rows.none { it.uuid == row.uuid } }.distinctBy { it.uuid }.forEach { rows += it.copy(id = nextId++) }
     }
 
+    override suspend fun unpostedWin(gameModeId: String, playerCount: Int, afterEpochMillis: Long): UnpostedWinRow {
+        val wins = rows.filter {
+            it.gameModeId == gameModeId && it.playerCount == playerCount && it.playedUnmodified && it.won && it.isPrimaryPlayer && it.endedAtEpochMillis > afterEpochMillis
+        }
+        return UnpostedWinRow(wins.minOfOrNull { it.turns }, wins.maxOfOrNull { it.endedAtEpochMillis })
+    }
+
     override suspend fun count(): Int = rows.size
 
     override suspend fun clearAll() = rows.clear()

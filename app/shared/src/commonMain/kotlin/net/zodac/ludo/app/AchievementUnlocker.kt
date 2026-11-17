@@ -11,6 +11,7 @@ import net.zodac.ludo.game.AchievementEngine
 import net.zodac.ludo.game.AchievementUpdate
 import net.zodac.ludo.game.GameFeats
 import net.zodac.ludo.game.nowEpochMillis
+import net.zodac.ludo.online.OnlineSyncRequests
 import net.zodac.ludo.model.Achievement
 
 /**
@@ -42,6 +43,8 @@ class AchievementUnlocker(
             if (!update.isEmpty) {
                 store.record(update.unlockedAt(), update.counters)
                 announce(update, ownsAllStyles.first())
+                // A new unlock reaches the online service at once, as it announces it; counters can wait for the game.
+                if (update.newlyUnlocked.isEmpty()) OnlineSyncRequests.requestOutsideGame() else OnlineSyncRequests.request()
             }
             update
         }

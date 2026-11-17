@@ -39,6 +39,7 @@ private class MemoryCloudSave(var local: CloudSave = CloudSave()) : CloudSaveSto
     override suspend fun mergeGame(save: CloudSave) = mergeIn(CloudSave(inProgressGame = save.inProgressGame))
     override suspend fun mergeAchievements(save: CloudSave) = mergeIn(CloudSave(achievements = save.achievements))
     override suspend fun mergeRecords(save: CloudSave) = mergeIn(CloudSave(records = save.records))
+    override suspend fun wipe() = Unit
 }
 
 /** A picker that answers [saveResult] to a save, and [opened] to an open - each once [answer] is completed. */

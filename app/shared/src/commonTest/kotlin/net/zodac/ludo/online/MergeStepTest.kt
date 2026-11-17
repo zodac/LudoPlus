@@ -20,6 +20,7 @@ private class PartsCloudSave : CloudSaveStore {
     override suspend fun mergeRecords(save: CloudSave) {
         parts += "records"
     }
+    override suspend fun wipe() = Unit
 }
 
 /**

@@ -45,6 +45,7 @@ private object EmptyCloudSave : CloudSaveStore {
     override suspend fun mergeGame(save: CloudSave) = Unit
     override suspend fun mergeAchievements(save: CloudSave) = Unit
     override suspend fun mergeRecords(save: CloudSave) = Unit
+    override suspend fun wipe() = Unit
 }
 
 /** A picker that saves wherever asked, and opens [opened]. */

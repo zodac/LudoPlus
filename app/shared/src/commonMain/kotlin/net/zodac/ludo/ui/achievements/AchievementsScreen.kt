@@ -1,5 +1,13 @@
 package net.zodac.ludo.ui.achievements
 
+import net.zodac.ludo.resources.achievements_online_action
+import net.zodac.ludo.online.LocalGameServices
+import net.zodac.ludo.online.GameServicesState
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.layout.Layout
+import androidx.compose.foundation.Image
 import net.zodac.ludo.resources.achievements_styles_unlocked_named
 import net.zodac.ludo.resources.achievements_reward_show_action
 import net.zodac.ludo.resources.achievements_reward_locked
@@ -283,6 +291,8 @@ fun AchievementsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val superuserModeActive by viewModel.superuserModeActive.collectAsStateWithLifecycle()
+    val gameServices = LocalGameServices.current
+    val onlineAchievements = gameServices.state.collectAsStateWithLifecycle().value is GameServicesState.SignedIn && gameServices.canShowAchievementsUi
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     // The list's own scrolls jump rather than glide: Compose's animations only follow the system's setting, not the app's Off.
     val reduceMotion = LocalReduceMotion.current
@@ -441,14 +451,34 @@ fun AchievementsScreen(
         // that relocks everything - see onBannerLongPress's doc comment. No haptic feedback on long
         // press either: a buzz would tip off that something's there.
 
+        //
+        // While signed in it's a real button instead, with the service's mark after the count: a tap opens the service's
+        // achievements, and still counts toward arming superuser mode.
         Card(
-            // Raw gestures, not combinedClickable: that would tell TalkBack this is a button with a
-            // long-press action, announcing a control that (to anyone not in on it) does nothing.
-            modifier = countModifier.pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = { viewModel.onUnlockedCountTapped() },
-                    onLongPress = { viewModel.onBannerLongPress() },
-                )
+            modifier = if (onlineAchievements) {
+                countModifier
+                    // The card's own clip is inside this modifier, so without one here the ripple would square off its corners.
+                    .clip(CardDefaults.shape)
+                    .combinedClickable(
+                        role = Role.Button,
+                        onClickLabel = stringResource(Res.string.achievements_online_action, gameServices.serviceName),
+                        // Only once armed: a long-press action would otherwise be announced that does nothing.
+                        onLongClick = if (superuserModeActive) viewModel::onBannerLongPress else null,
+                        hapticFeedbackEnabled = false,
+                        onClick = {
+                            viewModel.onUnlockedCountTapped()
+                            gameServices.showAchievementsUi()
+                        },
+                    )
+            } else {
+                // Raw gestures, not combinedClickable: that would tell TalkBack this is a button with a
+                // long-press action, announcing a control that (to anyone not in on it) does nothing.
+                countModifier.pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = { viewModel.onUnlockedCountTapped() },
+                        onLongPress = { viewModel.onBannerLongPress() },
+                    )
+                }
             },
         ) {
             val countText = @Composable { textModifier: Modifier ->
@@ -462,7 +492,16 @@ fun AchievementsScreen(
             }
             val verticalPadding = if (compact) 4.dp else 12.dp
             val width = if (compact) Modifier else Modifier.fillMaxWidth()
-            countText(Modifier.padding(horizontal = COUNT_SIDE_PADDING, vertical = verticalPadding).then(width))
+            val onlineIcon = if (onlineAchievements) gameServices.serviceIcon() else null
+            if (onlineIcon == null) {
+                countText(Modifier.padding(horizontal = COUNT_SIDE_PADDING, vertical = verticalPadding).then(width))
+            } else {
+                CountWithMark(
+                    count = { countText(Modifier) },
+                    mark = { Image(painter = onlineIcon, contentDescription = null, modifier = Modifier.size(if (compact) ONLINE_ICON_SIZE_COMPACT else ONLINE_ICON_SIZE)) },
+                    modifier = Modifier.padding(vertical = verticalPadding).then(width),
+                )
+            }
         }
     }
     val lockedOnlySwitch = @Composable {
@@ -612,6 +651,32 @@ fun AchievementsScreen(
 }
 
 private val COUNT_SIDE_PADDING = 16.dp
+private val ONLINE_ICON_SIZE = 20.dp
+private val ONLINE_ICON_SIZE_COMPACT = 18.dp
+private val ONLINE_ICON_GAP = 6.dp
+
+/**
+ * The count, with [mark] centred in the gap between the count's end and the card's. The count gets all the width that leaves
+ * [ONLINE_ICON_GAP] before the mark and [COUNT_SIDE_PADDING] after it, and sits as it would centred together with the mark at that gap.
+ */
+@Composable
+private fun CountWithMark(count: @Composable () -> Unit, mark: @Composable () -> Unit, modifier: Modifier = Modifier) {
+    Layout(content = { count(); mark() }, modifier = modifier) { measurables, constraints ->
+        val side = COUNT_SIDE_PADDING.roundToPx()
+        val gap = ONLINE_ICON_GAP.roundToPx()
+        val markPlaceable = measurables[1].measure(Constraints())
+        val countMax = if (constraints.hasBoundedWidth) (constraints.maxWidth - 2 * side - gap - markPlaceable.width).coerceAtLeast(0) else Constraints.Infinity
+        val countPlaceable = measurables[0].measure(Constraints(maxWidth = countMax))
+        val width = constraints.constrainWidth(2 * side + countPlaceable.width + gap + markPlaceable.width)
+        val height = constraints.constrainHeight(maxOf(countPlaceable.height, markPlaceable.height))
+        val countX = (width - countPlaceable.width - gap - markPlaceable.width) / 2
+        val countEnd = countX + countPlaceable.width
+        layout(width, height) {
+            countPlaceable.placeRelative(countX, (height - countPlaceable.height) / 2)
+            markPlaceable.placeRelative(countEnd + (width - countEnd - markPlaceable.width) / 2, (height - markPlaceable.height) / 2)
+        }
+    }
+}
 
 /**
  * A theme's subheader, in [categoryHeaderStyle] as the Styles page's category titles are.

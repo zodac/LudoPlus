@@ -28,6 +28,7 @@ import net.zodac.ludo.data.orNullOnFailure
 import net.zodac.ludo.data.settings.SettingsRepository
 import net.zodac.ludo.online.CloudSaveStore
 import net.zodac.ludo.online.LocalCloudSave
+import net.zodac.ludo.online.OnlineSettingsRepository
 
 /**
  * The app's long-lived objects, built once per process by the platform's entry point and handed to
@@ -42,6 +43,8 @@ class AppContainer(
     val inProgressGameRepository: InProgressGameRepository,
     val gameRecordRepository: GameRecordRepository,
     val achievementsRepository: AchievementStore,
+    /** The online service's bookkeeping on this device ([net.zodac.ludo.online.OnlineSync]'s). */
+    val onlineSettingsRepository: OnlineSettingsRepository,
     val buildInfo: BuildInfo,
     /** This device's side of a progress file (and, from Play Games, the cloud save): null where nothing can be merged in. */
     val cloudSave: CloudSaveStore? = null,
@@ -116,6 +119,7 @@ class AppContainer(
                 inProgressGameRepository = inProgressGame,
                 gameRecordRepository = records,
                 achievementsRepository = achievements,
+                onlineSettingsRepository = OnlineSettingsRepository(dataStore(PreferencesFile.ONLINE)),
                 buildInfo = buildInfo,
                 cloudSave = LocalCloudSave(achievements, records, settings, inProgressGame),
             )

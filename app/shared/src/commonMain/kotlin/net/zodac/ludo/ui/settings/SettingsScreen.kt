@@ -30,7 +30,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.remember
+import kotlinx.coroutines.flow.flowOf
 import net.zodac.ludo.app.LocalAppContainer
+import net.zodac.ludo.online.GameServicesState
+import net.zodac.ludo.online.LocalGameServices
+import net.zodac.ludo.online.LocalOnlineSyncStatus
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.about_title
@@ -197,7 +202,25 @@ fun SettingsScreen(
                 )
             }
         }
-        // Where the online account's card will be: a build has one or the other, never both (PlatformServices.progressFiles).
+        val services = LocalGameServices.current
+        val accountKey = (services.state.collectAsStateWithLifecycle().value as? GameServicesState.SignedIn)?.account?.accountKey
+        val online = LocalAppContainer.current.onlineSettingsRepository
+        val lastSaved by remember(accountKey) { accountKey?.let(online::cloudSavedAt) ?: flowOf(null) }.collectAsStateWithLifecycle(initialValue = null)
+        val syncStatus = LocalOnlineSyncStatus.current
+        val syncProgress by syncStatus.progress.collectAsStateWithLifecycle()
+        val unreachable by syncStatus.unreachable.collectAsStateWithLifecycle()
+        val signInSynced = syncStatus.signInSynced?.collectAsStateWithLifecycle()?.value.let { synced -> syncStatus.signInSynced == null || synced == accountKey }
+        // Nothing where the build or device has no service (OnlineAccountCard).
+        val onlineCard = @Composable {
+            OnlineAccountCard(
+                services = services,
+                lastSavedEpochMillis = lastSaved,
+                syncProgress = syncProgress,
+                unreachable = unreachable,
+                signInSynced = signInSynced,
+            )
+        }
+        // In the online card's place: a build has one or the other, never both (PlatformServices.progressFiles).
         val progressCard = @Composable {
             if (progressFiles != null) {
                 ProgressFilesCard(
@@ -243,9 +266,10 @@ fun SettingsScreen(
         }
 
         if (LocalLandscapePage.current) {
-            // Side by side: the progress files, the switches, and About; then the Graphics row and Licences.
+            // Side by side: the online account or the progress files, the switches, and About; then the Graphics row and Licences.
             TwoPanes(
                 start = {
+                    onlineCard()
                     progressCard()
                     switchesCard()
                     aboutLink(Modifier.fillMaxWidth())
@@ -256,6 +280,7 @@ fun SettingsScreen(
                 },
             )
         } else {
+            onlineCard()
             progressCard()
             switchesCard()
             graphicsCard()

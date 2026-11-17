@@ -30,6 +30,11 @@ class InMemoryAchievementStore(initial: AchievementsState = AchievementsState())
         )
     }
 
+    override suspend fun resetAll() {
+        mutableState.value = AchievementsState()
+        seconds.value = 0
+    }
+
     override suspend fun forceLock(achievement: Achievement) {
         mutableState.value = mutableState.value.copy(unlockedAt = mutableState.value.unlockedAt - achievement)
     }

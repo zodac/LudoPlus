@@ -1,12 +1,10 @@
 # Ludo Plus: Google Play Games Services
 
-> **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
-> from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
-> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
-
-**Built on Android; release remaining (see "Release").** Sign-in, achievements mirrored both ways, a leaderboard per
-mode, cloud save across devices, and Play Games Sidekick, each checked by the maintainer on real phones. This file is the one source on the subject:
-where another doc disagrees, follow this one.
+**Built for Ludo Plus (Phase 10, 2026-11-18); no Play Console project yet.** Sign-in, achievements mirrored both ways,
+a leaderboard per mode and player count, cloud save across devices, and Play Games Sidekick, restored from DiceFive
+(`5423b6c`), where each was checked by the maintainer on real phones. In Ludo Plus none has run against Play yet: the
+ids are empty until the Play Console project exists ("Play Console"). This file is the one source on the subject: where
+another doc disagrees, follow this one.
 
 ## What Google provides
 
@@ -53,7 +51,7 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
     (`PlayGamesServices.usesPlayGames`). Otherwise: `NoGameServices`, no card, as in the github APK. The SDK is still
     compiled into a play debug build, for its tests.
 - `PlayGamesServices` needs an `Activity`, so it's built in `MainActivity` and re-attached across config changes.
-- **Superuser mode** stops the whole sync (achievements, scores, save) on that install; a test pins it.
+- **Superuser mode** (a debug build's set rolls) needs no block of its own: a debug build never uses Play Games.
 
 ## Account and sign-in
 
@@ -77,7 +75,7 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
 - **Seat 1 reports to the signed-in account**, whatever name it holds; seats 2-4 never do.
 - **Choosing the account** is Play's: its default, or long-press the icon > Choose profile. No in-app picker.
 - **Accounts are kept apart.** `synced_account` (salted hash) is the last account to sync. That account, or the first
-    ever, **merges**. A different one **wipes** the synced data (achievements, counters, scores, synced settings, the
+    ever, **merges**. A different one **wipes** the synced data (achievements, counters, records, synced settings, the
     game in progress; no reset marker) and restores its own, once the service has answered. Signing out wipes nothing.
 
 ## Achievements
@@ -94,37 +92,43 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
     screens (`GameServices.serviceIcon`; the `play` flavour's `ic_play_games_controller`, from Google's branding zip,
     developer.android.com/games/pgs/downloads).
     There is no achievements reset: the option was removed from Settings.
-- **Mapping**: `PlayGamesIds.kt`. `PlayGamesAchievements.kt` sets each one's Play type and visibility (`playType`,
-    `playHidden`). Every achievement is mapped, steps ≤10,000, Professional Roller scaled
-    (`PlayGamesIdsTest`).
-- **Published types and steps never change.** Full Houses was published as standard, so it's in `PUBLISHED_STANDARD`
-    and Play gets only its unlock (30 hands in the game). A target that grows past Play's steps scales each step
-    instead: Well Rolled's 10,000 steps are 5 dice each since it went to 50,000. Check a new incremental achievement's
-    type and steps in Play Console before publishing: a mismatch fails every unlock silently.
-- **Points** by tier (`PlayConsoleAchievements.kt`, test sources): trivial 5, easy 10, medium 15, hard 25, very hard
-    45, extreme 70, Completionist 100, every Easter egg 5. That spends all 2,000 (`PlayConsoleExportTest`), so a new
-    achievement needs points freed first.
+- **Mapping**: `PlayGamesIds.kt`, empty until the Console has ids; an achievement with no id is never sent. From the
+    first id, `PlayGamesIdsTest` fails until every achievement is mapped. `PlayGamesAchievements.kt` sets each one's Play
+    type and visibility (`playType`, `playHidden`): a climbing total is incremental (steps ≤10,000, so Ultramarathon's
+    100,000 squares are 10 a step), a streak or one-off standard.
+- **Published types and steps never change.** Once published, a rule change here keeps the type and steps as
+    published. Check a new incremental achievement's type and steps in Play Console before publishing: a mismatch fails
+    every unlock silently.
+- **Points** by tier (`PlayConsoleAchievements.kt`, test sources; proposed 2026-11-18, for the maintainer's review):
+    trivial 5, easy 10, medium 15, hard 20, very hard 45, extreme 70, Completionist 100, every Easter egg 5. That spends
+    all 2,000 (`PlayConsoleExportTest`), so a new achievement needs points freed first.
+- **Icons**: each its own (Play rejects two the same; `PlayConsoleExportTest` checks). On A Roll's flame was Hot
+    Streak's (Phase 6's `ModeHeat` held the same path), so it climbs instead.
 
 ## Leaderboards
 
 **Ludo Plus (decided 2026-11-18):** a board for each built-in mode and player count, 2-8 (3 modes × 7 = 21 of the 70),
 each the turns in seat 1's win under the mode's own rules, smaller better. Play ranks one number, ties by submission time,
-so the local Leaderboard's captures tie-break doesn't carry. The rest of this section is DiceFive's.
+so the local Leaderboard's captures tie-break doesn't carry.
 
-- **7 boards**, one per `GameMode` (`playLeaderboardIds`): larger is better, 0 to `maxPossibleScore`, tamper
-    protection on.
-- **Submitted**: seat 1's score, only under the mode's own rules (`isPrimaryPlayer` and `playedUnmodified`; rows over
-    `maxPossibleScore` skipped). Each reconcile sends each mode the best score since the newest game that account took
-    from this device (`scores_posted:<account>:<key>`, moved only once Play confirms). So a first link sends the backlog,
-    after the cloud merge. Game Over says nothing.
-- **Viewing**: a "Global leaderboard" button on each mode card opens Play's screen. The local tables stay.
-- **Reset leaderboard** clears every device (a `scores_reset_at` marker in the save). Play's boards keep their
-    entries, and the confirmation says so.
-- **A new mode** needs a console board, an icon and an `onlineLeaderboardKey` (`OnlineLeaderboardKeyTest`).
+- **21 boards**, one per mode and player count (`playLeaderboardKeys`: `<GameMode.onlineLeaderboardKey>_<n>p`, as
+    `classic_4p`): numeric, smaller is better, from 1, tamper protection on. Ids in `playLeaderboardIds`, empty until the
+    Console has them.
+- **Submitted**: the turns of seat 1's win, only under the mode's own rules (`isPrimaryPlayer` and `playedUnmodified`:
+    no teams, no house rules, so no custom mode). Each reconcile sends each board the fastest win since the newest game
+    that account was sent from this device (`wins_posted:<account>:<key>`, moved only once Play confirms;
+    `GameRecordRepository.unpostedWin`). So a first link sends the backlog, after the cloud merge. Game Over says nothing.
+- **Viewing**: "Global leaderboard" under the Leaderboard's player counts, while signed in, opens Play's board for the
+    mode and count on show (spoken "Global leaderboard for Classic, 4 players, on Google Play Games"). The local tables stay.
+- **No reset**: Ludo has no Reset leaderboard, so no reset marker.
+- **A new mode** needs seven console boards, their icons, and an `onlineLeaderboardKey`.
 
 ## Cloud save
 
-One snapshot, `ludo-progress` (`CloudSaveCodec.SNAPSHOT_NAME`, permanent): versioned JSON, gzipped (okio).
+One snapshot, `ludo-progress` (`CloudSaveCodec.SNAPSHOT_NAME`, permanent): versioned JSON, gzipped (okio), the same
+bytes a progress file seals (`DESIGN.md`, "Persistence"). The table and the notes under it are DiceFive's; Ludo's
+differences: records (by `GameResult.uuid`) in place of scores, no reset marker or dismissed cards, format version 1,
+and the game in progress's copies compared by `StartedGame.steps`.
 Always on while signed in, with no switch and no prompt. Every sync merges; nothing is picked or thrown away.
 
 | Data                                                                              | Merge                                                                                                                                                                                                                                                                                       |
@@ -140,17 +144,15 @@ Always on while signed in, with no switch and no prompt. Every sync merges; noth
 - **Ids, not enums**, so an older app carries a newer one's achievements, counters and settings through a merge.
 - **Versions.** Fields are only added within a `version`. An app reads a newer version's known fields but never writes
     over it (`CloudSave.writableHere`). A corrupt save is replaced by this device's.
-- **Format.** Version 2 packs the scores: `names` and `modes` hold each value once, and `table` is one string of rows
-    (`CloudSaveCodec.encodeScores`). About 100,000 rows fit in the service's 3 MB, at 27-30 bytes a row. Version 1's `rows`,
-    an object per row, are still read; an app on version 1 finds none in a version 2 save, takes the rest, and never writes
-    over it, so that device's scores stop syncing until it updates.
+- **Format.** Version 1 packs the records: `names` and `modes` hold each value once, and `table` is one string of rows
+    (`CloudSaveCodec.encodeRecords`), each about 70 bytes, so tens of thousands fit in the service's 3 MB.
 - **Size.** A save inflating past `MAX_INFLATED_BYTES` (32 MiB), or too large for the device's memory, is
     `DecodedSave.TooLarge`: it is never written over or wiped for, and the sync counts as unreachable. A save over
     `MAX_SAVE_BYTES` isn't sent: it stays on the device, and the sync counts as unreachable.
 - **After a merge**, `AchievementEngine.evaluateProgress` unlocks whatever the combined totals reach (quietly, then
     mirrored, so Play's pop-up announces it).
 - **The write** reopens the snapshot and merges with anything committed since the read (`RESOLUTION_POLICY_MANUAL`,
-    up to 10 retries). It writes only if this device added something, and before posting scores.
+    up to 10 retries). It writes only if this device added something, and before posting wins.
 - **A sync with nothing to do costs no rows.** The save is still read from the service, but one matching the hash of
     what this device left there isn't decoded, and with `CloudSaveStore.changeStamp` unchanged too (the score writes
     `ScoreRepository` has made, and the save's other parts) no row is read and nothing is written. It is kept in memory, so
@@ -172,15 +174,15 @@ hidden when `Unavailable`.
     sync ends.
 - "Saved `<time>`" (`cloud_saved:<account>`, via `formatTimestamp`) under the name, on one line at 360dp: the text
     runs up to the button rather than stopping at a `ListItem`'s end padding.
-- While a sign-in's sync runs (`OnlineSync.progress`), a block names the step and count ("Merging scores (5/7)") with
+- While a sign-in's sync runs (`OnlineSync.progress`), a block names the step and count ("Merging game records (5/7)") with
     a spinner and a 400ms gliding bar (a still icon and snapping under reduced motion): `StepProgress`, which the
     github app's import shows too, with the same merge steps (`MergeStep`). Seven steps (`SyncStep`):
-    downloading, settings, the game in progress, achievements, scores, uploading, leaderboard scores.
+    downloading, settings, the game in progress, achievements, game records, uploading, leaderboard wins.
 - "Couldn't reach Google Play Games - will retry" while the last sync failed (`OnlineSync.unreachable`).
-- **TalkBack**: one group with its status as `stateDescription`, and the sync step in the heading ("…, Merging scores,
+- **TalkBack**: one group with its status as `stateDescription`, and the sync step in the heading ("…, Merging game records,
     step 5 of 7"); the progress block itself is hidden. Pinned in `OnlineAccountCardTest`.
 - About's Privacy section adds the sign-in sentence wherever a service exists (`about_privacy_body_online`,
-    `AboutDialogTest`).
+    `OnlineLinksTest`).
 
 ## Sidekick
 
@@ -194,32 +196,32 @@ Play's overlay: an edge tab that slides out achievements, streaks, offers and re
 
 ## Play Console
 
-- **Project**: APP_ID `308613893005`; Saved Games on. Android credentials, one per signing key (SHA-1):
-    - Play's app signing key `B3:92:54:2F:11:F1:67:02:F4:84:FF:CE:67:53:B1:DA:5E:78:D2:FB` (every install from a Play
-        track: players get only this);
-    - the upload key `FD:64:0E:6D:55:7E:13:7C:77:2E:BD:0A:02:C9:03:00:9D:45:80:A9` (the `RELEASE_KEY*` secrets; only
-        builds signed by hand). It also signs the github APK, but that's another package, which no credential names.
-    - **Never the debug key** (`76:7A:8F:8E:BF:D9:A9:58:4E:4C:21:D4:0B:9D:6E:51:1B:EB:21:A0`): it's committed to the
-        public repo (`app/android/debug.keystore`), so with a credential anyone could build the app from changed source
-        and post any score or unlock to the published boards. Its credential was deleted on 2026-10-22; never add it back.
+- **Project**: none yet (2026-11-18). Until it exists, `games-ids.xml`'s `game_services_project_id` is 0 and the id
+    maps are empty; the play app's sign-in can't work, and only a Play install would try it. When it does:
+    1. Create the Play Games Services project, turn on Saved Games, and put its project id in `games-ids.xml`.
+    2. Add an Android credential for each signing key's SHA-1: Play's app signing key (every install from a Play track)
+        and the upload key (the `RELEASE_KEY*` secrets).
+    3. **Never the debug key** (`app/android/debug.keystore`, committed to the public repo): with a credential, anyone
+        could build the app from changed source and post any score or unlock to the published boards.
   A build whose key has no credential fails sign-in with Google's `DEVELOPER_ERROR`, which only logcat shows (its
   `PlayGamesServices[SignInAuthenticator]` lines print the build's SHA-1); the app sees only "not authenticated".
 - **Sheets**: `scripts/export-play-console.sh` writes the gitignored `assets/play-console/`:
-    - `achievements/achievements-import-<timestamp>.zip` for Achievements > Import achievements (metadata, es-ES/es-419/ar
-        localisations, icon mappings, icons; no header rows, keyed by English name). Add the translations in Play Console
-        first.
+    - `achievements/achievements-import-<timestamp>.zip` for Achievements > Import achievements (metadata, icon
+        mappings, icons; no header rows, keyed by English name). English alone for now.
     - `achievements/achievements-<timestamp>.csv` and `achievements/achievement-icons/<id>.png` (512px) for review.
     - `achievements/achievement-ids.xml` isn't the script's: it's Achievements > Get resources (Android), saved there by
-        hand after an import. `playAchievementIds` (`PlayGamesIds.kt`) is updated from it.
-    - `leaderboards/leaderboards-<timestamp>.csv` and `leaderboards/leaderboard-icons/<key>.png` (`PlayConsoleLeaderboards.kt`),
-        entered by hand: Play has no leaderboard import. An icon can change any time; a board's ordering can't once published.
-    - `product-icons/unlock_all_styles.png`: the purchase's icon (`PURCHASES.md`, Phase 3).
+        hand after an import. `playAchievementIds` (`PlayGamesIds.kt`) is filled from it.
+    - `leaderboards/leaderboards-<timestamp>.csv` and `leaderboards/leaderboard-icons/<key>.png` (the mode's mark over
+        the player count; `PlayConsoleLeaderboardsExportTest`), entered by hand: Play has no leaderboard import. An icon
+        can change any time; a board's ordering can't once published. `playLeaderboardIds` is filled from Get resources.
 - Everything stays **draft** until publishing, because only drafts can be reset.
 
 ## Release
 
 The code is done. The rest is the maintainer's, in Play Console:
 
+0. **Set up the project and fill the ids** ("Play Console"), and update the privacy policy and data-safety form for
+   sign-in and cloud save (`PUBLISHING.md`).
 1. **Publish** the achievements and boards. From then on their ids, points and ordering are permanent.
 2. **Upload the release's `.aab`** with the `play-release.yml` workflow (`DESIGN.md`, "Release pipeline") to an
    internal or closed track, and make sure **Sidekick is on by default** is ticked in Play Console.
@@ -245,7 +247,7 @@ The code is done. The rest is the maintainer's, in Play Console:
 ## Risks and gotchas
 
 - **Ids and points are permanent on Google's side.** Retiring an achievement means keeping its mapping and no longer
-    reporting it. A rule change that makes old scores unfair needs a **new leaderboard key**; the old board stays frozen.
+    reporting it. A rule change that makes old wins unfair needs a **new leaderboard key**; the old board stays frozen.
 - **Banned words** apply to every console string; the export goes through the `StringChecks` guard.
 - **Testers must be PGS testers** until publishing.
 - **The data safety form** must declare Play Games and cloud save (draft answers: `PUBLISHING.md`, "Data safety").

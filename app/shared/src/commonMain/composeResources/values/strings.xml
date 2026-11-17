@@ -337,6 +337,13 @@
         <item quantity="one">No wins in %1$s with %2$d player yet. Win a game to set a time.</item>
         <item quantity="other">No wins in %1$s with %2$d players yet. Win a game to set a time.</item>
     </plurals>
+    <!-- Under the player counts while signed in to the online service: opens the same board there. -->
+    <string name="leaderboard_global">Global leaderboard</string>
+    <!-- leaderboard_global read aloud: %1$s the mode, %2$d the player count, %3$s the service's name. -->
+    <plurals name="leaderboard_global_cd">
+        <item quantity="one">Global leaderboard for %1$s, %2$d player, on %3$s</item>
+        <item quantity="other">Global leaderboard for %1$s, %2$d players, on %3$s</item>
+    </plurals>
     <string name="leaderboard_player">Player</string>
     <string name="leaderboard_turns">Turns</string>
     <string name="leaderboard_captures">Captures</string>
@@ -580,6 +587,33 @@
     <string name="settings_progress_step_opening">Opening the file</string>
     <!-- What a screen reader announces while an import runs, in place of each step. -->
     <string name="settings_progress_importing_cd">Importing progress</string>
+    <!-- The online game service card on Settings (ui/settings/OnlineAccountCard.kt), in the play app. %1$s is the service's own name, or the account's gamer name. -->
+    <string name="online_signed_out">Not signed in</string>
+    <string name="online_signing_in">Signing in...</string>
+    <string name="online_signed_in_cd">%1$s, signed in as %2$s</string>
+    <!-- Under the account, once its cloud save has matched this device. %1$s is the time, in common_timestamp_pattern. -->
+    <string name="online_last_saved">Saved %1$s</string>
+    <!-- The card read aloud once it has been saved: %1$s the service, %2$s the gamer name, %3$s the time of online_last_saved. -->
+    <string name="online_signed_in_saved_cd">%1$s, signed in as %2$s, saved %3$s</string>
+    <!-- Under the account while the service couldn't be reached for the last sync; it is tried again at the next sync (a finished game, launch, leaving or coming back to the app). %1$s is the service; the no-break space before the dash keeps the dash off the start of a line. -->
+    <string name="online_unreachable">Couldn't reach %1$s - will retry</string>
+    <!-- online_unreachable read aloud, as the last clause of the card (joined with common_clauses_join). -->
+    <string name="online_unreachable_cd">couldn't reach %1$s, will retry</string>
+    <!-- Under "Not signed in", in red, after a sign-in that didn't work. %1$s is the service's own reason, never translated (Google's status code, say), for the player to report. -->
+    <string name="online_sign_in_failed">Couldn't sign in: %1$s</string>
+    <!-- online_sign_in_failed read aloud, as the last clause of the card (joined with common_clauses_join). -->
+    <string name="online_sign_in_failed_cd">couldn't sign in: %1$s</string>
+    <string name="online_sync_step_downloading">Downloading your progress</string>
+    <string name="online_sync_step_uploading">Uploading your progress</string>
+    <string name="online_sync_step_leaderboards">Sending leaderboard wins</string>
+    <!-- The card read aloud while syncing: %1$s the service, %2$s the gamer name, %3$s the step (online_sync_step_*), %4$d which step it is, and %5$d how many there are. -->
+    <string name="online_signed_in_syncing_cd">%1$s, signed in as %2$s, %3$s, step %4$d of %5$d</string>
+    <string name="online_sign_in">Sign In</string>
+    <string name="online_sign_out">Sign Out</string>
+    <!-- The Achievements page's count banner, signed in: what a screen reader says a tap does. %1$s is the service's name. -->
+    <string name="achievements_online_action">Open %1$s</string>
+    <!-- About's privacy paragraph in the play app. %1$s is the app's name, %2$s the online service's. -->
+    <string name="about_privacy_body_online">%1$s holds no user data. Your games, scores, and settings stay on this device, unless you sign in to %2$s. There are no ads, analytics, or tracking.</string>
     <!-- A merge's progress, after a spinner and above a progress bar: %1$s is the step (one of online_sync_step_*), %2$d which step it is, and %3$d how many there are. -->
     <string name="online_sync_progress">%1$s (%2$d/%3$d)</string>
     <string name="online_sync_step_settings">Merging settings</string>

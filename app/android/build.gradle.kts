@@ -404,8 +404,14 @@ dependencies {
     // AndroidAppContainer opens the shared module's database and preferences files.
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.datastore.preferences.core)
-    // Google Play Games Services and Play Billing (DiceFive's play flavour) come back in Phases 10 and 11 of
+    // Google Play Games Services v2: sign-in, achievements, leaderboards and saved games (online/PlayGamesServices).
+    // The play flavour's alone: the github APK has none of it. Play Billing comes back in Phase 11 of
     // .claude/IMPLEMENTATION.md.
+    "playImplementation"(libs.play.services.games.v2)
+    constraints {
+        // play-services-base asks for androidx.fragment 1.1.0, which Play Console flags as an outdated SDK.
+        "playImplementation"(libs.androidx.fragment)
+    }
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

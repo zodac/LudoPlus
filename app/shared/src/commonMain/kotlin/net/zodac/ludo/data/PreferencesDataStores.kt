@@ -17,8 +17,9 @@ import okio.IOException
 import okio.Path.Companion.toPath
 
 /**
- * The app's preferences files, kept apart so each can be cleared on its own: the settings, the game in progress, and
- * the achievements. Online and purchases each get a file of their own in their phase of `.claude/IMPLEMENTATION.md`.
+ * The app's preferences files, kept apart so each can be cleared on its own: the settings, the game in progress, the
+ * achievements, and the online service's bookkeeping. Purchases get a file of their own in Phase 11 of
+ * `.claude/IMPLEMENTATION.md`.
  * Each platform puts them in its own app-private directory and opens each exactly once per process (DataStore refuses
  * a second instance on the same file).
  */
@@ -26,6 +27,7 @@ enum class PreferencesFile(val fileName: String) {
     SETTINGS("settings.preferences_pb"),
     IN_PROGRESS_GAME("in_progress_game.preferences_pb"),
     ACHIEVEMENTS("achievements.preferences_pb"),
+    ONLINE("online.preferences_pb"),
 }
 
 /**

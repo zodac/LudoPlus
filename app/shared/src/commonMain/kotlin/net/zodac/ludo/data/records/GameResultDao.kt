@@ -39,6 +39,16 @@ interface GameResultDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMerged(results: List<GameResult>)
 
+    /**
+     * The fewest turns, and the newest end, of player 1's wins in [gameModeId] with [playerCount] players under the mode's
+     * own rules that ended after [afterEpochMillis]: what its online leaderboard hasn't been sent yet. Null turns for none.
+     */
+    @Query(
+        "SELECT MIN(turns) AS turns, MAX(endedAtEpochMillis) AS newestEpochMillis FROM results WHERE gameModeId = :gameModeId " +
+            "AND playerCount = :playerCount AND playedUnmodified = 1 AND won = 1 AND isPrimaryPlayer = 1 AND endedAtEpochMillis > :afterEpochMillis",
+    )
+    suspend fun unpostedWin(gameModeId: String, playerCount: Int, afterEpochMillis: Long): UnpostedWinRow
+
     @Query("SELECT COUNT(*) FROM results")
     suspend fun count(): Int
 

@@ -89,6 +89,13 @@ class GameRecordRepository(
     /** Whether any game has been recorded: a person has finished one. */
     suspend fun hasFinishedGame(): Boolean = dao.count() > 0
 
+    /**
+     * Player 1's fastest win in [mode] with [playerCount] players under the mode's own rules, from the games that ended
+     * after [afterEpochMillis], for its online leaderboard; null with none.
+     */
+    suspend fun unpostedWin(mode: GameMode, playerCount: Int, afterEpochMillis: Long): UnpostedWin? =
+        dao.unpostedWin(mode.id, playerCount, afterEpochMillis).let { row -> row.turns?.let { UnpostedWin(it, checkNotNull(row.newestEpochMillis)) } }
+
     /** Every record, oldest first: what the cloud save and a progress file hold. */
     suspend fun cloudRecords(): List<GameResult> = dao.all()
 
@@ -120,6 +127,12 @@ class GameRecordRepository(
         return withContext(computeContext) { rows.groupBy { it.playerKey }.values.map(::statisticsOf) }
     }
 }
+
+/** The fewest [turns] of the wins not yet sent to an online leaderboard, and when the [newestEpochMillis] of those games ended. */
+data class UnpostedWin(val turns: Int, val newestEpochMillis: Long)
+
+/** [GameResultDao.unpostedWin]'s one row: both null with no such win. */
+data class UnpostedWinRow(val turns: Int?, val newestEpochMillis: Long?)
 
 /** One player's Statistics: their games added up across every mode, and each mode's on its own ([modes]). */
 data class PlayerStatistics(

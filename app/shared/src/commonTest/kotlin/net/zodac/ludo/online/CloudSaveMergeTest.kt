@@ -36,7 +36,7 @@ class CloudSaveMergeTest {
         assertEquals(mapOf("a" to 3L, "b" to 9L, "c" to 1L), merged.achievements.unlockedAt)
         assertEquals(mapOf("phone" to mapOf("GAMES_PLAYED" to 4), "tablet" to mapOf("GAMES_PLAYED" to 2)), merged.achievements.deviceCounters)
         assertEquals(mapOf("WIN_STREAK" to Stamped(0, 200L)), merged.achievements.latestCounters)
-        assertEquals(listOf("aa", "cc", "bb"), merged.records.map { it.uuid.take(2) })
+        assertEquals(listOf("aa", "cc", "bb"), merged.records.map { it.uuidLabel })
         assertEquals(Stamped(SettingValue.Flag(false), 50L), merged.settings["sound_enabled"])
         assertEquals(Stamped(SettingValue.Number(6), 20L), merged.settings["player_count"])
         // The game was finished on the tablet after the phone's last save.

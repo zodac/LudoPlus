@@ -1,5 +1,15 @@
 package net.zodac.ludo.ui.records
 
+import net.zodac.ludo.ui.icons.Symbols
+import net.zodac.ludo.resources.leaderboard_global_cd
+import net.zodac.ludo.resources.leaderboard_global
+import net.zodac.ludo.online.LocalGameServices
+import net.zodac.ludo.online.GameServicesState
+import net.zodac.ludo.online.GameServices
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -89,6 +99,11 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit) {
             modifier = Modifier.semantics { heading() },
         )
         PlayerCountRow(options = PLAYER_COUNTS, selected = count, onSelect = { viewModel.selectPlayerCount(it!!) })
+        // The same board on the online service, while signed in to one: shown with or without rows here.
+        val services = LocalGameServices.current
+        if (services.state.collectAsStateWithLifecycle().value is GameServicesState.SignedIn && services.canShowLeaderboardUi) {
+            GlobalLeaderboardButton(shownMode, count, services)
+        }
         if (board.isEmpty()) {
             EmptyStateCard(pluralStringResource(Res.plurals.leaderboard_empty_players, count, modeName, count))
             return@ScreenScaffold
@@ -106,6 +121,29 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+/**
+ * Opens [mode]'s leaderboard for [playerCount] players on [services]: a globe and "Global leaderboard", spoken with the
+ * board and the service's name.
+ */
+@Composable
+private fun GlobalLeaderboardButton(mode: GameMode, playerCount: Int, services: GameServices) {
+    val description = pluralStringResource(
+        Res.plurals.leaderboard_global_cd,
+        playerCount,
+        stringResource(mode.displayName),
+        playerCount,
+        services.serviceName,
+    )
+    TextButton(
+        onClick = { services.showLeaderboardUi(mode.onlineLeaderboardKey(playerCount)) },
+        modifier = Modifier.semantics { contentDescription = description },
+    ) {
+        Icon(imageVector = Symbols.Public, contentDescription = null, modifier = Modifier.size(18.dp))
+        Spacer(modifier = Modifier.size(8.dp))
+        Text(stringResource(Res.string.leaderboard_global))
     }
 }
 

@@ -391,6 +391,13 @@ count but 4 has a board of its own; one player on two colours was dropped.
 - [ ] Play Games Services: achievements, the fastest-win leaderboards, cloud save, and sign-in (`PLAY_GAMES.md`).
     Decided with the maintainer (2026-11-18): a leaderboard for each built-in mode and player count, 2-8 (21 of Play's
     70), each the turns in a win, fewer better. Play ranks one number, so the local captures tie-break doesn't carry.
+    - [x] The code, restored from `5423b6c` (2026-11-18): `OnlineSync`, the Settings card, the Achievements page's way
+        to Play's screen, the Leaderboard's "Global leaderboard", About's sign-in line, `PlayGamesServices`, Sidekick,
+        backup rules, and the Play Console export (achievements with proposed points, and the 21 boards' sheet and
+        icons). Ids are empty until the Console project exists.
+    - [ ] The maintainer's Console steps (`PLAY_GAMES.md`, "Play Console"), the ids filled in, the points reviewed, and
+        sign-in checked on a Play install. The privacy policy and data-safety form must cover sign-in and cloud save
+        first (`PUBLISHING.md`).
 - [x] Progress files (github flavour), restored from `5423b6c` with the cloud save format they share
     (`online/CloudSave*`, `ProgressFileCodec`, `ProgressTransfer`, the Settings card, `AndroidProgressFiles`, and the
     `PROGRESS_FILE_KEY` CI secret): settings, the saved game, and the game records (moved from Phase 4, 2026-11-17).

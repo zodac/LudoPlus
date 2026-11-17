@@ -15,8 +15,28 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.launch
+import net.zodac.ludo.data.orNullOnFailure
+import net.zodac.ludo.online.GameServices
+import net.zodac.ludo.online.GameServicesState
+import net.zodac.ludo.online.LocalGameServices
+import net.zodac.ludo.online.LocalOnlineSyncStatus
+import net.zodac.ludo.online.NoGameServices
+import net.zodac.ludo.online.OnlineSync
+import net.zodac.ludo.online.OnlineSyncRequests
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.app.Breadcrumbs
 import net.zodac.ludo.app.LocalAppContainer
@@ -53,15 +73,18 @@ import net.zodac.ludo.ui.theme.LudoPlusTheme
 
 /**
  * The whole app, on whatever platform hosts it: each platform's entry point builds its [AppContainer] and
- * [PlatformServices] and hands them in here, and everything below is shared.
+ * [PlatformServices] (and, where it has one, its [GameServices]) and hands them in here, and everything below is shared.
  *
- * The achievement banners sit here, over every page. DiceFive's online sync and purchases hung off this root too; they
- * come back in their phases of `.claude/IMPLEMENTATION.md`.
+ * The achievement banners and the online sync sit here, over every page. Purchases hang off this root too, from Phase 11
+ * of `.claude/IMPLEMENTATION.md`.
  */
+@OptIn(FlowPreview::class)
 @Composable
 fun LudoPlusApp(
     container: AppContainer,
     platform: PlatformServices,
+    /** The platform's online game service, where it has one. */
+    gameServices: GameServices = NoGameServices,
     /** What freezes the window's infinite animations, where it's the policy its recomposer runs under. */
     screenIdle: ScreenIdle = remember { ScreenIdle() },
 ) {
@@ -97,6 +120,46 @@ fun LudoPlusApp(
         onPauseOrDispose { }
     }
     val leaveConfirmation = remember { LeaveGameConfirmation() }
+    // Achievements, wins, and the cloud save are synced with the online service on signing in (and at each launch once
+    // signed in), after every recorded change (one with no new unlock waits if the game screen is up), a few seconds after
+    // a synced setting changes (a Styles pick), on leaving the game screen, on going to the background with something new
+    // to save, and on coming back at least 60 seconds after the last sync; requests made while one runs fold into the next.
+    val onlineSync = remember(container, gameServices) {
+        OnlineSync(
+            gameServices,
+            container.achievementsRepository,
+            container.onlineSettingsRepository,
+            container.gameRecordRepository::unpostedWin,
+            container.cloudSave,
+        )
+    }
+    LaunchedEffect(onlineSync) {
+        // Only a sign-in's sync shows its progress on the Settings card; the ones after it are quiet. All of this runs
+        // on the one main thread, so the flag needs no lock.
+        var signInPending = false
+        val signedIn = gameServices.state.map { it is GameServicesState.SignedIn }.distinctUntilChanged().filter { it }.map { signInPending = true }
+        merge(signedIn, OnlineSyncRequests.requests).conflate().collect {
+            val showProgress = signInPending
+            signInPending = false
+            // A sync that fails here (the records can't be written) costs that sync: thrown on, it would take the app down,
+            // and every later sync with it.
+            orNullOnFailure { onlineSync.reconcile(showProgress) }
+        }
+    }
+    LaunchedEffect(onlineSync) {
+        gameServices.state.collect { if (it !is GameServicesState.SignedIn) onlineSync.forgetSignInSync() }
+    }
+    LaunchedEffect(container) {
+        container.settingsRepository.syncedChanges.debounce(SETTINGS_SYNC_DELAY).collect { OnlineSyncRequests.request() }
+    }
+    // Put one device down and pick another up: the first saves, the second reads. A check that fails asks for the sync.
+    val appSwitches = rememberCoroutineScope()
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        appSwitches.launch { if (orNullOnFailure { onlineSync.needsSyncOnLeaving() } != false) OnlineSyncRequests.request() }
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        appSwitches.launch { if (orNullOnFailure { onlineSync.needsSyncOnReturning() } != false) OnlineSyncRequests.request() }
+    }
     CompositionLocalProvider(
         LocalReduceMotion provides reduceMotion,
         LocalMotionSettings provides motion,
@@ -104,6 +167,8 @@ fun LudoPlusApp(
         LocalFramePace provides framePaces.menus,
         LocalAppContainer provides container,
         LocalPlatformServices provides platform,
+        LocalGameServices provides gameServices,
+        LocalOnlineSyncStatus provides onlineSync.status,
         LocalDriftState provides driftState,
         LocalScreenIdle provides screenIdle,
         LocalLeaveGameConfirmation provides leaveConfirmation,
@@ -131,6 +196,16 @@ fun LudoPlusApp(
                                 Breadcrumbs.record("Opened $it") // i18n: not translated - a crash report's breadcrumb
                                 screenIdle.wake()
                             }
+                    }
+                    // What can wait for the game to end does: leaving its screen, below, asks for the sync anyway.
+                    LaunchedEffect(navController) {
+                        OnlineSyncRequests.outsideGameRequests.awayFrom(Screen.PLAY_GAME) { navController.currentDestination?.route }
+                            .collect { OnlineSyncRequests.request() }
+                    }
+                    // A game left part-way through is saved as it was left, for another device's Continue.
+                    LaunchedEffect(navController) {
+                        navController.currentBackStackEntryFlow.map { it.destination.route }.leaving(Screen.PLAY_GAME)
+                            .collect { OnlineSyncRequests.request() }
                     }
                     // Above the NavHost, not inside it: the burst of banners at the end of a game has to survive the move
                     // from the board to Game Over and on to the menu, which a per-page overlay wouldn't.
@@ -168,3 +243,18 @@ fun LudoPlusApp(
         }
     }
 }
+
+/** Emits each time these routes move off [route] to another. */
+internal fun Flow<String?>.leaving(route: String): Flow<Unit> = flow {
+    var previous: String? = null
+    distinctUntilChanged().collect { current ->
+        if (previous == route) emit(Unit)
+        previous = current
+    }
+}
+
+/** Each of these made while [current] isn't [route]. */
+internal fun Flow<Unit>.awayFrom(route: String, current: () -> String?): Flow<Unit> = filter { current() != route }
+
+/** How long synced settings are left unchanged before they're saved to the cloud: a run of Styles picks saves once. */
+private val SETTINGS_SYNC_DELAY = 5.seconds

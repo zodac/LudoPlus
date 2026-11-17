@@ -29,6 +29,11 @@ enum class GameMode(
      * Classic's earn achievements until modes have their own (the maintainer, 2026-11-18).
      */
     val earnsAchievements: Boolean = false,
+    /**
+     * Its online leaderboards' key (Play Games), one board for each player count ([onlineLeaderboardKey]). Permanent once
+     * released, as the boards are: a rule change that makes old wins unfair needs a new key (`.claude/PLAY_GAMES.md`).
+     */
+    val onlineLeaderboardKey: String,
 ) : StoredId {
     /** The classic rules, for four players (`.claude/IMPLEMENTATION.md`, "The classic rules"). */
     CLASSIC(
@@ -37,6 +42,7 @@ enum class GameMode(
         description = Res.string.mode_classic_description,
         rules = GameRules(),
         earnsAchievements = true,
+        onlineLeaderboardKey = "classic",
     ),
 
     /** The classic rules, two pawns each: a shorter race. */
@@ -45,6 +51,7 @@ enum class GameMode(
         displayName = Res.string.mode_quick,
         description = Res.string.mode_quick_description,
         rules = GameRules(pawnsPerPlayer = 2),
+        onlineLeaderboardKey = "quick",
     ),
 
     /**
@@ -56,8 +63,12 @@ enum class GameMode(
         displayName = Res.string.mode_two_dice,
         description = Res.string.mode_two_dice_description,
         rules = GameRules(dice = 2, rollAgainRolls = emptySet(), rollAgainOnDoubles = true),
+        onlineLeaderboardKey = "two_dice",
     ),
     ;
+
+    /** Its online leaderboard for games of [playerCount]: a bigger board's lap is longer, so each count has its own. */
+    fun onlineLeaderboardKey(playerCount: Int): String = "${onlineLeaderboardKey}_${playerCount}p"
 
     companion object {
         /** The mode a new player's first game is set to. */

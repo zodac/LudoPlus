@@ -126,6 +126,16 @@ class SettingsRepository(
         }
     }
 
+    /** Forgets every synced setting and its stamp, as on a device that never set one: for another account signing in. */
+    suspend fun wipeSynced() {
+        dataStore.edit { prefs ->
+            for (key in SYNCED_KEYS) {
+                prefs.remove(key)
+                prefs.remove(stampKey(key))
+            }
+        }
+    }
+
     /**
      * The seconds played that an older version kept here, before they moved to the achievements' counters
      * ([net.zodac.ludo.model.AchievementCounter.PLAY_SECONDS]): 0 once [forgetRetired] has removed them.

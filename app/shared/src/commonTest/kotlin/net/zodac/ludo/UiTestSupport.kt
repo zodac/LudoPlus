@@ -17,6 +17,7 @@ import net.zodac.ludo.data.game.InProgressGameRepository
 import net.zodac.ludo.data.records.GameRecordRepository
 import net.zodac.ludo.data.records.InMemoryGameResultDao
 import net.zodac.ludo.data.settings.SettingsRepository
+import net.zodac.ludo.online.OnlineSettingsRepository
 import net.zodac.ludo.ui.achievements.AchievementsViewModel
 import net.zodac.ludo.ui.game.GameViewModel
 
@@ -44,6 +45,7 @@ internal fun inMemoryAppContainer(
     inProgressGameRepository = saved,
     gameRecordRepository = records,
     achievementsRepository = achievements,
+    onlineSettingsRepository = OnlineSettingsRepository(InMemoryPreferences()),
     buildInfo = BuildInfo(versionName = "1.0.0", isDebug = false),
 )
 

@@ -26,6 +26,7 @@ import net.zodac.ludo.data.InMemoryPreferences
 import net.zodac.ludo.data.achievements.AchievementsRepository
 import net.zodac.ludo.data.game.InProgressGameRepository
 import net.zodac.ludo.data.settings.SettingsRepository
+import net.zodac.ludo.online.OnlineSettingsRepository
 import net.zodac.ludo.data.settings.savedStylesFlow
 
 /** Whether every style is owned, as the app reads it: in a debug build, the Styles page's hidden switch (the purchase joins it in Phase 11). */
@@ -99,6 +100,7 @@ class PretendOwnsAllStylesTest {
         inProgressGameRepository = InProgressGameRepository(InMemoryPreferences()),
         gameRecordRepository = GameRecordRepository(InMemoryGameResultDao()),
         achievementsRepository = InMemoryAchievementStore(),
+        onlineSettingsRepository = OnlineSettingsRepository(InMemoryPreferences()),
         buildInfo = BuildInfo(versionName = "test", isDebug = debug),
         scope = backgroundScope,
     )

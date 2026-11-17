@@ -39,6 +39,9 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.zodac.ludo.online.GameServicesState
+import net.zodac.ludo.online.LocalGameServices
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.about_author_body
@@ -48,6 +51,7 @@ import net.zodac.ludo.resources.about_game_body
 import net.zodac.ludo.resources.about_game_heading
 import net.zodac.ludo.resources.about_game_link
 import net.zodac.ludo.resources.about_privacy_body
+import net.zodac.ludo.resources.about_privacy_body_online
 import net.zodac.ludo.resources.about_privacy_heading
 import net.zodac.ludo.resources.about_privacy_link
 import net.zodac.ludo.resources.about_title
@@ -78,6 +82,8 @@ private data class AboutSection(
     val heading: StringResource,
     val body: StringResource,
     val link: AboutLink? = null,
+    /** [body] where there's an online service to sign in to, given its name too. */
+    val onlineBody: StringResource? = null,
 )
 
 private val ABOUT_SECTIONS = listOf(
@@ -95,6 +101,7 @@ private val ABOUT_SECTIONS = listOf(
         heading = Res.string.about_privacy_heading,
         body = Res.string.about_privacy_body,
         link = AboutLink(Res.string.about_privacy_link, PRIVACY_POLICY_URL),
+        onlineBody = Res.string.about_privacy_body_online,
     ),
 )
 
@@ -133,6 +140,9 @@ fun AboutDialog(onDismissRequest: () -> Unit, modifier: Modifier = Modifier, deb
         DebugCrashes.Kind.BACKGROUND -> DebugCrashes.crashInBackground()
         DebugCrashes.Kind.COMPOSITION -> crashWhileDrawn = true
     }
+    val services = LocalGameServices.current
+    // Null without a service: no Settings card, so nothing to sign in to.
+    val serviceName = services.serviceName.takeIf { services.state.collectAsStateWithLifecycle().value != GameServicesState.Unavailable }
 
     LargeDialog(onDismissRequest = onDismissRequest, modifier = modifier) {
         val scroll = rememberScrollState()
@@ -147,6 +157,7 @@ fun AboutDialog(onDismissRequest: () -> Unit, modifier: Modifier = Modifier, deb
                     ABOUT_SECTIONS.forEachIndexed { index, section ->
                         AboutSectionCard(
                             section = section,
+                            serviceName = serviceName,
                             nameStyle = nameStyle,
                             onOpenLink = if (crashMode) { _ -> crash(DebugCrashes.Kind.entries[index]) } else uriHandler::openUri,
                             onNameTapped = onNameTapped.takeIf { section.heading == Res.string.about_author_heading },
@@ -167,6 +178,7 @@ fun AboutDialog(onDismissRequest: () -> Unit, modifier: Modifier = Modifier, deb
 @Composable
 private fun AboutSectionCard(
     section: AboutSection,
+    serviceName: String?,
     nameStyle: SpanStyle,
     onOpenLink: (String) -> Unit,
     onNameTapped: (() -> Unit)? = null,
@@ -186,7 +198,11 @@ private fun AboutSectionCard(
                 modifier = Modifier.semantics { heading() },
             )
             val appName = stringResource(Res.string.app_name)
-            val body = stringResource(section.body, appName)
+            val body = if (section.onlineBody != null && serviceName != null) {
+                stringResource(section.onlineBody, appName, serviceName)
+            } else {
+                stringResource(section.body, appName)
+            }
             val text = parseInlineMarkup(body, nameStyle)
             var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
             Text(

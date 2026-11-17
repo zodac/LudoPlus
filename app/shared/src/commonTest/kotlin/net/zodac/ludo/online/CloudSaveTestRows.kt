@@ -3,9 +3,10 @@ package net.zodac.ludo.online
 import net.zodac.ludo.data.records.GameResult
 import net.zodac.ludo.model.playerNameKey
 
-/** A game record as a merge carries it: [uuid] padded to a whole one with zeros, won by [name] at [at]. */
-internal fun cloudRecord(uuid: String, at: Long, name: String = "Sam", turns: Int = 40, won: Boolean = true) = GameResult(
-    uuid = uuid.padEnd(32, '0'),
+/** A game record as a merge carries it, won by [name] at [at]: its uuid is [label]'s bytes in hex, padded with zeros. */
+internal fun cloudRecord(label: String, at: Long, name: String = "Sam", turns: Int = 40, won: Boolean = true) = GameResult(
+    uuid = label.encodeToByteArray().also { require(it.size <= 16) { "A label is 16 bytes at most" } }
+        .joinToString("") { (it.toInt() and 0xff).toString(16).padStart(2, '0') }.padEnd(32, '0'),
     playerName = name,
     playerKey = playerNameKey(name),
     isPrimaryPlayer = true,
@@ -21,3 +22,7 @@ internal fun cloudRecord(uuid: String, at: Long, name: String = "Sam", turns: In
     timesCaptured = 1,
     pawnsHome = if (won) 4 else 2,
 )
+
+/** The label [cloudRecord] made this record's uuid from. */
+internal val GameResult.uuidLabel: String
+    get() = uuid.chunked(2).map { it.toInt(16).toByte() }.toByteArray().decodeToString().trimEnd('\u0000')

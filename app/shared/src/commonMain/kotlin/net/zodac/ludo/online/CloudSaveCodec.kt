@@ -47,6 +47,9 @@ object CloudSaveCodec {
     /** The most a save is read up to once inflated. Anything larger is [DecodedSave.TooLarge]. */
     internal const val MAX_INFLATED_BYTES = 32L * 1024 * 1024
 
+    /** The most this app sends the online service, which stores 3 MB at most: a larger save stays on the device. */
+    internal const val MAX_SAVE_BYTES = 3_000_000
+
     private const val ROW_SEPARATOR = ';'
     private const val FIELD_SEPARATOR = ','
     private const val FLAG_PRIMARY_PLAYER = 1

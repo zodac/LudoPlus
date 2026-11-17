@@ -27,6 +27,12 @@ interface AchievementStore {
     suspend fun record(unlockedAt: Map<Achievement, Long>, counters: Map<AchievementCounter, Int>)
 
     /**
+     * Wipes every unlock and counter, the time played included, as on a new device: for another online account signing
+     * in, whose own come back from its cloud save and the service.
+     */
+    suspend fun resetAll()
+
+    /**
      * Reverts a single achievement to locked, leaving every other unlock and every counter untouched. Debug builds only:
      * see `AchievementsViewModel`'s superuser mode.
      */

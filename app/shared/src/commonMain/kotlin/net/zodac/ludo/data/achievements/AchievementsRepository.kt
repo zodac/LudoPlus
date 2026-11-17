@@ -130,6 +130,11 @@ class AchievementsRepository(
         (parseJson(prefs[SHARES_KEY] ?: return emptyMap()) as JsonObject).fields.mapValues { (_, counters) -> (counters as JsonObject).ints() }
     }.getOrDefault(emptyMap())
 
+    /** Every unlock, counter and share, and this file's share id, so the next save starts a new share. */
+    override suspend fun resetAll() {
+        dataStore.edit { it.clear() }
+    }
+
     override suspend fun forceLock(achievement: Achievement) {
         dataStore.edit { prefs -> prefs.remove(unlockedKey(achievement)) }
     }

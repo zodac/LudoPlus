@@ -129,6 +129,12 @@ class InProgressGameRepository(
         }
     }
 
+    /** Forgets the saved game and its stamps, as on a device that never had one: for another account signing in. */
+    suspend fun wipe() {
+        awaitWrites()
+        dataStore.edit { it.clear() }
+    }
+
     private suspend fun awaitWrites() {
         pending.value?.let { queued -> written.first { it >= queued.sequence } }
     }

@@ -3,6 +3,8 @@ package net.zodac.ludo
 import android.app.Application
 import androidx.activity.ComponentActivity
 import net.zodac.ludo.device.AndroidProgressFiles
+import net.zodac.ludo.online.GameServices
+import net.zodac.ludo.online.NoGameServices
 import net.zodac.ludo.platform.ProgressFiles
 
 /**
@@ -12,6 +14,9 @@ import net.zodac.ludo.platform.ProgressFiles
 internal object Distribution {
 
     fun initialize(application: Application) = Unit
+
+    /** None: the github app has no online service. */
+    fun gameServices(activity: ComponentActivity): GameServices = NoGameServices
 
     /** [activity]'s progress files: registered as it's created, before it starts. */
     fun progressFiles(activity: ComponentActivity): ProgressFiles = AndroidProgressFiles.attach(activity)

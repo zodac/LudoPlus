@@ -6,6 +6,7 @@ import net.zodac.ludo.data.game.InProgressGameRepository
 import net.zodac.ludo.data.records.GameRecordRepository
 import net.zodac.ludo.data.settings.SettingsRepository
 import net.zodac.ludo.game.AchievementEngine
+import net.zodac.ludo.model.AchievementCounter
 
 /**
  * This device's side of a [CloudSave]: read it whole, or merge a save into it store by store. Each merge follows
@@ -16,6 +17,12 @@ interface CloudSaveStore {
     /** Everything on this device that a [CloudSave] holds. */
     suspend fun snapshot(): CloudSave
 
+    /**
+     * What changes whenever [snapshot] would, for comparing: the same stamp twice means nothing has changed between them.
+     * It may be far cheaper to read than the [snapshot].
+     */
+    suspend fun changeStamp(): Any = snapshot()
+
     suspend fun mergeSettings(save: CloudSave)
 
     suspend fun mergeGame(save: CloudSave)
@@ -23,6 +30,12 @@ interface CloudSaveStore {
     suspend fun mergeAchievements(save: CloudSave)
 
     suspend fun mergeRecords(save: CloudSave)
+
+    /**
+     * Wipes everything a [CloudSave] holds but the achievements ([AchievementStore.resetAll] is theirs), as on a new
+     * device, ready for another account's save.
+     */
+    suspend fun wipe()
 }
 
 /** [CloudSaveStore] over the app's own repositories. */
@@ -33,9 +46,18 @@ class LocalCloudSave(
     private val inProgressGame: InProgressGameRepository,
 ) : CloudSaveStore {
 
-    override suspend fun snapshot(): CloudSave = CloudSave(
+    override suspend fun snapshot(): CloudSave = withoutRecords().copy(records = records.cloudRecords())
+
+    /**
+     * The [snapshot] but for the records, which aren't read, every row of them, just to see that none has changed, and
+     * the time played, which moves every few minutes: it goes with the next save that has something else to send.
+     */
+    override suspend fun changeStamp(): Any = records.writes.value to withoutRecords().let { save ->
+        save.copy(achievements = save.achievements.copy(deviceCounters = save.achievements.deviceCounters.mapValues { (_, counters) -> counters - AchievementCounter.PLAY_SECONDS.id }))
+    }
+
+    private suspend fun withoutRecords() = CloudSave(
         achievements = achievements.cloudAchievements(),
-        records = records.cloudRecords(),
         settings = settings.cloudSettings(),
         inProgressGame = inProgressGame.cloudGame(),
     )
@@ -48,6 +70,12 @@ class LocalCloudSave(
     override suspend fun mergeAchievements(save: CloudSave) = achievements.locked { achievements.mergeCloud(save.achievements) }
 
     override suspend fun mergeRecords(save: CloudSave) = records.mergeCloud(save.records)
+
+    override suspend fun wipe() {
+        records.reset()
+        settings.wipeSynced()
+        inProgressGame.wipe()
+    }
 }
 
 /**

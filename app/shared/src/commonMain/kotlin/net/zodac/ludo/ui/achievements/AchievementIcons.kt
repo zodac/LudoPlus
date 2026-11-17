@@ -43,7 +43,8 @@ val Achievement.icon: ImageVector
         Achievement.WARMING_UP -> Symbols.Whatshot
         Achievement.GETTING_COMFORTABLE -> Symbols.Numbers
         Achievement.CHAMPION -> Symbols.SocialLeaderboard
-        Achievement.ON_A_ROLL -> Symbols.ModeHeat
+        // Climbing, not a flame: Hot Streak has the flame.
+        Achievement.ON_A_ROLL -> Symbols.KeyboardDoubleArrowUp
         Achievement.HOT_STREAK -> Symbols.LocalFireDepartment
         Achievement.REGULAR -> Symbols.EventRepeat
         Achievement.HALL_OF_FAMER -> Symbols.EmojiEvents

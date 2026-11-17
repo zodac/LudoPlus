@@ -1,5 +1,6 @@
 package net.zodac.ludo.ui.game
 
+import net.zodac.ludo.online.OnlineSyncRequests
 import net.zodac.ludo.data.settings.SavedStyles
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -171,7 +172,11 @@ class GameViewModel(
             val endedAt = now()
             // Written even if the screen is left at once (it starts at once, on the main thread's immediate dispatcher).
             // One that fails costs this game's records, not the app.
-            viewModelScope.launch { withContext(NonCancellable) { orNullOnFailure { records.recordGame(timed, endedAt) } } }
+            viewModelScope.launch {
+                withContext(NonCancellable) { orNullOnFailure { records.recordGame(timed, endedAt) } }
+                // The win reaches the online leaderboards, and the record the cloud save.
+                OnlineSyncRequests.request()
+            }
         }
     }
 
