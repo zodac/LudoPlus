@@ -5,7 +5,7 @@
 # startup and post-startup (H S P). The app's own code is small enough (a few hundred classes) that
 # compiling all of it ahead of time costs little. The generated profile
 # (src/release/generated/baselineProfiles/, from :app:baselineprofile) is merged with this file, not
-# a replacement for it; whether this one can go is DESIGN.md Phase 19's open step 3, which needs a
-# benchmark on a phone.
+# a replacement for it; whether this one can go needs a startup benchmark on a phone (StartupBenchmark, and
+# .claude/BENCHMARKS.md).
 HSPLnet/zodac/ludo/**->**(**)**
 Lnet/zodac/ludo/**;

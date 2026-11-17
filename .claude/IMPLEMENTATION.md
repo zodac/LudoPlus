@@ -266,6 +266,10 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     maintainer 2026-11-17; the hold and unhold clicks (CC-BY) went.
 - [ ] Baseline Profile journeys and benchmarks, restored from `5423b6c` (`app/baselineprofile`, the `baseline-profile`
     job in `android-release.yml`) and written for Ludo's screens (`BENCHMARKS.md`): 60fps while pawns move.
+    - [x] The module, the startup and pawn-move benchmarks, Ludo's journey, and the CI job (from 1.0.0) are back
+        (2026-11-17). The journey compiles in the lint job.
+    - [ ] Run the journey on an emulator (the sandbox's `emulator` skill): written on a host without one, so not yet run.
+    - [ ] `PawnMoveBenchmark` on a phone: frameDurationCpuMs P90 under 16ms.
 - [ ] Store-assets generator scenes for Ludo, README gallery, and `assets/full-description.txt`.
 - [ ] Privacy policy re-read against the app.
 - [ ] Set VERSION to 1.0.0, which turns publishing on: the first GitHub release.

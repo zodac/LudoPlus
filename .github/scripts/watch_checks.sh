@@ -8,7 +8,8 @@
 #               (GitHub can cancel a whole run but not one job of it, and cancelling the run would also
 #               cut short the other checks, whose results are still wanted.)
 #
-#               Polls the run's jobs every 30 seconds. When a named job ends in anything but success, it
+#               Polls the run's jobs every 30 seconds. When a named job ends in anything but success (or skipped:
+#               the upgrade check has nothing to upgrade from on the first release), it
 #               writes the marker file, stops Gradle's daemons and the emulator (which fails the Gradle
 #               build in progress), and exits. When every named job has succeeded, it exits quietly.
 #               A failed API call is retried on the next poll, never taken as a failed check.
@@ -32,7 +33,7 @@ while true; do
             line=$(grep -P "^\Q${name}\E\t" <<< "${jobs}" | head -1 || true)
             IFS=$'\t' read -r _ status conclusion <<< "${line}"
             [[ "${status:-}" == "completed" ]] || continue
-            if [[ "${conclusion}" == "success" ]]; then
+            if [[ "${conclusion}" == "success" || "${conclusion}" == "skipped" ]]; then
                 succeeded=$((succeeded + 1))
             else
                 echo "::error::${name} ended '${conclusion}' - stopping the Baseline Profile, which can no longer be released"

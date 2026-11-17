@@ -13,8 +13,11 @@ failure stops what follows.
 
 ```sh
 ./gradlew testDebugUnitTest :app:shared:lint lintDebug lintRelease assembleDebug :app:android:assembleRelease \
-  --console=plain 2>&1 | grep -v -E '^> Task|^$'
+  :app:baselineprofile:compileNonMinifiedReleaseKotlin --console=plain 2>&1 | grep -v -E '^> Task|^$'
 ```
+
+- `:app:baselineprofile:compileNonMinifiedReleaseKotlin` compiles the Baseline Profile journey, as CI's lint job does:
+    nothing else builds it before a release's emulator job.
 
 - The root `testDebugUnitTest` runs both modules' test suites: `:app:shared`'s as Android runs them (`commonTest`
     and `androidHostTest`), and `:app:android`'s.

@@ -55,8 +55,7 @@ app/
 
 - **Convention plugins** (`build-logic/src/main/kotlin/net/zodac/ludo/buildlogic/`):
     - `ludo.kotlin.multiplatform` (`:app:shared`): the Android library target and its host tests.
-    - `ludo.android.application` (`:app:android`), and `ludo.android.test` (unused until `:app:baselineprofile` comes
-        back in Phase 5).
+    - `ludo.android.application` (`:app:android`), and `ludo.android.test` (`:app:baselineprofile`).
     - Each sets the SDK levels, the Java version, and the strict rules (`StrictChecks.kt`: compiler warnings are errors,
         and lint reads `code-quality-config/android/lint.xml`, where its warnings are errors). A module adds its
         namespace, dependencies and anything only it has.

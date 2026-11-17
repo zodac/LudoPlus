@@ -29,8 +29,7 @@ name: Android release
 # Play App Signing upload key - Play re-signs the bundle with its own key.
 #
 # The checks run side by side, each on a runner of its own - the app's Robolectric tests, the shared
-# module's tests, lint, and the upgrade check. (DiceFive's Baseline Profile job comes back in Phase 5 of
-# .claude/IMPLEMENTATION.md, with the profile journey.) The signed APK is
+# module's tests, lint, the upgrade check, and the Baseline Profile, which stops itself if a check fails. The signed APK is
 # built with that profile once it and every check have passed, and the release itself is made only once
 # all of that has. Each job sets itself up through .github/actions/build-setup.
 #
@@ -216,7 +215,8 @@ jobs:
 
   # Deprecation gates. Any compile already fails on a deprecated API (allWarningsAsErrors, from build-logic's
   # StrictChecks.kt) or a build-script warning (org.gradle.kotlin.dsl.allWarningsAsErrors in
-  # gradle.properties); this runs lint, where Deprecated / ObsoleteSdkInt findings are errors - on the
+  # gradle.properties); this extends that to the Baseline Profile journey (app/baselineprofile), which nothing else
+  # compiles before the emulator job, and runs lint, where Deprecated / ObsoleteSdkInt findings are errors - on the
   # release builds too (lintRelease), whose own source sets and manifests the debug lint never sees.
   lint:
     needs: version
@@ -234,8 +234,214 @@ jobs:
         with:
           ffmpeg: "true"
 
-      - name: Check lint passes
-        run: ./gradlew lintDebug lintRelease --console=plain
+      - name: Check the profile journey compiles and lint passes
+        run: ./gradlew :app:baselineprofile:compileNonMinifiedReleaseKotlin lintDebug lintRelease --console=plain
+
+  # A fresh Baseline Profile for every APK: the profile journey (app/baselineprofile) run on an
+  # emulator, from this commit. Only when there's an APK to put it in. The profile is not committed (it is
+  # gitignored); it goes to the apk job as an artifact. A failing journey fails the job, and with it the
+  # release, rather than shipping a thinner profile - but in a 3-lap run it is first run once more, as most
+  # failures were a starved runner dropping a tap, which a relabelled button would not survive. An emulator
+  # that fails to boot, or whose framework fails the APK install (Gradle then passes with no profile), is
+  # retried too, since neither says anything about the journey: three attempts in all. The
+  # emulator and the journey are explained in .claude/EMULATOR.md; the journey in .claude/BENCHMARKS.md.
+  #
+  # Timeouts: a lap of the journey (a game's first turns, the whole tutorial, and every page) was sized from DiceFive's,
+  # ~4.5 minutes on a 4-core sandbox emulator, and a hosted runner is at least three times slower - a 60-minute step timed out with laps still to run. The step stops at 190
+  # (a boot of up to 15, the benchmark build, 10 laps, room for two retried boots) and fails like a failed
+  # journey, so its report is still uploaded; the job's own 210 is the backstop for a hang anywhere else
+  # (setup, the cache, an upload). Each lap's start is printed in the step's log, so a slow run shows how
+  # far it got.
+  #
+  # It runs alongside the checks but is no use once one of them fails (nothing will be released), so it
+  # watches them and stops itself when one does - see watch_checks.sh.
+  baseline-profile:
+    needs: version
+    if: needs.version.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    permissions:
+      contents: read
+      actions: read # watch_checks.sh reads this run's jobs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true # code-quality-config: lint's rules, which release builds read too (lintVital)
+          ref: ${{ needs.version.outputs.sha }}
+          fetch-depth: 0 # the lap count below diffs against the previous release's tag
+
+      # 3 laps are enough for a profile (a rule is recorded once). 10 only when the journey or a
+      # profile file changed since the previous release: the journey's timing races only showed up
+      # from lap 4, so a changed journey is soaked once, before it goes on being run 3 laps at a time.
+      # A change only to comments or blank lines isn't one: a reworded KDoc cost a release a 10-lap soak. Each
+      # comment pattern is its own -I (joined into one with `|`, git's -I ignored every line).
+      - name: Pick the number of laps
+        id: laps
+        run: |
+          previous_tag="$(git tag --merged HEAD --list 'android-v*' --sort=-version:refname \
+            | grep -vxF "android-v${{ needs.version.outputs.name }}" | head -n 1 || true)"
+          laps=3
+          if [ -z "$previous_tag" ] || ! git diff --quiet --ignore-blank-lines \
+              -I '^[[:space:]]*//' -I '^[[:space:]]*/\*' -I '^[[:space:]]*\*' -I '^[[:space:]]*#' \
+              "$previous_tag" HEAD -- \
+              app/baselineprofile app/android/src/main/baseline-prof.txt; then
+            laps=10
+          fi
+          echo "laps=$laps" >> "$GITHUB_OUTPUT"
+          echo "Journey laps: $laps (previous release: ${previous_tag:-none})"
+
+      # In the background for the rest of the job: it writes the marker file, and stops Gradle and the
+      # emulator, as soon as a check fails. The generate step below reads the marker so it neither starts
+      # nor retries once that has happened.
+      - name: Watch the checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          nohup .github/scripts/watch_checks.sh "$RUNNER_TEMP/checks-failed" "android-tests (Play)" "android-tests (Github)" \
+            shared-tests lint upgrade-check \
+            > "$RUNNER_TEMP/watch-checks.log" 2>&1 &
+
+      - name: Set up the build
+        uses: ./.github/actions/build-setup
+        with:
+          ffmpeg: "true"
+
+      # The emulator's Android version is ai-sandbox-configuration/Dockerfile's EMULATOR_API (see ci_emulator.sh). The SDK's
+      # path is read here too: the runner's own environment isn't in the `env` context the cache reads.
+      - name: Read the emulator's Android version
+        id: emulator
+        run: |
+          echo "api=$(grep -oP '^ARG EMULATOR_API=\K[0-9.]+' ai-sandbox-configuration/Dockerfile)" >> "$GITHUB_OUTPUT"
+          echo "sdk=$ANDROID_HOME" >> "$GITHUB_OUTPUT"
+
+      # About 1.5 GB to download otherwise. Keyed on the Android version: the emulator and its image
+      # can't be pinned to a revision, so a cached pair is kept until EMULATOR_API moves. Restored and saved
+      # as separate steps: actions/cache only saves when the whole job passes, so a failed journey would
+      # leave the next run downloading them again.
+      - name: Restore the emulator and its system image
+        id: emulator-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ steps.emulator.outputs.sdk }}/emulator
+            ${{ steps.emulator.outputs.sdk }}/system-images/android-${{ steps.emulator.outputs.api }}
+          key: emulator-${{ runner.os }}-api${{ steps.emulator.outputs.api }}
+
+      # The app and journey APKs are built before the emulator boots, not by the generate step, so the two
+      # don't compete for the runner's cores. The generate step then finds these up to date and goes
+      # straight to the device.
+      - name: Build the journey's APKs
+        run: |
+          ./gradlew :app:android:assemblePlayNonMinifiedRelease :app:baselineprofile:assembleNonMinifiedRelease \
+            --console=plain
+
+      # 3 laps, or 10 when the journey or a profile file changed (see "Pick the number of laps").
+      # The boot and the install are retried, and a failed journey once in a short run; the three attempts are
+      # shared (see the job's comment).
+      # The benchmark library logs "Compile iteration (N)" as each lap starts; those lines are echoed here
+      # (Gradle prints nothing until the tests end).
+      - name: Generate the Baseline Profile
+        timeout-minutes: 190
+        env:
+          JOURNEY_LAPS: ${{ steps.laps.outputs.laps }}
+        run: |
+          # adb for the logcat below: ci_emulator.sh puts platform-tools on its own PATH, not this step's.
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          checks_failed() {
+            if [ -f "$RUNNER_TEMP/checks-failed" ]; then
+              echo "::error::$(cat "$RUNNER_TEMP/checks-failed") failed - the Baseline Profile was stopped"
+              return 0
+            fi
+            return 1
+          }
+          journey_retried=""
+          for attempt in 1 2 3; do
+            if checks_failed; then exit 1; fi
+            if ! .github/scripts/ci_emulator.sh start; then
+              .github/scripts/ci_emulator.sh stop
+              echo "::warning::The emulator failed to boot (attempt $attempt)"
+              continue
+            fi
+            adb logcat -v time -s Benchmark:D -e "Compile iteration" &
+            trap 'kill $! 2>/dev/null || true' EXIT
+            if ./gradlew :app:android:generatePlayReleaseBaselineProfile \
+                -Pandroid.testInstrumentationRunnerArguments.journeyLaps="$JOURNEY_LAPS" \
+                --console=plain; then
+              # The plugin only warns when the tests yield no profile, so Gradle can pass without one. That
+              # means the APKs never installed (the emulator's framework fell over), not that the journey
+              # failed, so it is retried like a failed boot.
+              if [ -s app/android/src/playRelease/generated/baselineProfiles/baseline-prof.txt ]; then
+                # R8 lays the dex out from the startup profile (dexLayoutOptimization), so a release without
+                # one would quietly lose that. The install worked, so this is the startup journey's fault, not
+                # the emulator's: it fails rather than retries.
+                if [ -s app/android/src/playRelease/generated/baselineProfiles/startup-prof.txt ]; then
+                  exit 0
+                fi
+                echo "::error::Gradle wrote a Baseline Profile but no startup profile - see StartupProfileGenerator"
+                exit 1
+              fi
+              .github/scripts/ci_emulator.sh logcat "$RUNNER_TEMP/logcat-attempt$attempt.txt" || true
+              .github/scripts/ci_emulator.sh stop
+              echo "::warning::Gradle passed but wrote no Baseline Profile - the install failed (attempt $attempt)"
+              continue
+            fi
+            if checks_failed; then exit 1; fi
+            # No screenshot here: the app was force-stopped as the journey failed, and the journey saved its own
+            # (connected_android_test_additional_output, in the report artifact).
+            .github/scripts/ci_emulator.sh logcat "$RUNNER_TEMP/logcat-attempt$attempt.txt" || true
+            .github/scripts/ci_emulator.sh stop
+            # A failed journey is run once more, in a short run only: a renamed label fails both runs, a race on a
+            # starved runner rarely does. The 10-lap soak is there to find races, so it fails on the first. The
+            # failed run's saved screen and results are kept apart, as the next run replaces them.
+            if [ "$JOURNEY_LAPS" -le 3 ] &&[ -z "$journey_retried" ] && [ "$attempt" -lt 3 ]; then
+              journey_retried=1
+              mkdir -p "$RUNNER_TEMP/journey-attempt$attempt"
+              cp -r app/baselineprofile/build/outputs/connected_android_test_additional_output \
+                app/baselineprofile/build/outputs/androidTest-results "$RUNNER_TEMP/journey-attempt$attempt/" || true
+              failure="$(grep -rhoE 'Baseline Profile journey: [^&<]*' app/baselineprofile/build/outputs/androidTest-results | head -n 1 || true)"
+              echo "::warning::The journey failed (attempt $attempt) and is run once more: ${failure:-see the logcat}"
+              continue
+            fi
+            echo "::error::Baseline Profile generation failed - see the baseline-profile-report artifact"
+            exit 1
+          done
+          echo "::error::The emulator failed to boot, or to install the APKs, three times - see the baseline-profile-report artifact"
+          exit 1
+
+      # Whether or not the journey passed: ci_emulator.sh installed them if the restore missed.
+      - name: Save the emulator and its system image
+        if: always() && steps.emulator-cache.outputs.cache-hit != 'true'
+        continue-on-error: true # nothing to save if the step stopped before installing them
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ steps.emulator.outputs.sdk }}/emulator
+            ${{ steps.emulator.outputs.sdk }}/system-images/android-${{ steps.emulator.outputs.api }}
+          key: ${{ steps.emulator-cache.outputs.cache-primary-key }}
+
+      - name: Upload the journey's report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: baseline-profile-report
+          path: |
+            ${{ runner.temp }}/watch-checks.log
+            app/baselineprofile/build/reports/androidTests/
+            app/baselineprofile/build/outputs/androidTest-results/
+            app/baselineprofile/build/outputs/connected_android_test_additional_output/**/journey-failure-*
+            ${{ runner.temp }}/emulator-*.log
+            ${{ runner.temp }}/logcat-*.txt
+            ${{ runner.temp }}/journey-attempt*/
+          retention-days: 7
+
+      - name: Hand the profile to the apk job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: baseline-profile
+          path: app/android/src/playRelease/generated/baselineProfiles/
+          if-no-files-found: error
+          retention-days: 1
 
   # A game left on the last release must resume on this one: .github/scripts/ci_upgrade_check.py plays one on the last
   # release's APK, upgrades over it, and continues it (.claude/EMULATOR.md, "The upgrade check"). A failure fails the job,
@@ -271,7 +477,7 @@ jobs:
           echo "api=$(grep -oP '^ARG EMULATOR_API=\K[0-9.]+' ai-sandbox-configuration/Dockerfile)" >> "$GITHUB_OUTPUT"
           echo "sdk=$ANDROID_HOME" >> "$GITHUB_OUTPUT"
 
-      # Saved by this job (the baseline-profile job saved it in DiceFive). On a miss ci_emulator.sh installs them.
+      # Saved by whichever of this job and the baseline-profile job gets there first. On a miss ci_emulator.sh installs them.
       - name: Cache the emulator and its system image
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -338,15 +544,16 @@ jobs:
             ${{ runner.temp }}/emulator-*.log
           retention-days: 7
 
-  # The signed release APK and App Bundle - only once every check has passed (there's no use for a build that won't be
-  # released). Handed to the
+  # The signed release APK and App Bundle, built with the Baseline Profile generated above - only once the
+  # profile and every check have passed (there's no use for a build that won't be released). Handed to the
   # release job as an artifact, with the mapping.txt each R8 run wrote.
   apk:
-    needs: [version, android-tests, shared-tests, lint, upgrade-check]
+    needs: [version, android-tests, shared-tests, lint, upgrade-check, baseline-profile]
     # The upgrade check may be skipped (the first release has nothing to upgrade from); every other check must pass.
     if: >-
       !cancelled() && needs.version.outputs.publish == 'true'
       && needs.android-tests.result == 'success' && needs.shared-tests.result == 'success' && needs.lint.result == 'success'
+      && needs.baseline-profile.result == 'success'
       && contains(fromJSON('["success", "skipped"]'), needs.upgrade-check.result)
     runs-on: ubuntu-latest
     steps:
@@ -360,6 +567,17 @@ jobs:
         uses: ./.github/actions/build-setup
         with:
           ffmpeg: "true"
+
+      # Where AGP merges it into each flavour's release build (alongside the hand-written src/main/baseline-prof.txt).
+      # The journey runs the play app; the github one is the same code less Play Games, so it takes the same profile.
+      - name: Fetch the Baseline Profile
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: baseline-profile
+          path: app/android/src/playRelease/generated/baselineProfiles/
+
+      - name: Give the github APK the same profile
+        run: cp -r app/android/src/playRelease/generated app/android/src/githubRelease/
 
       # The github APK's progress files are sealed with this (app/android/build.gradle.kts, PROGRESS_FILE_KEY): without
       # it the build would use the all-zero key anyone can read in the source, and its files would be readable and
@@ -431,7 +649,7 @@ jobs:
 
   # Made only once every job it needs has succeeded (Actions' default), so a release always has its APK.
   release:
-    needs: [version, android-tests, shared-tests, lint, upgrade-check, apk]
+    needs: [version, android-tests, shared-tests, lint, upgrade-check, baseline-profile, apk]
     if: ${{ !cancelled() && needs.apk.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:

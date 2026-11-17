@@ -56,8 +56,43 @@ drawing Ludo Plus**.
 
 ## The Baseline Profile journey in CI
 
-Removed with `app/baselineprofile` until there is an app to profile. DiceFive's `baseline-profile` job (in
-`android-release.yml` at commit `5423b6c`) comes back with it in Phase 5 of `IMPLEMENTATION.md`.
+`android-release.yml`'s `baseline-profile` job runs the journey on a GitHub-hosted runner for every release APK (from
+1.0.0): 3 laps, or 10 if the journey or a profile file changed beyond its comments and blank lines. The `apk` job builds
+with the profile it makes.
+
+**`.github/scripts/ci_emulator.sh` is `emulator.sh`'s twin.** It uses the same API (read from the Dockerfile's
+`ARG EMULATOR_API`), the same image, the same boot and the same renderer fix. The differences:
+
+- `/dev/kvm` is opened with a udev rule;
+- packages install without `sudo`;
+- the emulator and image are cached per API level (saved even on failure);
+- there's no timezone (CI is UTC);
+- **`/data` is pinned at 6 GB with `-partition-size`.**
+
+**Why `/data` is pinned.** The runner's `avdmanager` gives 800 MB, and a first boot fills it in ~30s.
+
+- Every write then fails (`ENOSPC`, `SQLiteFullException`) and `system_server` crash-loops.
+- It looks like flakiness: `cmd: Can't find service: package`, `not allowed to perform GET_USAGE_STATS`,
+    `DeadSystemException`, or Gradle passing with no profile.
+- The image is sparse, so only ~2 GB is stored.
+
+**Robustness.**
+
+- The APKs build before the boot.
+- `.github/scripts/watch_checks.sh` stops the job as soon as another release check fails.
+- A failed boot or install is retried, and so is a failing journey once in a 3-lap run (three attempts in all). A 10-lap
+    soak fails on the first failing journey. The failed run's screen and results go in the report under
+    `journey-attempt<N>/`.
+- Journey taps confirm they took (`tapUntil` and its kin in `Journeys.kt`), tapping again only after `TIMEOUT_MS` without
+    their effect: a starved runner drops taps.
+- Gradle passing with no `baseline-prof.txt` counts as a failed install.
+- Limits: 190 min for the step, 210 for the job, sized from DiceFive's ~4.5 min lap (3x+ that on a runner). Ludo's lap
+    (a game's first turns, the whole tutorial, and every page) hasn't been timed yet.
+- The `baseline-profile-report` artifact holds the report, the emulator log and every logcat buffer, and the screen and
+    UI hierarchy the journey saved as it failed (`journey-failure-lap<N>.png`/`.xml`, from `captureFailure`).
+
+**Reproducing a first boot like CI's**: run `.github/scripts/ci_emulator.sh start` with `ANDROID_HOME=/opt/android-sdk`
+and an empty `ANDROID_AVD_HOME` and `RUNNER_TEMP`.
 
 ## The upgrade check in CI
 
