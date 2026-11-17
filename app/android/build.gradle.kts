@@ -392,7 +392,8 @@ dependencies {
     // artifacts, which resolve to these same androidx ones on Android); the BOM keeps the test and
     // tooling artifacts below on matching versions.
     implementation(platform(libs.androidx.compose.bom))
-    // AndroidAppContainer opens the shared module's preferences files.
+    // AndroidAppContainer opens the shared module's database and preferences files.
+    implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.datastore.preferences.core)
     // Google Play Games Services and Play Billing (DiceFive's play flavour) come back in Phases 10 and 11 of
     // .claude/IMPLEMENTATION.md.

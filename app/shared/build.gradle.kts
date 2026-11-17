@@ -9,6 +9,8 @@ plugins {
     id("ludo.kotlin.multiplatform")
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.jetbrains.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.room)
 }
 
 kotlin {
@@ -21,6 +23,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.datastore.preferences.core)
             // Gzip for the cloud save (online/CloudSaveCodec). Already in the APK as DataStore's file layer.
             implementation(libs.okio)
@@ -77,6 +80,20 @@ compose.resources {
     publicResClass = false
 }
 
+room {
+    // Every schema version is exported here and committed, so a future migration can be tested
+    // against the real shape of the version it migrates from.
+    schemaDirectory("$projectDir/schemas")
+}
+
+dependencies {
+    // Room's compiler, generating the target's AppDatabaseConstructor.
+    add("kspAndroid", libs.androidx.room.compiler)
+}
+
+// CI, the dependency-update script and day-to-day habit all run `./gradlew testDebugUnitTest` (the
+// name :app:android's unit tests have). A KMP library's tests have other names, so this answers to
+// that one too, rather than every one of those callers having to learn the new task names.
 tasks.register("testDebugUnitTest") {
     group = "verification"
     description = "Runs the shared module's tests as Android runs them."

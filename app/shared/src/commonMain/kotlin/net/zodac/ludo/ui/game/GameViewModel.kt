@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlin.random.Random
 import kotlin.time.TimeSource
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,9 +16,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.data.game.InProgressGameRepository
+import net.zodac.ludo.data.orNullOnFailure
+import net.zodac.ludo.data.records.GameRecordRepository
 import net.zodac.ludo.data.settings.SettingsRepository
 import net.zodac.ludo.game.CpuStrategy
 import net.zodac.ludo.game.GameState
@@ -36,12 +40,14 @@ import net.zodac.ludo.model.PlayerType
  * The die is drawn from [random]. A CPU player's turn plays itself with its difficulty's [CpuStrategy], waiting before
  * each roll and move for the screen to finish showing the last one ([GamePacing], set by the screen).
  *
- * The game is saved to [savedGame] as it starts and after every roll and move, and the save is cleared when it finishes.
+ * The game is saved to [savedGame] as it starts and after every roll and move, and the save is cleared when it finishes,
+ * as it is written to the game [records].
  * Its play time ([StartedGame.playMillis]) counts, by [elapsedMillis], only while it's on screen and not held.
  */
 class GameViewModel(
     private val settingsRepository: SettingsRepository,
     private val savedGame: InProgressGameRepository,
+    private val records: GameRecordRepository,
     private val random: Random = Random.Default,
     private val elapsedMillis: () -> Long = monotonicMillis(),
     private val now: () -> Long = ::nowEpochMillis,
@@ -117,9 +123,20 @@ class GameViewModel(
 
     /** Makes [game] the one being played, with its play time brought up to date, and saves it, or clears the save once it's over. */
     private fun commit(game: StartedGame) {
+        val wasFinished = _game.value?.state?.isFinished == true
         val timed = withPlayTime(game)
         _game.value = timed
-        if (timed.state.isFinished) savedGame.clear() else savedGame.save(timed)
+        if (!timed.state.isFinished) {
+            savedGame.save(timed)
+            return
+        }
+        savedGame.clear()
+        if (!wasFinished) {
+            val endedAt = now()
+            // Written even if the screen is left at once (it starts at once, on the main thread's immediate dispatcher).
+            // One that fails costs this game's records, not the app.
+            viewModelScope.launch { withContext(NonCancellable) { orNullOnFailure { records.recordGame(timed, endedAt) } } }
+        }
     }
 
     /** [delay] that doesn't run while [foreground] is false - see [setForeground]. */
@@ -221,7 +238,13 @@ class GameViewModel(
 
     companion object {
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
-            initializer { GameViewModel(settingsRepository = container.settingsRepository, savedGame = container.inProgressGameRepository) }
+            initializer {
+                GameViewModel(
+                    settingsRepository = container.settingsRepository,
+                    savedGame = container.inProgressGameRepository,
+                    records = container.gameRecordRepository,
+                )
+            }
         }
     }
 }

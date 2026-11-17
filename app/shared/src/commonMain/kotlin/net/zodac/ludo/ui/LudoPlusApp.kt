@@ -22,6 +22,7 @@ import net.zodac.ludo.data.settings.AnimationLevel
 import net.zodac.ludo.navigation.LudoPlusNavHost
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.platform.PlatformServices
+import net.zodac.ludo.ui.common.DatabaseFailurePage
 import net.zodac.ludo.ui.common.DriftState
 import net.zodac.ludo.ui.common.FramePaces
 import net.zodac.ludo.ui.common.LastMotionSettings
@@ -103,6 +104,12 @@ fun LudoPlusApp(
         ) {
             LudoPlusTheme {
                 Surface(modifier = Modifier.fillMaxSize().wakesScreen(screenIdle)) {
+                    // Records that can't be opened stop the app here, saying why, rather than on the first page to read one.
+                    val databaseFailure by container.databaseFailure.collectAsStateWithLifecycle()
+                    databaseFailure?.let {
+                        DatabaseFailurePage(details = it)
+                        return@Surface
+                    }
                     val navController = rememberNavController()
                     val pageCover = rememberPageCover()
                     // Each page opened, for a crash report to say where the player was. It wakes the screen too: a screen

@@ -1,0 +1,27 @@
+package net.zodac.ludo.data.records
+
+/** [GameResultDao] over a list, for tests: the same filters and order as the real queries (`GameResultDaoTest` checks those). */
+class InMemoryGameResultDao : GameResultDao {
+    private val rows = mutableListOf<GameResult>()
+    private var nextId = 1L
+
+    override suspend fun insertGame(results: List<GameResult>) {
+        results.forEach { rows += it.copy(id = nextId++) }
+    }
+
+    private fun leaderboardRows(gameModeId: String) = rows
+        .filter { it.gameModeId == gameModeId && it.playedUnmodified && it.won }
+        .sortedWith(compareBy<GameResult> { it.turns }.thenByDescending { it.captures }.thenBy { it.endedAtEpochMillis })
+
+    override suspend fun leaderboard(gameModeId: String, limit: Int, offset: Int): List<GameResult> =
+        leaderboardRows(gameModeId).drop(offset).take(limit)
+
+    override suspend fun leaderboardCount(gameModeId: String): Int = leaderboardRows(gameModeId).size
+
+    override suspend fun allByPlayer(): List<GameResult> =
+        rows.sortedWith(compareBy<GameResult> { it.playerKey }.thenBy { it.endedAtEpochMillis }.thenBy { it.id })
+
+    override suspend fun count(): Int = rows.size
+
+    override suspend fun clearAll() = rows.clear()
+}

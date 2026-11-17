@@ -11,6 +11,8 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import net.zodac.ludo.data.InMemoryPreferences
 import net.zodac.ludo.data.game.InProgressGameRepository
+import net.zodac.ludo.data.records.GameRecordRepository
+import net.zodac.ludo.data.records.InMemoryGameResultDao
 import net.zodac.ludo.data.settings.SettingsRepository
 import net.zodac.ludo.game.GameState
 import net.zodac.ludo.game.PlayerState
@@ -123,7 +125,7 @@ class GameOverTest : UiTest() {
             finishingOrder = listOf(1, 2),
         )
         saved.save(finished.copy(state = nearlyDone, finishMillis = mapOf(1 to 900_000L, 2 to 1_000_000L)))
-        val viewModel = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, LoadedDie(1))
+        val viewModel = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, GameRecordRepository(InMemoryGameResultDao()), LoadedDie(1))
         viewModel.setPacing(GamePacing(thinkMillis = 500))
         assertTrue(runBlocking { viewModel.resumeGame() })
         showcase.show {

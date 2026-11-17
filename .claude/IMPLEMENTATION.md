@@ -227,7 +227,11 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     times captured (the last, their pawns home in place of turns). Review Board, Main Menu, and Play Again (the same
     players). A person's win gets DiceFive's fanfare and gold fireworks. Each player's finish time
     (`StartedGame.finishMillis`) is saved with the game. Approved from renders 2026-11-17.
-- [ ] Room schema v1: a game record per finished game (mode, players, placements, turns, captures, duration).
+- [x] Room schema v1 (`data/records`: `GameResult`, `GameResultDao`, `AppDatabase`, `GameRecordRepository`): a row
+    per person per finished game (CPUs aren't recorded, as in DiceFive): mode, player count, place, finish time, turns,
+    captures, times captured, pawns home, the game's length, and whether it was played unmodified. Written once, as the
+    game finishes. A database that can't be opened shows DiceFive's failure page. `GameResultDaoTest` runs the real
+    queries on SQLite; the shared tests use `InMemoryGameResultDao`.
 - [ ] Leaderboard: fastest wins per mode (fewest turns, then more captures).
 - [ ] Statistics per player: games, wins, win rate, current and best streaks, captures, times captured, and pawns
     home, overall and per mode.

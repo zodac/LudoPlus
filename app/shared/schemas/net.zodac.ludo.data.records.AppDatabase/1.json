@@ -1,0 +1,147 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "1b757f88353c035e970eccee9cd2ac64",
+    "entities": [
+      {
+        "tableName": "results",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `playerName` TEXT NOT NULL, `playerKey` TEXT NOT NULL, `isPrimaryPlayer` INTEGER NOT NULL, `gameModeId` TEXT NOT NULL, `playedUnmodified` INTEGER NOT NULL, `playerCount` INTEGER NOT NULL, `endedAtEpochMillis` INTEGER NOT NULL, `playMillis` INTEGER NOT NULL, `place` INTEGER NOT NULL, `won` INTEGER NOT NULL, `finishMillis` INTEGER NOT NULL, `turns` INTEGER NOT NULL, `captures` INTEGER NOT NULL, `timesCaptured` INTEGER NOT NULL, `pawnsHome` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerName",
+            "columnName": "playerName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerKey",
+            "columnName": "playerKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPrimaryPlayer",
+            "columnName": "isPrimaryPlayer",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameModeId",
+            "columnName": "gameModeId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playedUnmodified",
+            "columnName": "playedUnmodified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerCount",
+            "columnName": "playerCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endedAtEpochMillis",
+            "columnName": "endedAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playMillis",
+            "columnName": "playMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place",
+            "columnName": "place",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "won",
+            "columnName": "won",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "finishMillis",
+            "columnName": "finishMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "turns",
+            "columnName": "turns",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "captures",
+            "columnName": "captures",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timesCaptured",
+            "columnName": "timesCaptured",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pawnsHome",
+            "columnName": "pawnsHome",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_results_leaderboard",
+            "unique": false,
+            "columnNames": [
+              "gameModeId",
+              "playedUnmodified",
+              "won",
+              "turns",
+              "captures",
+              "endedAtEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_results_leaderboard` ON `${TABLE_NAME}` (`gameModeId`, `playedUnmodified`, `won`, `turns`, `captures`, `endedAtEpochMillis`)"
+          },
+          {
+            "name": "index_results_player",
+            "unique": false,
+            "columnNames": [
+              "playerKey",
+              "endedAtEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_results_player` ON `${TABLE_NAME}` (`playerKey`, `endedAtEpochMillis`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1b757f88353c035e970eccee9cd2ac64')"
+    ]
+  }
+}

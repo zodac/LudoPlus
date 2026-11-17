@@ -23,6 +23,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import net.zodac.ludo.data.InMemoryPreferences
 import net.zodac.ludo.data.game.InProgressGameRepository
+import net.zodac.ludo.data.records.GameRecordRepository
+import net.zodac.ludo.data.records.InMemoryGameResultDao
 import net.zodac.ludo.data.settings.SettingsRepository
 import net.zodac.ludo.game.GameEvent
 import net.zodac.ludo.game.RollOff
@@ -49,8 +51,9 @@ class GameViewModelTest {
         humans: Boolean = false,
         saved: InProgressGameRepository = InProgressGameRepository(InMemoryPreferences(), backgroundScope),
         clock: () -> Long = { 0L },
+        records: GameRecordRepository = GameRecordRepository(InMemoryGameResultDao()),
     ): GameViewModel {
-        val viewModel = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, Random(seed), elapsedMillis = clock, now = { START })
+        val viewModel = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, records, Random(seed), elapsedMillis = clock, now = { START })
         // A 700ms think, and nothing animated to wait for.
         viewModel.setPacing(GamePacing(thinkMillis = 700, pawnsAnimated = false, dieAnimated = false))
         runCurrent()
@@ -133,7 +136,7 @@ class GameViewModelTest {
         assertIs<TurnPhase.AwaitingMove>(viewModel.state.phase)
         assertEquals(viewModel.game.value, saved.load())
 
-        val resumed = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, Random(0), elapsedMillis = { 0L })
+        val resumed = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, GameRecordRepository(InMemoryGameResultDao()), Random(0), elapsedMillis = { 0L })
         runCurrent()
         assertTrue(resumed.resumeGame())
         assertEquals(viewModel.game.value, resumed.game.value)
@@ -145,7 +148,7 @@ class GameViewModelTest {
 
     @Test
     fun `with no saved game there is nothing to resume`() = runTest(dispatcher) {
-        val viewModel = GameViewModel(SettingsRepository(InMemoryPreferences()), InProgressGameRepository(InMemoryPreferences(), backgroundScope))
+        val viewModel = GameViewModel(SettingsRepository(InMemoryPreferences()), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao()))
         runCurrent()
         assertFalse(viewModel.resumeGame())
         assertNull(viewModel.game.value)
@@ -155,7 +158,7 @@ class GameViewModelTest {
     fun `a resumed CPU's turn plays on by itself`() = runTest(dispatcher) {
         val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
         val first = started(seedWhere { it != 0 }, saved = saved)
-        val resumed = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, Random(1))
+        val resumed = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, GameRecordRepository(InMemoryGameResultDao()), Random(1))
         resumed.setPacing(GamePacing(thinkMillis = 700, pawnsAnimated = false, dieAnimated = false))
         first.setForeground(false)
         runCurrent()
@@ -166,9 +169,10 @@ class GameViewModelTest {
     }
 
     @Test
-    fun `a finished game's save is cleared`() = runTest(dispatcher) {
+    fun `a finished game's save is cleared - and its people are recorded once`() = runTest(dispatcher) {
         val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
-        val viewModel = started(seedWhere { true }, saved = saved)
+        val records = GameRecordRepository(InMemoryGameResultDao())
+        val viewModel = started(seedWhere { true }, saved = saved, records = records)
         assertNotNull(saved.load())
         // Player 1 plays its first move each time; the CPUs play themselves.
         while (!viewModel.state.isFinished) {
@@ -189,6 +193,14 @@ class GameViewModelTest {
         // Gone, not left to be found unreadable: the menu stops offering Continue at once.
         assertFalse(saved.hasInProgressGame.first())
         assertNull(saved.load())
+        // Player 1 is the one person: one row, at their place, with the game's figures.
+        val game = assertNotNull(viewModel.game.value)
+        val row = records.playerStatistics().single()
+        assertEquals("Player 1", row.playerName)
+        assertEquals(1, row.totals.gamesPlayed)
+        assertEquals(game.state.winner == 0, row.totals.gamesWon == 1)
+        assertEquals(game.state.players[0].captures, row.totals.captures)
+        assertEquals(1, records.writes.value)
     }
 
     @Test
