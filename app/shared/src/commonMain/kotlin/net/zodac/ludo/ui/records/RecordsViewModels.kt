@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import net.zodac.ludo.app.AppContainer
@@ -28,13 +29,16 @@ class LeaderboardViewModel(records: GameRecordRepository, val mode: GameMode = G
 }
 
 /** Every player's Statistics, read again whenever a game is recorded. Null until first read. */
-class StatisticsViewModel(records: GameRecordRepository) : ViewModel() {
+class StatisticsViewModel(records: GameRecordRepository, val readPlaySeconds: suspend () -> Int = { 0 }) : ViewModel() {
     val players: StateFlow<List<PlayerStatistics>?> =
         records.writes.map { records.playerStatistics() }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     companion object {
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
-            initializer { StatisticsViewModel(container.gameRecordRepository) }
+            initializer {
+                // The time played: what's saved, and what's counted since.
+                StatisticsViewModel(container.gameRecordRepository) { container.settingsRepository.playSeconds.first() + container.playTime.unsavedSeconds }
+            }
         }
     }
 }

@@ -81,6 +81,11 @@ fun LudoPlusApp(
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(screenIdle, lifecycle) { screenIdle.runTimer(lifecycle::delayWhileResumed) }
     LaunchedEffect(screenIdle, motion.idleTimeout) { screenIdle.setTimeout(motion.idleTimeout) }
+    // Only while in front of the player: pausing covers the background, the screen going off, and a system sheet on top.
+    LifecycleResumeEffect(container) {
+        container.playTime.resume()
+        onPauseOrDispose { container.playTime.pause() }
+    }
     LifecycleResumeEffect(screenIdle) {
         screenIdle.wake()
         onPauseOrDispose { }

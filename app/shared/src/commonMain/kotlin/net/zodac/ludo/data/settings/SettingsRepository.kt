@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -142,6 +143,18 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun setScreenOrientation(orientation: ScreenOrientation) = set(SCREEN_ORIENTATION_KEY, orientation.id)
 
+    /**
+     * The seconds the app has been in front of the player, as [net.zodac.ludo.app.PlayTimeTracker] saves them: Statistics'
+     * time played. Not cleared by anything the player can reset. (DiceFive kept it with the achievements' counters; it
+     * can move there with them in Phase 6.)
+     */
+    val playSeconds: Flow<Int> = read(PLAY_SECONDS_KEY, default = 0)
+
+    /** Adds [seconds] to [playSeconds], in one read and write. */
+    suspend fun addPlaySeconds(seconds: Int) {
+        dataStore.edit { it[PLAY_SECONDS_KEY] = (it[PLAY_SECONDS_KEY] ?: 0) + seconds }
+    }
+
     private companion object {
         val CONFIRM_BEFORE_LEAVING_GAME_KEY = booleanPreferencesKey("confirm_before_leaving_game")
         val STOP_AT_FIRST_WINNER_KEY = booleanPreferencesKey("stop_at_first_winner")
@@ -150,6 +163,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val ANIMATION_LEVEL_KEY = stringPreferencesKey("animation_level")
         val SCREEN_ORIENTATION_KEY = stringPreferencesKey("screen_orientation")
         val GAME_MODE_KEY = stringPreferencesKey("game_mode")
+        val PLAY_SECONDS_KEY = intPreferencesKey("play_seconds")
 
         // The Advanced graphics settings' groups and Pause when idle, each set only once the player changes one (setMotionSettings).
         fun motionKey(group: MotionGroup) = stringPreferencesKey("motion_${group.key}")

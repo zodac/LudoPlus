@@ -41,13 +41,15 @@ import net.zodac.ludo.ui.common.ScreenScaffold
 import net.zodac.ludo.ui.common.stringResource
 
 /**
- * Statistics: a card per person, in name order, adding up every game they've played. A screen reader reads the name
- * as a heading, then each figure with its label as one.
+ * Statistics: the time played in the app ([LivePlayTimeLine]), then a card per person, in name order, adding up every
+ * game they've played. A screen reader reads the name as a heading, then each figure with its label as one.
  */
 @Composable
 fun StatisticsScreen(viewModel: StatisticsViewModel, onBack: () -> Unit) {
     val players by viewModel.players.collectAsStateWithLifecycle()
     ScreenScaffold(title = stringResource(Res.string.stats_title), onBack = onBack, scrollable = true) {
+        // Every player's and none, at the top whether anyone has a card or not.
+        LivePlayTimeLine(viewModel.readPlaySeconds)
         // Nothing until the figures are read, so the empty card never flashes up before players who have some.
         val all = players ?: return@ScreenScaffold HoldPageCover()
         if (all.isEmpty()) {

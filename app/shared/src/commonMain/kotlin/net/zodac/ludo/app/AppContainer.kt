@@ -33,6 +33,9 @@ class AppContainer(
     val buildInfo: BuildInfo,
     scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
+    /** The time the app is in front of the player, counted into [SettingsRepository.playSeconds]: resumed and paused by the app. */
+    val playTime: PlayTimeTracker = PlayTimeTracker(settingsRepository::addPlaySeconds, scope)
+
     private val mutableDatabaseFailure = MutableStateFlow<String?>(null)
 
     /**
