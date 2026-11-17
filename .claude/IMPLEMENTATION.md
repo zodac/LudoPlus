@@ -13,7 +13,7 @@ reorders them.
 | 1 | The Ludo rules engine (pure, tested) | Done |
 | 2 | The board and game screen | Done |
 | 3 | CPU opponents | Done |
-| 4 | Saving, Game Over, Statistics, and the Leaderboard | In progress |
+| 4 | Saving, Game Over, Statistics, and the Leaderboard | Done |
 | 5 | Rules, tutorial, sound, and polish (to 1.0.0) | Not started |
 | 6 | Achievements | Not started |
 | 7 | Styles | Not started |
@@ -242,7 +242,8 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 - [x] A "stop at first winner" setting (Settings, off by default): `GameRules.stopAtFirstWinner`, set from it when a
     game starts and saved with the game. The game ends when the first player has every pawn home; the rest are placed
     by how far their pawns have come, a tie to who plays sooner after the winner, each finishing as the game ends.
-- [ ] Progress files (github flavour) carry the new records.
+- Progress files (github flavour) moved to Phase 10 (the maintainer, 2026-11-17): they're built on DiceFive's cloud
+    save format and merge, which Phase 10's cloud save restores.
 
 ## Phase 5: Rules, tutorial, sound, and polish (to 1.0.0)
 
@@ -295,6 +296,9 @@ There is no standard board for more than four. This phase designs one.
 
 - [ ] Create the Play Console project, the signing key and upload key, and the CI secrets (`PUBLISHING.md`).
 - [ ] Play Games Services: achievements, the fastest-win leaderboards, cloud save, and sign-in (`PLAY_GAMES.md`).
+- [ ] Progress files (github flavour), restored from `5423b6c` with the cloud save format they share
+    (`online/CloudSave*`, `ProgressFileCodec`, `ProgressTransfer`, the Settings card, `AndroidProgressFiles`, and the
+    `PROGRESS_FILE_KEY` CI secret): settings, the saved game, and the game records (moved from Phase 4, 2026-11-17).
 - [ ] Store listing, data-safety form, and content rating. Internal testing track, then production.
 
 ## Phase 11: In-app purchases
