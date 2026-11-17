@@ -453,7 +453,7 @@ they open on, then **Combined**, every mode's games together, last (a divider af
 
 ## Achievements
 
-`model/Achievement.kt` (51: 48 counted, 3 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
+`model/Achievement.kt` (100: 94 counted, 6 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
 (pure), `data/achievements/`, `app/AchievementUnlocker.kt`, `ui/achievements/`. Rebuilt for Ludo in Phase 6; DiceFive's
 110 are in `5423b6c`.
 
@@ -463,34 +463,24 @@ they open on, then **Combined**, every mode's games together, last (a divider af
     - String keys follow the constant: `achievement_<constant>_title`, `_description`.
 - **Player 1 only.** The person in seat 1 earns them; every other seat, person or CPU, is an opponent. The tutorial
     earns nothing.
-- **The catalog**, in display order (declaration order):
-    - **Milestones** (easiest first): The Journey Begins, Let's Finish This, One More Time, Getting Comfortable (10
-        games), On A Roll (3 wins in a row), Regular (50), Hall Of Famer (25 wins), Centurion (100), Well Rolled (10,000
-        rolls), Unstoppable (10 in a row), Living Legend (100 wins).
-    - **Captures**: Gotcha!, Two For One (two pawns with one move), Hat Trick (three in a turn), Payback (whoever last
-        captured you, on your very next turn), Not So Fast! (a pawn on the last square before its home column), Nobody
-        Is Safe (a pawn of every opponent in a game), Bouncer (100), Public Enemy (1,000).
-    - **Racing**: Home Sweet Home, All Hands On Deck (every pawn on the board), Lap Of Honour (a pawn from yard to home
-        with no other pawn moved meanwhile: "the full lap"), Frequent Traveller (100 home), Globetrotter (1,000).
-    - **Winning** (alphabetical): Clean Sweep (before any opponent has a pawn home), Comeback Kid (after an opponent had
-        all but one home while you had none), First Victory, How Do You Do, Fellow CPUs? (against three Hard CPUs), Last
-        Human Standing (against three CPUs), Pacifist (no capture), Photo Finish (an opponent's last pawn in their home
-        column), Speed Demon (60 turns or fewer), Untouchable (none of yours captured).
-    - **Misfortune** (alphabetical): Back To Square One, Defeat From The Jaws Of Victory, I, Robot, Locked Out (first 15
-        turns all in the yard), Pipped To The Post, Punching Bag (captured 15 times in a game), Sitting Ducks (two
-        captured by one move), Too Much Of A Good Thing (three 6s and the turn lost), Wooden Spoon (last place).
-    - **Miscellaneous** (hidden, alphabetical): Buddy System (two pawns on one square), Déjà Vu (the same pawn captured
-        twice in a game), Inch By Inch (a pawn home with a 1), So Near, Yet So Far (the last pawn a square from home,
-        missed three turns running), Who Made This? (the About page).
-    - **Collection**: Completionist.
-    - **Easter Eggs** (hidden, alphabetical, outside Completionist and the page's total): Are You A Developer? (the
-        version number tapped seven times), Big Fan (a game with a person named "zodac", exactly), Midnight Run (a new
-        game started midnight to 6am on the phone's clock).
-- **Counters** (`AchievementCounter`): games played, games won, the win streak, captures, pawns home, and rolls. Each
+- **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (18), The Die (6), Captures (15), Racing
+    (11), Winning (16), Misfortune (17), Miscellaneous (10, hidden), Collection (Completionist), and Easter Eggs (6,
+    hidden, outside Completionist and the page's total). Each entry's description is its rule; the thresholds are the
+    tracker's constants (`AchievementTracker`'s companion). The maintainer is reviewing the list (asked for 100 on
+    2026-11-17, "a variety of them in groups, like DiceFive").
+    - Speed Demon (60 turns) and Lightning Fast (50), and Punching Bag (15 captured), come from simulated games: a win
+        takes player 1 about 80 turns, the fastest tenth about 60, the fastest hundredth about 50.
+    - Easter Eggs: Are You A Developer? (the version tapped seven times), Big Fan (a person named "zodac", exactly), I
+        Am Not A Robot (player 1 named "CPU", any case), Midnight Run (a new game from midnight to 6am), Musical Chairs
+        (nobody in their seat's own colour), Who's Ludo? (anyone named "Ludo", any case).
+    - Opening the Rules (Read The Manual), Statistics (Number Cruncher), or About (Who Made This?), and finishing the
+        tutorial (Back To School) earn hidden ones. The tutorial earns nothing else.
+- **Counters** (`AchievementCounter`): games played, games won, the win and losing streaks, captures, pawns home,
+    rolls, 6s, squares moved, and last places. Each
     moves as its event happens, never at a game's end only, so a game left unfinished still counts what was played.
     - A game counts as played the moment player 1 is placed; a win the moment they are first.
-    - The streak goes up with a win, and back to 0 the moment another player wins.
-    - Rolls wait to be written with the next step that earns anything else, or when the game leaves the screen
+    - The win streak goes up with a win, and back to 0 the moment another player wins; the losing streak the other way.
+    - Rolls, 6s, and squares moved wait to be written with the next step that earns anything else, or when the game leaves the screen
         (`AchievementTracker.flush`), so a roll alone doesn't write the store.
 - **When they're judged.** The engine decides, never a call site.
     - `AchievementEngine.atGameStart`: The Journey Begins, One More Time, Big Fan, Midnight Run. `atGameResume`: Let's
@@ -512,8 +502,11 @@ they open on, then **Combined**, every mode's games together, last (a divider af
         earned), and only those are.
 - **Progress banners.** A streak announces every step. A running total announces only at quarter marks (or every
     `progressStepSize`), and never alongside its own unlock.
-- **Superuser mode (debug builds only).** On the Achievements screen, tapping the count banner `SUPERUSER_TAP_TARGET`
-    times turns on long-press editing:
+- **Superuser modes (debug builds only).**
+    - In a game, a long press on the die turns it on, with a toast; each long press after that offers the next roll's
+        number (1 to 6, or a fair roll), which whoever rolls next rolls, person or CPU (`GameViewModel.onDieLongPressed`,
+        `pickNextRoll`; never in the tutorial). The dialog's words aren't translated.
+    - On the Achievements screen, tapping the count banner `SUPERUSER_TAP_TARGET` times turns on long-press editing:
     - a long press on a row locks, unlocks or steps it (in-memory, never written);
     - a long press on the banner toggles everything.
     - On Settings > About, tapping the author's name (`zodac`) `DebugCrashes.TAP_TARGET` (5) times turns on the crash

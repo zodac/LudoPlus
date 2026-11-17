@@ -3,6 +3,7 @@ package net.zodac.ludo.game
 import net.zodac.ludo.data.achievements.AchievementsState
 import net.zodac.ludo.model.Achievement
 import net.zodac.ludo.model.AchievementCounter
+import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.ProgressStyle
@@ -24,7 +25,8 @@ data class AchievementUpdate(
 
 /**
  * What a moment of play earned player 1: [achievements] done, [counts] to add to their counters, and [streak] true for
- * a win (the streak goes up), false for another player's (it's broken), null when no one won.
+ * a win (the win streak goes up, the losing one is broken), false for another player's (the other way round), null when
+ * no one won.
  */
 data class GameFeats(
     val achievements: Set<Achievement> = emptySet(),
@@ -46,6 +48,12 @@ object AchievementEngine {
     /** [Achievement.BIG_FAN]'s opponent's name, matched exactly. */
     private const val CREATOR_NAME = "zodac"
 
+    /** [Achievement.WHOS_LUDO]'s player's name, in any case. */
+    private const val LUDO_NAME = "Ludo"
+
+    /** [Achievement.I_AM_NOT_A_ROBOT]'s name for player 1, in any case. */
+    private const val CPU_NAME = "CPU"
+
     /** The hours a new game starts in for [Achievement.MIDNIGHT_RUN]: midnight up to 6am. */
     private val MIDNIGHT_HOURS = 0 until 6
 
@@ -63,9 +71,15 @@ object AchievementEngine {
             if (previousGame != null && previousGame.isFinished && previousGame.winner != 0) add(Achievement.ONE_MORE_TIME)
             if (players.drop(1).any { it.type == PlayerType.HUMAN && it.name == CREATOR_NAME }) add(Achievement.BIG_FAN)
             if (localHour in MIDNIGHT_HOURS) add(Achievement.MIDNIGHT_RUN)
+            if (players.any { it.name.equals(LUDO_NAME, ignoreCase = true) }) add(Achievement.WHOS_LUDO)
+            if (players.first().name.equals(CPU_NAME, ignoreCase = true)) add(Achievement.I_AM_NOT_A_ROBOT)
+            if (players.withIndex().all { (seat, player) -> player.colour != PlayerColour.defaultFor(seat) }) add(Achievement.MUSICAL_CHAIRS)
         }
         return GameFeats(earned)
     }
+
+    /** What finishing the tutorial earns. */
+    fun atTutorialEnd(): GameFeats = GameFeats(setOf(Achievement.BACK_TO_SCHOOL))
 
     /** What continuing a saved game earns. */
     fun atGameResume(): GameFeats = GameFeats(setOf(Achievement.LETS_FINISH_THIS))
@@ -82,10 +96,10 @@ object AchievementEngine {
         if (feats.isEmpty) return AchievementUpdate()
         val counters = buildMap {
             for ((counter, count) in feats.counts) if (count != 0) put(counter, before.counter(counter) + count)
-            when (feats.streak) {
-                true -> put(AchievementCounter.WIN_STREAK, before.counter(AchievementCounter.WIN_STREAK) + 1)
-                false -> if (before.counter(AchievementCounter.WIN_STREAK) != 0) put(AchievementCounter.WIN_STREAK, 0)
-                null -> Unit
+            feats.streak?.let { won ->
+                val (up, broken) = if (won) AchievementCounter.WIN_STREAK to AchievementCounter.LOSS_STREAK else AchievementCounter.LOSS_STREAK to AchievementCounter.WIN_STREAK
+                put(up, before.counter(up) + 1)
+                if (before.counter(broken) != 0) put(broken, 0)
             }
         }
         val earned = feats.achievements + Achievement.entries.filter { achievement ->

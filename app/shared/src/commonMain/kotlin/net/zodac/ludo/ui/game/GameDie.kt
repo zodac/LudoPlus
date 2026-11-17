@@ -3,6 +3,7 @@ package net.zodac.ludo.ui.game
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -12,6 +13,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.random.Random
@@ -47,6 +49,12 @@ private const val TUMBLE_FACES = 7
 private const val TUMBLE_TURN_DEGREES = 300f
 
 /**
+ * What a long press on the game's die does, in a debug build's game (superuser mode, `GameViewModel.onDieLongPressed`):
+ * null everywhere else, and then the die has no long press at all.
+ */
+val LocalDieLongPress = compositionLocalOf<(() -> Unit)?> { null }
+
+/**
  * The die: DiceFive's ivory bevelled die, showing [value] (blank before the first roll). While [canRoll] it is ringed
  * in violet and a tap rolls it ([onRoll]); TalkBack hears "Die showing 4", a button with the action "Roll".
  *
@@ -65,6 +73,7 @@ fun GameDie(value: Int?, roll: Any?, canRoll: Boolean, onRoll: () -> Unit, modif
     val tumbleFace = if (tumble.value < 1f) faces[(tumble.value * TUMBLE_FACES).toInt().coerceAtMost(TUMBLE_FACES - 1)] else null
     val description = if (value == null) stringResource(Res.string.game_die_cd) else stringResource(Res.string.game_die_showing_cd, value)
     val rollLabel = stringResource(Res.string.game_roll_action)
+    val longPress = LocalDieLongPress.current
     Box(
         modifier = modifier
             .clearAndSetSemantics {
@@ -79,7 +88,14 @@ fun GameDie(value: Int?, roll: Any?, canRoll: Boolean, onRoll: () -> Unit, modif
             .clip(shape)
             .background(Brush.linearGradient(listOf(IvoryDiceTop, IvoryDiceBottom)))
             .border(if (canRoll) 3.dp else 1.dp, if (canRoll) Primary else IvoryDiceBottom, shape)
-            .then(if (canRoll) Modifier.clickable(onClickLabel = rollLabel, role = Role.Button, onClick = onRoll) else Modifier),
+            .then(
+                when {
+                    // Debug builds only: a tap still rolls when it may.
+                    longPress != null -> Modifier.combinedClickable(onClick = { if (canRoll) onRoll() }, onLongClick = longPress)
+                    canRoll -> Modifier.clickable(onClickLabel = rollLabel, role = Role.Button, onClick = onRoll)
+                    else -> Modifier
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         val face = tumbleFace ?: value

@@ -10,7 +10,10 @@ import androidx.compose.ui.unit.dp
 import net.zodac.ludo.model.Achievement
 import net.zodac.ludo.ui.icons.Symbols
 import net.zodac.ludo.ui.theme.AchievementDeveloperCyan
+import net.zodac.ludo.ui.theme.AchievementBadgeViolet
 import net.zodac.ludo.ui.theme.AchievementHeartRed
+import net.zodac.ludo.ui.theme.AchievementMusicGold
+import net.zodac.ludo.ui.theme.AchievementRobotSilver
 
 /**
  * The glyph an unlocked [Achievement] shows on the Achievements page and its banner: its own, never a stock trophy, and
@@ -28,8 +31,11 @@ val Achievement.icon: ImageVector
         Achievement.THE_JOURNEY_BEGINS -> Symbols.RocketLaunch
         Achievement.LETS_FINISH_THIS -> Symbols.History
         Achievement.ONE_MORE_TIME -> Symbols.Replay
+        Achievement.WARMING_UP -> Symbols.Whatshot
         Achievement.GETTING_COMFORTABLE -> Symbols.Numbers
+        Achievement.CHAMPION -> Symbols.SocialLeaderboard
         Achievement.ON_A_ROLL -> Symbols.ModeHeat
+        Achievement.HOT_STREAK -> Symbols.LocalFireDepartment
         Achievement.REGULAR -> Symbols.EventRepeat
         Achievement.HALL_OF_FAMER -> Symbols.EmojiEvents
         Achievement.CENTURION -> Symbols.MilitaryTech
@@ -37,57 +43,103 @@ val Achievement.icon: ImageVector
         // A crown for ten wins in a row: a flame would be too close to On A Roll's.
         Achievement.UNSTOPPABLE -> Symbols.Crown
         Achievement.LIVING_LEGEND -> Symbols.WorkspacePremium
+        Achievement.OLD_HAND -> Symbols.Elderly
+        Achievement.PART_OF_THE_FURNITURE -> Symbols.Chair
+        Achievement.DIE_HARD -> Symbols.FitnessCenter
+        Achievement.IMMORTAL -> Symbols.AllInclusive
+
+        // ---- The Die ------------------------------------------------------------------------
+        Achievement.OFF_THE_MARK -> Symbols.Start
+        Achievement.SIX_SHOOTER -> Symbols.Filter6
+        Achievement.FULL_SPREAD -> Symbols.FormatListNumbered
+        Achievement.HOT_HAND -> Symbols.BackHand
+        Achievement.SIX_PACK -> Symbols.SportsBar
+        Achievement.SIXTH_SENSE -> Symbols.Visibility
 
         // ---- Captures -----------------------------------------------------------------------
         Achievement.GOTCHA -> Symbols.Target
+        Achievement.PEST -> Symbols.PestControl
         // Two stacked, for two pawns with one move.
         Achievement.TWO_FOR_ONE -> Symbols.FilterNone
+        Achievement.WELCOME_PARTY -> Symbols.Celebration
+        Achievement.STRAIGHT_OUT_THE_GATE -> Symbols.DoorOpen
         Achievement.HAT_TRICK -> Symbols.Looks3
         // Justice done, on the very next turn.
         Achievement.PAYBACK -> Symbols.Gavel
         Achievement.NOT_SO_FAST -> Symbols.Block
+        // Cut down to size.
+        Achievement.TALL_POPPY -> Symbols.ContentCut
+        Achievement.PARTING_SHOT -> Symbols.NearMe
+        Achievement.PICKING_ON_YOU -> Symbols.PersonRemove
         // The whole world: every opponent.
         Achievement.NOBODY_IS_SAFE -> Symbols.Public
+        Achievement.ON_THE_WARPATH -> Symbols.Swords
         // Shown the door.
         Achievement.BOUNCER -> Symbols.Logout
         Achievement.PUBLIC_ENEMY -> Symbols.Skull
 
         // ---- Racing -------------------------------------------------------------------------
         Achievement.HOME_SWEET_HOME -> Symbols.House
+        Achievement.EARLY_BIRD -> Symbols.FlutterDash
         Achievement.ALL_HANDS_ON_DECK -> Symbols.WavingHand
+        Achievement.DOUBLE_DELIVERY -> Symbols.LocalShipping
+        Achievement.EXPRESS_DELIVERY -> Symbols.Rocket
         // A runner on a lap of the board.
         Achievement.LAP_OF_HONOUR -> Symbols.Sprint
+        Achievement.FULL_HOUSE -> Symbols.HolidayVillage
         Achievement.FREQUENT_TRAVELLER -> Symbols.HomeWork
+        Achievement.MARATHON -> Symbols.DirectionsRun
         Achievement.GLOBETROTTER -> Symbols.TravelExplore
+        Achievement.ULTRAMARATHON -> Symbols.Hiking
 
         // ---- Winning ------------------------------------------------------------------------
         Achievement.CLEAN_SWEEP -> Symbols.DeleteSweep
         Achievement.COMEBACK_KID -> Symbols.TrendingUp
+        Achievement.CONQUEROR -> Symbols.Castle
         Achievement.FIRST_VICTORY -> Symbols.Flag
+        Achievement.FRONT_RUNNER -> Symbols.LooksOne
         Achievement.HOW_DO_YOU_DO_FELLOW_CPUS -> Symbols.Memory
         Achievement.LAST_HUMAN_STANDING -> Symbols.EmojiPeople
+        Achievement.LATE_BLOOMER -> Symbols.LocalFlorist
+        Achievement.LIFE_OF_THE_PARTY -> Symbols.Diversity3
+        Achievement.LIGHTNING_FAST -> Symbols.FlashOn
+        Achievement.NEVER_SAY_DIE -> Symbols.Healing
         Achievement.PACIFIST -> Symbols.ThumbUp
         Achievement.PHOTO_FINISH -> Symbols.PhotoCamera
         Achievement.SPEED_DEMON -> Symbols.Bolt
+        Achievement.TRAINING_WHEELS -> Symbols.PedalBike
         // Locked away, out of reach: never captured.
         Achievement.UNTOUCHABLE -> Symbols.Lock
 
         // ---- Misfortune ---------------------------------------------------------------------
         Achievement.BACK_TO_SQUARE_ONE -> Symbols.RestartAlt
+        Achievement.BOTTOM_OF_THE_BARREL -> Symbols.KeyboardDoubleArrowDown
         // Drawn for this app: a trophy cracked in two - the win that broke at the last.
         Achievement.DEFEAT_FROM_THE_JAWS_OF_VICTORY -> CRACKED_TROPHY_ICON
+        Achievement.DRY_SPELL -> Symbols.WbSunny
+        Achievement.GROUNDHOG_DAY -> Symbols.Update
         Achievement.I_ROBOT -> Symbols.Android
+        Achievement.INSULT_TO_INJURY -> Symbols.PersonalInjury
         Achievement.LOCKED_OUT -> Symbols.HourglassEmpty
+        Achievement.LOSING_STREAK -> Symbols.ThumbDown
+        Achievement.NEVER_LEFT_HOME -> Symbols.Cottage
         Achievement.PIPPED_TO_THE_POST -> Symbols.Timer
         Achievement.PUNCHING_BAG -> Symbols.SentimentDissatisfied
+        Achievement.SCENIC_ROUTE -> Symbols.Landscape
         Achievement.SITTING_DUCKS -> Symbols.Cancel
+        Achievement.SPOON_COLLECTOR -> Symbols.Restaurant
         Achievement.TOO_MUCH_OF_A_GOOD_THING -> Symbols.Looks6
         Achievement.WOODEN_SPOON -> Symbols.TrendingDown
 
         // ---- Miscellaneous (hidden) ---------------------------------------------------------
+        Achievement.BACK_TO_SCHOOL -> Symbols.School
         Achievement.BUDDY_SYSTEM -> Symbols.Groups
         Achievement.DEJA_VU -> Symbols.Repeat
         Achievement.INCH_BY_INCH -> Symbols.SlowMotionVideo
+        Achievement.LEAPFROG -> Symbols.Redo
+        Achievement.NUMBER_CRUNCHER -> Symbols.BarChart
+        Achievement.READ_THE_MANUAL -> Symbols.MenuBook
+        Achievement.SAFETY_FIRST -> Symbols.HealthAndSafety
         Achievement.SO_NEAR_YET_SO_FAR -> Symbols.SentimentNeutral
         Achievement.WHO_MADE_THIS -> Symbols.Info
 
@@ -99,8 +151,11 @@ val Achievement.icon: ImageVector
         // Every icon in this category is a fixed colour rather than the ambient tint - see [iconTintOrUnspecified].
         Achievement.ARE_YOU_A_DEVELOPER -> Symbols.DeveloperMode
         Achievement.BIG_FAN -> Symbols.Favorite
+        Achievement.I_AM_NOT_A_ROBOT -> Symbols.SmartToy
         // A crescent moon and two stars, for the small hours it was earned in.
         Achievement.MIDNIGHT_RUN -> rememberMidnightIcon()
+        Achievement.MUSICAL_CHAIRS -> Symbols.MusicNote
+        Achievement.WHOS_LUDO -> Symbols.Badge
     }
 
 /**
@@ -113,6 +168,9 @@ fun Achievement.iconTintOrUnspecified(tint: Color): Color = when (this) {
     Achievement.ARE_YOU_A_DEVELOPER -> AchievementDeveloperCyan
     Achievement.BIG_FAN -> AchievementHeartRed
     Achievement.MIDNIGHT_RUN -> Color.Unspecified
+    Achievement.I_AM_NOT_A_ROBOT -> AchievementRobotSilver
+    Achievement.MUSICAL_CHAIRS -> AchievementMusicGold
+    Achievement.WHOS_LUDO -> AchievementBadgeViolet
     else -> tint
 }
 

@@ -9,6 +9,7 @@ import net.zodac.ludo.model.AchievementCategory
 import net.zodac.ludo.model.AchievementCounter
 import net.zodac.ludo.model.AchievementVisibility
 import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.ProgressStyle
@@ -82,6 +83,25 @@ class AchievementEngineTest {
         assertTrue(Achievement.MIDNIGHT_RUN !in AchievementEngine.atGameStart(PLAYERS, null, 23).achievements)
 
         assertEquals(GameFeats(setOf(Achievement.LETS_FINISH_THIS)), AchievementEngine.atGameResume())
+        assertEquals(GameFeats(setOf(Achievement.BACK_TO_SCHOOL)), AchievementEngine.atTutorialEnd())
+    }
+
+    @Test
+    fun `a player named Ludo is Who's Ludo - player 1 named CPU I Am Not A Robot - nobody in their seat's colour Musical Chairs`() {
+        val ludo = PLAYERS.toMutableList().apply { this[3] = PlayerConfig(4, PlayerType.AI, "ludo") }
+        assertTrue(Achievement.WHOS_LUDO in AchievementEngine.atGameStart(ludo, null, 14).achievements)
+        assertTrue(Achievement.WHOS_LUDO !in AchievementEngine.atGameStart(PLAYERS, null, 14).achievements)
+
+        val cpu = PLAYERS.toMutableList().apply { this[0] = PlayerConfig(1, PlayerType.HUMAN, "Cpu") }
+        assertTrue(Achievement.I_AM_NOT_A_ROBOT in AchievementEngine.atGameStart(cpu, null, 14).achievements)
+        val opponentCpu = PLAYERS.toMutableList().apply { this[1] = PlayerConfig(2, PlayerType.HUMAN, "CPU") }
+        assertTrue(Achievement.I_AM_NOT_A_ROBOT !in AchievementEngine.atGameStart(opponentCpu, null, 14).achievements)
+
+        // Each in the next seat's colour round the table.
+        val shuffled = PLAYERS.mapIndexed { seat, player -> player.copy(colour = PlayerColour.defaultFor(seat + 1)) }
+        assertTrue(Achievement.MUSICAL_CHAIRS in AchievementEngine.atGameStart(shuffled, null, 14).achievements)
+        val oneHome = shuffled.toMutableList().apply { this[2] = this[2].copy(colour = PlayerColour.defaultFor(2)); this[3] = this[3].copy(colour = PlayerColour.defaultFor(1)) }
+        assertTrue(Achievement.MUSICAL_CHAIRS !in AchievementEngine.atGameStart(oneHome, null, 14).achievements)
     }
 
     @Test
@@ -91,8 +111,9 @@ class AchievementEngineTest {
         assertEquals(mapOf(AchievementCounter.GAMES_PLAYED to 10, AchievementCounter.CAPTURES to 5), update.counters)
         assertEquals(listOf(Achievement.GETTING_COMFORTABLE), update.newlyUnlocked)
         assertEquals(mapOf(Achievement.GETTING_COMFORTABLE to NOW), update.unlockedAt())
-        // Regular (50) moved from 9 to 10, not across a quarter (12.5); Centurion's (100) quarter is 25. Bouncer (100) from 3 to 5.
-        assertEquals(emptyList(), update.progressed)
+        // Regular (50) moved from 9 to 10, not across a quarter (12.5), nor did any longer ladder; Pest (10) from 3 to 5,
+        // across its quarter (2.5) to its half: one banner.
+        assertEquals(listOf(AchievementProgress(Achievement.PEST, 3, 5)), update.progressed)
     }
 
     @Test
@@ -111,15 +132,19 @@ class AchievementEngineTest {
     }
 
     @Test
-    fun `a win steps the streak up with a banner each step - another's win breaks it back to 0`() {
+    fun `a win steps the win streak up with a banner each step - another's win breaks it back to 0 and steps the losing one up`() {
         val two = AchievementsState(counters = mapOf(AchievementCounter.WIN_STREAK to 2))
         val third = AchievementEngine.evaluate(GameFeats(streak = true), two, NOW)
         assertEquals(mapOf(AchievementCounter.WIN_STREAK to 3), third.counters)
         assertEquals(listOf(Achievement.ON_A_ROLL), third.newlyUnlocked)
-        assertEquals(listOf(AchievementProgress(Achievement.UNSTOPPABLE, 2, 3)), third.progressed)
+        assertEquals(listOf(AchievementProgress(Achievement.HOT_STREAK, 2, 3), AchievementProgress(Achievement.UNSTOPPABLE, 2, 3)), third.progressed)
 
-        assertEquals(mapOf(AchievementCounter.WIN_STREAK to 0), AchievementEngine.evaluate(GameFeats(streak = false), two, NOW).counters)
-        assertTrue(AchievementEngine.evaluate(GameFeats(streak = false), AchievementsState(), NOW).isEmpty, "no streak to break")
+        assertEquals(mapOf(AchievementCounter.LOSS_STREAK to 1, AchievementCounter.WIN_STREAK to 0), AchievementEngine.evaluate(GameFeats(streak = false), two, NOW).counters)
+        assertEquals(mapOf(AchievementCounter.LOSS_STREAK to 1), AchievementEngine.evaluate(GameFeats(streak = false), AchievementsState(), NOW).counters, "no win streak to break")
+
+        val fourLosses = AchievementsState(counters = mapOf(AchievementCounter.LOSS_STREAK to 4))
+        assertEquals(listOf(Achievement.LOSING_STREAK), AchievementEngine.evaluate(GameFeats(streak = false), fourLosses, NOW).newlyUnlocked)
+        assertEquals(mapOf(AchievementCounter.WIN_STREAK to 1, AchievementCounter.LOSS_STREAK to 0), AchievementEngine.evaluate(GameFeats(streak = true), fourLosses, NOW).counters)
     }
 
     @Test

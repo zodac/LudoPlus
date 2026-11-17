@@ -285,10 +285,11 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 
 ## Phase 6: Achievements
 
-- [x] Achievement catalog for Ludo (`DESIGN.md`, "Achievements"): 51, in Milestones, Captures, Racing, Winning,
-    Misfortune, Miscellaneous (hidden), Collection, and Easter Eggs, with permanent ids and titles of 38 characters or
-    less. First win, captures (Gotcha!, Bouncer, Public Enemy: 1, 100, 1,000), Comeback Kid, Untouchable, Hat Trick,
-    Lap Of Honour (the full lap), streaks, and hidden ones. DiceFive's page, banners, unlocker, and store came back
+- [x] Achievement catalog for Ludo (`DESIGN.md`, "Achievements"): 100 (the maintainer, 2026-11-17), in Milestones, The
+    Die, Captures, Racing, Winning, Misfortune, Miscellaneous (hidden), Collection, and Easter Eggs, with permanent ids
+    and titles of 38 characters or less. First win, captures (Gotcha!, Bouncer, Public Enemy: 1, 100, 1,000), Comeback
+    Kid, Untouchable, Hat Trick, Lap Of Honour (the full lap), streaks, and hidden ones. A debug build's game has a
+    superuser mode setting the next roll, to check them. DiceFive's page, banners, unlocker, and store came back
     from `5423b6c` (2026-11-17), without style rewards (Phase 7), Play Games (Phase 10), or per-mode limits (Phase 9).
     The catalog awaits the maintainer's review.
 - [x] Audited against the one mode and Settings' stop at first winner (`GAME_MODES_AUDIT.md`).

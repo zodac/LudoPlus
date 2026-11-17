@@ -23,12 +23,12 @@ For each achievement a new mode, modifier, or setting changes, decide:
 
 | Family | Achievements | Ask |
 | --- | --- | --- |
-| Pawn count | All Hands On Deck, Lap Of Honour, Comeback Kid, Defeat From The Jaws Of Victory, Photo Finish, Pipped To The Post, So Near, Yet So Far, Buddy System | Do "all but one pawn", "every pawn", or "two pawns" mean the same with fewer or more pawns? |
-| Track length | Speed Demon, Locked Out, Not So Fast!, Back To Square One | Is 60 turns still fast, 15 turns still unlucky, and is there still a last square before the home column? |
-| Rolls | Too Much Of A Good Thing, Inch By Inch, Locked Out, So Near, Yet So Far | Is there a roll-again limit, a 1, and a roll that leaves the yard? Two dice change all of these |
-| Captures | Gotcha!, Two For One, Hat Trick, Payback, Nobody Is Safe, Déjà Vu, Bouncer, Public Enemy, Sitting Ducks, Punching Bag, Pacifist, Untouchable | Can pawns still be captured, more than one at once, and does a capture still give a roll? |
-| Table | Last Human Standing, How Do You Do, Fellow CPUs?, Nobody Is Safe | Still three opponents? (Phase 8's 2-8 players) |
-| Game end | Wooden Spoon, Getting Comfortable to Centurion, the win counts and streaks | Is every player still placed, and does a game still take its usual time? |
+| Pawn count | All Hands On Deck, Full House, Safety First, Lap Of Honour, Comeback Kid, Defeat From The Jaws Of Victory, Photo Finish, Pipped To The Post, Tall Poppy, Parting Shot, So Near, Yet So Far, Buddy System, Double Delivery | Do "all but one pawn", "every pawn", or "two pawns" mean the same with fewer or more pawns? |
+| Track length | Speed Demon, Lightning Fast, Express Delivery, Scenic Route, Locked Out, Not So Fast!, Back To Square One, Welcome Party, Leapfrog, Marathon, Ultramarathon | Are the turn and square thresholds still fast or slow, and is there still a last square before the home column? |
+| Rolls | Too Much Of A Good Thing, Inch By Inch, Locked Out, So Near, Yet So Far, Off The Mark, Full Spread, Hot Hand, Six Pack, Dry Spell, Bottom Of The Barrel, Six Shooter, Sixth Sense | Is there a roll-again limit, a 1, a 6, and a roll that leaves the yard? Two dice change all of these |
+| Captures | Gotcha!, Pest, Two For One, Straight Out The Gate, Hat Trick, Payback, Picking On You, Nobody Is Safe, On The Warpath, Déjà Vu, Bouncer, Public Enemy, Sitting Ducks, Insult To Injury, Groundhog Day, Punching Bag, Pacifist, Untouchable, Conqueror, Never Say Die | Can pawns still be captured, more than one at once, and does a capture still give a roll? |
+| Table | Last Human Standing, How Do You Do, Fellow CPUs?, Training Wheels, Life Of The Party, Nobody Is Safe, Musical Chairs | Still three opponents, and four seat colours? (Phase 8's 2-8 players) |
+| Game end | Wooden Spoon, Spoon Collector, Never Left Home, Early Bird, Late Bloomer, Front-Runner, the games-played ladder, the win counts and both streaks | Is every player still placed, and does a game still take its usual time? |
 
 The numbers behind Speed Demon and Punching Bag came from simulated games (2,000 a difficulty, 2026-11-17): a win
 takes player 1 about 80 turns (the fastest tenth about 60), and a player is captured about 6 times a game (15 or more
@@ -39,8 +39,9 @@ about 1-3%). Re-measure them for a mode that changes the track or the die.
 A rules setting, not a modifier: games with it count on the Leaderboard and earn everything.
 
 - **Nothing is free.** The game ends at the first winner, and the others are placed as they stand.
-- **Easier:** Getting Comfortable, Regular, and Centurion (finished games come quicker, a game counted the moment
-    player 1 is placed, as in a full game); Wooden Spoon (last place is given on the spot, rather than being the last
-    left racing). Left unguarded, as reported to the maintainer (2026-11-17).
+- **Easier:** the games-played ladder (finished games come quicker, a game counted the moment player 1 is placed, as
+    in a full game); Wooden Spoon and Spoon Collector (last place is given on the spot, rather than being the last left
+    racing); Never Left Home (the game can end before a pawn gets out). Left unguarded, as reported to the maintainer
+    (2026-11-17).
 - **Harder:** nothing a full game gives is taken away, but a game it ends early has fewer turns in which to earn the
     in-play achievements.

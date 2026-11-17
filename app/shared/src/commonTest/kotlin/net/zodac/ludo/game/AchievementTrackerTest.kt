@@ -99,7 +99,7 @@ class AchievementTrackerTest {
         assertEquals(2, two.counts[AchievementCounter.CAPTURES])
 
         val ducks = Play(game(listOf(4, 4, Y, Y), listOf(42, Y, Y, Y), current = GREEN)).play(1, pawn = 0)
-        assertEquals(setOf(Achievement.SITTING_DUCKS), ducks.earned)
+        assertEquals(setOf(Achievement.SITTING_DUCKS, Achievement.INSULT_TO_INJURY), ducks.earned)
         val one = Play(game(listOf(4, Y, Y, Y), listOf(42, Y, Y, Y), current = GREEN)).play(1, pawn = 0)
         assertEquals(emptySet(), one.earned)
     }
@@ -282,7 +282,16 @@ class AchievementTrackerTest {
             ),
             play.earned,
         )
-        assertEquals(mapOf(AchievementCounter.PAWNS_HOME to 1, AchievementCounter.GAMES_WON to 1, AchievementCounter.GAMES_PLAYED to 1, AchievementCounter.DIE_ROLLS to 1), play.counts)
+        assertEquals(
+            mapOf(
+                AchievementCounter.PAWNS_HOME to 1,
+                AchievementCounter.GAMES_WON to 1,
+                AchievementCounter.GAMES_PLAYED to 1,
+                AchievementCounter.DIE_ROLLS to 1,
+                AchievementCounter.SQUARES_MOVED to 1,
+            ),
+            play.counts,
+        )
         assertEquals(listOf(true), play.streaks)
     }
 
@@ -341,12 +350,12 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `player 1's rolls are counted with the next step that earns something - or when flushed - never an opponent's`() {
+    fun `player 1's rolls and squares moved are counted with the next step that earns something - or when flushed - never an opponent's`() {
         val play = Play(game(listOf(10, Y, Y, Y)))
         play.play(2, pawn = 0)
         play.skipTo(play.state.copy(current = GREEN)).roll(3)
         assertEquals(emptyMap(), play.counts)
-        assertEquals(GameFeats(counts = mapOf(AchievementCounter.DIE_ROLLS to 1)), play.tracker.flush())
+        assertEquals(GameFeats(counts = mapOf(AchievementCounter.DIE_ROLLS to 1, AchievementCounter.SQUARES_MOVED to 2)), play.tracker.flush())
         assertEquals(GameFeats(), play.tracker.flush())
 
         play.skipTo(game(listOf(HOME - 1, Y, Y, Y))).roll(4).skipTo(play.state.copy(current = RED)).play(1, pawn = 0)
@@ -360,5 +369,183 @@ class AchievementTrackerTest {
         assertTrue(Achievement.BUDDY_SYSTEM in play.last.achievements)
         play.skipTo(play.state.copy(current = RED)).play(2, pawn = 1)
         assertFalse(Achievement.BUDDY_SYSTEM in play.last.achievements)
+    }
+    /** Player 1 rolls each of [rolls] with the turn passing straight back to them after each: for rolls with no move. */
+    private fun Play.rollEach(vararg rolls: Int) = apply { rolls.forEach { roll(it).skipTo(state.copy(current = RED, rollingAgain = false)) } }
+
+    @Test
+    fun `Off The Mark is a 6 with the game's first roll - Full Spread every number in the first six`() {
+        assertTrue(Achievement.OFF_THE_MARK in Play(game()).roll(6).earned)
+        assertFalse(Achievement.OFF_THE_MARK in Play(game(turns = 3)).roll(6).earned)
+
+        // Every pawn home but one stuck two squares short, so no roll but a 1 or 2 moves: the turn passes back each time.
+        val stuck = listOf(HOME, HOME, HOME, HOME - 2)
+        val spread = Play(game(stuck)).rollEach(3, 4, 5, 6).play(1, pawn = 3)
+        assertFalse(Achievement.FULL_SPREAD in spread.earned)
+        spread.skipTo(spread.state.copy(current = RED)).roll(2)
+        assertTrue(Achievement.FULL_SPREAD in spread.earned)
+        val play = Play(game(stuck)).rollEach(3, 4, 5, 6, 3)
+        assertFalse(Achievement.FULL_SPREAD in play.roll(2).earned, "a 3 twice, and no 1")
+        assertFalse(Achievement.FULL_SPREAD in Play(game(stuck, turns = 1)).rollEach(3, 4, 5, 6).play(1, pawn = 3).roll(2).earned, "not the game's first rolls")
+    }
+
+    @Test
+    fun `Dry Spell is 30 rolls without a 6 - Bottom Of The Barrel three 1s in a row - Six Pack 30 6s in a game`() {
+        val dry = Play(game()).rollEach(*IntArray(29) { 2 })
+        assertFalse(Achievement.DRY_SPELL in dry.earned)
+        assertTrue(Achievement.DRY_SPELL in dry.rollEach(3).earned)
+
+        val ones = Play(game()).rollEach(1, 1)
+        assertFalse(Achievement.BOTTOM_OF_THE_BARREL in ones.earned)
+        assertTrue(Achievement.BOTTOM_OF_THE_BARREL in ones.rollEach(1).earned)
+        assertFalse(Achievement.BOTTOM_OF_THE_BARREL in Play(game()).rollEach(1, 1, 2, 1).earned)
+
+        // A 6 that can't be moved: the last pawn four squares from home.
+        val sixes = Play(game(listOf(HOME, HOME, HOME, HOME - 4))).rollEach(*IntArray(29) { 6 })
+        assertFalse(Achievement.SIX_PACK in sixes.earned)
+        sixes.rollEach(6)
+        assertTrue(Achievement.SIX_PACK in sixes.earned)
+        assertEquals(30, sixes.counts[AchievementCounter.SIXES_ROLLED], "handed over with the Six Pack")
+    }
+
+    @Test
+    fun `Hot Hand starts three turns in a row with a 6`() {
+        val play = Play(game(listOf(10, Y, Y, Y)))
+        fun turn(first: Int) = play.play(first, pawn = 0).apply { if (state.rollingAgain) play(2, pawn = 0) }.skipTo(play.state.copy(current = RED, rollingAgain = false))
+        turn(6)
+        turn(6)
+        assertFalse(Achievement.HOT_HAND in play.earned)
+        turn(6)
+        assertTrue(Achievement.HOT_HAND in play.earned)
+
+        val broken = Play(game(listOf(10, Y, Y, Y)))
+        listOf(6, 6, 3, 6).forEach { first ->
+            broken.play(first, pawn = 0).apply { if (state.rollingAgain) play(2, pawn = 0) }.skipTo(broken.state.copy(current = RED, rollingAgain = false))
+        }
+        assertFalse(Achievement.HOT_HAND in broken.earned)
+    }
+
+    @Test
+    fun `captures near a start - from one's own start - of a last pawn - with a last pawn - of one opponent 4 times - 10 in a game`() {
+        // Green's pawn 3 squares out (square 16); red's on 15.
+        assertTrue(Achievement.WELCOME_PARTY in Play(game(listOf(15, Y, Y, Y), listOf(3, Y, Y, Y))).play(1, pawn = 0).earned)
+        assertFalse(Achievement.WELCOME_PARTY in Play(game(listOf(19, Y, Y, Y), listOf(7, Y, Y, Y))).play(1, pawn = 0).earned)
+        // Red's pawn on its start square takes green's on square 4.
+        assertTrue(Achievement.STRAIGHT_OUT_THE_GATE in Play(game(listOf(0, Y, Y, Y), listOf(43, Y, Y, Y))).play(4, pawn = 0).earned)
+        assertTrue(Achievement.TALL_POPPY in Play(game(listOf(3, Y, Y, Y), listOf(HOME, HOME, HOME, 43))).play(1, pawn = 0).earned)
+        assertTrue(Achievement.PARTING_SHOT in Play(game(listOf(HOME, HOME, HOME, 3), listOf(43, Y, Y, Y))).play(1, pawn = 3).earned)
+        assertTrue(Achievement.ON_THE_WARPATH in Play(game(listOf(3, Y, Y, Y), listOf(43, Y, Y, Y), captures = 9)).play(1, pawn = 0).earned)
+        assertFalse(Achievement.ON_THE_WARPATH in Play(game(listOf(3, Y, Y, Y), listOf(43, Y, Y, Y), captures = 8)).play(1, pawn = 0).earned)
+
+        val picking = Play(game(listOf(3, Y, Y, Y), listOf(43, Y, Y, Y)))
+        repeat(4) {
+            assertFalse(Achievement.PICKING_ON_YOU in picking.earned)
+            picking.skipTo(game(listOf(3, Y, Y, Y), listOf(43, Y, Y, Y))).play(1, pawn = 0)
+        }
+        assertTrue(Achievement.PICKING_ON_YOU in picking.earned)
+    }
+
+    @Test
+    fun `Insult To Injury is two of player 1's pawns lost in one opponent's turn - Groundhog Day one pawn lost three times`() {
+        // Green on square 3 takes red's pawn on 4, rolls again, and takes red's on 6.
+        val insult = Play(game(listOf(4, 6, Y, Y), listOf(42, Y, Y, Y), current = GREEN)).play(1, pawn = 0)
+        assertFalse(Achievement.INSULT_TO_INJURY in insult.earned)
+        insult.play(2, pawn = 0)
+        assertTrue(Achievement.INSULT_TO_INJURY in insult.earned)
+        assertFalse(Achievement.SITTING_DUCKS in insult.earned)
+
+        val groundhog = Play(game(listOf(4, Y, Y, Y), listOf(42, Y, Y, Y), current = GREEN))
+        repeat(3) {
+            assertFalse(Achievement.GROUNDHOG_DAY in groundhog.earned)
+            groundhog.skipTo(game(listOf(4, Y, Y, Y), listOf(42, Y, Y, Y), current = GREEN)).play(1, pawn = 0)
+        }
+        assertTrue(Achievement.GROUNDHOG_DAY in groundhog.earned)
+    }
+
+    @Test
+    fun `Early Bird is the first pawn out of any yard - Late Bloomer a win after being the last out`() {
+        assertTrue(Achievement.EARLY_BIRD in Play(game()).play(6, pawn = 0).earned)
+        assertFalse(Achievement.EARLY_BIRD in Play(game(listOf(Y, Y, Y, Y), listOf(10, Y, Y, Y))).play(6, pawn = 0).earned)
+
+        val late = Play(game(listOf(Y, Y, Y, Y), listOf(10, Y, Y, Y), listOf(10, Y, Y, Y), listOf(10, Y, Y, Y))).play(6, pawn = 0)
+        assertFalse(Achievement.LATE_BLOOMER in late.earned)
+        late.skipTo(game(listOf(HOME, HOME, HOME, HOME - 1))).play(1, pawn = 3)
+        assertTrue(Achievement.LATE_BLOOMER in late.earned)
+
+        val notLast = Play(game(listOf(Y, Y, Y, Y), listOf(10, Y, Y, Y))).play(6, pawn = 0)
+        notLast.skipTo(game(listOf(HOME, HOME, HOME, HOME - 1))).play(1, pawn = 3)
+        assertFalse(Achievement.LATE_BLOOMER in notLast.earned)
+    }
+
+    @Test
+    fun `Double Delivery is two pawns home in one turn`() {
+        val play = Play(game(listOf(HOME - 1, HOME - 2, Y, Y))).play(1, pawn = 0)
+        assertFalse(Achievement.DOUBLE_DELIVERY in play.earned)
+        play.play(2, pawn = 1)
+        assertTrue(Achievement.DOUBLE_DELIVERY in play.earned)
+    }
+
+    @Test
+    fun `Express Delivery takes a pawn yard to home within 12 turns - Scenic Route in 60 or more`() {
+        fun lap(homeTurn: Int): Set<Achievement> {
+            val play = Play(game()).play(6, pawn = 0)
+            // Out on turn 1; home on [homeTurn].
+            val far = play.state.copy(current = RED, rollingAgain = false, players = play.state.players.mapIndexed { i, p -> if (i == RED) p.copy(pawns = listOf(HOME - 6, Y, Y, Y), turns = homeTurn - 1) else p })
+            return play.skipTo(far).play(6, pawn = 0).earned
+        }
+        assertTrue(Achievement.EXPRESS_DELIVERY in lap(12))
+        assertFalse(Achievement.EXPRESS_DELIVERY in lap(13))
+        assertFalse(Achievement.SCENIC_ROUTE in lap(59))
+        assertTrue(Achievement.SCENIC_ROUTE in lap(60))
+    }
+
+    @Test
+    fun `Full House is every pawn in the home column - Safety First every pawn on a safe square - Leapfrog three pawns passed in one move`() {
+        assertTrue(Achievement.FULL_HOUSE in Play(game(listOf(51, 52, 53, 49))).play(2, pawn = 3).earned)
+        assertFalse(Achievement.FULL_HOUSE in Play(game(listOf(51, 52, HOME, 49))).play(2, pawn = 3).earned)
+
+        // Squares 0, 8, 13, and 21: starts and stars.
+        assertTrue(Achievement.SAFETY_FIRST in Play(game(listOf(0, 8, 13, 19))).play(2, pawn = 3).earned)
+        assertFalse(Achievement.SAFETY_FIRST in Play(game(listOf(0, 8, 13, 19))).play(1, pawn = 3).earned)
+
+        // Green's pawns on squares 1, 2, and 3 (13 + 40 to 42): red's pawn from its start square to 6 passes them all.
+        assertTrue(Achievement.LEAPFROG in Play(game(listOf(0, Y, Y, Y), listOf(40, 41, 42, Y))).play(6, pawn = 0).earned)
+        assertFalse(Achievement.LEAPFROG in Play(game(listOf(0, Y, Y, Y), listOf(40, 41, Y, Y))).play(6, pawn = 0).earned)
+    }
+
+    @Test
+    fun `Front-Runner wins after the game's first pawn home - and the rest of the win's measures`() {
+        val front = Play(game(listOf(HOME - 1, 10, 10, 10))).play(1, pawn = 0)
+        front.skipTo(game(listOf(HOME, HOME, HOME, HOME - 1))).play(1, pawn = 3)
+        assertTrue(Achievement.FRONT_RUNNER in front.earned)
+        val notFirst = Play(game(listOf(HOME - 1, 10, 10, 10), listOf(HOME, Y, Y, Y))).play(1, pawn = 0)
+        notFirst.skipTo(game(listOf(HOME, HOME, HOME, HOME - 1))).play(1, pawn = 3)
+        assertFalse(Achievement.FRONT_RUNNER in notFirst.earned)
+
+        fun win(players: List<PlayerConfig> = configs(), turns: Int = 70, captures: Int = 0, timesCaptured: Int = 0) =
+            Play(game(listOf(HOME, HOME, HOME, HOME - 1), turns = turns, captures = captures, timesCaptured = timesCaptured), players).play(1, pawn = 3).earned
+        assertTrue(Achievement.LIGHTNING_FAST in win(turns = 49))
+        assertFalse(Achievement.LIGHTNING_FAST in win(turns = 50))
+        assertTrue(Achievement.CONQUEROR in win(captures = 10))
+        assertFalse(Achievement.CONQUEROR in win(captures = 9))
+        assertTrue(Achievement.NEVER_SAY_DIE in win(timesCaptured = 10))
+        assertFalse(Achievement.NEVER_SAY_DIE in win(timesCaptured = 9))
+        assertTrue(Achievement.LIFE_OF_THE_PARTY in win(configs(cpus = false)))
+        assertFalse(Achievement.LIFE_OF_THE_PARTY in win())
+        assertTrue(Achievement.TRAINING_WHEELS in win(configs(difficulty = Difficulty.EASY)))
+        assertFalse(Achievement.TRAINING_WHEELS in win(configs(difficulty = Difficulty.MEDIUM)))
+    }
+
+    @Test
+    fun `Never Left Home is every pawn still in the yard when another player wins`() {
+        assertTrue(Achievement.NEVER_LEFT_HOME in Play(game(listOf(Y, Y, Y, Y), listOf(HOME, HOME, HOME, HOME - 1), current = GREEN)).play(1, pawn = 3).earned)
+        assertFalse(Achievement.NEVER_LEFT_HOME in Play(game(listOf(Y, Y, Y, 3), listOf(HOME, HOME, HOME, HOME - 1), current = GREEN)).play(1, pawn = 3).earned)
+    }
+
+    @Test
+    fun `finishing last counts toward Spoon Collector`() {
+        val rules = GameRules(stopAtFirstWinner = true)
+        val play = Play(game(listOf(Y, Y, Y, Y), listOf(HOME, HOME, HOME, HOME - 1), listOf(10, Y, Y, Y), listOf(5, Y, Y, Y), current = GREEN, rules = rules)).play(1, pawn = 3)
+        assertEquals(1, play.counts[AchievementCounter.LAST_PLACES])
     }
 }

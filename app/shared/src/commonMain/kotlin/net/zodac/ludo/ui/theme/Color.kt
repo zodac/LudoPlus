@@ -122,6 +122,15 @@ val AchievementHeartRed = Color(0xFFE53935)
 /** Are You A Developer?'s icon: Android's developer cyan. */
 val AchievementDeveloperCyan = Color(0xFF3FE6FF)
 
+/** I Am Not A Robot's toy robot: brushed silver. */
+val AchievementRobotSilver = Color(0xFFC9CED6)
+
+/** Musical Chairs' note: brass gold. */
+val AchievementMusicGold = Color(0xFFF2C14E)
+
+/** Who's Ludo?'s name badge: the brand's own violet seed. */
+val AchievementBadgeViolet = Color(0xFF9C6BFF)
+
 /** The Completionist trophy's crystal, top left to bottom right: white, ice, cyan, violet. */
 val CrystalTrophyWhite = Color(0xFFFFFFFF)
 val CrystalTrophyIce = Color(0xFFCDEFFF)

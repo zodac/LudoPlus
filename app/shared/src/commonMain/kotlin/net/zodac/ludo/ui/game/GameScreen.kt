@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,28 +16,29 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
@@ -44,7 +46,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.zodac.ludo.data.settings.MotionGroup
 import net.zodac.ludo.game.GameEvent
 import net.zodac.ludo.game.GameState
 import net.zodac.ludo.game.Move
@@ -52,14 +56,15 @@ import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.game.TutorialStep
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.resources.Res
+import net.zodac.ludo.resources.common_default_player_name
 import net.zodac.ludo.resources.game_event_capture
 import net.zodac.ludo.resources.game_event_finished
 import net.zodac.ludo.resources.game_event_first
 import net.zodac.ludo.resources.game_event_home
 import net.zodac.ludo.resources.game_event_no_move
 import net.zodac.ludo.resources.game_event_three_sixes
-import net.zodac.ludo.resources.common_default_player_name
 import net.zodac.ludo.resources.game_over_results
 import net.zodac.ludo.resources.game_over_winner
 import net.zodac.ludo.resources.game_player_pawns_home_spoken
@@ -73,15 +78,16 @@ import net.zodac.ludo.resources.game_prompt_roll
 import net.zodac.ludo.resources.game_prompt_roll_again
 import net.zodac.ludo.resources.game_tutorial_coach_name
 import net.zodac.ludo.resources.game_tutorial_part
-import net.zodac.ludo.data.settings.MotionGroup
 import net.zodac.ludo.ui.common.BackHandler
-import net.zodac.ludo.ui.common.groupReduceMotion
+import net.zodac.ludo.ui.common.LudoPlusDialog
 import net.zodac.ludo.ui.common.ScreenScaffold
 import net.zodac.ludo.ui.common.delayWhileResumed
+import net.zodac.ludo.ui.common.groupReduceMotion
 import net.zodac.ludo.ui.common.joinClauses
 import net.zodac.ludo.ui.common.ordinal
 import net.zodac.ludo.ui.common.pluralStringResource
 import net.zodac.ludo.ui.common.stringResource
+import net.zodac.ludo.ui.icons.Symbols
 import net.zodac.ludo.ui.theme.color
 
 /** The narrowest the side panel beside the board gets in landscape. */
@@ -154,16 +160,51 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
     }
     val tutorialStep by viewModel.tutorialStep.collectAsStateWithLifecycle()
     val tutorialPart by viewModel.tutorialPart.collectAsStateWithLifecycle()
-    GameContent(
-        started,
-        onRoll = viewModel::roll,
-        onMove = viewModel::move,
-        onBack = leave,
-        onResults = { finishedView = FinishedView.RESULTS },
-        tutorial = if (isTutorial) {
-            TutorialView(tutorialStep, tutorialPart, viewModel.tutorialParts, viewModel.tutorialSteps, viewModel::jumpToTutorialPart)
-        } else {
-            null
+    SuperuserRollPicker(viewModel)
+    CompositionLocalProvider(LocalDieLongPress provides viewModel::onDieLongPressed.takeIf { viewModel.hasSuperuserMode }) {
+        GameContent(
+            started,
+            onRoll = viewModel::roll,
+            onMove = viewModel::move,
+            onBack = leave,
+            onResults = { finishedView = FinishedView.RESULTS },
+            tutorial = if (isTutorial) {
+                TutorialView(tutorialStep, tutorialPart, viewModel.tutorialParts, viewModel.tutorialSteps, viewModel::jumpToTutorialPart)
+            } else {
+                null
+            },
+        )
+    }
+}
+
+/**
+ * Superuser mode's (debug builds only) toasts, and its pick of the next roll: a button for each number, and a fair roll.
+ * Not translated: a developer's tool, never in a release build.
+ */
+@Composable
+private fun SuperuserRollPicker(viewModel: GameViewModel) {
+    val platform = LocalPlatformServices.current
+    LaunchedEffect(viewModel) { viewModel.toastMessages.collect(platform::showTransientMessage) }
+    val shown by viewModel.rollPickerShown.collectAsStateWithLifecycle()
+    if (!shown) return
+    val faces = viewModel.game.collectAsStateWithLifecycle().value?.state?.rules?.dieFaces ?: return
+    LudoPlusDialog(
+        icon = Symbols.Casino,
+        title = "Superuser: the next roll", // i18n: not translated - a debug-build developer dialog
+        message = "Whoever rolls next, a person or a CPU, rolls this.", // i18n: not translated - a debug-build developer dialog
+        confirmLabel = "Fair roll", // i18n: not translated - a debug-build developer dialog
+        onConfirm = { viewModel.pickNextRoll(null) },
+        onDismissRequest = { viewModel.pickNextRoll(null) },
+        extraContent = {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+                for (value in 1..faces) {
+                    FilledTonalButton(
+                        onClick = { viewModel.pickNextRoll(value) },
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier.weight(1f),
+                    ) { Text(value.toString()) }
+                }
+            }
         },
     )
 }

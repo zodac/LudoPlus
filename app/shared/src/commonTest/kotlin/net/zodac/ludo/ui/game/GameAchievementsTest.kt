@@ -28,7 +28,7 @@ import net.zodac.ludo.game.TutorialScript
 import net.zodac.ludo.model.Achievement
 import net.zodac.ludo.model.AchievementCounter
 
-/** The game screen's view model earns achievements from the game it plays, each step once - and the tutorial none. */
+/** The game screen's view model earns achievements from the game it plays, each step once - and the tutorial only its own. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class GameAchievementsTest {
 
@@ -113,7 +113,7 @@ class GameAchievementsTest {
     }
 
     @Test
-    fun `the tutorial earns nothing`() = runTest(dispatcher) {
+    fun `the tutorial earns nothing but Back To School - for playing it to its end`() = runTest(dispatcher) {
         val store = InMemoryAchievementStore()
         val viewModel = viewModel(store, tutorial = TutorialScript.CLASSIC)
         viewModel.startTutorial(defaultName = "Player 1", cpuName = "Green")
@@ -127,7 +127,7 @@ class GameAchievementsTest {
             advanceTimeBy(2_000)
             runCurrent()
         }
-        assertEquals(emptySet(), store.unlocked)
+        assertEquals(setOf(Achievement.BACK_TO_SCHOOL), store.unlocked)
         assertEquals(emptyMap(), store.mutableState.value.counters)
     }
 }

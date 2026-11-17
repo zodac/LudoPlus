@@ -17,7 +17,10 @@ class AchievementIconColourTest {
                 Achievement.COMPLETIONIST,
                 Achievement.ARE_YOU_A_DEVELOPER,
                 Achievement.BIG_FAN,
+                Achievement.I_AM_NOT_A_ROBOT,
                 Achievement.MIDNIGHT_RUN,
+                Achievement.MUSICAL_CHAIRS,
+                Achievement.WHOS_LUDO,
             ),
             fixed,
         )

@@ -9,11 +9,14 @@ import kotlin.random.Random
 import kotlin.time.TimeSource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,7 +56,8 @@ import net.zodac.ludo.model.PlayerType
  * Its play time ([StartedGame.playMillis]) counts, by [elapsedMillis], only while it's on screen and not held.
  *
  * Given a [tutorial], it plays that guided game instead ([startTutorial]): every roll and move is the script's, only the
- * step's own action is taken, and nothing is kept (no save, no records, no setup saved, no achievements).
+ * step's own action is taken, and nothing is kept (no save, no records, no setup saved, and no achievements but
+ * finishing it).
  *
  * Every step of a game is shown to an [AchievementTracker], and what it earns player 1 goes to [achievements] (none
  * without one): a new game's start, at [localHour] of its start time, and a saved game's continuing too.
@@ -68,6 +72,8 @@ class GameViewModel(
     private val tutorial: TutorialScript? = null,
     private val achievements: AchievementUnlocker? = null,
     private val localHour: (epochMillis: Long) -> Int = ::localHourOfDay,
+    /** Whether this is a debug build: superuser mode ([onDieLongPressed]) never activates without it. */
+    private val isDebugBuild: Boolean = false,
 ) : ViewModel() {
 
     private var pacing = GamePacing()
@@ -238,7 +244,7 @@ class GameViewModel(
         if (game.state.phase != TurnPhase.AwaitingRoll || game.currentIsCpu) return
         val progress = tutorialProgress
         if (progress == null) {
-            update(LudoEngine.roll(game.state, random))
+            update(rolled(game.state))
             return
         }
         val step = progress.current as? TutorialStep.Roll ?: return
@@ -289,6 +295,56 @@ class GameViewModel(
         viewModelScope.launch { withContext(NonCancellable) { orNullOnFailure { unlocker.record(feats) } } }
     }
 
+    // ---- Superuser mode (debug builds only) ----------------------------------------------------
+    // A tester's cheat for checking achievements: a long press on the die turns it on (with a toast), and each long press
+    // after that offers the next roll's number, whoever rolls it - a person's tap or a CPU's turn. Never in the tutorial.
+
+    private val _superuserModeActive = MutableStateFlow(false)
+    val superuserModeActive: StateFlow<Boolean> = _superuserModeActive.asStateFlow()
+
+    private val _rollPickerShown = MutableStateFlow(false)
+
+    /** Whether the superuser's pick of the next roll is up. */
+    val rollPickerShown: StateFlow<Boolean> = _rollPickerShown.asStateFlow()
+
+    private val _nextRoll = MutableStateFlow<Int?>(null)
+
+    /** The number the next roll will be, picked in superuser mode; null for a fair roll. */
+    val nextRoll: StateFlow<Int?> = _nextRoll.asStateFlow()
+
+    // A Channel, not a StateFlow: a one-shot toast rather than state to replay.
+    private val _toastMessages = Channel<String>(Channel.BUFFERED)
+    val toastMessages: Flow<String> = _toastMessages.receiveAsFlow()
+
+    /** Whether superuser mode can be turned on here: a debug build's game, never the tutorial. */
+    val hasSuperuserMode: Boolean
+        get() = isDebugBuild && tutorial == null
+
+    /** A long press on the die, in a debug build: turns superuser mode on, then offers the next roll's number. */
+    fun onDieLongPressed() {
+        if (!hasSuperuserMode) return
+        if (!_superuserModeActive.value) {
+            _superuserModeActive.value = true
+            _toastMessages.trySend("Superuser mode activated! Long-press the die to set the next roll") // i18n: not translated - a debug-build developer toast
+        } else {
+            _rollPickerShown.value = true
+        }
+    }
+
+    /** The superuser's pick for the next roll ([value] on the die), or null to put the picker away with the roll left fair. */
+    fun pickNextRoll(value: Int?) {
+        _rollPickerShown.value = false
+        if (!_superuserModeActive.value || value == null) return
+        _nextRoll.value = value.coerceIn(1, _game.value?.state?.rules?.dieFaces ?: value)
+    }
+
+    /** [state]'s next roll: the superuser's pick, once, or else a fair one. */
+    private fun rolled(state: GameState): GameState {
+        val picked = _nextRoll.value ?: return LudoEngine.roll(state, random)
+        _nextRoll.value = null
+        return LudoEngine.applyRoll(state, picked)
+    }
+
     /** Whether this is the guided game: see [tutorial]. */
     val isTutorial: Boolean
         get() = tutorial != null
@@ -328,6 +384,10 @@ class GameViewModel(
             val step = progress.current
             when {
                 step != null -> progress.shown.value = step
+                progress.part.value == progress.script.parts.lastIndex -> {
+                    // Its last step played: the one thing the tutorial earns.
+                    achievements?.let { withContext(NonCancellable) { orNullOnFailure { it.record(AchievementEngine.atTutorialEnd()) } } }
+                }
                 progress.part.value < progress.script.parts.lastIndex -> {
                     // A beat on the part's last move before the board is set out for the next.
                     pausableDelay(pacing.thinkMillis)
@@ -394,7 +454,7 @@ class GameViewModel(
                 return@launch
             }
             val next = when (val phase = now.state.phase) {
-                TurnPhase.AwaitingRoll -> LudoEngine.roll(now.state, random)
+                TurnPhase.AwaitingRoll -> rolled(now.state)
                 is TurnPhase.AwaitingMove -> {
                     val strategy = CpuStrategy.of(now.players[now.state.current].difficulty)
                     LudoEngine.move(now.state, strategy.choose(now.state, phase.moves, random).pawn)
@@ -416,6 +476,7 @@ class GameViewModel(
                     savedGame = container.inProgressGameRepository,
                     records = container.gameRecordRepository,
                     achievements = container.achievementUnlocker,
+                    isDebugBuild = container.buildInfo.isDebug,
                 )
             }
         }
@@ -428,6 +489,7 @@ class GameViewModel(
                     savedGame = container.inProgressGameRepository,
                     records = container.gameRecordRepository,
                     tutorial = script,
+                    achievements = container.achievementUnlocker,
                 )
             }
         }

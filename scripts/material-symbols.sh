@@ -24,6 +24,7 @@ AcUnit ac_unit
 Acute acute
 Add add
 Air air
+AllInclusive all_inclusive
 Anchor anchor
 Android android
 ArrowBack arrow_back mirror
@@ -34,19 +35,31 @@ ArrowUpward arrow_upward
 AssignmentTurnedIn assignment_turned_in
 AutoAwesome auto_awesome
 AvgPace avg_pace
+BackHand back_hand
+Badge badge
+BarChart bar_chart
 Block block
 Bolt bolt
 Calculate calculate
 Cancel cancel
 Casino casino
+Castle castle
+Celebration celebration
+Chair chair
 Check check
 CheckCircle check_circle
 Close close
+ContentCut content_cut
+Cottage cottage
 Crown crown
 DeleteForever delete_forever
 DeleteSweep delete_sweep
 DeveloperMode developer_mode
+DirectionsRun directions_run
+Diversity3 diversity_3
+DoorOpen door_open
 Download download
+Elderly elderly
 EmojiEvents emoji_events
 EmojiPeople emoji_people
 EventRepeat event_repeat
@@ -54,19 +67,28 @@ FastForward fast_forward
 Favorite favorite
 FileOpen file_open
 Filter4 filter_4
+Filter6 filter_6
 Filter7 filter_7
 FilterNone filter_none
+FitnessCenter fitness_center
 Flag flag
+FlashOn flash_on
+FlutterDash flutter_dash
+FormatListNumbered format_list_numbered
 FormatPaint format_paint
 Functions functions
 Gavel gavel
 GridView grid_view
 GridViewOutlined grid_view fill0
 Groups groups
+Healing healing
+HealthAndSafety health_and_safety
 HeartBroken heart_broken
 Help help mirror
 HelpOutline help fill0 mirror
+Hiking hiking
 History history
+HolidayVillage holiday_village
 HomeWork home_work
 HourglassEmpty hourglass_empty
 House house
@@ -75,26 +97,39 @@ KeyboardArrowDown keyboard_arrow_down
 KeyboardArrowLeft keyboard_arrow_left mirror
 KeyboardArrowRight keyboard_arrow_right mirror
 KeyboardArrowUp keyboard_arrow_up
+KeyboardDoubleArrowDown keyboard_double_arrow_down
 KeyboardDoubleArrowUp keyboard_double_arrow_up
+Landscape landscape
 Landslide landslide
 LocalCafe local_cafe
+LocalFireDepartment local_fire_department
+LocalFlorist local_florist
+LocalShipping local_shipping
 Lock lock
 LockOpen lock_open
 Logout logout mirror
 Looks3 looks_3
 Looks6 looks_6
+LooksOne looks_one
 Memory memory
+MenuBook menu_book
 MilitaryTech military_tech
 ModeHeat mode_heat
 MotionPhotosOff motion_photos_off
 MoveUp move_up
+MusicNote music_note
 MyLocation my_location
+NearMe near_me
 Numbers numbers
 OpenInNew open_in_new mirror
 OtherHouses other_houses
 Palette palette
 Pause pause
+PedalBike pedal_bike
 Person person
+PersonRemove person_remove
+PersonalInjury personal_injury
+PestControl pest_control
 PhotoCamera photo_camera
 PlayArrow play_arrow
 Psychology psychology
@@ -102,43 +137,57 @@ Public public
 QuestionMark question_mark
 Quiz quiz
 RecordVoiceOver record_voice_over
+Redo redo mirror
 Remove remove
 Repeat repeat
 Replay replay
 RestartAlt restart_alt
+Restaurant restaurant
+Rocket rocket
 RocketLaunch rocket_launch
 Savings savings
+School school
 ScreenRotation screen_rotation
 SentimentDissatisfied sentiment_dissatisfied
 SentimentNeutral sentiment_neutral
 Skull skull
 SlowMotionVideo slow_motion_video
+SmartToy smart_toy
+SocialLeaderboard social_leaderboard
 Sort sort mirror
 Speed speed
+SportsBar sports_bar
 SportsEsports sports_esports
 Sprint sprint
 Stairs2 stairs_2
 Star star
 Stars stars
+Start start mirror
 StayCurrentLandscape stay_current_landscape
 StayCurrentPortrait stay_current_portrait
 Storefront storefront
 Style style
+Swords swords
 Sync sync
 SyncAlt sync_alt
 Target target
 Texture texture
+ThumbDown thumb_down
 ThumbUp thumb_up
 Timer timer
 TravelExplore travel_explore
 TrendingDown trending_down mirror
 TrendingUp trending_up mirror
 Undo undo mirror
+Update update
 Upgrade upgrade
 Vibration vibration
+Visibility visibility
 VolumeUp volume_up mirror
 Wallpaper wallpaper
 WavingHand waving_hand
+WbSunny wb_sunny
+Whatshot whatshot
 WorkspacePremium workspace_premium
 """
 
