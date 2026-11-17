@@ -306,6 +306,8 @@ Decided with the maintainer (2026-11-17):
 - **Order.** Slice 1 brings back DiceFive's style system (registry, saved picks, the Styles screen, unlocks and their
     banners) with the die and background art, and a Classic-only board and pawns. Later slices add the board and pawn
     families, each approved from renders.
+- **Resume here (2026-11-18).** The style structure and the board families are approved; what remains is the pawn
+    families (the unticked slice below), rendered and approved, and rewriting `STYLE_ART.md` alongside them.
 - **Die.** All 35 of DiceFive's families, D20 included (drawn showing 1-6).
 - **Boards.** Classic, Wood, Stone, Neon, Ocean, Starry, Paper, and Retro. Each keeps the four player colours readable;
     a family changes the track, safe squares, surround, and texture. A board shares its unlock with the die and
@@ -315,13 +317,16 @@ Decided with the maintainer (2026-11-17):
 
 - [ ] The style categories, re-cast for Ludo: **board**, **pawns**, **die** (DiceFive's styles, kept),
     **background** (kept). Unlocks are tied to achievements, as in DiceFive.
-    - [x] Slice 1 (2026-11-18, awaiting the maintainer's review from renders): the registry and saved picks for the four
+    - [x] Slice 1 (2026-11-18, structure approved by the maintainer the same day): the registry and saved picks for the four
         categories, DiceFive's 35 die families (fonts and licences back) and 20 backgrounds, Classic board and pawns
         (today's art, moved to `ui/style/BoardStyles.kt` and `PawnStyles.kt`), the Styles page and category pages, the
         menu's Styles button, unlock banners and the achievement rows' reward star and tip, the Die decoration motion
         group, and the game drawing the picks. DiceFive's locks on its own achievements remapped (`DESIGN.md`, "Table
         art"). The "Unlock all styles" button waits for Phase 11; a debug build's pretend switch stands in.
-    - [ ] Board families: Wood, Stone, Neon, Ocean, Starry, Paper, and Retro, each approved from renders.
+    - [x] Board families (2026-11-18, approved from renders): Wood (Oak, Walnut), Ocean (Lagoon, Deep), Retro (Blue),
+        Paper (Pencil), Starry (Midnight), Stone (Slate, Sandstone), and Neon (Night), drawn as `LayeredBoardStyle`s
+        (`ui/style/BoardFamilies.kt`). Each locks with the die of its name; Paper, which has none, at 50 achievements.
+        The board draws on a layer of its own under the pawns, so a move doesn't redraw its texture.
     - [ ] Pawn families: Counter, Cone, Peg, Gem, Glass, and Animal, each approved from renders.
 - [x] The Styles screen's previews show a corner of the board with pawns (`BoardCornerPreview`).
 - [ ] `STYLE_ART.md` rewritten for board and pawn art.

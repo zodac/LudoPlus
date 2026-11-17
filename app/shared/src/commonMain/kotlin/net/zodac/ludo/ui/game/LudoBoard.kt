@@ -63,7 +63,7 @@ fun LudoBoard(
     onPawn: (pawn: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colours = seatColours.map { it?.color }
+    val colours = remember(seatColours) { seatColours.map { it?.color } }
     val movable = moves.map { it.pawn }.toSet()
     val marks = remember(state.players) { pawnMarks(state) }
     val textMeasurer = rememberTextMeasurer()
@@ -74,6 +74,11 @@ fun LudoBoard(
     val motion = rememberMoveMotion(state)
     val theme = LocalGameVisualTheme.current
     Box(modifier = modifier.aspectRatio(1f)) {
+        // The board on a layer of its own, which reads only the style and the seats' colours: it's drawn again when they
+        // change, not on every frame of a move.
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            with(theme.board) { drawBoard(size.minDimension / BoardLayout.SIZE, colours) }
+        }
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -85,7 +90,6 @@ fun LudoBoard(
                 },
         ) {
             val unit = size.minDimension / BoardLayout.SIZE
-            with(theme.board) { drawBoard(unit, colours) }
             val animating = motion.moving
             for (mark in marks) {
                 // The moving pawn and any it captured are drawn on their way, below; the rest of their mark stays.

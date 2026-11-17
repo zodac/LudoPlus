@@ -535,8 +535,14 @@ board and pawns.
 surround, and the texture, never which colour a seat is; a pawn style changes shape and material, never whose it is. A
 board or pawn tile on the Styles page is a corner of the board (`BoardCornerPreview`): seat 0's yard with three pawns,
 one on its start square, and the next seat's pawn on the track, in the default seat colours, the tile's style drawn
-with the player's pick of the other. Only Classic exists of each so far; the families to come are in
-`IMPLEMENTATION.md`, Phase 7.
+with the player's pick of the other.
+
+The boards are Classic, Wood, Ocean, Retro, Paper, Starry, Stone, and Neon. Every family but Classic is a
+`LayeredBoardStyle` (`ui/style/BoardFamilies.kt`): a ground, the squares, the yards, the home triangles, the safe
+squares' marks, and a finish over it all (grain, speckle), each the family's own, with the seats' colours drawn through
+its `seatTone` (tinted towards the material, never so far that two seats look alike). `LudoBoard` draws the board on a
+Canvas of its own under the pawns, which reads only the style and the seat colours, so a texture isn't redrawn on every
+frame of a move. Only Classic pawns exist so far; the families to come are in `IMPLEMENTATION.md`, Phase 7.
 
 **The die** is DiceFive's 35 families, D20 included (drawn showing 1-6). `GameDie` draws the style's face, turning
 through random faces as it tumbles; a style that tumbles itself (the D20, the Egg, the Bestagon) is handed the tumble's
@@ -560,8 +566,9 @@ Each category is two lists in the same order:
 - **The Classic family** comes first in every category and is free. Its first colour is the default: the cream board,
     glossy pawns, the ivory die, and the navy felt.
 - **A style with a counterpart of the same name is unlocked by the same thing** in every category that has one:
-    Stone opens at 65 achievements, Neon and RGB at 100, the water set (the Ocean die and background) at 15
-    (`WATER_SET_UNLOCK`). `StyleRegistryTest` checks every family name across the categories.
+    Stone opens at 65 achievements, Neon and RGB at 100, the water set (the Ocean board, die, and background) at
+    15 (`WATER_SET_UNLOCK`). A board family locks with the die of its name; Paper, which has none, opens at 50.
+    `StyleRegistryTest` checks every family name across the categories.
 - **Locks.** Every other family is locked behind a count of achievements (`StyleUnlock.AchievementCount`) or one
     achievement (`SpecificAchievement`).
     - A count is of **counted** achievements: every one but an Easter Egg (`AchievementsState.countedUnlocks`), as the

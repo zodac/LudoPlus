@@ -92,6 +92,24 @@ object BoardStyles : StyleCatalog<BoardStyle>(
     BoardStyleRegistry,
     listOf(
         listOf(colour(ClassicBoardStyle)),
+        listOf(
+            colour(WoodBoardStyle("wood_oak", plank = Color(0xFFDDB27A), groove = Color(0xFF5A3A1A), grain = Color(0xFF7A4E22))),
+            colour(WoodBoardStyle("wood_walnut", plank = Color(0xFFA9774C), groove = Color(0xFF2E1B0C), grain = Color(0xFF3E2410))),
+        ),
+        listOf(
+            colour(OceanBoardStyle("ocean_lagoon", sand = Color(0xFFF3E4BE), shore = Color(0xFF1B6F7A), water = Color(0xFF3CC3BE), starfish = Color(0xFFFF8A65))),
+            colour(OceanBoardStyle("ocean_deep", sand = Color(0xFFD3E9F2), shore = Color(0xFF0D3B66), water = Color(0xFF15507E), starfish = Color(0xFFFFB74D))),
+        ),
+        listOf(colour(RetroBoardStyle("retro_blue", block = Color(0xFFC2C3C7), screen = Color(0xFF1D2B53)))),
+        listOf(colour(PaperBoardStyle("paper_pencil", paper = Color(0xFFFBF8EF), pencil = Color(0xFF3C3C40), ruling = Color(0x407FA7D9)))),
+        listOf(
+            colour(StarryBoardStyle("starry_midnight", sky = Color(0xFF232B5C), night = Color(0xFF0E1233), silver = Color(0xFFC3CCE8), gold = Color(0xFFFFD45C))),
+        ),
+        listOf(
+            colour(StoneBoardStyle("stone_slate", slab = Color(0xFF7D8A96), mortar = Color(0xFF3A424A), fleck = Color(0xFF2A3036))),
+            colour(StoneBoardStyle("stone_sandstone", slab = Color(0xFFDCC394), mortar = Color(0xFF8C7250), fleck = Color(0xFF7A5E3A))),
+        ),
+        listOf(colour(NeonBoardStyle("neon_night", dark = Color(0xFF0A0A1C), tube = Color(0xFF3FD8FF), star = Color(0xFFFF4FD8)))),
     ),
 )
 

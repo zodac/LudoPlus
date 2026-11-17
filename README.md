@@ -14,7 +14,7 @@ and be the first to get all four home. Land on a rival to send them back to the 
 - **A guided tutorial** that teaches the game in four short parts, and the rules with a diagram for each idea
 - **A Leaderboard** of the fastest wins, and **Statistics** for every player: wins, streaks, and captures
 - **Achievements** to chase: 110 of them, for captures, comebacks, close finishes, and a few hidden surprises
-- **Styles** they unlock: 35 dice and 20 backgrounds for the table
+- **Styles** they unlock: 8 boards, 35 dice, and 20 backgrounds for the table
 - Built for **TalkBack** and large fonts, with no ads and no accounts: your games stay on your phone
 
 <table>
@@ -55,7 +55,7 @@ and be the first to get all four home. Land on a rival to send them back to the 
 - **2 to 8 players**, on boards made for each size
 - **Game modes and house rules** - variations on the classic, and optional modifiers to mix in
 - **Online play** with friends
-- **More styles**, for the board and the pawns
+- **More styles**, for the pawns
 
 ----
 

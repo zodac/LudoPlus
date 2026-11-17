@@ -126,6 +126,7 @@ import net.zodac.ludo.resources.style_family_numeral
 import net.zodac.ludo.resources.style_family_obsidian
 import net.zodac.ludo.resources.style_family_ocean
 import net.zodac.ludo.resources.style_family_pinstripe
+import net.zodac.ludo.resources.style_family_paper
 import net.zodac.ludo.resources.style_family_planks
 import net.zodac.ludo.resources.style_family_retro
 import net.zodac.ludo.resources.style_family_rgb
@@ -654,6 +655,51 @@ object BoardStyleRegistry : StyleRegistry(
         StyleGroup(
             Res.string.style_family_classic,
             listOf(StyleVariant(DefaultStyleIds.BOARD, Res.string.style_colour_cream)),
+        ),
+        // Each family but Paper shares its lock with the die and background of the same name.
+        StyleGroup(
+            Res.string.style_family_wood,
+            listOf(
+                StyleVariant("wood_oak", Res.string.style_colour_oak),
+                StyleVariant("wood_walnut", Res.string.style_colour_walnut),
+            ),
+            unlock = AchievementCount(10),
+        ),
+        StyleGroup(
+            Res.string.style_family_ocean,
+            listOf(
+                StyleVariant("ocean_lagoon", Res.string.style_colour_lagoon),
+                StyleVariant("ocean_deep", Res.string.style_colour_deep),
+            ),
+            unlock = AchievementCount(WATER_SET_UNLOCK),
+        ),
+        StyleGroup(
+            Res.string.style_family_retro,
+            listOf(StyleVariant("retro_blue", Res.string.style_colour_blue)),
+            unlock = AchievementCount(45),
+        ),
+        StyleGroup(
+            Res.string.style_family_paper,
+            listOf(StyleVariant("paper_pencil", Res.string.style_colour_pencil)),
+            unlock = AchievementCount(50),
+        ),
+        StyleGroup(
+            Res.string.style_family_starry,
+            listOf(StyleVariant("starry_midnight", Res.string.style_colour_midnight)),
+            unlock = StyleUnlock.SpecificAchievement(Achievement.MIDNIGHT_RUN),
+        ),
+        StyleGroup(
+            Res.string.style_family_stone,
+            listOf(
+                StyleVariant("stone_slate", Res.string.style_colour_slate),
+                StyleVariant("stone_sandstone", Res.string.style_colour_sandstone),
+            ),
+            unlock = AchievementCount(65),
+        ),
+        StyleGroup(
+            Res.string.style_family_neon,
+            listOf(StyleVariant("neon_night", Res.string.style_colour_night)),
+            unlock = AchievementCount(100),
         ),
     ),
 )

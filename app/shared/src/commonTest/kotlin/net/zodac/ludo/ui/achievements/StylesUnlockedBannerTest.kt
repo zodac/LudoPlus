@@ -26,6 +26,7 @@ import net.zodac.ludo.resources.style_family_starry
 import net.zodac.ludo.resources.style_family_maths
 import net.zodac.ludo.resources.style_family_ocean
 import net.zodac.ludo.resources.style_noun_background
+import net.zodac.ludo.resources.style_noun_board
 import net.zodac.ludo.resources.style_noun_dice
 import net.zodac.ludo.ui.style.StyleCatalogs
 
@@ -61,9 +62,10 @@ class StylesUnlockedBannerTest {
         assertEquals(listOf(StyleReward(Res.string.style_family_garden, Res.string.style_noun_dice)), stylesUnlockedByCount(94, 95))
         assertEquals(emptyList(), stylesUnlockedByCount(93, 94))
         assertEquals(emptyList(), stylesUnlockedByCount(95, 96))
-        // The water set opens together, at one count: the die and the background, in the Styles screen's order.
+        // The water set opens together, at one count: the board, the die, and the background, in the Styles screen's order.
         assertEquals(
             listOf(
+                StyleReward(Res.string.style_family_ocean, Res.string.style_noun_board),
                 StyleReward(Res.string.style_family_ocean, Res.string.style_noun_dice),
                 StyleReward(Res.string.style_family_ocean, Res.string.style_noun_background),
             ),

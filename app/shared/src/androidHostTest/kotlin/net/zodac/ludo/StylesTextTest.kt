@@ -86,7 +86,7 @@ class StylesTextTest : UiTest() {
         compose.onNodeWithText("Styles").assertExists()
         val count = { catalog: net.zodac.ludo.ui.style.StyleCatalog<*> -> catalog.unlockCount(StyleAccess(achievements)).let { "${it.unlocked} of ${it.total} unlocked" } }
         val expected = listOf(
-            Triple("Board", "Classic. 1 of 1 unlocked", StyleCategory.BOARD),
+            Triple("Board", "Classic. ${count(BoardStyles)}", StyleCategory.BOARD),
             Triple("Pawns", "Classic. 1 of 1 unlocked", StyleCategory.PAWNS),
             Triple("Die", "Classic, Ivory. ${count(DiceStyles)}", StyleCategory.DICE),
             Triple("Background", "Classic, Navy. ${count(TableBackgrounds)}", StyleCategory.BACKGROUND),

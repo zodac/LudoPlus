@@ -63,6 +63,22 @@ class StyleRegistryTest {
     }
 
     @Test
+    fun `the boards are the plan's eight families - each but Paper locked with the die of its name`() {
+        assertEquals(
+            listOf("classic", "wood", "ocean", "retro", "paper", "starry", "stone", "neon"),
+            BoardStyleRegistry.groups.map { it.name.key.removePrefix("style_family_") },
+        )
+        assertEquals(
+            listOf("classic_cream", "wood_oak", "wood_walnut", "ocean_lagoon", "ocean_deep", "retro_blue", "paper_pencil", "starry_midnight", "stone_slate", "stone_sandstone", "neon_night"),
+            BoardStyleRegistry.ids,
+        )
+        for (family in listOf("wood", "ocean", "retro", "starry", "stone", "neon")) {
+            assertEquals(group(DiceStyleRegistry, family).unlock, group(BoardStyleRegistry, family).unlock, family)
+        }
+        assertEquals(StyleUnlock.AchievementCount(50), group(BoardStyleRegistry, "paper").unlock)
+    }
+
+    @Test
     fun `no count lock is beyond the 100 counted achievements - and the water set opens at 15`() {
         val counted = Achievement.entries.count { it.category != AchievementCategory.EASTER_EGGS }
         assertEquals(100, counted)
