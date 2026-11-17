@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -21,6 +22,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,6 +34,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
@@ -49,6 +52,7 @@ import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.TeamMode
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.common_cpu_cd
 import net.zodac.ludo.resources.common_default_player_name
@@ -57,12 +61,18 @@ import net.zodac.ludo.resources.setup_difficulty_hard
 import net.zodac.ludo.resources.setup_difficulty_medium
 import net.zodac.ludo.resources.setup_game_mode
 import net.zodac.ludo.resources.setup_names_unique
+import net.zodac.ludo.resources.setup_partner_captures
 import net.zodac.ludo.resources.setup_player_count_spoken
 import net.zodac.ludo.resources.setup_player_name_cd
 import net.zodac.ludo.resources.setup_players
+import net.zodac.ludo.resources.setup_roll_for_partners
 import net.zodac.ludo.resources.setup_start
-import net.zodac.ludo.resources.setup_tutorial_link
+import net.zodac.ludo.resources.setup_teams
+import net.zodac.ludo.resources.setup_teams_pairs_description
+import net.zodac.ludo.resources.setup_teams_two_teams_description
+import net.zodac.ludo.resources.setup_teams_unavailable
 import net.zodac.ludo.resources.setup_title
+import net.zodac.ludo.resources.setup_tutorial_link
 import net.zodac.ludo.resources.setup_type_user
 import net.zodac.ludo.ui.common.ChoicePicker
 import net.zodac.ludo.ui.common.FittedSegmentedChoiceRow
@@ -72,8 +82,8 @@ import net.zodac.ludo.ui.common.MAIN_ACTION_HEIGHT
 import net.zodac.ludo.ui.common.MIN_READABLE_FONT_SIZE
 import net.zodac.ludo.ui.common.ScreenScaffold
 import net.zodac.ludo.ui.common.ScrollingColumn
-import net.zodac.ludo.ui.common.pluralStringResource
 import net.zodac.ludo.ui.common.SoraFontFamily
+import net.zodac.ludo.ui.common.pluralStringResource
 import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.common.textScale
 import net.zodac.ludo.ui.game.GameSetupForm
@@ -226,9 +236,10 @@ private fun PlayerCards(
     }
 }
 
-/** The form's second half: the game mode. Modifiers join it in Phase 9 of `.claude/IMPLEMENTATION.md`. */
+/** The form's second half: teams, and the game mode. Modifiers join it in Phase 9 of `.claude/IMPLEMENTATION.md`. */
 @Composable
 private fun GameCards(setup: GameSetupState, form: GameSetupForm) {
+    SetupCard(title = stringResource(Res.string.setup_teams)) { TeamsChoice(setup, form) }
     SetupCard(title = stringResource(Res.string.setup_game_mode)) {
         GameModeSelector(selected = setup.gameMode, onSelect = form::setGameMode)
     }
@@ -488,6 +499,56 @@ private fun Difficulty.label(): String = stringResource(
  * scrollable list of every [GameMode] - the list is long enough to outgrow the form, so it isn't
  * laid out inline. See [ChoicePicker].
  */
+/**
+ * How the players make teams, with an even count of four or more: Off, Two Teams, or Pairs, a line saying what that
+ * makes of this game, and while teams are on, the switches for partners capturing each other and rolling for a partner.
+ * Any other count says why there are none; the choice is kept for when the count changes back.
+ */
+@Composable
+private fun TeamsChoice(setup: GameSetupState, form: GameSetupForm) {
+    val count = setup.playerCount
+    if (!TeamMode.allowsTeams(count)) {
+        Text(
+            text = stringResource(Res.string.setup_teams_unavailable),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+    FittedSegmentedChoiceRow(
+        options = TeamMode.entries,
+        selected = setup.teamMode,
+        onSelect = form::setTeamMode,
+        label = { stringResource(it.label) },
+        modifier = Modifier.fillMaxWidth(),
+    )
+    val description = when (setup.teamMode) {
+        TeamMode.OFF -> null
+        TeamMode.TWO_TEAMS -> pluralStringResource(Res.plurals.setup_teams_two_teams_description, count / 2, count / 2)
+        TeamMode.PAIRS -> pluralStringResource(Res.plurals.setup_teams_pairs_description, count / 2, count / 2)
+    }
+    if (description == null) return
+    Text(text = description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    SetupSwitch(stringResource(Res.string.setup_partner_captures), setup.partnerCaptures, form::setPartnerCaptures)
+    SetupSwitch(stringResource(Res.string.setup_roll_for_partners), setup.rollForPartners, form::setRollForPartners)
+}
+
+/** An on/off choice: the whole row is the toggle, said as one ("Partners can capture each other, switch, off"). */
+@Composable
+private fun SetupSwitch(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = null)
+    }
+}
+
 /** How many play, 2 to 8: one segment a number, each said as "4 players". */
 @Composable
 private fun PlayerCountSelector(selected: Int, onSelect: (Int) -> Unit) {

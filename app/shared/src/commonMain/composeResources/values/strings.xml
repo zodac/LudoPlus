@@ -192,6 +192,8 @@
     <string name="game_prompt_roll_again">%1$s, roll again: tap the die.</string>
     <string name="game_prompt_cpu_roll_again">%1$s rolls again.</string>
     <string name="game_prompt_move">%1$s rolled %2$d. Pick a pawn to move.</string>
+    <!-- A team game: the player has every pawn home and moves a partner's. -->
+    <string name="game_prompt_move_partner">%1$s rolled %2$d. Pick a partner's pawn to move.</string>
     <string name="game_prompt_cpu_move">%1$s rolled %2$d.</string>
     <!-- The line above it, saying what just happened when it matters. %1$s is the player who acted, %2$d their roll. -->
     <string name="game_event_first">%1$s rolled highest, so goes first.</string>
@@ -205,8 +207,16 @@
     <string name="game_event_home">%1$s brought a pawn home.</string>
     <!-- %2$s is the place: "1st", "2nd"... -->
     <string name="game_event_finished">%1$s has every pawn home, in %2$s place.</string>
+    <!-- A team game: a player has every pawn home, but their team isn't placed until every partner's are too. -->
+    <string name="game_event_all_home">%1$s has every pawn home.</string>
+    <!-- A team game: the last of a team's pawns home. %1$s is its players' names as a list ("Alex and Sam"), %2$s the place ("1st"). -->
+    <string name="game_event_team_finished">%1$s are home, in %2$s place.</string>
     <!-- The finished board, reviewed from the results page: the winner, and the button back to the results. -->
     <string name="game_over_winner">%1$s wins!</string>
+    <!-- A team game's winners, as a list: "Alex and Sam win!" -->
+    <string name="game_over_team_winner">%1$s win!</string>
+    <!-- A team game: each player's team, by number, on their card (shown as the number in a ring) and to a screen reader. -->
+    <string name="game_player_team_spoken">Team %1$d</string>
     <string name="game_over_results">Results</string>
 
     <!-- The results page (ui/game/GameOverScreen.kt) -->
@@ -351,6 +361,26 @@
     <string name="setup_title">New Game</string>
     <string name="setup_start">Start Game</string>
     <string name="setup_game_mode">Game Mode</string>
+    <!-- The setup form's Teams card (model/TeamMode.kt): how the players make teams, with 4, 6, or 8 players. -->
+    <string name="setup_teams">Teams</string>
+    <string name="team_mode_off">Off</string>
+    <string name="team_mode_two_teams">Two Teams</string>
+    <string name="team_mode_pairs">Pairs</string>
+    <!-- Under the choice, saying what it makes of this game. %1$d is the players on each team. -->
+    <plurals name="setup_teams_two_teams_description">
+        <item quantity="one">Two teams of %1$d, seats alternating</item>
+        <item quantity="other">Two teams of %1$d, seats alternating</item>
+    </plurals>
+    <!-- %1$d is how many teams of two. -->
+    <plurals name="setup_teams_pairs_description">
+        <item quantity="one">%1$d team of two, partners opposite</item>
+        <item quantity="other">%1$d teams of two, partners opposite</item>
+    </plurals>
+    <!-- In place of the choice when the player count can't have teams. -->
+    <string name="setup_teams_unavailable">Teams need 4, 6, or 8 players</string>
+    <!-- Two switches under the choice while teams are on. -->
+    <string name="setup_partner_captures">Partners can capture each other</string>
+    <string name="setup_roll_for_partners">Roll for a partner once your pawns are home</string>
     <!-- The setup form's card choosing how many play, 2 to 8. -->
     <string name="setup_players">Players</string>
     <!-- What a screen reader says for each of the Players card's numbers. -->

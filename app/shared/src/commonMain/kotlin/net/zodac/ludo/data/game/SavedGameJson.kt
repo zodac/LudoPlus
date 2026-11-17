@@ -61,6 +61,12 @@ object SavedGameJson {
         put("players", JsonArray(game.players.map(::encodePlayer)))
         put("rollOff", encodeRollOff(game.rollOff))
         if (game.state.rules.stopAtFirstWinner) put("stopAtFirstWinner", true)
+        // A team game's teams and their two options; absent for a game without teams.
+        game.state.rules.teams?.let { teams ->
+            put("teams", jsonInts(teams))
+            put("partnerCaptures", game.state.rules.partnerCaptures)
+            put("rollForPartners", game.state.rules.rollForPartners)
+        }
         put("state", encodeState(game.state))
     }.toJson()
 
@@ -71,7 +77,14 @@ object SavedGameJson {
         val mode = storedId<GameMode>(obj.string("mode"))
         val players = obj.objectList("players").map(::decodePlayer)
         val rollOff = decodeRollOff(obj.obj("rollOff"), players.size)
-        val rules = mode.rules.forPlayers(players.size).copy(stopAtFirstWinner = obj.flag("stopAtFirstWinner"))
+        val teams = if ("teams" in obj) obj.array("teams").ints() else null
+        require(teams == null || teams.size == players.size) { "${teams?.size} teams for ${players.size} players" }
+        val rules = mode.rules.forPlayers(players.size).copy(
+            stopAtFirstWinner = obj.flag("stopAtFirstWinner"),
+            teams = teams,
+            partnerCaptures = teams != null && obj.boolean("partnerCaptures"),
+            rollForPartners = teams == null || obj.boolean("rollForPartners"),
+        )
         val state = decodeState(obj.obj("state"), mode, rules, players.size)
         val playMillis = obj.long("playMillis")
         require(playMillis >= 0) { "Negative play time" }
@@ -175,9 +188,13 @@ object SavedGameJson {
         require(finishingOrder.distinct() == finishingOrder && finishingOrder.all { players.getOrNull(it)?.isFinished(board) == true }) {
             "The finishing order isn't the finished players"
         }
-        require(players.indices.filter { players[it].isFinished(board) }.toSet() == finishingOrder.toSet()) { "A finished player isn't placed" }
-        require(finishingOrder.size < playerCount - 1) { "A finished game is never saved" }
+        // The placed players are those of every team that's home (a player alone is a team of one), and only them.
+        val members = players.indices.groupBy(rules::teamOf)
+        val homeTeams = members.filterValues { team -> team.all { players[it].isFinished(board) } }.keys
+        require(finishingOrder.toSet() == homeTeams.flatMap { members.getValue(it) }.toSet()) { "The finishing order isn't the players home" }
+        require(members.keys.count { it !in homeTeams } > 1) { "A finished game is never saved" }
         require(current !in finishingOrder) { "A finished player has the turn" }
+        require(!(players[current].isFinished(board) && (rules.teams == null || !rules.rollForPartners))) { "A player with every pawn home has the turn" }
         val waiting = GameState(
             mode = mode,
             rules = rules,
@@ -212,6 +229,7 @@ object SavedGameJson {
             put("from", event.move.from)
             put("to", event.move.to)
             put("captures", JsonArray(event.move.captures.map { jsonInts(listOf(it.player, it.pawn)) }))
+            event.move.owner?.let { put("owner", it) }
             put("finished", event.finished)
             if (event.rollsAgain) put("rollsAgain", true)
         }
@@ -236,6 +254,7 @@ object SavedGameJson {
                         val pair = (item as? JsonArray)?.ints()?.takeIf { it.size == 2 } ?: throw JsonParseException("A capture isn't a pair")
                         PawnRef(pair[0], pair[1])
                     },
+                    owner = obj.intOrNull("owner")?.also { require(it in 0..<playerCount) { "No player $it owns the pawn" } },
                 ),
                 finished = obj.boolean("finished"),
                 rollsAgain = obj.flag("rollsAgain"),

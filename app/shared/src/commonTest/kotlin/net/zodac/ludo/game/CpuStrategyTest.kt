@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.TeamMode
 
 private const val Y = -1
 
@@ -59,5 +60,18 @@ class CpuStrategyTest {
         val state = rolled(2, listOf(54, 10, Y, Y))
         assertEquals(0, state.pick(medium))
         assertEquals(0, state.pick(hard))
+    }
+
+    @Test
+    fun `where partners capture Medium and Hard leave a partner be - and take an opponent instead`() {
+        // Red's pawn 0 on its 10th step would land on yellow's (its partner's) 40th, square 14, with a 4; pawn 1 on its
+        // 19th would take green's 10th, square 23.
+        val rules = GameMode.CLASSIC.rules.copy(teams = TeamMode.TWO_TEAMS.teamsFor(4), partnerCaptures = true)
+        val new = GameState.new(GameMode.CLASSIC, 4, rules = rules)
+        val pawns = listOf(listOf(10, 19, Y, Y), listOf(10, Y, Y, Y), listOf(40, Y, Y, Y), listOf(Y, Y, Y, Y))
+        val state = LudoEngine.applyRoll(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns[i]) }), 4)
+        assertEquals(listOf(PawnRef(2, 0)), (state.phase as TurnPhase.AwaitingMove).moves.first { it.pawn == 0 }.captures)
+        assertEquals(1, state.pick(medium))
+        assertEquals(1, state.pick(hard))
     }
 }

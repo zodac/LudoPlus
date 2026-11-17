@@ -16,6 +16,7 @@ import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.TeamMode
 import net.zodac.ludo.ui.game.StartedGame
 
 class SavedGameJsonTest {
@@ -57,6 +58,31 @@ class SavedGameJsonTest {
         }
         // Enough states to have met captures, rolls again, and players finishing.
         assert(checked > 10_000) { "Only $checked states" }
+    }
+
+    @Test
+    fun `every state of random team games comes back as it was saved - partners rolled for and part-home teams too`() {
+        val random = Random(9)
+        var rolledFor = 0
+        for ((index, teams) in listOf(TeamMode.TWO_TEAMS, TeamMode.PAIRS).withIndex()) {
+            repeat(15) { game ->
+                // Each option both ways across the games.
+                val rules = GameMode.CLASSIC.rules.copy(teams = teams.teamsFor(4), partnerCaptures = game % 2 == 0, rollForPartners = (game + index) % 3 != 0)
+                var state = GameState.new(GameMode.CLASSIC, 4, first = 1, rules = rules)
+                while (!state.isFinished) {
+                    val saved = game(state)
+                    assertEquals(saved, SavedGameJson.decode(SavedGameJson.encode(saved)))
+                    state = when (val phase = state.phase) {
+                        is TurnPhase.AwaitingMove -> phase.moves.random(random).let {
+                            if (it.owner != null) rolledFor++
+                            LudoEngine.move(state, it.pawn, it.owner)
+                        }
+                        else -> LudoEngine.roll(state, random)
+                    }
+                }
+            }
+        }
+        assert(rolledFor > 0) { "No partner was rolled for" }
     }
 
     @Test

@@ -24,6 +24,7 @@ import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.TeamMode
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.platform.SilentPlatformServices
 import net.zodac.ludo.ui.game.GameContent
@@ -58,7 +59,7 @@ class BoardSemanticsTest : UiTest() {
         val game = StartedGame(GameMode.CLASSIC, players, state, RollOff(listOf(mapOf(0 to 6, 1 to 1, 2 to 1, 3 to 1)), 0))
         showcase.show {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
-                LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it }, onBack = { backs++ }, onResults = {}) }
+                LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it.pawn }, onBack = { backs++ }, onResults = {}) }
             }
         }
     }
@@ -108,6 +109,23 @@ class BoardSemanticsTest : UiTest() {
             listOf("Bring Red pawn 1 out of the yard", "Move Red pawn 2 6 squares, reaching home", "Move Red pawn 3 6 squares, capturing Green pawn 1"),
             actions,
         )
+    }
+
+    @Test
+    fun `in a team game each card says its team - and a player home is offered a partner's moves by its colour`() = uiTest(TestScreen(411, 891)) {
+        // Alex and Sam (red and yellow) against Gambit and Payout: Alex is home, and rolls 1 for Sam's last pawn.
+        val teams = GameMode.CLASSIC.rules.copy(teams = TeamMode.TWO_TEAMS.teamsFor(4))
+        val new = GameState.new(GameMode.CLASSIC, 4, rules = teams)
+        val pawns = listOf(listOf(H, H, H, H), listOf(Y, Y, Y, Y), listOf(H, H, H, H - 1), listOf(Y, Y, Y, Y))
+        show(LudoEngine.applyRoll(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns[i]) }), 1))
+        val prompt = compose.onNodeWithContentDescription("Alex rolled 1. Pick a partner's pawn to move.")
+        assertEquals(listOf("Move Yellow pawn 4 1 square, reaching home"), prompt.fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label })
+        compose.onNode(hasText("Alex").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 1, 4 pawns home, playing now"))).assertExists()
+        compose.onNode(hasText("Sam").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 1, 3 pawns home"))).assertExists()
+        compose.onNode(hasText("Gambit").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 2, 0 pawns home"))).assertExists()
+        // The pawn's own square offers the move too.
+        compose.onNode(onClickLabel("Move Yellow pawn 4 1 square, reaching home")).performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(listOf(3), moved)
     }
 
     @Test

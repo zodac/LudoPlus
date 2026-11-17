@@ -50,7 +50,8 @@ private const val HOP_SWELL = 0.18f
 /**
  * The board for [state]'s players, drawn from its [BoardLayout], with [state]'s pawns on it. [seatColours] colours each
  * seat's yard, start square, home column, and pawns (null for a seat nobody sits at). The pawns that [moves] can move
- * are ringed, and a tap near one, or a screen reader's action on its square ([BoardSemantics]), moves it ([onPawn]).
+ * are ringed (a partner's too, when the player rolls for one), and a tap near one, or a screen reader's action on its
+ * square ([BoardSemantics]), makes its move ([onMove]).
  *
  * A move arrives square by square, and any pawn it captures then slides back to its yard, unless the Pawn moves motion
  * is off ([MotionGroup.PAWN_MOVE]).
@@ -60,17 +61,18 @@ fun LudoBoard(
     state: GameState,
     seatColours: List<PlayerColour?>,
     moves: List<Move>,
-    onPawn: (pawn: Int) -> Unit,
+    onMove: (Move) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colours = remember(seatColours) { seatColours.map { it?.color } }
-    val movable = moves.map { it.pawn }.toSet()
+    val movable = moves.map { PawnRef(it.ownerIn(state), it.pawn) }.toSet()
     val marks = remember(state.players) { pawnMarks(state) }
     val textMeasurer = rememberTextMeasurer()
     val currentMarks by rememberUpdatedState(marks)
     val currentMovable by rememberUpdatedState(movable)
-    val currentPlayer by rememberUpdatedState(state.current)
-    val currentOnPawn by rememberUpdatedState(onPawn)
+    val currentMoves by rememberUpdatedState(moves)
+    val currentState by rememberUpdatedState(state)
+    val currentOnMove by rememberUpdatedState(onMove)
     val motion = rememberMoveMotion(state)
     val theme = LocalGameVisualTheme.current
     val layout = BoardLayout.of(state.board)
@@ -86,7 +88,8 @@ fun LudoBoard(
                 .pointerInput(layout) {
                     detectTapGestures { tap ->
                         val unit = size.width.toFloat() / layout.size
-                        pawnAt(tap / unit, currentMarks, currentPlayer, currentMovable)?.let(currentOnPawn)
+                        val picked = pawnAt(tap / unit, currentMarks, currentMovable)
+                        currentMoves.firstOrNull { picked != null && it.pawn == picked.pawn && it.ownerIn(currentState) == picked.player }?.let(currentOnMove)
                     }
                 },
         ) {
@@ -97,7 +100,7 @@ fun LudoBoard(
                 val pawns = mark.pawns.filterNot { animating != null && motion.isAnimated(mark.player, it) }
                 if (pawns.isEmpty()) continue
                 val colour = colours.getOrNull(state.players[mark.player].seat) ?: BoardEmptySeat
-                val ringed = animating == null && mark.player == state.current && pawns.any { it in movable }
+                val ringed = animating == null && pawns.any { PawnRef(mark.player, it) in movable }
                 if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
                 with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, colour, ringed) }
                 if (pawns.size > 1) drawCount(textMeasurer, pawns.size, mark, unit)
@@ -112,11 +115,14 @@ fun LudoBoard(
                 }
             }
         }
-        BoardSemantics(state, seatColours, moves, onPawn, Modifier.fillMaxSize())
+        BoardSemantics(state, seatColours, moves, onMove, Modifier.fillMaxSize())
     }
 }
 
-/** A move being shown: [player]'s pawn on [path] (board-unit centres, square by square), capturing [captured]. */
+/**
+ * A move being shown: [player]'s pawn (its owner's, a partner's if one was rolled for) on [path] (board-unit centres,
+ * square by square), capturing [captured].
+ */
 private class MovingPawn(val player: Int, val pawn: Int, val path: List<Offset>, val captured: List<Pair<PawnRef, Offset>>, val landing: Offset)
 
 /** The pawn move under way on the board, if any, and how far along it is. */
@@ -159,15 +165,17 @@ private fun rememberMoveMotion(state: GameState): MoveMotion {
 
 private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
     val layout = BoardLayout.of(state.board)
-    val seat = state.players[event.player].seat
     val move = event.move
+    // The pawn's owner: the mover, or a partner they rolled for.
+    val owner = move.owner ?: event.player
+    val seat = state.players[owner].seat
     val path = if (move.from == PawnPosition.YARD_PROGRESS) {
         listOf(layout.yardSpot(seat, move.pawn), layout.centreOf(seat, PawnPosition.of(0, state.board), 0))
     } else {
         (move.from..move.to).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn) }
     }
     val captured = move.captures.map { it to layout.yardSpot(state.players[it.player].seat, it.pawn) }
-    return MovingPawn(event.player, move.pawn, path, captured, path.last())
+    return MovingPawn(owner, move.pawn, path, captured, path.last())
 }
 
 /** A count badge at the top right of [mark], for pawns sharing a square. */

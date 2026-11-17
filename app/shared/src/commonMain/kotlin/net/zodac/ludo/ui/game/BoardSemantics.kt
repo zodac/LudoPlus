@@ -47,10 +47,11 @@ private fun List<Offset>.bounds(): Rect = Rect(minOf { it.x }, minOf { it.y }, m
 /**
  * The board for a screen reader, laid over the drawn one: a node for each yard, each track square (numbered from red's
  * start), each home-column square, and home, saying what's on it ("Square 14, Red pawn 2, 43 squares from home"). A
- * square holding one of the current player's movable pawns is a button whose action moves it ([moves], [onPawn]).
+ * square holding a pawn the current player can move (theirs, or a partner's they roll for) is a button whose action
+ * moves it ([moves], [onMove]).
  */
 @Composable
-fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>, onPawn: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>, onMove: (Move) -> Unit, modifier: Modifier = Modifier) {
     val spots = boardSpots(state, seatColours, moves)
     BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
         val unit: Dp = maxWidth / BoardLayout.of(state.board).size
@@ -63,7 +64,7 @@ fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: Li
                         contentDescription = spot.description
                         traversalIndex = index.toFloat()
                         val move = spot.move
-                        if (move != null) onClick(label = spot.moveLabel) { onPawn(move.pawn); true }
+                        if (move != null) onClick(label = spot.moveLabel) { onMove(move); true }
                     },
             )
         }
@@ -84,7 +85,7 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
     }
     val moveLabels = moves.associateWith { moveLabel(state, it, colourOf) }
     val movableAt = { player: Int, pawnsHere: List<Int> ->
-        if (player != state.current) null else moves.firstOrNull { it.pawn in pawnsHere }
+        moves.firstOrNull { it.ownerIn(state) == player && it.pawn in pawnsHere }
     }
     val empty = stringResource(Res.string.game_square_empty_spoken)
     val spots = mutableListOf<Spot>()
@@ -132,10 +133,13 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
     return spots
 }
 
-/** What TalkBack offers for [move]: "Move Red pawn 2 4 squares, capturing Green pawn 1", or "Bring Red pawn 1 out of the yard". */
+/**
+ * What TalkBack offers for [move]: "Move Red pawn 2 4 squares, capturing Green pawn 1", or "Bring Red pawn 1 out of the
+ * yard". A partner's pawn is named by its own colour.
+ */
 @Composable
 fun moveLabel(state: GameState, move: Move, colourOf: (Int) -> PlayerColour): String {
-    val colour = stringResource(colourOf(state.current).label)
+    val colour = stringResource(colourOf(move.ownerIn(state)).label)
     val number = move.pawn + 1
     val roll = move.to - move.from
     val main = if (move.from == PawnPosition.YARD_PROGRESS) {

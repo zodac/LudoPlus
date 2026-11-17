@@ -93,8 +93,8 @@ private val PLACE_WIDTH = 40.sp
 private const val CELEBRATION_MILLIS = 3300
 
 /**
- * The results of a finished [game]: the winner in a raised card with the trophy, then everyone else in the order they
- * finished, each with when they finished (the last, when the game ended), then their turns, captures, and times captured
+ * The results of a finished [game]: the winner in a raised card with the trophy (in a team game, a card for each of the
+ * winning team's players), then everyone else in the order they finished (partners sharing their team's place), each with when they finished (the last, when the game ended), then their turns, captures, and times captured
  * (the last, who never brought every pawn home, with their pawns home in place of turns). With
  * [celebrate], a person's win gets the fanfare and gold fireworks (these only with the Celebrations motion on), once:
  * [onCelebrated] is called as it starts.
@@ -118,8 +118,9 @@ fun GameOverScreen(
 ) {
     val state = game.state
     val order = state.finishingOrder
-    val winner = order.first()
-    val personWon = game.players[winner].type == PlayerType.HUMAN
+    // One winner, or in a team game the first team's players, each with their card.
+    val winners = order.filter { state.placeOf(it) == 1 }
+    val personWon = winners.any { game.players[it].type == PlayerType.HUMAN }
     // Latched at first composition: [onCelebrated] clears the caller's flag at once, which mustn't cut these short.
     val celebrateNow = remember { celebrate && personWon }
     val sounds = rememberSoundEffects()
@@ -147,7 +148,7 @@ fun GameOverScreen(
                     TwoPanes(
                         spacing = 12.dp,
                         start = {
-                            WinnerCard(game, winner, details = !tutorial)
+                            winners.forEach { WinnerCard(game, it, details = !tutorial) }
                             if (tutorial) {
                                 Text(
                                     text = stringResource(Res.string.gameover_tutorial_finished),
@@ -158,9 +159,9 @@ fun GameOverScreen(
                             } else {
                                 Card(modifier = Modifier.fillMaxWidth()) {
                                     Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                                        order.drop(1).forEachIndexed { index, player ->
+                                        order.filter { it !in winners }.forEachIndexed { index, player ->
                                             if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                                            PlacingRow(game, player, place = index + 2)
+                                            PlacingRow(game, player, place = requireNotNull(state.placeOf(player)))
                                         }
                                     }
                                 }

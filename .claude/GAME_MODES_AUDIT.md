@@ -45,3 +45,18 @@ A rules setting, not a modifier: games with it count on the Leaderboard and earn
     (2026-11-17).
 - **Harder:** nothing a full game gives is taken away, but a game it ends early has fewer turns in which to earn the
     in-play achievements.
+
+## Teams (New Game)
+
+A rules setting (Phase 8): two alternating teams, or pairs sitting opposite, with 4, 6, or 8 players; partners may
+capture each other or not, and a player home may roll for a partner or sit out. Team games earn achievements, but stay
+off the Leaderboard (`GameRecordRepository.recordGame`).
+
+- **A win is the team's.** Player 1 wins when their team is placed first (`GameState.placeOf`), so a partner bringing
+    the last pawn home wins it for them; Wooden Spoon is the last team's. Statistics counts the same.
+- **A partner isn't an opponent.** The tracker's opponents, for Comeback Kid, Early Bird, and the like, leave partners
+    out.
+- **Easier:** a win shared with a partner, and with roll for partners, player 1's captures can come on a partner's
+    pawn's move (credited to the player who rolled). Left unguarded, as reported to the maintainer (2026-11-18).
+- **Not yet audited achievement by achievement**: each team-sensitive one's own wording is for the maintainer's
+    review.

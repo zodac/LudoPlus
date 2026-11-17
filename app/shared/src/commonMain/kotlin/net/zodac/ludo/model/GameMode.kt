@@ -65,7 +65,26 @@ data class GameRules(
      * are then placed by how far their pawns have come, and a tie by who plays sooner after the winner.
      */
     val stopAtFirstWinner: Boolean = false,
+    /**
+     * Each player's team, by player index, or null for a game where everyone plays alone (`.claude/IMPLEMENTATION.md`,
+     * Phase 8). A team is placed when every one of its pawns is home, its players together; the rest play on for the
+     * places after.
+     */
+    val teams: List<Int>? = null,
+    /** In a team game, whether a pawn captures a partner's as it would an opponent's. Otherwise partners share squares. */
+    val partnerCaptures: Boolean = false,
+    /**
+     * In a team game, whether a player with every pawn home rolls on, moving a partner's pawns, until their team is home.
+     * Otherwise their turns pass them by.
+     */
+    val rollForPartners: Boolean = true,
 ) {
+    /** [player]'s team: their own, alone, in a game without teams. */
+    fun teamOf(player: Int): Int = teams?.get(player) ?: TEAMLESS + player
+
+    /** Whether [a] and [b] are on one team, [a] and [b] being different players. */
+    fun arePartners(a: Int, b: Int): Boolean = a != b && teams != null && teams[a] == teams[b]
+
     /** These rules on the board for [players] players ([BoardGeometry.forPlayers]). */
     fun forPlayers(players: Int): GameRules = copy(board = BoardGeometry.forPlayers(players))
 
@@ -74,5 +93,11 @@ data class GameRules(
         require(dieFaces > 1) { "A die needs two faces" }
         require((yardExitRolls + rollAgainRolls).all { it in 1..dieFaces }) { "Every special roll must be on the die" }
         require(rollAgainLimit == null || rollAgainLimit > 0) { "A run of rolls again ends after one roll or more" }
+        require(teams == null || teams.all { it >= 0 } && teams.toSet().size >= 2) { "A team game needs two teams or more" }
+    }
+
+    private companion object {
+        /** Where a teamless game's one-player teams are numbered from, clear of any real team's number. */
+        const val TEAMLESS = 1_000
     }
 }

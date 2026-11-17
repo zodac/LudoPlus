@@ -347,7 +347,12 @@ count but 4 has a board of its own; one player on two colours was dropped.
     - Every board family draws them: arm squares turned, the three-seat board's yard-side squares stretched, the
         yards a plain shape (`STYLE_ART.md`, "Boards"). Each family's own yard art for them awaits review.
 - [x] New Game's Players row (2-8), eight slots kept, the count saved (`player_count`).
-- [ ] Teams (2v2, 3v3, 4v4: partners across the board, both sets home to win) as a setting.
+- [x] Teams as a New Game setting (decided with the maintainer, 2026-11-18): Off, Two Teams (seats alternating: 2v2,
+    3v3, 4v4), or Pairs (partners opposite: two, three, or four teams), with 4, 6, or 8 players (`TeamMode`). Two
+    options: partners capture each other (off by default), and a player with every pawn home rolls for a partner (on).
+    A team is placed when all its pawns are home, its players sharing the place, and the rest play on for the places
+    after. The CPU counts a partner's pawns as its own. Team games stay off the Leaderboard (`GAME_MODES_AUDIT.md`,
+    "Teams").
 - [x] Player colours past four: orange, cyan, pink, and purple, kept by the maintainer though purple is near the
     movable ring. Checked for colour blindness (`UI.md`, "Player colours"): blue and purple, and green and cyan, are
     close for some, so the defaults stay and the picker offers four more (lime, magenta, berry, and scarlet; the

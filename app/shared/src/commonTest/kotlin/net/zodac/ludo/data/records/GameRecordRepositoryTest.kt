@@ -13,6 +13,7 @@ import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.TeamMode
 import net.zodac.ludo.ui.game.StartedGame
 
 class GameRecordRepositoryTest {
@@ -106,6 +107,20 @@ class GameRecordRepositoryTest {
         // Nor does Statistics count them for another count - only for every game, or theirs.
         assertEquals(emptyList(), repository.playerStatistics(playerCount = 3))
         assertEquals(repository.playerStatistics(), repository.playerStatistics(playerCount = 4))
+    }
+
+    @Test
+    fun `a team game records each player at their team's place - and stays off the Leaderboard`() = runTest {
+        val repository = GameRecordRepository(InMemoryGameResultDao())
+        // Alex (player 1) and Pip (player 3) against Gambit and Sam: Alex's team home first.
+        val solo = game(order = listOf(0, 2, 1, 3))
+        val teamGame = solo.copy(state = solo.state.copy(rules = solo.state.rules.copy(teams = TeamMode.TWO_TEAMS.teamsFor(4))))
+        repository.recordGame(teamGame)
+        val (alex, sam) = repository.playerStatistics()
+        assertEquals(1, alex.totals.gamesWon)
+        // Sam's team is second, whatever the order its players were placed in.
+        assertEquals(0, sam.totals.gamesWon)
+        assertEquals(0, repository.leaderboardCount(GameMode.CLASSIC, playerCount = 4))
     }
 
     @Test

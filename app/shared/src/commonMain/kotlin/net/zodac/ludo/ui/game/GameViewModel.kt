@@ -34,6 +34,7 @@ import net.zodac.ludo.game.CpuStrategy
 import net.zodac.ludo.game.GameFeats
 import net.zodac.ludo.game.GameState
 import net.zodac.ludo.game.LudoEngine
+import net.zodac.ludo.game.Move
 import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.game.TutorialScript
@@ -213,7 +214,12 @@ class GameViewModel(
                     setup.gameMode,
                     players.size,
                     first = rollOff.first,
-                    rules = setup.gameMode.rules.forPlayers(players.size).copy(stopAtFirstWinner = stopAtFirstWinner.value),
+                    rules = setup.gameMode.rules.forPlayers(players.size).copy(
+                        stopAtFirstWinner = stopAtFirstWinner.value,
+                        teams = setup.teams,
+                        partnerCaptures = setup.partnerCaptures,
+                        rollForPartners = setup.rollForPartners,
+                    ),
                 ),
                 rollOff = rollOff,
                 startedAtEpochMillis = startedAt,
@@ -257,20 +263,23 @@ class GameViewModel(
     }
 
     /**
-     * The current player moves [pawn], if it's a person's turn and that pawn has a legal move. In the tutorial, only the
-     * move step's own pawn, once the step is shown.
+     * The current player moves [pawn] (a partner's, [owner]'s, when they roll for one), if it's a person's turn and that
+     * pawn has a legal move. In the tutorial, only the move step's own pawn, once the step is shown.
      */
-    fun move(pawn: Int) {
+    fun move(pawn: Int, owner: Int? = null) {
         val game = _game.value ?: return
         val phase = game.state.phase
-        if (phase !is TurnPhase.AwaitingMove || game.currentIsCpu || phase.moves.none { it.pawn == pawn }) return
+        if (phase !is TurnPhase.AwaitingMove || game.currentIsCpu || phase.moves.none { it.pawn == pawn && it.owner == owner }) return
         val progress = tutorialProgress
         if (progress != null) {
             val step = progress.current as? TutorialStep.Move ?: return
             if (step.pawn != pawn || progress.shown.value != step) return
         }
-        update(LudoEngine.move(game.state, pawn))
+        update(LudoEngine.move(game.state, pawn, owner))
     }
+
+    /** The current player makes [move] ([move] by pawn). */
+    fun move(move: Move) = move(move.pawn, move.owner)
 
     private fun update(state: GameState) {
         val game = _game.value ?: return
@@ -467,7 +476,8 @@ class GameViewModel(
                 TurnPhase.AwaitingRoll -> rolled(now.state)
                 is TurnPhase.AwaitingMove -> {
                     val strategy = CpuStrategy.of(now.players[now.state.current].difficulty)
-                    LudoEngine.move(now.state, strategy.choose(now.state, phase.moves, random).pawn)
+                    val choice = strategy.choose(now.state, phase.moves, random)
+                    LudoEngine.move(now.state, choice.pawn, choice.owner)
                 }
                 TurnPhase.Finished -> return@launch
             }

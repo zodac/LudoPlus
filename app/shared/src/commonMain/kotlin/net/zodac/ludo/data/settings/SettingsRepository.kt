@@ -16,6 +16,7 @@ import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.TeamMode
 import net.zodac.ludo.model.storedIdOf
 
 /**
@@ -56,6 +57,12 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         fun setPlayerCount(count: Int) {
             prefs[PLAYER_COUNT_KEY] = count
         }
+
+        fun setTeams(mode: TeamMode, partnerCaptures: Boolean, rollForPartners: Boolean) {
+            prefs[TEAM_MODE_KEY] = mode.id
+            prefs[PARTNER_CAPTURES_KEY] = partnerCaptures
+            prefs[ROLL_FOR_PARTNERS_KEY] = rollForPartners
+        }
     }
 
     /** Settings no version reads any more, removed at launch. None yet. */
@@ -92,6 +99,11 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
         /** How many players the setup form last started a game with, or null for none it can start. */
         val playerCount: Int? get() = prefs[PLAYER_COUNT_KEY]?.takeIf { it in BoardGeometry.MIN_PLAYERS..BoardGeometry.MAX_PLAYERS }
+
+        /** How the setup form last made teams, and its two options: off, and the rules' defaults, until it's chosen. */
+        val teamMode: TeamMode get() = prefs[TEAM_MODE_KEY]?.let { storedIdOf<TeamMode>(it) } ?: TeamMode.OFF
+        val partnerCaptures: Boolean get() = prefs[PARTNER_CAPTURES_KEY] ?: false
+        val rollForPartners: Boolean get() = prefs[ROLL_FOR_PARTNERS_KEY] ?: true
     }
 
     val confirmBeforeLeavingGame: Flow<Boolean> = read(CONFIRM_BEFORE_LEAVING_GAME_KEY, default = true)
@@ -201,6 +213,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val SCREEN_ORIENTATION_KEY = stringPreferencesKey("screen_orientation")
         val GAME_MODE_KEY = stringPreferencesKey("game_mode")
         val PLAYER_COUNT_KEY = intPreferencesKey("player_count")
+        val TEAM_MODE_KEY = stringPreferencesKey("team_mode")
+        val PARTNER_CAPTURES_KEY = booleanPreferencesKey("partner_captures")
+        val ROLL_FOR_PARTNERS_KEY = booleanPreferencesKey("roll_for_partners")
         val PLAY_SECONDS_KEY = intPreferencesKey("play_seconds")
 
         // Stored ids: permanent once released. The die's and background's keys are DiceFive's.

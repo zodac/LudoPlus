@@ -31,8 +31,21 @@ data class GameState(
 
     val isFinished: Boolean get() = phase == TurnPhase.Finished
 
-    /** The player in first place, once someone has brought every pawn home. */
+    /** The player in first place (one of the first team's, in a team game), once someone has brought every pawn home. */
     val winner: Int? get() = finishingOrder.firstOrNull()
+
+    /**
+     * [player]'s place, 1 for first, once placed: their place in [finishingOrder], or in a team game their team's, its
+     * players sharing it.
+     */
+    fun placeOf(player: Int): Int? {
+        if (player !in finishingOrder) return null
+        val teamsBefore = finishingOrder.takeWhile { rules.teamOf(it) != rules.teamOf(player) }.map(rules::teamOf).distinct()
+        return teamsBefore.size + 1
+    }
+
+    /** [player]'s partners, by index: none in a game without teams. */
+    fun partnersOf(player: Int): List<Int> = players.indices.filter { rules.arePartners(player, it) }
 
     /** Where [player]'s pawn [pawn] is. */
     fun position(player: Int, pawn: Int): PawnPosition = PawnPosition.of(players[player].pawns[pawn], board)
@@ -102,10 +115,14 @@ sealed interface TurnPhase {
 }
 
 /**
- * A legal move: the current player's pawn [pawn] from progress [from] to [to]. [captures] lists the opponents' pawns it
- * sends back to their yards, as (player, pawn) pairs.
+ * A legal move: the current player's pawn [pawn] from progress [from] to [to], or in a team game where they roll for a
+ * partner, [owner]'s (null for the mover's own). [captures] lists the opponents' pawns it sends back to their yards, as
+ * (player, pawn) pairs.
  */
-data class Move(val pawn: Int, val from: Int, val to: Int, val captures: List<PawnRef> = emptyList())
+data class Move(val pawn: Int, val from: Int, val to: Int, val captures: List<PawnRef> = emptyList(), val owner: Int? = null) {
+    /** Whose pawn moves in [state]: [owner], or the player whose turn it is. */
+    fun ownerIn(state: GameState): Int = owner ?: state.current
+}
 
 /** One pawn in a game: [player]'s pawn [pawn], both indices. */
 data class PawnRef(val player: Int, val pawn: Int)
@@ -125,8 +142,9 @@ sealed interface GameEvent {
     data class RollAgainLimit(override val player: Int, val roll: Int) : GameEvent
 
     /**
-     * [player] moved with [roll]. [finished] is true if that brought their last pawn home; [rollsAgain] if the move earned
-     * them another roll (a roll-again roll, a capture, or a pawn home, as the rules give).
+     * [player] moved with [roll]. [finished] is true if that brought the moved pawn's owner's last pawn home (theirs, or
+     * a partner's they rolled for); [rollsAgain] if the move earned them another roll (a roll-again roll, a capture, or a
+     * pawn home, as the rules give).
      */
     data class Moved(override val player: Int, val roll: Int, val move: Move, val finished: Boolean, val rollsAgain: Boolean = false) : GameEvent
 }

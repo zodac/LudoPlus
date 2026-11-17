@@ -12,6 +12,7 @@ import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.TeamMode
 import net.zodac.ludo.model.duplicateHumanNameSlots
 import net.zodac.ludo.model.maxPlayerNameLength
 import net.zodac.ludo.model.resolvePlayerName
@@ -37,7 +38,14 @@ data class GameSetupState(
     val allSlots: List<PlayerSetupSlot> = (1..BoardGeometry.MAX_PLAYERS).map { PlayerSetupSlot(slot = it) },
     val playerCount: Int = DEFAULT_PLAYER_COUNT,
     val gameMode: GameMode = GameMode.DEFAULT,
+    /** How the players make teams: kept whatever the count, though only an even count of four or more has them. */
+    val teamMode: TeamMode = TeamMode.OFF,
+    val partnerCaptures: Boolean = false,
+    val rollForPartners: Boolean = true,
 ) {
+    /** Each player's team for the game this would start, or null for none ([TeamMode.teamsFor]). */
+    val teams: List<Int>? get() = teamMode.teamsFor(playerCount)
+
     init {
         require(playerCount in BoardGeometry.MIN_PLAYERS..allSlots.size) { "No game of $playerCount players" }
     }
@@ -55,6 +63,7 @@ data class GameSetupState(
         settingsRepository.batch {
             setGameMode(gameMode)
             setPlayerCount(playerCount)
+            setTeams(teamMode, partnerCaptures, rollForPartners)
             for (slot in allSlots) {
                 setPlayerName(slot.slot, slot.name)
                 setPlayerType(slot.slot, slot.type)
@@ -96,6 +105,9 @@ class GameSetupForm {
             allSlots = if (restoredColours == null) slots else slots.mapIndexed { i, slot -> slot.copy(colour = restoredColours[i]) },
             playerCount = saved.playerCount ?: DEFAULT_PLAYER_COUNT,
             gameMode = saved.gameMode,
+            teamMode = saved.teamMode,
+            partnerCaptures = saved.partnerCaptures,
+            rollForPartners = saved.rollForPartners,
         )
         _setupRestored.value = true
     }
@@ -108,6 +120,18 @@ class GameSetupForm {
     /** Capped here rather than only in the text field, so the cap holds for every path into a name. */
     fun setPlayerName(slot: Int, name: String) {
         updateSlot(slot) { it.copy(name = sanitizePlayerName(name).takeNameWidth(NAME_CAP)) }
+    }
+
+    fun setTeamMode(mode: TeamMode) {
+        _setup.update { it.copy(teamMode = mode) }
+    }
+
+    fun setPartnerCaptures(on: Boolean) {
+        _setup.update { it.copy(partnerCaptures = on) }
+    }
+
+    fun setRollForPartners(on: Boolean) {
+        _setup.update { it.copy(rollForPartners = on) }
     }
 
     /** How many players the game has: the first [count] slots play. */

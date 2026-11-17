@@ -45,13 +45,16 @@ object HeuristicStrategy : CpuStrategy {
 
     internal fun score(state: GameState, move: Move): Double {
         val board = state.board
-        val seat = state.currentPlayer.seat
-        var score = CAPTURE * move.captures.size
+        val owner = move.ownerIn(state)
+        val seat = state.players[owner].seat
+        // Sending a partner home (where partners capture) costs what taking an opponent gains.
+        val (partners, opponents) = move.captures.partition { state.rules.arePartners(state.current, it.player) }
+        var score = CAPTURE * (opponents.size - partners.size)
         if (move.from == PawnPosition.YARD_PROGRESS) score += LEAVE_YARD
         if (move.to == board.homeProgress) score += REACH_HOME
         if (isSafe(state, seat, move.to)) score += REACH_SAFETY
-        if (threats(state, seat, move.from) > 0) score += ESCAPE
-        score -= IN_REACH * threats(state, seat, move.to, ignoring = move.captures)
+        if (threats(state, owner, move.from) > 0) score += ESCAPE
+        score -= IN_REACH * threats(state, owner, move.to, ignoring = move.captures)
         score += ADVANCE * maxOf(move.from, 0)
         return score
     }
@@ -83,12 +86,13 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
         moves.shuffled(random).maxBy { value(state, it) }
 
     internal fun value(state: GameState, move: Move): Double {
-        val after = LudoEngine.move(state, move.pawn)
+        val after = LudoEngine.move(state, move.pawn, move.owner)
         val me = state.current
         var value = 0.0
         after.players.forEachIndexed { index, player ->
             val worth = player.pawns.sumOf { pawnWorth(after, player.seat, it) }
-            value += if (index == me) worth else -weights.opponent * worth
+            // A partner's pawns are as good as this player's own.
+            value += if (index == me || state.rules.arePartners(me, index)) worth else -weights.opponent * worth
         }
         return value - weights.risk * expectedLoss(after, me) + weights.chance * expectedGain(after, me)
     }
@@ -108,7 +112,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
         val mine = state.players[me]
         val targets = mutableMapOf<Int, Double>()
         state.players.forEachIndexed { index, opponent ->
-            if (index == me) return@forEachIndexed
+            if (index == me || state.rules.arePartners(me, index)) return@forEachIndexed
             for (progress in opponent.pawns) {
                 if (progress !in 0..<board.trackSteps || isSafe(state, opponent.seat, progress)) continue
                 val square = board.trackSquare(opponent.seat, progress)
@@ -137,7 +141,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
         if (exposed.isEmpty()) return 0.0
         var loss = 0.0
         state.players.forEachIndexed { index, opponent ->
-            if (index == me || index in state.finishingOrder) return@forEachIndexed
+            if (index == me || index in state.finishingOrder || isFriendly(state, me, index)) return@forEachIndexed
             for (roll in 1..state.rules.dieFaces) {
                 val reachable = opponent.pawns.mapNotNull { progress ->
                     val to = when {
@@ -160,17 +164,22 @@ private fun isSafe(state: GameState, seat: Int, progress: Int): Boolean {
     return progress !in 0..<board.trackSteps || board.isSafe(board.trackSquare(seat, progress))
 }
 
+/** Whether [other]'s pawns can't capture [me]'s: [me] themselves, or a partner where partners don't capture. */
+private fun isFriendly(state: GameState, me: Int, other: Int): Boolean =
+    other == me || (state.rules.arePartners(me, other) && !state.rules.partnerCaptures)
+
 /**
- * How many opponents' pawns could land on [seat]'s pawn at [progress] with their next roll, not counting the pawns in
+ * How many opponents' pawns could land on [owner]'s pawn at [progress] with their next roll, not counting the pawns in
  * [ignoring] (captured by the move being weighed). None for a safe pawn.
  */
-private fun threats(state: GameState, seat: Int, progress: Int, ignoring: List<PawnRef> = emptyList()): Int {
+private fun threats(state: GameState, owner: Int, progress: Int, ignoring: List<PawnRef> = emptyList()): Int {
+    val seat = state.players[owner].seat
     if (isSafe(state, seat, progress)) return 0
     val board = state.board
     val square = board.trackSquare(seat, progress)
     var count = 0
     state.players.forEachIndexed { index, opponent ->
-        if (index == state.current) return@forEachIndexed
+        if (index == state.current || isFriendly(state, owner, index)) return@forEachIndexed
         opponent.pawns.forEachIndexed { pawn, at ->
             if (PawnRef(index, pawn) in ignoring || at !in 0..<board.trackSteps) return@forEachIndexed
             val reach = (1..state.rules.dieFaces).any { roll -> at + roll < board.trackSteps && board.trackSquare(opponent.seat, at + roll) == square }

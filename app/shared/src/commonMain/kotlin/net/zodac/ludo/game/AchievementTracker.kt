@@ -148,7 +148,8 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
             }
         }
         if (after.players[PLAYER_ONE].timesCaptured >= PUNCHING_BAG_CAPTURES) feats += Achievement.PUNCHING_BAG
-        val opponents = after.players.indices.filter { it != PLAYER_ONE }
+        // A partner isn't an opponent: in a team game, they're racing for player 1's place too.
+        val opponents = after.players.indices.filter { it != PLAYER_ONE && !after.rules.arePartners(PLAYER_ONE, it) }
         val myHome = after.players[PLAYER_ONE].pawnsHome(board)
         if (opponents.any { after.players[it].pawnsHome(board) > myHome }) everBehind = true
         if (myHome == 0 && opponents.any { after.players[it].pawnsHome(board) == pawnsPerPlayer - 1 }) trailedBadly = true
@@ -157,13 +158,13 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
 
         var won: Boolean? = null
         if (before.winner == null && after.winner != null) {
-            won = after.winner == PLAYER_ONE
+            won = after.placeOf(PLAYER_ONE) == 1
             feats += if (won) wonAchievements(after, opponents) else lostAchievements(after)
             if (won) counts.add(AchievementCounter.GAMES_WON)
         }
         if (PLAYER_ONE !in before.finishingOrder && PLAYER_ONE in after.finishingOrder) {
             counts.add(AchievementCounter.GAMES_PLAYED)
-            if (after.isFinished && after.finishingOrder.last() == PLAYER_ONE) {
+            if (after.isFinished && after.placeOf(PLAYER_ONE) == after.placeOf(after.finishingOrder.last())) {
                 feats += Achievement.WOODEN_SPOON
                 counts.add(AchievementCounter.LAST_PLACES)
             }
@@ -270,7 +271,7 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
             val neverOut: (PlayerState) -> Boolean = { player ->
                 player.pawns.all { it == PawnPosition.YARD_PROGRESS } && player.timesCaptured == 0
             }
-            val opponents = before.players.indices - PLAYER_ONE
+            val opponents = before.players.indices.filter { it != PLAYER_ONE && !before.rules.arePartners(PLAYER_ONE, it) }
             if (neverOut(me)) {
                 if (opponents.all { neverOut(before.players[it]) }) feats += Achievement.EARLY_BIRD
                 if (opponents.none { neverOut(before.players[it]) }) lastOut = true

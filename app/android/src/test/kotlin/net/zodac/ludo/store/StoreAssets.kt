@@ -137,7 +137,7 @@ internal object StoreState {
     /** The next action of [state], played by the Medium CPU for whoever's turn it is. */
     fun step(state: GameState, random: Random): GameState = when (val phase = state.phase) {
         TurnPhase.AwaitingRoll -> LudoEngine.roll(state, random)
-        is TurnPhase.AwaitingMove -> LudoEngine.move(state, CpuStrategy.of(Difficulty.MEDIUM).choose(state, phase.moves, random).pawn)
+        is TurnPhase.AwaitingMove -> CpuStrategy.of(Difficulty.MEDIUM).choose(state, phase.moves, random).let { LudoEngine.move(state, it.pawn, it.owner) }
         TurnPhase.Finished -> state
     }
 

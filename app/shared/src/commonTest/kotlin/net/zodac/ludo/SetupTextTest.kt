@@ -5,6 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -13,6 +17,7 @@ import androidx.compose.ui.test.performClick
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.model.TeamMode
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.platform.SilentPlatformServices
 import net.zodac.ludo.ui.game.GameViewModel
@@ -92,5 +97,29 @@ class SetupTextTest : UiTest() {
         compose.waitForIdle()
         assertEquals(8, viewModel.setupForm.setup.value.playerCount)
         compose.onAllNodesWithContentDescription("Player 8 colour, Purple").assertCountEquals(1)
+    }
+
+    @Test
+    fun `the Teams card - three choices with 4, 6, or 8 players - what each makes said - and its two switches`() = uiTest(SCREEN) {
+        val viewModel = gameViewModel()
+        viewModel.setupForm.setPlayerCount(5)
+        show(viewModel)
+        compose.onNodeWithText("Teams need 4, 6, or 8 players").assertExists()
+        viewModel.setupForm.setPlayerCount(6)
+        compose.waitForIdle()
+        listOf("Off", "Two Teams", "Pairs").forEach { compose.onNodeWithText(it).assertExists() }
+        compose.onAllNodesWithText("Partners can capture each other").assertCountEquals(0)
+        compose.onNodeWithText("Two Teams").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Two teams of 3, seats alternating").assertExists()
+        viewModel.setupForm.setTeamMode(TeamMode.PAIRS)
+        compose.waitForIdle()
+        compose.onNodeWithText("3 teams of two, partners opposite").assertExists()
+        // Each switch is one toggle, named by its words.
+        compose.onNode(hasText("Partners can capture each other") and isToggleable()).assertIsOff().performClick()
+        compose.onNode(hasText("Roll for a partner once your pawns are home") and isToggleable()).assertIsOn()
+        compose.waitForIdle()
+        assertEquals(true, viewModel.setupForm.setup.value.partnerCaptures)
+        assertEquals(listOf(0, 1, 2, 0, 1, 2), viewModel.setupForm.setup.value.teams)
     }
 }

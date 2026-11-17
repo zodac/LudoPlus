@@ -67,21 +67,26 @@ import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.common_default_player_name
+import net.zodac.ludo.resources.game_event_all_home
 import net.zodac.ludo.resources.game_event_capture
 import net.zodac.ludo.resources.game_event_finished
 import net.zodac.ludo.resources.game_event_first
 import net.zodac.ludo.resources.game_event_home
 import net.zodac.ludo.resources.game_event_no_move
+import net.zodac.ludo.resources.game_event_team_finished
 import net.zodac.ludo.resources.game_event_three_sixes
 import net.zodac.ludo.resources.game_over_results
+import net.zodac.ludo.resources.game_over_team_winner
 import net.zodac.ludo.resources.game_over_winner
 import net.zodac.ludo.resources.game_player_pawns_home_spoken
 import net.zodac.ludo.resources.game_player_place
+import net.zodac.ludo.resources.game_player_team_spoken
 import net.zodac.ludo.resources.game_player_turn_spoken
 import net.zodac.ludo.resources.game_prompt_cpu_move
 import net.zodac.ludo.resources.game_prompt_cpu_roll
 import net.zodac.ludo.resources.game_prompt_cpu_roll_again
 import net.zodac.ludo.resources.game_prompt_move
+import net.zodac.ludo.resources.game_prompt_move_partner
 import net.zodac.ludo.resources.game_prompt_roll
 import net.zodac.ludo.resources.game_prompt_roll_again
 import net.zodac.ludo.resources.game_tutorial_coach_name
@@ -94,6 +99,7 @@ import net.zodac.ludo.ui.common.groupReduceMotion
 import net.zodac.ludo.ui.common.joinClauses
 import net.zodac.ludo.ui.common.ordinal
 import net.zodac.ludo.ui.common.pluralStringResource
+import net.zodac.ludo.ui.common.spokenList
 import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.icons.Symbols
 import net.zodac.ludo.ui.theme.color
@@ -182,7 +188,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
         GameContent(
             started,
             onRoll = viewModel::roll,
-            onMove = viewModel::move,
+            onMove = { viewModel.move(it) },
             onBack = leave,
             onResults = { finishedView = FinishedView.RESULTS },
             tutorial = if (isTutorial) {
@@ -274,7 +280,7 @@ private fun GameFeedback(state: GameState) {
 fun GameContent(
     started: StartedGame,
     onRoll: () -> Unit,
-    onMove: (pawn: Int) -> Unit,
+    onMove: (Move) -> Unit,
     onBack: () -> Unit,
     onResults: () -> Unit,
     tutorial: TutorialView? = null,
@@ -303,7 +309,7 @@ fun GameContent(
                     state = started.state,
                     seatColours = seatColours,
                     moves = moves,
-                    onPawn = onMove,
+                    onMove = onMove,
                     modifier = modifier.clip(RoundedCornerShape(8.dp)),
                 )
             }
@@ -376,10 +382,13 @@ private fun PlayerCard(game: StartedGame, index: Int, modifier: Modifier) {
     val colour = player.colour.color
     val current = state.current == index && !state.isFinished
     val home = side.pawnsHome(state.board)
-    val place = state.finishingOrder.indexOf(index).takeIf { it >= 0 && state.players[index].isFinished(state.board) }
-    val placeText = place?.let { stringResource(Res.string.game_player_place, ordinal(it + 1)) }
+    // A player still racing when the game ended has a place but no pawns all home: their card keeps its dots.
+    val place = state.placeOf(index).takeIf { side.isFinished(state.board) }
+    val placeText = place?.let { stringResource(Res.string.game_player_place, ordinal(it)) }
+    val team = teamNumber(state, index)
     val spoken = joinClauses(
         listOfNotNull(
+            team?.let { stringResource(Res.string.game_player_team_spoken, it) },
             pluralStringResource(Res.plurals.game_player_pawns_home_spoken, home, home),
             if (current) stringResource(Res.string.game_player_turn_spoken) else null,
             placeText,
@@ -396,6 +405,7 @@ private fun PlayerCard(game: StartedGame, index: Int, modifier: Modifier) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            if (team != null) TeamBadge(team, Modifier.clearAndSetSemantics { })
             Surface(color = colour, shape = CircleShape, modifier = Modifier.size(14.dp)) {}
             Text(
                 text = player.name,
@@ -411,6 +421,56 @@ private fun PlayerCard(game: StartedGame, index: Int, modifier: Modifier) {
                 PawnsHomeDots(home, state.rules.pawnsPerPlayer, colour, Modifier.clearAndSetSemantics { })
             }
         }
+    }
+}
+
+/** [player]'s team as players see it, numbered from 1 in seat order, or null in a game without teams. */
+internal fun teamNumber(state: GameState, player: Int): Int? {
+    if (state.rules.teams == null) return null
+    val order = state.players.indices.map(state.rules::teamOf).distinct()
+    return order.indexOf(state.rules.teamOf(player)) + 1
+}
+
+/** A team's number in a small ring, on each of its players' cards. Drawn only; the card says "Team 1". */
+@Composable
+private fun TeamBadge(team: Int, modifier: Modifier) {
+    Surface(
+        shape = CircleShape,
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant),
+        modifier = modifier.size(18.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(team.toString(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        }
+    }
+}
+
+/** Who won, once the game is over: "Alex wins!", or a team's players, "Alex and Sam win!" */
+@Composable
+private fun winnerLine(game: StartedGame): String {
+    val state = game.state
+    val winners = state.finishingOrder.filter { state.placeOf(it) == 1 }
+    return if (winners.size == 1) {
+        stringResource(Res.string.game_over_winner, game.players[winners.single()].name)
+    } else {
+        stringResource(Res.string.game_over_team_winner, spokenList(winners.map { game.players[it].name }))
+    }
+}
+
+/**
+ * What a move that brought [player]'s last pawn home says: their place ("Alex has every pawn home, in 1st place"); in a
+ * team game, their team's once it's placed ("Alex and Sam are home, in 1st place"), and before that only that they're home.
+ */
+@Composable
+private fun finishedLine(game: StartedGame, player: Int): String {
+    val state = game.state
+    val place = state.placeOf(player) ?: return stringResource(Res.string.game_event_all_home, game.players[player].name)
+    val team = state.players.indices.filter { it == player || state.rules.arePartners(player, it) }
+    return if (team.size == 1) {
+        stringResource(Res.string.game_event_finished, game.players[player].name, ordinal(place))
+    } else {
+        stringResource(Res.string.game_event_team_finished, spokenList(team.map { game.players[it].name }), ordinal(place))
     }
 }
 
@@ -436,7 +496,7 @@ private fun TurnPanel(
     moves: List<Move>,
     seatColours: List<PlayerColour?>,
     onRoll: () -> Unit,
-    onMove: (Int) -> Unit,
+    onMove: (Move) -> Unit,
     onResults: () -> Unit,
     dieSize: Dp,
     tutorial: TutorialView? = null,
@@ -447,7 +507,7 @@ private fun TurnPanel(
     if (state.isFinished) {
         Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text = stringResource(Res.string.game_over_winner, name(state.finishingOrder.first())),
+                text = winnerLine(game),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.semantics { heading() },
@@ -483,7 +543,7 @@ private fun ColumnScope.StatusLines(
     game: StartedGame,
     moves: List<Move>,
     seatColours: List<PlayerColour?>,
-    onMove: (Int) -> Unit,
+    onMove: (Move) -> Unit,
     tutorial: Boolean = false,
 ) {
     val state = game.state
@@ -495,11 +555,7 @@ private fun ColumnScope.StatusLines(
         event == null -> stringResource(Res.string.game_event_first, name(game.rollOff.first))
         event is GameEvent.NoMove -> stringResource(Res.string.game_event_no_move, name(event.player), event.roll)
         event is GameEvent.RollAgainLimit -> stringResource(Res.string.game_event_three_sixes, name(event.player))
-        event is GameEvent.Moved && event.finished -> stringResource(
-            Res.string.game_event_finished,
-            name(event.player),
-            ordinal(state.finishingOrder.indexOf(event.player) + 1),
-        )
+        event is GameEvent.Moved && event.finished -> finishedLine(game, event.move.owner ?: event.player)
 
         event is GameEvent.Moved && event.move.captures.isNotEmpty() -> event.move.captures.size.let { count ->
             pluralStringResource(Res.plurals.game_event_capture, count, name(event.player), name(event.move.captures.first().player), count)
@@ -512,6 +568,7 @@ private fun ColumnScope.StatusLines(
     val current = name(state.current)
     val prompt = when {
         phase is TurnPhase.AwaitingMove && game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_move, current, phase.roll)
+        phase is TurnPhase.AwaitingMove && phase.moves.all { it.owner != null } -> stringResource(Res.string.game_prompt_move_partner, current, phase.roll)
         phase is TurnPhase.AwaitingMove -> stringResource(Res.string.game_prompt_move, current, phase.roll)
         game.currentIsCpu && state.rollingAgain -> stringResource(Res.string.game_prompt_cpu_roll_again, current)
         game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_roll, current)
@@ -528,7 +585,7 @@ private fun ColumnScope.StatusLines(
     )
     // A screen reader can make any move from here as well as from its pawn's square.
     val colourOf = { player: Int -> seatColours[state.players[player].seat] ?: PlayerColour.defaultFor(state.players[player].seat) }
-    val actions = moves.map { move -> CustomAccessibilityAction(moveLabel(state, move, colourOf)) { onMove(move.pawn); true } }
+    val actions = moves.map { move -> CustomAccessibilityAction(moveLabel(state, move, colourOf)) { onMove(move); true } }
     Text(
         text = prompt,
         style = MaterialTheme.typography.titleMedium,

@@ -392,7 +392,8 @@ can't is a page saying so, with the stack trace to report. The app never just cl
 counts under their heading (`ui/records/PlayerCountRow.kt`, TalkBack "4 players"). The Leaderboard has a board a count,
 2 to 8 (a bigger board's lap is longer, so turns only compare within a count), opening at the count New Game last
 started; Statistics opens on "All" (every game, spoken "All games") and can show one count's games. Filtered in the
-query and in `playerStatistics`, with no schema change.
+query and in `playerStatistics`, with no schema change. A team game records each player at their team's place, and
+stays off the Leaderboard (`playedUnmodified` false): a team's win is its players' together, not one player's race.
 
 **Time played** is a line at the top of Statistics, on every page and with no players yet: `PlayTimeLine`, seconds
 counting up for the first minute ("42s"), then minutes, hours and minutes ("12h 34m"), and from 24 hours days, hours,

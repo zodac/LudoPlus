@@ -5,6 +5,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import net.zodac.ludo.game.GameState
+import net.zodac.ludo.game.PawnRef
 import net.zodac.ludo.model.PawnPosition
 
 /**
@@ -73,13 +74,18 @@ private fun MutableMap<BoardSquare, MutableMap<Int, MutableList<Int>>>.square(ce
 const val PAWN_TAP_REACH = 1.6f
 
 /**
- * The pawn a tap at [point] (board units) picks among [movable] (the current player's movable pawns): the nearest
- * movable mark's first movable pawn, within [PAWN_TAP_REACH]. Null for a tap nowhere near one.
+ * The pawn a tap at [point] (board units) picks among [movable] (the pawns the current player can move: their own, or a
+ * partner's they roll for): the nearest movable mark's first movable pawn, within [PAWN_TAP_REACH]. Null for a tap
+ * nowhere near one.
  */
-fun pawnAt(point: Offset, marks: List<PawnMark>, player: Int, movable: Set<Int>): Int? =
+fun pawnAt(point: Offset, marks: List<PawnMark>, movable: Set<PawnRef>): PawnRef? =
     marks.asSequence()
-        .filter { it.player == player && it.pawns.any { pawn -> pawn in movable } }
+        .filter { mark -> mark.pawns.any { PawnRef(mark.player, it) in movable } }
         .map { it to (it.centre - point).getDistance() }
         .filter { it.second <= PAWN_TAP_REACH }
         .minByOrNull { it.second }
-        ?.first?.pawns?.first { it in movable }
+        ?.first?.let { mark -> PawnRef(mark.player, mark.pawns.first { PawnRef(mark.player, it) in movable }) }
+
+/** [pawnAt] for [player]'s own [movable] pawns, by index. */
+fun pawnAt(point: Offset, marks: List<PawnMark>, player: Int, movable: Set<Int>): Int? =
+    pawnAt(point, marks, movable.map { PawnRef(player, it) }.toSet())?.pawn

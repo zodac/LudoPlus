@@ -77,7 +77,7 @@ object AchievementEngine {
         if (players.firstOrNull()?.type != PlayerType.HUMAN) return GameFeats()
         val earned = buildSet {
             add(Achievement.THE_JOURNEY_BEGINS)
-            if (previousGame != null && previousGame.isFinished && previousGame.winner != 0) add(Achievement.ONE_MORE_TIME)
+            if (previousGame != null && previousGame.isFinished && previousGame.placeOf(0) != 1) add(Achievement.ONE_MORE_TIME)
             if (players.drop(1).any { it.type == PlayerType.HUMAN && it.name == CREATOR_NAME }) add(Achievement.BIG_FAN)
             if (localHour in MIDNIGHT_HOURS) add(Achievement.MIDNIGHT_RUN)
             if (players.any { it.name.equals(LUDO_NAME, ignoreCase = true) }) add(Achievement.WHOS_LUDO)
