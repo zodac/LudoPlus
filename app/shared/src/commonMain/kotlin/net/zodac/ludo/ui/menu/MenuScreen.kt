@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.menu_continue
+import net.zodac.ludo.resources.menu_achievements
 import net.zodac.ludo.resources.menu_leaderboard
 import net.zodac.ludo.resources.menu_new_game
 import net.zodac.ludo.resources.menu_play
@@ -66,6 +67,7 @@ fun MenuScreen(
     hasInProgressGame: Boolean?,
     onContinue: () -> Unit,
     onNewGame: () -> Unit,
+    onAchievements: () -> Unit,
     onLeaderboard: () -> Unit,
     onStatistics: () -> Unit,
     onRules: () -> Unit,
@@ -86,6 +88,7 @@ fun MenuScreen(
                 label = "menuButtonsAlpha", // i18n: not translated - an animation label, not shown
             )
             val destinations = listOf(
+                stringResource(Res.string.menu_achievements) to onAchievements,
                 stringResource(Res.string.menu_leaderboard) to onLeaderboard,
                 stringResource(Res.string.menu_statistics) to onStatistics,
                 stringResource(Res.string.menu_rules) to onRules,
@@ -211,6 +214,7 @@ private fun MenuScreenPreview() {
             hasInProgressGame = false,
             onContinue = {},
             onNewGame = {},
+            onAchievements = {},
             onLeaderboard = {},
             onStatistics = {},
             onRules = {},
@@ -227,6 +231,7 @@ private fun MenuScreenInProgressPreview() {
             hasInProgressGame = true,
             onContinue = {},
             onNewGame = {},
+            onAchievements = {},
             onLeaderboard = {},
             onStatistics = {},
             onRules = {},

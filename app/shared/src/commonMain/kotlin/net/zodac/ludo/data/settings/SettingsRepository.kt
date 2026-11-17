@@ -95,6 +95,11 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun setStopAtFirstWinner(stop: Boolean) = set(STOP_AT_FIRST_WINNER_KEY, stop)
 
+    /** Whether the Achievements page shows only the achievements not yet earned: its Unearned switch. Off until switched on. */
+    val lockedOnlyAchievements: Flow<Boolean> = read(LOCKED_ONLY_ACHIEVEMENTS_KEY, default = false)
+
+    suspend fun setLockedOnlyAchievements(lockedOnly: Boolean) = set(LOCKED_ONLY_ACHIEVEMENTS_KEY, lockedOnly)
+
     val soundEnabled: Flow<Boolean> = read(SOUND_ENABLED_KEY, default = true)
 
     suspend fun setSoundEnabled(enabled: Boolean) = set(SOUND_ENABLED_KEY, enabled)
@@ -158,6 +163,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     private companion object {
         val CONFIRM_BEFORE_LEAVING_GAME_KEY = booleanPreferencesKey("confirm_before_leaving_game")
         val STOP_AT_FIRST_WINNER_KEY = booleanPreferencesKey("stop_at_first_winner")
+        val LOCKED_ONLY_ACHIEVEMENTS_KEY = booleanPreferencesKey("locked_only_achievements")
         val SOUND_ENABLED_KEY = booleanPreferencesKey("sound_enabled")
         val VIBRATION_ENABLED_KEY = booleanPreferencesKey("vibration_enabled")
         val ANIMATION_LEVEL_KEY = stringPreferencesKey("animation_level")

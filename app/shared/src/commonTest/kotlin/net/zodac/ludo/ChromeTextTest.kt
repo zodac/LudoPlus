@@ -40,7 +40,7 @@ class ChromeTextTest : UiTest() {
                 LudoPlusTheme {
                     MenuScreen(
                         hasInProgressGame = hasInProgressGame,
-                        onContinue = {}, onNewGame = {}, onLeaderboard = {}, onStatistics = {}, onRules = {}, onSettings = {},
+                        onContinue = {}, onNewGame = {}, onAchievements = {}, onLeaderboard = {}, onStatistics = {}, onRules = {}, onSettings = {},
                     )
                 }
             }

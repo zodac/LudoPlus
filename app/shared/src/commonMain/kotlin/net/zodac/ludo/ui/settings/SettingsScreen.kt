@@ -1,6 +1,7 @@
 package net.zodac.ludo.ui.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -24,16 +26,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.zodac.ludo.app.LocalAppContainer
+import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.about_title
 import net.zodac.ludo.resources.licences_title
+import net.zodac.ludo.resources.settings_already_developer
 import net.zodac.ludo.resources.settings_confirm_leaving
 import net.zodac.ludo.resources.settings_graphics
 import net.zodac.ludo.resources.settings_sound
+import net.zodac.ludo.resources.settings_steps_from_developer
 import net.zodac.ludo.resources.settings_stop_at_first_winner
 import net.zodac.ludo.resources.settings_title
 import net.zodac.ludo.resources.settings_version
@@ -44,6 +50,7 @@ import net.zodac.ludo.ui.common.LocalLandscapePage
 import net.zodac.ludo.ui.common.ScreenScaffold
 import net.zodac.ludo.ui.common.ShrinkThenWrapText
 import net.zodac.ludo.ui.common.TwoPanes
+import net.zodac.ludo.ui.common.pluralStringResource
 import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.icons.Symbols
 
@@ -145,6 +152,13 @@ fun SettingsScreen(
     // Saveable: a rotation with a dialog open shouldn't silently close it.
     var showLicenses by rememberSaveable { mutableStateOf(false) }
     var showAbout by rememberSaveable { mutableStateOf(false) }
+    val platform = LocalPlatformServices.current
+    val alreadyDeveloper = stringResource(Res.string.settings_already_developer)
+    // Index 0 is steps-away 1: resolved in composition, as the plural form and numerals need it.
+    val stepsAway = (1 until SettingsViewModel.VERSION_TAP_TARGET).map { pluralStringResource(Res.plurals.settings_steps_from_developer, it, it) }
+    LaunchedEffect(viewModel) {
+        viewModel.versionTapMessages.collect { steps -> platform.showTransientMessage(if (steps == 0) alreadyDeveloper else stepsAway[steps - 1]) }
+    }
     ScreenScaffold(
         title = stringResource(Res.string.settings_title),
         onBack = onBack,
@@ -184,7 +198,10 @@ fun SettingsScreen(
         // screen's content moved once it was folded in here. The version is the scaffold's footer.
         val aboutLink = @Composable { linkModifier: Modifier ->
             TextButton(
-                onClick = { showAbout = true },
+                onClick = {
+                    showAbout = true
+                    viewModel.onAboutViewed()
+                },
                 modifier = linkModifier,
             ) {
                 Icon(
@@ -237,7 +254,11 @@ fun SettingsScreen(
         // The version, last on the page, just below the links.
         FooterPill(
             stringResource(Res.string.settings_version, LocalAppContainer.current.buildInfo.versionName),
-            modifier = Modifier.offset(y = if (LocalLandscapePage.current) 0.dp else LINKS_RAISE * 2),
+            // Raw taps, not clickable, and no ripple: the "Are You A Developer?" easter egg. A clickable would give
+            // TalkBack a "double tap to activate" on a label that does nothing anyone could use.
+            modifier = Modifier
+                .offset(y = if (LocalLandscapePage.current) 0.dp else LINKS_RAISE * 2)
+                .pointerInput(Unit) { detectTapGestures { viewModel.onVersionTapped() } },
         )
     }
 

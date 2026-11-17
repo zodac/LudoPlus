@@ -21,4 +21,6 @@ object Screen {
     const val LEADERBOARD = "leaderboard"
 
     const val STATISTICS = "statistics"
+
+    const val ACHIEVEMENTS = "achievements"
 }

@@ -37,6 +37,10 @@ import net.zodac.ludo.ui.common.delayWhileResumed
 import net.zodac.ludo.ui.game.LeaveGameConfirmation
 import net.zodac.ludo.ui.game.LeaveGameConfirmationDialog
 import net.zodac.ludo.ui.game.LocalGameHaptics
+import net.zodac.ludo.navigation.AchievementScrollRequest
+import net.zodac.ludo.navigation.AchievementScrollRequests
+import net.zodac.ludo.navigation.Screen
+import net.zodac.ludo.ui.achievements.AchievementBannerHost
 import net.zodac.ludo.ui.game.LocalLeaveGameConfirmation
 import net.zodac.ludo.ui.game.LocalSoundEffects
 import net.zodac.ludo.ui.game.rememberAppHaptics
@@ -49,8 +53,8 @@ import net.zodac.ludo.ui.theme.LudoPlusTheme
  * The whole app, on whatever platform hosts it: each platform's entry point builds its [AppContainer] and
  * [PlatformServices] and hands them in here, and everything below is shared.
  *
- * DiceFive's online sync, purchases, play-time count and achievement banners hung off this root too; they come back in
- * their phases of `.claude/IMPLEMENTATION.md`.
+ * The achievement banners sit here, over every page. DiceFive's online sync and purchases hung off this root too; they
+ * come back in their phases of `.claude/IMPLEMENTATION.md`.
  */
 @Composable
 fun LudoPlusApp(
@@ -126,7 +130,23 @@ fun LudoPlusApp(
                                 screenIdle.wake()
                             }
                     }
-                    LudoPlusNavHost(navController = navController, cover = pageCover)
+                    // Above the NavHost, not inside it: the burst of banners at the end of a game has to survive the move
+                    // from the board to Game Over and on to the menu, which a per-page overlay wouldn't.
+                    AchievementBannerHost(
+                        modifier = Modifier.fillMaxSize(),
+                        isOnGameScreen = { navController.currentDestination?.route == Screen.PLAY_GAME },
+                        onAchievementSelected = { achievement ->
+                            val alreadyOnAchievements = navController.currentDestination?.route == Screen.ACHIEVEMENTS
+                            // Requested before navigating: an Achievements page not yet open starts its collector only
+                            // once it composes, and the request's replay is what lets it still catch this.
+                            AchievementScrollRequests.request(AchievementScrollRequest(achievement.id, animate = alreadyOnAchievements))
+                            if (!alreadyOnAchievements) {
+                                pageCover.change(reduceMotion) { navController.navigate(Screen.ACHIEVEMENTS) }
+                            }
+                        },
+                    ) {
+                        LudoPlusNavHost(navController = navController, cover = pageCover)
+                    }
                     LeaveGameConfirmationDialog(leaveConfirmation)
                 }
             }

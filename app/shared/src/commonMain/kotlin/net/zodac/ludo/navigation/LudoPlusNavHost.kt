@@ -25,6 +25,8 @@ import net.zodac.ludo.data.orNullOnFailure
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.common_default_player_name
 import net.zodac.ludo.resources.game_tutorial_cpu_name
+import net.zodac.ludo.ui.achievements.AchievementsScreen
+import net.zodac.ludo.ui.achievements.AchievementsViewModel
 import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.common.LocalPageCover
 import net.zodac.ludo.ui.common.LocalReduceMotion
@@ -91,6 +93,7 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
             // Straight to the board, which brings the saved game back itself (see below).
             onContinue = { navigate(Screen.PLAY_GAME) },
             onNewGame = { navigate(Screen.PLAY_GRAPH) },
+            onAchievements = { navigate(Screen.ACHIEVEMENTS) },
             onLeaderboard = { navigate(Screen.LEADERBOARD) },
             onStatistics = { navigate(Screen.STATISTICS) },
             onRules = { navigate(Screen.RULES) },
@@ -166,5 +169,8 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
     }
     composable(Screen.STATISTICS) {
         StatisticsScreen(viewModel = viewModel(factory = StatisticsViewModel.factory(container)), onBack = navigateUp)
+    }
+    composable(Screen.ACHIEVEMENTS) {
+        AchievementsScreen(viewModel = viewModel(factory = AchievementsViewModel.factory(container)), onBack = navigateUp)
     }
 }

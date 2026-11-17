@@ -15,7 +15,7 @@ reorders them.
 | 3 | CPU opponents | Done |
 | 4 | Saving, Game Over, Statistics, and the Leaderboard | Done |
 | 5 | Rules, tutorial, sound, and polish (to 1.0.0) | In progress |
-| 6 | Achievements | Not started |
+| 6 | Achievements | Done |
 | 7 | Styles | Not started |
 | 8 | 2-8 players | Not started |
 | 9 | Game modes and modifiers | Not started |
@@ -285,11 +285,15 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 
 ## Phase 6: Achievements
 
-- [ ] Achievement catalog for Ludo, with permanent ids and titles of 38 characters or less: first win, captures (1,
-    100, 1,000), comeback wins, a win with no pawn captured, three captures in a turn, the full lap, streaks, and
-    hidden ones.
-- [ ] Audit them against modes and modifiers (`GAME_MODES_AUDIT.md`).
-- [ ] Unlocks are tested from the engine's events, not the UI.
+- [x] Achievement catalog for Ludo (`DESIGN.md`, "Achievements"): 51, in Milestones, Captures, Racing, Winning,
+    Misfortune, Miscellaneous (hidden), Collection, and Easter Eggs, with permanent ids and titles of 38 characters or
+    less. First win, captures (Gotcha!, Bouncer, Public Enemy: 1, 100, 1,000), Comeback Kid, Untouchable, Hat Trick,
+    Lap Of Honour (the full lap), streaks, and hidden ones. DiceFive's page, banners, unlocker, and store came back
+    from `5423b6c` (2026-11-17), without style rewards (Phase 7), Play Games (Phase 10), or per-mode limits (Phase 9).
+    The catalog awaits the maintainer's review.
+- [x] Audited against the one mode and Settings' stop at first winner (`GAME_MODES_AUDIT.md`).
+- [x] Unlocks are tested from the engine's events, not the UI (`AchievementTrackerTest`, `AchievementEngineTest`), and
+    end to end through `GameViewModel` (`GameAchievementsTest`).
 
 ## Phase 7: Styles
 

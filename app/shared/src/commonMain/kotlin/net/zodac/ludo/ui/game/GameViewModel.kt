@@ -18,18 +18,23 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import net.zodac.ludo.app.AchievementUnlocker
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.data.game.InProgressGameRepository
 import net.zodac.ludo.data.orNullOnFailure
 import net.zodac.ludo.data.records.GameRecordRepository
 import net.zodac.ludo.data.settings.SettingsRepository
+import net.zodac.ludo.game.AchievementEngine
+import net.zodac.ludo.game.AchievementTracker
 import net.zodac.ludo.game.CpuStrategy
+import net.zodac.ludo.game.GameFeats
 import net.zodac.ludo.game.GameState
 import net.zodac.ludo.game.LudoEngine
 import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.game.TutorialScript
 import net.zodac.ludo.game.TutorialStep
+import net.zodac.ludo.game.localHourOfDay
 import net.zodac.ludo.game.nowEpochMillis
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerColour
@@ -48,7 +53,10 @@ import net.zodac.ludo.model.PlayerType
  * Its play time ([StartedGame.playMillis]) counts, by [elapsedMillis], only while it's on screen and not held.
  *
  * Given a [tutorial], it plays that guided game instead ([startTutorial]): every roll and move is the script's, only the
- * step's own action is taken, and nothing is kept (no save, no records, no setup saved).
+ * step's own action is taken, and nothing is kept (no save, no records, no setup saved, no achievements).
+ *
+ * Every step of a game is shown to an [AchievementTracker], and what it earns player 1 goes to [achievements] (none
+ * without one): a new game's start, at [localHour] of its start time, and a saved game's continuing too.
  */
 class GameViewModel(
     private val settingsRepository: SettingsRepository,
@@ -58,6 +66,8 @@ class GameViewModel(
     private val elapsedMillis: () -> Long = monotonicMillis(),
     private val now: () -> Long = ::nowEpochMillis,
     private val tutorial: TutorialScript? = null,
+    private val achievements: AchievementUnlocker? = null,
+    private val localHour: (epochMillis: Long) -> Int = ::localHourOfDay,
 ) : ViewModel() {
 
     private var pacing = GamePacing()
@@ -108,9 +118,10 @@ class GameViewModel(
         if (value) {
             if (!game.state.isFinished) playMark = elapsedMillis()
         } else {
-            // Leaving the screen: what was played so far is saved with it.
+            // Leaving the screen: what was played so far is saved with it, and counted.
             commit(game)
             playMark = null
+            tracker?.let { record(it.flush()) }
         }
     }
 
@@ -179,6 +190,10 @@ class GameViewModel(
         val players = setupForm.playerConfigs(defaultName)
         val rollOff = RollOff.roll(players.size, setup.gameMode.rules.dieFaces, random)
         cpuTurn?.cancel()
+        val previousGame = _game.value?.state
+        val startedAt = now()
+        tracker = AchievementTracker(players)
+        record(AchievementEngine.atGameStart(players, previousGame, localHour(startedAt)))
         playMark = elapsedMillis().takeIf { foreground.value }
         commit(
             StartedGame(
@@ -191,7 +206,7 @@ class GameViewModel(
                     rules = setup.gameMode.rules.copy(stopAtFirstWinner = stopAtFirstWinner.value),
                 ),
                 rollOff = rollOff,
-                startedAtEpochMillis = now(),
+                startedAtEpochMillis = startedAt,
             ),
         )
         viewModelScope.launch { setup.saveTo(settingsRepository) }
@@ -208,6 +223,8 @@ class GameViewModel(
         if (_game.value != null) return true
         playMark = elapsedMillis().takeIf { foreground.value }
         _game.value = game
+        tracker = AchievementTracker(game.players)
+        record(AchievementEngine.atGameResume())
         playCpuTurn()
         return true
     }
@@ -247,9 +264,29 @@ class GameViewModel(
 
     private fun update(state: GameState) {
         val game = _game.value ?: return
+        track(game.state, state)
         commit(game.copy(state = state))
         advanceTutorial()
         playCpuTurn()
+    }
+
+    /** What the game being played has earned so far: see [achievements]. Null in the tutorial, and before a game. */
+    private var tracker: AchievementTracker? = null
+
+    /** Shows the step from [before] to [after] to the [tracker], and records what it earned. */
+    private fun track(before: GameState, after: GameState) {
+        if (tutorial != null) return
+        tracker?.let { record(it.observe(before, after)) }
+    }
+
+    /**
+     * Records [feats] with [achievements], even if the screen is left at once (it starts at once, on the main thread's
+     * immediate dispatcher). Each waits its turn in the unlocker, in the order played.
+     */
+    private fun record(feats: GameFeats) {
+        val unlocker = achievements ?: return
+        if (tutorial != null || feats.isEmpty) return
+        viewModelScope.launch { withContext(NonCancellable) { orNullOnFailure { unlocker.record(feats) } } }
     }
 
     /** Whether this is the guided game: see [tutorial]. */
@@ -364,6 +401,7 @@ class GameViewModel(
                 }
                 TurnPhase.Finished -> return@launch
             }
+            track(now.state, next)
             commit(now.copy(state = next))
             cpuTurn = null
             playCpuTurn()
@@ -377,6 +415,7 @@ class GameViewModel(
                     settingsRepository = container.settingsRepository,
                     savedGame = container.inProgressGameRepository,
                     records = container.gameRecordRepository,
+                    achievements = container.achievementUnlocker,
                 )
             }
         }

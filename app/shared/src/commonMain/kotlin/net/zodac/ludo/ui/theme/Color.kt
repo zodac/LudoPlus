@@ -114,3 +114,16 @@ val CupRimGold = Color(0xFFC79A4B)
 /** The Leaderboard's second and third places; the first is [GoldAccent]. */
 val LeaderboardSilver = Color(0xFFC9D1DC)
 val LeaderboardBronze = Color(0xFFD79A6A)
+
+// Achievement icons in fixed colours (ui/achievements/AchievementIcons.kt): M3 has no role for "this heart is red".
+/** Big Fan's heart. */
+val AchievementHeartRed = Color(0xFFE53935)
+
+/** Are You A Developer?'s icon: Android's developer cyan. */
+val AchievementDeveloperCyan = Color(0xFF3FE6FF)
+
+/** The Completionist trophy's crystal, top left to bottom right: white, ice, cyan, violet. */
+val CrystalTrophyWhite = Color(0xFFFFFFFF)
+val CrystalTrophyIce = Color(0xFFCDEFFF)
+val CrystalTrophyCyan = Color(0xFF8EC5EC)
+val CrystalTrophyViolet = Color(0xFF6F7FD8)

@@ -120,6 +120,7 @@
         <item quantity="other">%1$d images</item>
     </plurals>
 
+    <string name="menu_achievements">Achievements</string>
     <string name="menu_leaderboard">Leaderboard</string>
     <string name="menu_statistics">Statistics</string>
     <string name="menu_rules">Rules</string>
@@ -348,6 +349,13 @@
     <string name="settings_title">Settings</string>
     <!-- The footer. %1$s is the app's version number. -->
     <string name="settings_version">Version %1$s</string>
+    <!-- A toast when the version number is tapped again and again by a player who has already earned the achievement for it. -->
+    <string name="settings_already_developer">You're already a developer!</string>
+    <!-- A toast on each repeated tap of the version number before the achievement is earned. %1$d is how many more taps it needs. -->
+    <plurals name="settings_steps_from_developer">
+        <item quantity="one">You are now %1$d step away from being a developer</item>
+        <item quantity="other">You are now %1$d steps away from being a developer</item>
+    </plurals>
     <string name="settings_sound">Sound effects</string>
     <string name="settings_vibration">Vibration</string>
     <!-- The "Animations" setting: its label and each level's name. -->
@@ -407,7 +415,160 @@
     <string name="styles_unlocked_percent">%1$d%</string>
     <string name="common_ok">OK</string>
 
+    <!-- Achievements (ui/achievements/*) -->
+    <string name="achievements_title">Achievements</string>
+    <!-- The card at the top: achievements earned, of all there are. -->
+    <string name="achievements_earned_count">%1$d of %2$d earned</string>
+    <!-- The count when "earned" doesn't fit the card, then the percentage when even this doesn't. -->
+    <string name="achievements_earned_count_short">%1$d of %2$d</string>
     <string name="achievements_earned_percent">%1$d%</string>
+    <string name="achievements_category_count">%1$d/%2$d</string>
+    <string name="achievements_all_unlocked">Everything's earned. Nothing left to chase!</string>
+    <string name="achievements_unearned_only">Unearned</string>
+    <!-- The other side of the Unearned switch: every achievement shown. -->
+    <string name="filter_all">All</string>
+    <!-- The arrows on a category's header, which jump to the neighbouring one. -->
+    <string name="achievements_previous_category_cd">Previous category</string>
+    <string name="achievements_next_category_cd">Next category</string>
+    <!-- Stands in for the description of a hidden achievement until it is earned. -->
+    <string name="achievements_hidden_description">???</string>
+    <!-- %1$s is a date and time. -->
+    <string name="achievements_unlocked_at">Earned %1$s</string>
+    <!-- Progress towards an achievement: "250 of 1,000". Numbers come grouped. -->
+    <string name="achievements_progress">%1$s of %2$s</string>
+    <!-- TalkBack's names for tapping an achievement banner, which holds it on screen or lets it go. -->
+    <string name="achievements_banner_pause_action">Pause countdown</string>
+    <string name="achievements_banner_resume_action">Resume countdown</string>
+    <!-- Said when the tap holds a banner or lets it go again. -->
+    <string name="achievements_banner_paused_spoken">Paused</string>
+    <string name="achievements_banner_resumed_spoken">Resumed</string>
+    <!-- An unlock banner read aloud: its title, then its description. -->
+    <string name="achievements_banner_unlocked_spoken">Achievement earned: %1$s. %2$s</string>
+    <!-- A progress banner read aloud: the title, then how far along. -->
+    <string name="achievements_banner_progress_spoken">%1$s: %2$s of %3$s</string>
+
+    <!--
+        The longest an achievement's title may be, in characters, in this language: the unlock banner draws it on ONE
+        line, at 11sp or larger and never wrapped. 38 holds for English; a language whose letters are wider (full-width
+        scripts) needs a lower number and one with longer words may need a bigger one *and a banner render to check it
+        fits* (AchievementTextTest enforces whatever is set here, against every title of that language). A translation
+        that leaves this out gets the English figure.
+    -->
+    <string name="achievement_title_max_length">38</string>
+
+    <!-- Achievement categories: the section headers (model/Achievement.kt, AchievementCategory). -->
+    <string name="category_milestones">Milestones</string>
+    <string name="category_captures">Captures</string>
+    <string name="category_racing">Racing</string>
+    <string name="category_winning">Winning</string>
+    <string name="category_misfortune">Misfortune</string>
+    <string name="category_miscellaneous">Miscellaneous</string>
+    <string name="category_collection">Collection</string>
+    <string name="category_easter_eggs">Easter Eggs</string>
+
+    <!-- Achievements (model/Achievement.kt): each one's title and description. A title fits achievement_title_max_length. A name of a page or mode in a description is in `backticks`, drawn bold gold and dropped when read aloud. -->
+    <string name="achievement_the_journey_begins_title">The Journey Begins</string>
+    <string name="achievement_the_journey_begins_description">Start your first game</string>
+    <string name="achievement_lets_finish_this_title">Let's Finish This</string>
+    <string name="achievement_lets_finish_this_description">Leave a game, then continue it</string>
+    <string name="achievement_one_more_time_title">One More Time</string>
+    <string name="achievement_one_more_time_description">Start a new game straight after losing one</string>
+    <string name="achievement_getting_comfortable_title">Getting Comfortable</string>
+    <string name="achievement_getting_comfortable_description">Finish 10 games</string>
+    <string name="achievement_on_a_roll_title">On A Roll</string>
+    <string name="achievement_on_a_roll_description">Win 3 games in a row</string>
+    <string name="achievement_regular_title">Regular</string>
+    <string name="achievement_regular_description">Finish 50 games</string>
+    <string name="achievement_hall_of_famer_title">Hall Of Famer</string>
+    <string name="achievement_hall_of_famer_description">Win 25 games</string>
+    <string name="achievement_centurion_title">Centurion</string>
+    <string name="achievement_centurion_description">Finish 100 games</string>
+    <string name="achievement_well_rolled_title">Well Rolled</string>
+    <string name="achievement_well_rolled_description">Roll the die 10,000 times</string>
+    <string name="achievement_unstoppable_title">Unstoppable</string>
+    <string name="achievement_unstoppable_description">Win 10 games in a row</string>
+    <string name="achievement_living_legend_title">Living Legend</string>
+    <string name="achievement_living_legend_description">Win 100 games</string>
+    <string name="achievement_gotcha_title">Gotcha!</string>
+    <string name="achievement_gotcha_description">Capture an opponent's pawn</string>
+    <string name="achievement_two_for_one_title">Two For One</string>
+    <string name="achievement_two_for_one_description">Capture two pawns with one move</string>
+    <string name="achievement_hat_trick_title">Hat Trick</string>
+    <string name="achievement_hat_trick_description">Capture three pawns in one turn</string>
+    <string name="achievement_payback_title">Payback</string>
+    <string name="achievement_payback_description">Capture a pawn of whoever last captured yours, on your very next turn</string>
+    <string name="achievement_not_so_fast_title">Not So Fast!</string>
+    <string name="achievement_not_so_fast_description">Capture a pawn on the last square before its home column</string>
+    <string name="achievement_nobody_is_safe_title">Nobody Is Safe</string>
+    <string name="achievement_nobody_is_safe_description">Capture a pawn of every opponent in one game</string>
+    <string name="achievement_bouncer_title">Bouncer</string>
+    <string name="achievement_bouncer_description">Capture 100 pawns</string>
+    <string name="achievement_public_enemy_title">Public Enemy</string>
+    <string name="achievement_public_enemy_description">Capture 1,000 pawns</string>
+    <string name="achievement_home_sweet_home_title">Home Sweet Home</string>
+    <string name="achievement_home_sweet_home_description">Bring a pawn home</string>
+    <string name="achievement_all_hands_on_deck_title">All Hands On Deck</string>
+    <string name="achievement_all_hands_on_deck_description">Have all your pawns on the board at once, none in your yard or home</string>
+    <string name="achievement_lap_of_honour_title">Lap Of Honour</string>
+    <string name="achievement_lap_of_honour_description">Take a pawn from your yard all the way home without moving any other pawn</string>
+    <string name="achievement_frequent_traveller_title">Frequent Traveller</string>
+    <string name="achievement_frequent_traveller_description">Bring 100 pawns home</string>
+    <string name="achievement_globetrotter_title">Globetrotter</string>
+    <string name="achievement_globetrotter_description">Bring 1,000 pawns home</string>
+    <string name="achievement_clean_sweep_title">Clean Sweep</string>
+    <string name="achievement_clean_sweep_description">Win before any opponent brings a pawn home</string>
+    <string name="achievement_comeback_kid_title">Comeback Kid</string>
+    <string name="achievement_comeback_kid_description">Win after an opponent had all but one pawn home while you had none</string>
+    <string name="achievement_first_victory_title">First Victory</string>
+    <string name="achievement_first_victory_description">Win a game</string>
+    <string name="achievement_how_do_you_do_fellow_cpus_title">How Do You Do, Fellow CPUs?</string>
+    <string name="achievement_how_do_you_do_fellow_cpus_description">Win against three Hard CPU players</string>
+    <string name="achievement_last_human_standing_title">Last Human Standing</string>
+    <string name="achievement_last_human_standing_description">Win against three CPU players</string>
+    <string name="achievement_pacifist_title">Pacifist</string>
+    <string name="achievement_pacifist_description">Win without capturing a pawn</string>
+    <string name="achievement_photo_finish_title">Photo Finish</string>
+    <string name="achievement_photo_finish_description">Win while an opponent's last pawn is in their home column</string>
+    <string name="achievement_speed_demon_title">Speed Demon</string>
+    <string name="achievement_speed_demon_description">Win in 60 turns or fewer</string>
+    <string name="achievement_untouchable_title">Untouchable</string>
+    <string name="achievement_untouchable_description">Win without having a pawn captured</string>
+    <string name="achievement_back_to_square_one_title">Back To Square One</string>
+    <string name="achievement_back_to_square_one_description">Have a pawn captured on the last square before your home column</string>
+    <string name="achievement_defeat_from_the_jaws_of_victory_title">Defeat From The Jaws Of Victory</string>
+    <string name="achievement_defeat_from_the_jaws_of_victory_description">Have all but one pawn home while no opponent has any, then lose</string>
+    <string name="achievement_i_robot_title">I, Robot</string>
+    <string name="achievement_i_robot_description">Lose a game to a CPU player</string>
+    <string name="achievement_locked_out_title">Locked Out</string>
+    <string name="achievement_locked_out_description">Spend your first 15 turns with every pawn still in your yard</string>
+    <string name="achievement_pipped_to_the_post_title">Pipped To The Post</string>
+    <string name="achievement_pipped_to_the_post_description">Lose with every other pawn home and your last in your home column</string>
+    <string name="achievement_punching_bag_title">Punching Bag</string>
+    <string name="achievement_punching_bag_description">Have your pawns captured 15 times in one game</string>
+    <string name="achievement_sitting_ducks_title">Sitting Ducks</string>
+    <string name="achievement_sitting_ducks_description">Have two of your pawns captured with one move</string>
+    <string name="achievement_too_much_of_a_good_thing_title">Too Much Of A Good Thing</string>
+    <string name="achievement_too_much_of_a_good_thing_description">Roll three 6s in a row and lose your turn</string>
+    <string name="achievement_wooden_spoon_title">Wooden Spoon</string>
+    <string name="achievement_wooden_spoon_description">Finish last</string>
+    <string name="achievement_buddy_system_title">Buddy System</string>
+    <string name="achievement_buddy_system_description">Have two of your pawns share a square</string>
+    <string name="achievement_deja_vu_title">Déjà Vu</string>
+    <string name="achievement_deja_vu_description">Capture the same pawn twice in one game</string>
+    <string name="achievement_inch_by_inch_title">Inch By Inch</string>
+    <string name="achievement_inch_by_inch_description">Bring a pawn home with a 1</string>
+    <string name="achievement_so_near_yet_so_far_title">So Near, Yet So Far</string>
+    <string name="achievement_so_near_yet_so_far_description">With one pawn left, a square from home, miss it three turns running</string>
+    <string name="achievement_who_made_this_title">Who Made This?</string>
+    <string name="achievement_who_made_this_description">Open the `About` page</string>
+    <string name="achievement_completionist_title">Completionist</string>
+    <string name="achievement_completionist_description">Unlock every other achievement</string>
+    <string name="achievement_are_you_a_developer_title">Are You A Developer?</string>
+    <string name="achievement_are_you_a_developer_description">Tap the version number seven times</string>
+    <string name="achievement_big_fan_title">Big Fan</string>
+    <string name="achievement_big_fan_description">Play a game against the creator</string>
+    <string name="achievement_midnight_run_title">Midnight Run</string>
+    <string name="achievement_midnight_run_description">Start a game between midnight and 6am</string>
 
     <!-- Rules pages (ui/rules/RulesContent.kt): one page per idea, in order, in groups (rules_group_*); each has a title over the page and a shorter name for its tab. Body text may use markup: *italics* for the name of a setting, **bold** for a number. -->
     <string name="rules_how_to_play_title">How to Play %1$s</string>

@@ -3,6 +3,12 @@
 > **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
 > from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
 > <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
+>
+> **Achievements (Phase 6).** "The achievements list" and "Achievement banners" hold for Ludo Plus, except: no style
+> star, styles banner, or online count button yet (Phases 7 and 10), and no row tips or dialogs (DiceFive's mode limits,
+> style rewards, and missing-entry lists), so each row is one TalkBack item with no action: its title, description, and
+> when it was earned or how far along it is. The Easter Eggs' fixed colours are Big Fan's red heart, Are You A
+> Developer?'s cyan, and Midnight Run's moon; Completionist keeps its crystal trophy.
 
 Achievements, banners, Styles, Leaderboard and menu decisions. The general rules are in `UI.md`, the game screen is in
 `UI_BOARD.md`, and what the features do is in `DESIGN.md`.

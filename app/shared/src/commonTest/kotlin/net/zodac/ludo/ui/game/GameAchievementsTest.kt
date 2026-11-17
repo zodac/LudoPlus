@@ -1,0 +1,133 @@
+package net.zodac.ludo.ui.game
+
+import kotlin.random.Random
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import net.zodac.ludo.app.AchievementUnlocker
+import net.zodac.ludo.data.InMemoryPreferences
+import net.zodac.ludo.data.achievements.InMemoryAchievementStore
+import net.zodac.ludo.data.game.InProgressGameRepository
+import net.zodac.ludo.data.records.GameRecordRepository
+import net.zodac.ludo.data.records.InMemoryGameResultDao
+import net.zodac.ludo.data.settings.SettingsRepository
+import net.zodac.ludo.game.TurnPhase
+import net.zodac.ludo.game.TutorialScript
+import net.zodac.ludo.model.Achievement
+import net.zodac.ludo.model.AchievementCounter
+
+/** The game screen's view model earns achievements from the game it plays, each step once - and the tutorial none. */
+@OptIn(ExperimentalCoroutinesApi::class)
+class GameAchievementsTest {
+
+    private val dispatcher = StandardTestDispatcher()
+
+    @BeforeTest
+    fun setUp() = Dispatchers.setMain(dispatcher)
+
+    @AfterTest
+    fun tearDown() = Dispatchers.resetMain()
+
+    private fun TestScope.viewModel(
+        store: InMemoryAchievementStore,
+        saved: InProgressGameRepository = InProgressGameRepository(InMemoryPreferences(), backgroundScope),
+        hour: Int = 14,
+        tutorial: TutorialScript? = null,
+    ) = GameViewModel(
+        SettingsRepository(InMemoryPreferences()),
+        saved,
+        GameRecordRepository(InMemoryGameResultDao()),
+        Random(7),
+        elapsedMillis = { 0L },
+        tutorial = tutorial,
+        achievements = AchievementUnlocker(store, now = { 1L }),
+        localHour = { hour },
+    ).also {
+        it.setPacing(GamePacing(thinkMillis = 700, pawnsAnimated = false, dieAnimated = false))
+        runCurrent()
+    }
+
+    @Test
+    fun `a game played out stores what player 1 did - each roll, capture, and pawn home counted once`() = runTest(dispatcher) {
+        val store = InMemoryAchievementStore()
+        val viewModel = viewModel(store)
+        viewModel.startGame { "Player $it" }
+        runCurrent()
+        assertTrue(Achievement.THE_JOURNEY_BEGINS in store.unlocked)
+        assertTrue(Achievement.MIDNIGHT_RUN !in store.unlocked)
+
+        // Player 1 plays its first move each time; the CPUs play themselves.
+        var rolls = 0
+        val state = { assertNotNull(viewModel.game.value).state }
+        while (!state().isFinished) {
+            if (state().current != 0) {
+                advanceTimeBy(1_000)
+                runCurrent()
+                continue
+            }
+            when (val phase = state().phase) {
+                is TurnPhase.AwaitingMove -> viewModel.move(phase.moves.first().pawn)
+                else -> {
+                    viewModel.roll()
+                    rolls++
+                }
+            }
+            runCurrent()
+        }
+        runCurrent()
+        val me = state().players[0]
+        val counters = store.mutableState.value.counters
+        assertEquals(1, counters[AchievementCounter.GAMES_PLAYED])
+        assertEquals(rolls, counters[AchievementCounter.DIE_ROLLS])
+        assertEquals(4, counters[AchievementCounter.PAWNS_HOME])
+        assertEquals(me.captures, counters[AchievementCounter.CAPTURES] ?: 0)
+        assertEquals(if (state().winner == 0) 1 else 0, counters[AchievementCounter.GAMES_WON] ?: 0)
+        assertEquals(state().winner == 0, Achievement.FIRST_VICTORY in store.unlocked)
+        assertTrue(Achievement.HOME_SWEET_HOME in store.unlocked)
+    }
+
+    @Test
+    fun `a game started after midnight is a Midnight Run - and one continued from its save is Let's Finish This`() = runTest(dispatcher) {
+        val store = InMemoryAchievementStore()
+        val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
+        viewModel(store, saved, hour = 2).startGame { "Player $it" }
+        runCurrent()
+        assertTrue(Achievement.MIDNIGHT_RUN in store.unlocked)
+        assertTrue(Achievement.LETS_FINISH_THIS !in store.unlocked)
+
+        assertTrue(viewModel(store, saved).resumeGame())
+        runCurrent()
+        assertTrue(Achievement.LETS_FINISH_THIS in store.unlocked)
+    }
+
+    @Test
+    fun `the tutorial earns nothing`() = runTest(dispatcher) {
+        val store = InMemoryAchievementStore()
+        val viewModel = viewModel(store, tutorial = TutorialScript.CLASSIC)
+        viewModel.startTutorial(defaultName = "Player 1", cpuName = "Green")
+        runCurrent()
+        // Through every step the script asks of the player, the CPU playing its own.
+        repeat(200) {
+            when (val phase = viewModel.game.value?.state?.phase) {
+                is TurnPhase.AwaitingMove -> phase.moves.forEach { viewModel.move(it.pawn) }
+                else -> viewModel.roll()
+            }
+            advanceTimeBy(2_000)
+            runCurrent()
+        }
+        assertEquals(emptySet(), store.unlocked)
+        assertEquals(emptyMap(), store.mutableState.value.counters)
+    }
+}

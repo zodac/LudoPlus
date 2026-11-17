@@ -7,10 +7,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import net.zodac.ludo.data.PreferencesFile
+import net.zodac.ludo.data.achievements.AchievementStore
+import net.zodac.ludo.data.achievements.AchievementsRepository
 import net.zodac.ludo.data.createPreferencesDataStore
 import net.zodac.ludo.data.game.InProgressGameRepository
 import net.zodac.ludo.data.records.AppDatabase
@@ -23,18 +27,25 @@ import net.zodac.ludo.data.settings.SettingsRepository
  * the UI through [LocalAppContainer]: the ViewModel factories take their repositories from here,
  * rather than each one reaching for an Android `Context` to build its own.
  *
- * The settings, the game in progress, and the game records for now. The repositories for achievements, online play, and
- * purchases join it in their phases of `.claude/IMPLEMENTATION.md`.
+ * The settings, the game in progress, the game records, and the achievements for now. The repositories for online play
+ * and purchases join it in their phases of `.claude/IMPLEMENTATION.md`.
  */
 class AppContainer(
     val settingsRepository: SettingsRepository,
     val inProgressGameRepository: InProgressGameRepository,
     val gameRecordRepository: GameRecordRepository,
+    val achievementsRepository: AchievementStore,
     val buildInfo: BuildInfo,
     scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
     /** The time the app is in front of the player, counted into [SettingsRepository.playSeconds]: resumed and paused by the app. */
     val playTime: PlayTimeTracker = PlayTimeTracker(settingsRepository::addPlaySeconds, scope)
+
+    /** The one way an achievement is earned, shared by every screen - see [AchievementUnlocker]. */
+    val achievementUnlocker: AchievementUnlocker = AchievementUnlocker(achievementsRepository)
+
+    /** The Achievements page's Unearned switch, loaded with the container so the page opens already filtered: null until then. */
+    val lockedOnlyAchievements: StateFlow<Boolean?> = settingsRepository.lockedOnlyAchievements.stateIn(scope, SharingStarted.Eagerly, null)
 
     private val mutableDatabaseFailure = MutableStateFlow<String?>(null)
 
@@ -71,6 +82,7 @@ class AppContainer(
                 settingsRepository = SettingsRepository(dataStore(PreferencesFile.SETTINGS)),
                 inProgressGameRepository = InProgressGameRepository(dataStore(PreferencesFile.IN_PROGRESS_GAME)),
                 gameRecordRepository = GameRecordRepository(databaseBuilder.buildAppDatabase().gameResultDao(), computeContext = Dispatchers.Default),
+                achievementsRepository = AchievementsRepository(dataStore(PreferencesFile.ACHIEVEMENTS)),
                 buildInfo = buildInfo,
             )
         }
