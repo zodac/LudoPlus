@@ -80,12 +80,12 @@ class RulesScreenAccessibilityTest : UiTest() {
     @Test
     fun theTabRowSaysHowManyTabsItHasAndWhereEachTabIsAndEveryPageCanBeReachedByTabSwipeOrChevron() = uiTest(phone) {
         showRules()
-        // The edge chevrons are not extra TalkBack stops: every clickable node is a tab or the app bar's back arrow. The
-        // chevrons only repeat what the tabs (and their "1 of 5") already give TalkBack, so they're kept out of it, and the
-        // diagrams are pictures, not buttons.
+        // The edge chevrons are not extra TalkBack stops: every clickable node is a tab, the app bar's back arrow, or How to
+        // Play's Play the Tutorial. The chevrons only repeat what the tabs (and their "1 of 5") already give TalkBack, so
+        // they're kept out of it, and the diagrams are pictures, not buttons.
         val tabs = compose.onAllNodes(isTab).fetchSemanticsNodes()
         assertEquals(5, tabs.size)
-        assertEquals(tabs.size + 1, compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.OnClick)).fetchSemanticsNodes().size)
+        assertEquals(tabs.size + 2, compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.OnClick)).fetchSemanticsNodes().size)
 
         // The row says how many tabs it has, and each tab its place in it.
         val row = generateSequence(tabs.first().parent) { it.parent }.first { SemanticsProperties.CollectionInfo in it.config }

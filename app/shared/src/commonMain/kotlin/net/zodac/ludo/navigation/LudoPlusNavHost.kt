@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -20,6 +21,11 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.app.LocalAppContainer
+import net.zodac.ludo.data.orNullOnFailure
+import net.zodac.ludo.resources.Res
+import net.zodac.ludo.resources.common_default_player_name
+import net.zodac.ludo.resources.game_tutorial_cpu_name
+import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.common.LocalPageCover
 import net.zodac.ludo.ui.common.LocalReduceMotion
 import net.zodac.ludo.ui.common.PageCover
@@ -95,10 +101,16 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
     navigation(startDestination = Screen.PLAY_SETUP, route = Screen.PLAY_GRAPH) {
         composable(Screen.PLAY_SETUP) { backStackEntry ->
             val playGraphEntry = remember(backStackEntry) { navController.getBackStackEntry(Screen.PLAY_GRAPH) }
+            // Offered until a person has finished a game; not while that's still being read, so nothing appears late.
+            val firstGame by produceState(initialValue = false) {
+                value = orNullOnFailure { !container.gameRecordRepository.hasFinishedGame() } ?: false
+            }
             GameSetupScreen(
                 viewModel = viewModel<GameViewModel>(playGraphEntry, factory = GameViewModel.factory(container)),
                 onStartGame = { navigate(Screen.PLAY_GAME) },
                 onBack = navigateUp,
+                showTutorialLink = firstGame,
+                onTutorial = { navigate(Screen.TUTORIAL) },
             )
         }
         composable(Screen.PLAY_GAME) { backStackEntry ->
@@ -127,7 +139,27 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
         )
     }
     composable(Screen.RULES) {
-        RulesScreen(onBack = navigateUp)
+        RulesScreen(onBack = navigateUp, onStartTutorial = { navigate(Screen.TUTORIAL) })
+    }
+    composable(Screen.TUTORIAL) {
+        // A view model of its own, never the play graph's: nothing of a real game is touched.
+        val tutorialViewModel = viewModel<GameViewModel>(factory = GameViewModel.tutorialFactory(container))
+        val defaultName = stringResource(Res.string.common_default_player_name, 1)
+        val cpuName = stringResource(Res.string.game_tutorial_cpu_name)
+        LaunchedEffect(tutorialViewModel) { tutorialViewModel.startTutorial(defaultName, cpuName) }
+        GameScreen(
+            viewModel = tutorialViewModel,
+            // Done goes back where it was started: Rules, or New Game.
+            onBackToMenu = navigateUp,
+            // Back to New Game if that's where it was started, otherwise in place of the tutorial.
+            onNewGame = {
+                change {
+                    if (!navController.popBackStack(Screen.PLAY_SETUP, inclusive = false)) {
+                        navController.navigate(Screen.PLAY_GRAPH) { popUpTo(Screen.TUTORIAL) { inclusive = true } }
+                    }
+                }
+            },
+        )
     }
     composable(Screen.LEADERBOARD) {
         LeaderboardScreen(viewModel = viewModel(factory = LeaderboardViewModel.factory(container)), onBack = navigateUp)

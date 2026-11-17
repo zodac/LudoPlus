@@ -1,11 +1,16 @@
 package net.zodac.ludo
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.platform.SilentPlatformServices
@@ -56,5 +61,22 @@ class SetupTextTest : UiTest() {
         show(gameViewModel())
         compose.onAllNodesWithText("CPU").assertCountEquals(3)
         listOf("Easy", "Medium", "Hard").forEach { compose.onAllNodesWithText(it).assertCountEquals(3) }
+    }
+
+    @Test
+    fun `the tutorial link shows until a first game is finished - and opens the tutorial`() = uiTest(SCREEN) {
+        var opened = 0
+        val viewModel = gameViewModel()
+        var link by mutableStateOf(true)
+        showcase.show {
+            CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
+                LudoPlusTheme { GameSetupScreen(viewModel = viewModel, onStartGame = {}, onBack = {}, showTutorialLink = link, onTutorial = { opened++ }) }
+            }
+        }
+        compose.onNodeWithText("New to the game? Play the tutorial").performClick()
+        assertEquals(1, opened)
+        link = false
+        compose.waitForIdle()
+        compose.onAllNodesWithText("New to the game? Play the tutorial").assertCountEquals(0)
     }
 }

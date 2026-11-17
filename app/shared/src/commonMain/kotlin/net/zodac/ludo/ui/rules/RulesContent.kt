@@ -17,6 +17,7 @@ import net.zodac.ludo.resources.rules_how_to_play_1
 import net.zodac.ludo.resources.rules_how_to_play_2
 import net.zodac.ludo.resources.rules_how_to_play_tab
 import net.zodac.ludo.resources.rules_how_to_play_title
+import net.zodac.ludo.resources.rules_how_to_play_tutorial
 import net.zodac.ludo.resources.rules_turn_1
 import net.zodac.ludo.resources.rules_turn_2
 import net.zodac.ludo.resources.rules_turn_3
@@ -45,6 +46,9 @@ internal sealed interface RulesBlock
 /** A paragraph. */
 internal data class RulesText(val text: StringResource) : RulesBlock
 
+/** The button that starts the guided tutorial: see `RulesScreen`'s `onStartTutorial`. */
+internal data object RulesTutorialStart : RulesBlock
+
 /** A diagram of part of the board ([RulesDiagram]). */
 internal data class RulesDiagramBlock(val kind: RulesDiagramKind) : RulesBlock
 
@@ -54,7 +58,11 @@ private fun texts(vararg text: StringResource): List<RulesBlock> = text.map(::Ru
 private val GAMEPLAY = RulesGroup(
     Res.string.rules_group_gameplay,
     listOf(
-        RulesPage(Res.string.rules_how_to_play_title, Res.string.rules_how_to_play_tab, texts(Res.string.rules_how_to_play_1, Res.string.rules_how_to_play_2)),
+        RulesPage(
+            Res.string.rules_how_to_play_title,
+            Res.string.rules_how_to_play_tab,
+            texts(Res.string.rules_how_to_play_1, Res.string.rules_how_to_play_2, Res.string.rules_how_to_play_tutorial) + RulesTutorialStart,
+        ),
         RulesPage(
             Res.string.rules_board_title,
             Res.string.rules_board_tab,

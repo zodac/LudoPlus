@@ -230,6 +230,45 @@
         <item quantity="other">%1$d of %2$d pawns home</item>
     </plurals>
     <!-- The confirmation before leaving a game that isn't over. It stays saved, for the menu's Continue. -->
+    <!-- The guided tutorial (game/Tutorial.kt, ui/game/CoachCard.kt): the coach card's words at each step, in order. You're Red, against Green (a CPU). Markup: **bold** for a number. Keep them short: the card is as tall as the longest. %1$s in the welcome is the app's name. -->
+    <string name="game_tutorial_welcome">Welcome to %1$s! You're Red, racing Green. First, getting out of your yard. Tap the die to roll.</string>
+    <string name="game_tutorial_watch_green">Only a **6** brings a pawn out of the yard, so your turn passed. Watch Green.</string>
+    <string name="game_tutorial_green_rolls_again">Green rolled a **6** and came out. A **6** also earns another roll.</string>
+    <string name="game_tutorial_your_turn_out">Your turn. Tap the die.</string>
+    <string name="game_tutorial_bring_out">A **6**! Tap a pawn in your yard to bring it out onto your start square.</string>
+    <string name="game_tutorial_six_rolls_again">Your **6** earns another roll. Tap the die.</string>
+    <string name="game_tutorial_move_out_pawn">Tap your pawn to move it **4** squares.</string>
+    <string name="game_tutorial_capture_intro">Next, captures. Green's pawn is **4** squares ahead of yours. Tap the die.</string>
+    <string name="game_tutorial_capture">A **4**! Tap your pawn to land on Green's and send it back to its yard.</string>
+    <string name="game_tutorial_capture_rolls_again">Captured! A capture earns another roll. Tap the die.</string>
+    <string name="game_tutorial_capture_move_on">Tap your pawn to move on. Green can capture you too, but nobody can on a star or a start square.</string>
+    <string name="game_tutorial_home_intro">Next, home. Your pawn in the home column is **2** squares from home. Tap the die.</string>
+    <string name="game_tutorial_home">Exactly **2**! Tap that pawn to bring it home.</string>
+    <string name="game_tutorial_home_rolls_again">Home! That earns another roll too. Tap the die.</string>
+    <string name="game_tutorial_home_move_on">Tap your other pawn to move it on.</string>
+    <string name="game_tutorial_win_intro">Last, winning. Three pawns are home, and the last needs exactly **4**. Tap the die.</string>
+    <string name="game_tutorial_too_many">A **5** is too many: a pawn needs the exact roll home, so your turn passed.</string>
+    <string name="game_tutorial_win_roll">Your turn again. Tap the die.</string>
+    <string name="game_tutorial_win">Exactly **4**! Tap your last pawn to bring it home and win.</string>
+    <!-- The coach card's name, and which part of the tutorial this is: "Part 2 of 4". -->
+    <string name="game_tutorial_coach_name">Coach</string>
+    <string name="game_tutorial_part">Part %1$d of %2$d</string>
+    <!-- The tutorial's CPU opponent's name: Green, the colour it plays. -->
+    <string name="game_tutorial_cpu_name">Green</string>
+    <!-- The arrows at the coach card's edges, for a screen reader. -->
+    <string name="game_tutorial_previous_part_cd">Previous part</string>
+    <string name="game_tutorial_next_part_cd">Next part</string>
+    <!-- Leaving the tutorial (back), always asked. -->
+    <string name="game_leave_tutorial_title">Leave the tutorial?</string>
+    <string name="game_leave_tutorial_message">Nothing in it is kept. You can play it again from the Rules.</string>
+    <!-- The tutorial's Game Over: a line under the winner, and its two buttons. -->
+    <string name="gameover_tutorial_finished">That's the tutorial done. Nothing in it was kept, so your first real game is still to come.</string>
+    <string name="gameover_tutorial_done">Done</string>
+    <string name="gameover_tutorial_new_game">New Game</string>
+    <!-- Rules' How to Play page, above its button, and New Game's link while no game has been finished. -->
+    <string name="rules_how_to_play_tutorial">Want to see it played? The tutorial takes you through it in four short parts. Nothing in it counts: no scores and no saved game.</string>
+    <string name="rules_tutorial_start">Play the Tutorial</string>
+    <string name="setup_tutorial_link">New to the game? Play the tutorial</string>
     <string name="game_leave_title">Leave game?</string>
     <string name="game_leave_message">Your progress is saved, so you can continue this game later.</string>
     <string name="game_leave_confirm">Leave</string>

@@ -79,6 +79,14 @@ class GameRecordRepositoryTest {
     }
 
     @Test
+    fun `a finished game is known once one is recorded - for New Game's tutorial link`() = runTest {
+        val repository = GameRecordRepository(InMemoryGameResultDao())
+        assertEquals(false, repository.hasFinishedGame())
+        repository.recordGame(game(order = listOf(3, 1, 0, 2)))
+        assertEquals(true, repository.hasFinishedGame())
+    }
+
+    @Test
     fun `the Leaderboard is each mode's wins - fewest turns first, then most captures`() = runTest {
         val repository = GameRecordRepository(InMemoryGameResultDao())
         // Sam wins in 43 turns, Alex in 40, then Alex in 43 again: level with Sam on turns and captures, so after, as later.

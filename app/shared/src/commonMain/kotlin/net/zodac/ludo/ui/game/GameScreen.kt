@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -48,6 +49,7 @@ import net.zodac.ludo.game.GameEvent
 import net.zodac.ludo.game.GameState
 import net.zodac.ludo.game.Move
 import net.zodac.ludo.game.TurnPhase
+import net.zodac.ludo.game.TutorialStep
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.resources.Res
@@ -69,6 +71,8 @@ import net.zodac.ludo.resources.game_prompt_cpu_roll_again
 import net.zodac.ludo.resources.game_prompt_move
 import net.zodac.ludo.resources.game_prompt_roll
 import net.zodac.ludo.resources.game_prompt_roll_again
+import net.zodac.ludo.resources.game_tutorial_coach_name
+import net.zodac.ludo.resources.game_tutorial_part
 import net.zodac.ludo.data.settings.MotionGroup
 import net.zodac.ludo.ui.common.BackHandler
 import net.zodac.ludo.ui.common.groupReduceMotion
@@ -92,14 +96,21 @@ private enum class FinishedView { BOARD, RESULTS, REVIEW }
  * played out, the results ([GameOverScreen]).
  */
 @Composable
-fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit) {
+fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: () -> Unit = {}) {
     val game by viewModel.game.collectAsStateWithLifecycle()
     val started = game ?: return
     val confirmBeforeLeaving by viewModel.confirmBeforeLeavingGame.collectAsStateWithLifecycle()
     val leaveConfirmation = LocalLeaveGameConfirmation.current
-    // Back (the arrow or the gesture) leaves for the menu, not the setup form, asking first while the game is on.
+    val isTutorial = viewModel.isTutorial
+    // Back (the arrow or the gesture) leaves for the menu, not the setup form, asking first while the game is on. The
+    // tutorial always asks, in its own words.
     val leave = {
-        if (!started.state.isFinished && confirmBeforeLeaving) leaveConfirmation.request(onBackToMenu) else onBackToMenu()
+        when {
+            started.state.isFinished -> onBackToMenu()
+            isTutorial -> leaveConfirmation.request(onBackToMenu, tutorial = true)
+            confirmBeforeLeaving -> leaveConfirmation.request(onBackToMenu)
+            else -> onBackToMenu()
+        }
     }
     BackHandler(onBack = leave)
     LifecycleResumeEffect(viewModel) {
@@ -129,24 +140,39 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit) {
     }
     if (started.state.isFinished && finishedView == FinishedView.RESULTS) {
         val defaultNames = (1..started.players.size).map { stringResource(Res.string.common_default_player_name, it) }
+        val playAgain: () -> Unit = { viewModel.startGame { defaultNames[it - 1] } }
         GameOverScreen(
             game = started,
             onBackToMenu = onBackToMenu,
-            onPlayAgain = { viewModel.startGame { defaultNames[it - 1] } },
+            onPlayAgain = if (isTutorial) onNewGame else playAgain,
             onReviewBoard = { finishedView = FinishedView.REVIEW },
             celebrate = celebrate,
             onCelebrated = { celebrate = false },
+            tutorial = isTutorial,
         )
         return
     }
+    val tutorialStep by viewModel.tutorialStep.collectAsStateWithLifecycle()
+    val tutorialPart by viewModel.tutorialPart.collectAsStateWithLifecycle()
     GameContent(
         started,
         onRoll = viewModel::roll,
         onMove = viewModel::move,
         onBack = leave,
         onResults = { finishedView = FinishedView.RESULTS },
+        tutorial = if (isTutorial) {
+            TutorialView(tutorialStep, tutorialPart, viewModel.tutorialParts, viewModel.tutorialSteps, viewModel::jumpToTutorialPart)
+        } else {
+            null
+        },
     )
 }
+
+/**
+ * What the game screen shows of the tutorial: the [step] shown (null between parts), the [part] (from 0) of [parts], every
+ * one of its [steps] (for the coach card's height), and [onJump] to the part before (-1) or after (+1).
+ */
+class TutorialView(val step: TutorialStep?, val part: Int, val parts: Int, val steps: List<TutorialStep>, val onJump: (Int) -> Unit)
 
 /** The sounds and vibrations for each thing that happens: the die landing, a pawn moved, and a capture. The win's are the results page's. */
 @Composable
@@ -172,10 +198,21 @@ private fun GameFeedback(state: GameState) {
  * [onBack], and the finished game's button [onResults].
  */
 @Composable
-fun GameContent(started: StartedGame, onRoll: () -> Unit, onMove: (pawn: Int) -> Unit, onBack: () -> Unit, onResults: () -> Unit) {
+fun GameContent(
+    started: StartedGame,
+    onRoll: () -> Unit,
+    onMove: (pawn: Int) -> Unit,
+    onBack: () -> Unit,
+    onResults: () -> Unit,
+    tutorial: TutorialView? = null,
+) {
     val seatColours = List(started.state.board.seats) { seat -> started.players.getOrNull(seat)?.colour }
     val phase = started.state.phase
-    val moves = if (phase is TurnPhase.AwaitingMove && !started.currentIsCpu) phase.moves else emptyList()
+    val allMoves = if (phase is TurnPhase.AwaitingMove && !started.currentIsCpu) phase.moves else emptyList()
+    // In the tutorial, only the step's own move: its pawn alone is ringed, and the only one a tap or TalkBack can move.
+    val moves = if (tutorial == null) allMoves else allMoves.filter { it.pawn == (tutorial.step as? TutorialStep.Move)?.pawn }
+    val rollStep = tutorial?.step is TutorialStep.Roll
+    val players = @Composable { if (tutorial == null) PlayerCards(started, columns = 2) else TutorialCoachCard(tutorial) }
     ScreenScaffold(title = stringResource(started.mode.displayName), onBack = onBack, driftingDice = false, wide = true) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val (width, height) = maxWidth to maxHeight
@@ -192,18 +229,39 @@ fun GameContent(started: StartedGame, onRoll: () -> Unit, onMove: (pawn: Int) ->
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     board(Modifier.size(minOf(height, width - SIDE_PANEL_WIDTH)))
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        PlayerCards(started, columns = 2)
-                        TurnPanel(started, moves, seatColours, onRoll, onMove, onResults, dieSize = 64.dp)
+                        players()
+                        TurnPanel(started, moves, seatColours, onRoll, onMove, onResults, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep)
                     }
                 }
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    PlayerCards(started, columns = 2)
+                    players()
                     board(Modifier.fillMaxWidth())
-                    TurnPanel(started, moves, seatColours, onRoll, onMove, onResults, dieSize = 72.dp)
+                    TurnPanel(started, moves, seatColours, onRoll, onMove, onResults, dieSize = 72.dp, tutorial = tutorial, rollStep = rollStep)
                 }
             }
         }
+    }
+}
+
+/** The tutorial's coach card, in place of the players: as tall as its longest words need, so it never changes height. */
+@Composable
+private fun TutorialCoachCard(tutorial: TutorialView) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val height = coachCardHeight(tutorial.steps, maxWidth)
+        val step = tutorial.step
+        if (step == null) {
+            Box(modifier = Modifier.fillMaxWidth().height(height))
+            return@BoxWithConstraints
+        }
+        CoachCard(
+            step = step,
+            coachName = stringResource(Res.string.game_tutorial_coach_name),
+            part = stringResource(Res.string.game_tutorial_part, tutorial.part + 1, tutorial.parts),
+            onBack = { tutorial.onJump(-1) },
+            onForward = if (tutorial.part < tutorial.parts - 1) ({ tutorial.onJump(1) }) else null,
+            modifier = Modifier.height(height),
+        )
     }
 }
 
@@ -291,6 +349,8 @@ private fun TurnPanel(
     onMove: (Int) -> Unit,
     onResults: () -> Unit,
     dieSize: Dp,
+    tutorial: TutorialView? = null,
+    rollStep: Boolean = false,
 ) {
     val state = game.state
     val name = { index: Int -> game.players[index].name }
@@ -316,22 +376,32 @@ private fun TurnPanel(
         GameDie(
             value = roll,
             roll = state.lastEvent.takeIf { it !is GameEvent.Moved },
-            canRoll = phase == TurnPhase.AwaitingRoll && !game.currentIsCpu,
+            canRoll = phase == TurnPhase.AwaitingRoll && !game.currentIsCpu && (tutorial == null || rollStep),
             onRoll = onRoll,
-            modifier = Modifier.size(dieSize),
+            modifier = Modifier
+                .then(if (rollStep) Modifier.tutorialOutline(rememberTutorialPulse()) else Modifier)
+                .size(dieSize),
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            StatusLines(game, moves, seatColours, onMove)
+            StatusLines(game, moves, seatColours, onMove, tutorial = tutorial != null)
         }
     }
 }
 
 @Composable
-private fun ColumnScope.StatusLines(game: StartedGame, moves: List<Move>, seatColours: List<PlayerColour?>, onMove: (Int) -> Unit) {
+private fun ColumnScope.StatusLines(
+    game: StartedGame,
+    moves: List<Move>,
+    seatColours: List<PlayerColour?>,
+    onMove: (Int) -> Unit,
+    tutorial: Boolean = false,
+) {
     val state = game.state
     val name = { index: Int -> game.players[index].name }
     val event = state.lastEvent
     val happened = when {
+        // The tutorial's parts start with no roll-off: the coach says who's playing.
+        event == null && tutorial -> null
         event == null -> stringResource(Res.string.game_event_first, name(game.rollOff.first))
         event is GameEvent.NoMove -> stringResource(Res.string.game_event_no_move, name(event.player), event.roll)
         event is GameEvent.RollAgainLimit -> stringResource(Res.string.game_event_three_sixes, name(event.player))

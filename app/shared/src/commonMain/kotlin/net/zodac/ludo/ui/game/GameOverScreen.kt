@@ -61,6 +61,9 @@ import net.zodac.ludo.resources.gameover_finished_in
 import net.zodac.ludo.resources.gameover_play_again
 import net.zodac.ludo.resources.gameover_review
 import net.zodac.ludo.resources.gameover_title
+import net.zodac.ludo.resources.gameover_tutorial_done
+import net.zodac.ludo.resources.gameover_tutorial_finished
+import net.zodac.ludo.resources.gameover_tutorial_new_game
 import net.zodac.ludo.resources.gameover_turns
 import net.zodac.ludo.resources.gameover_winner
 import net.zodac.ludo.ui.common.BrandBackdrop
@@ -98,6 +101,9 @@ private const val CELEBRATION_MILLIS = 3300
  *
  * The ways on are [onReviewBoard] (back to the finished board), [onBackToMenu], and [onPlayAgain] (a new game with the
  * same players).
+ *
+ * The [tutorial]'s shows the winner alone, without the game's figures, then a line that it's done, and two ways on:
+ * Done ([onBackToMenu], back where it was started) and New Game ([onPlayAgain]).
  */
 @Composable
 fun GameOverScreen(
@@ -108,6 +114,7 @@ fun GameOverScreen(
     modifier: Modifier = Modifier,
     celebrate: Boolean = true,
     onCelebrated: () -> Unit = {},
+    tutorial: Boolean = false,
 ) {
     val state = game.state
     val order = state.finishingOrder
@@ -140,12 +147,21 @@ fun GameOverScreen(
                     TwoPanes(
                         spacing = 12.dp,
                         start = {
-                            WinnerCard(game, winner)
-                            Card(modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                                    order.drop(1).forEachIndexed { index, player ->
-                                        if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                                        PlacingRow(game, player, place = index + 2)
+                            WinnerCard(game, winner, details = !tutorial)
+                            if (tutorial) {
+                                Text(
+                                    text = stringResource(Res.string.gameover_tutorial_finished),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                )
+                            } else {
+                                Card(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                                        order.drop(1).forEachIndexed { index, player ->
+                                            if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                                            PlacingRow(game, player, place = index + 2)
+                                        }
                                     }
                                 }
                             }
@@ -153,16 +169,27 @@ fun GameOverScreen(
                         end = {
                             // Beside the results in landscape, level with their top.
                             if (!LocalLandscapePage.current) Spacer(modifier = Modifier.height(8.dp))
-                            OutlinedButton(onClick = onReviewBoard, modifier = Modifier.fillMaxWidth().heightIn(min = MAIN_ACTION_HEIGHT)) {
-                                Text(stringResource(Res.string.gameover_review), style = MaterialTheme.typography.titleMedium)
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                OutlinedButton(onClick = onBackToMenu, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
-                                    Text(stringResource(Res.string.gameover_main_menu), style = MaterialTheme.typography.titleMedium)
+                            if (tutorial) {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    OutlinedButton(onClick = onBackToMenu, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
+                                        Text(stringResource(Res.string.gameover_tutorial_done), style = MaterialTheme.typography.titleMedium)
+                                    }
+                                    Button(onClick = onPlayAgain, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
+                                        Text(stringResource(Res.string.gameover_tutorial_new_game), style = MaterialTheme.typography.titleMedium)
+                                    }
                                 }
-                                Button(onClick = onPlayAgain, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
-                                    Text(stringResource(Res.string.gameover_play_again), style = MaterialTheme.typography.titleMedium)
+                            } else {
+                                OutlinedButton(onClick = onReviewBoard, modifier = Modifier.fillMaxWidth().heightIn(min = MAIN_ACTION_HEIGHT)) {
+                                    Text(stringResource(Res.string.gameover_review), style = MaterialTheme.typography.titleMedium)
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    OutlinedButton(onClick = onBackToMenu, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
+                                        Text(stringResource(Res.string.gameover_main_menu), style = MaterialTheme.typography.titleMedium)
+                                    }
+                                    Button(onClick = onPlayAgain, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
+                                        Text(stringResource(Res.string.gameover_play_again), style = MaterialTheme.typography.titleMedium)
+                                    }
                                 }
                             }
                         },
@@ -207,8 +234,9 @@ private fun finishedText(millis: Long): String {
 }
 
 
+/** The winner's card: their name, and with [details] their finish time and figures. */
 @Composable
-private fun WinnerCard(game: StartedGame, player: Int) {
+private fun WinnerCard(game: StartedGame, player: Int, details: Boolean = true) {
     Card(
         modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
         colors = CardDefaults.cardColors(
@@ -226,8 +254,10 @@ private fun WinnerCard(game: StartedGame, player: Int) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(stringResource(Res.string.gameover_winner), style = MaterialTheme.typography.labelLarge)
                 PlayerName(game, player, MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), dot = 16)
-                game.finishMillis[player]?.let { Text(finishedText(it), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium) }
-                Text(resultLine(game, player), style = MaterialTheme.typography.bodyMedium)
+                if (details) {
+                    game.finishMillis[player]?.let { Text(finishedText(it), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium) }
+                    Text(resultLine(game, player), style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
     }

@@ -256,7 +256,11 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     the maintainer, 2026-11-17): How to Play, The Board, Your Turn, Captures, and Winning, each but the first with a
     diagram cropped from the real board (`RulesDiagram`), one image to TalkBack. The group row (Gameplay, Modes,
     Modifiers) shows once Phase 9 brings a second group. Approved from renders 2026-11-17.
-- [ ] Guided tutorial (`TUTORIAL.md`'s framework): a scripted first game.
+- [x] Guided tutorial (`TUTORIAL.md`): the player against Green in four scripted parts, as the maintainer asked
+    (2026-11-17): getting out on a 6 (with its roll again), a capture, a pawn home, each with its bonus roll, then
+    winning after a roll too big. A coach card in place of the player cards, back and forward between parts, nothing
+    kept. Opens from Rules' How to Play and New Game's link (until a first game is finished). Approved from renders
+    2026-11-17.
 - [ ] Sounds (licensed, recorded in `app/licensing`, normalised): roll, move step, capture, home, win.
 - [ ] Baseline Profile journeys and benchmarks, restored from `5423b6c` (`app/baselineprofile`, the `baseline-profile`
     job in `android-release.yml`) and written for Ludo's screens (`BENCHMARKS.md`): 60fps while pawns move.

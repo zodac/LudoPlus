@@ -22,6 +22,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -57,6 +58,7 @@ import net.zodac.ludo.resources.setup_game_mode
 import net.zodac.ludo.resources.setup_names_unique
 import net.zodac.ludo.resources.setup_player_name_cd
 import net.zodac.ludo.resources.setup_start
+import net.zodac.ludo.resources.setup_tutorial_link
 import net.zodac.ludo.resources.setup_title
 import net.zodac.ludo.resources.setup_type_user
 import net.zodac.ludo.ui.common.ChoicePicker
@@ -95,6 +97,8 @@ fun GameSetupScreen(
     onStartGame: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    showTutorialLink: Boolean = false,
+    onTutorial: () -> Unit = {},
 ) {
     val setup by viewModel.setupForm.setup.collectAsStateWithLifecycle()
     val setupRestored by viewModel.setupForm.setupRestored.collectAsStateWithLifecycle()
@@ -117,6 +121,12 @@ fun GameSetupScreen(
             PlayerCards(activeSlots = activeSlots, duplicateNameSlots = duplicateNameSlots, namesMustBeUnique = namesMustBeUnique, defaultName = defaultName, form = viewModel.setupForm)
         }
         val actions = @Composable {
+            // Until a first game is finished: the way to the guided tutorial.
+            if (showTutorialLink) {
+                TextButton(onClick = onTutorial, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = stringResource(Res.string.setup_tutorial_link), style = MaterialTheme.typography.titleSmall)
+                }
+            }
             if (duplicateNameSlots.isNotEmpty()) {
                 Text(
                     text = namesMustBeUnique,

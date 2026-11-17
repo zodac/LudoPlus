@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.platform.SilentPlatformServices
 import net.zodac.ludo.ui.rules.RulesScreen
@@ -37,6 +38,7 @@ class RulesTextTest : UiTest() {
             listOf(
                 "Race your four pawns a full lap of the board and into home, in the middle. The first player to bring all four pawns home wins.",
                 "Players take turns clockwise, each rolling one die. To decide who goes first, everyone rolls once, and the highest roll starts. Ties roll again.",
+                "Want to see it played? The tutorial takes you through it in four short parts. Nothing in it counts: no scores and no saved game.",
             ),
             diagram = null,
         ),
@@ -84,6 +86,19 @@ class RulesTextTest : UiTest() {
             "Diagram: a red pawn 3 squares from home needs exactly 3 to get there. Another red pawn is already home.",
         ),
     )
+
+    @Test
+    fun `How to Play's button starts the tutorial`() = uiTest(TestScreen(360, 800)) {
+        resetRulesPageMemory()
+        var started = 0
+        compose.setContent {
+            CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
+                LudoPlusTheme { RulesScreen(onBack = {}, onStartTutorial = { started++ }) }
+            }
+        }
+        compose.onNodeWithText("Play the Tutorial").performScrollTo().assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)).performClick()
+        assertEquals(1, started)
+    }
 
     @Test
     fun `the Rules screen's words - its title, and every page's tab, title, paragraphs, and diagram`() = uiTest(TestScreen(360, 800)) {

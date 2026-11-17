@@ -15,6 +15,9 @@ object Screen {
 
     const val RULES = "rules"
 
+    /** The guided tutorial: a game screen of its own, opened from Rules' How to Play page or New Game's link. */
+    const val TUTORIAL = "tutorial"
+
     const val LEADERBOARD = "leaderboard"
 
     const val STATISTICS = "statistics"

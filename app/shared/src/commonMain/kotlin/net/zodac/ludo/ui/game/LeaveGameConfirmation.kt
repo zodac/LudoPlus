@@ -10,6 +10,8 @@ import net.zodac.ludo.resources.common_cancel
 import net.zodac.ludo.resources.game_leave_confirm
 import net.zodac.ludo.resources.game_leave_message
 import net.zodac.ludo.resources.game_leave_title
+import net.zodac.ludo.resources.game_leave_tutorial_message
+import net.zodac.ludo.resources.game_leave_tutorial_title
 import net.zodac.ludo.ui.common.LudoPlusDialog
 import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.icons.Symbols
@@ -23,11 +25,16 @@ class LeaveGameConfirmation {
 
     private var pendingLeave by mutableStateOf<(() -> Unit)?>(null)
 
+    /** Whether the game being left is the tutorial, which the dialog words as its own. */
+    internal var tutorial by mutableStateOf(false)
+        private set
+
     val isShowing: Boolean
         get() = pendingLeave != null
 
-    /** Asks the player to confirm leaving the game; [onLeave] runs only if they do. */
-    fun request(onLeave: () -> Unit) {
+    /** Asks the player to confirm leaving the game (the [tutorial], if it is); [onLeave] runs only if they do. */
+    fun request(onLeave: () -> Unit, tutorial: Boolean = false) {
+        this.tutorial = tutorial
         pendingLeave = onLeave
     }
 
@@ -50,8 +57,8 @@ fun LeaveGameConfirmationDialog(confirmation: LeaveGameConfirmation) {
     if (!confirmation.isShowing) return
     LudoPlusDialog(
         icon = Symbols.Logout,
-        title = stringResource(Res.string.game_leave_title),
-        message = stringResource(Res.string.game_leave_message),
+        title = stringResource(if (confirmation.tutorial) Res.string.game_leave_tutorial_title else Res.string.game_leave_title),
+        message = stringResource(if (confirmation.tutorial) Res.string.game_leave_tutorial_message else Res.string.game_leave_message),
         confirmLabel = stringResource(Res.string.game_leave_confirm),
         onConfirm = confirmation::confirm,
         dismissLabel = stringResource(Res.string.common_cancel),

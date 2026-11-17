@@ -28,8 +28,11 @@ import net.zodac.ludo.game.GameState
 import net.zodac.ludo.game.LudoEngine
 import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
+import net.zodac.ludo.game.TutorialScript
+import net.zodac.ludo.game.TutorialStep
 import net.zodac.ludo.game.nowEpochMillis
 import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
 
@@ -43,6 +46,9 @@ import net.zodac.ludo.model.PlayerType
  * The game is saved to [savedGame] as it starts and after every roll and move, and the save is cleared when it finishes,
  * as it is written to the game [records].
  * Its play time ([StartedGame.playMillis]) counts, by [elapsedMillis], only while it's on screen and not held.
+ *
+ * Given a [tutorial], it plays that guided game instead ([startTutorial]): every roll and move is the script's, only the
+ * step's own action is taken, and nothing is kept (no save, no records, no setup saved).
  */
 class GameViewModel(
     private val settingsRepository: SettingsRepository,
@@ -51,6 +57,7 @@ class GameViewModel(
     private val random: Random = Random.Default,
     private val elapsedMillis: () -> Long = monotonicMillis(),
     private val now: () -> Long = ::nowEpochMillis,
+    private val tutorial: TutorialScript? = null,
 ) : ViewModel() {
 
     private var pacing = GamePacing()
@@ -126,6 +133,8 @@ class GameViewModel(
         val wasFinished = _game.value?.state?.isFinished == true
         val timed = withPlayTime(game)
         _game.value = timed
+        // The tutorial keeps nothing.
+        if (tutorial != null) return
         if (!timed.state.isFinished) {
             savedGame.save(timed)
             return
@@ -203,25 +212,129 @@ class GameViewModel(
         return true
     }
 
-    /** The current player rolls the die, if it's a person's turn and the game is waiting for a roll. */
+    /**
+     * The current player rolls the die, if it's a person's turn and the game is waiting for a roll. In the tutorial, only
+     * at a roll step once it's shown, rolling the script's number.
+     */
     fun roll() {
         val game = _game.value ?: return
         if (game.state.phase != TurnPhase.AwaitingRoll || game.currentIsCpu) return
-        update(LudoEngine.roll(game.state, random))
+        val progress = tutorialProgress
+        if (progress == null) {
+            update(LudoEngine.roll(game.state, random))
+            return
+        }
+        val step = progress.current as? TutorialStep.Roll ?: return
+        if (progress.shown.value != step) return
+        update(LudoEngine.applyRoll(game.state, step.value))
     }
 
-    /** The current player moves [pawn], if it's a person's turn and that pawn has a legal move. */
+    /**
+     * The current player moves [pawn], if it's a person's turn and that pawn has a legal move. In the tutorial, only the
+     * move step's own pawn, once the step is shown.
+     */
     fun move(pawn: Int) {
         val game = _game.value ?: return
         val phase = game.state.phase
         if (phase !is TurnPhase.AwaitingMove || game.currentIsCpu || phase.moves.none { it.pawn == pawn }) return
+        val progress = tutorialProgress
+        if (progress != null) {
+            val step = progress.current as? TutorialStep.Move ?: return
+            if (step.pawn != pawn || progress.shown.value != step) return
+        }
         update(LudoEngine.move(game.state, pawn))
     }
 
     private fun update(state: GameState) {
         val game = _game.value ?: return
         commit(game.copy(state = state))
+        advanceTutorial()
         playCpuTurn()
+    }
+
+    /** Whether this is the guided game: see [tutorial]. */
+    val isTutorial: Boolean
+        get() = tutorial != null
+
+    /** How far through [tutorial] the player is: null outside one. */
+    private val tutorialProgress: TutorialProgress? = tutorial?.let(::TutorialProgress)
+
+    /**
+     * The tutorial's step for the coach card and the board: the one waited for, shown once the screen has played out the
+     * action before it (the die's tumble, a pawn's move). Null outside a tutorial, and between parts.
+     */
+    val tutorialStep: StateFlow<TutorialStep?> = tutorialProgress?.shown ?: MutableStateFlow(null)
+
+    /** Which of [tutorial]'s parts is being played, from 0. */
+    val tutorialPart: StateFlow<Int> = tutorialProgress?.part ?: MutableStateFlow(0)
+
+    /** Every step of [tutorial], part after part: none outside one. */
+    val tutorialSteps: List<TutorialStep>
+        get() = tutorial?.parts?.flatMap { it.steps }.orEmpty()
+
+    /** How many parts [tutorial] has. */
+    val tutorialParts: Int
+        get() = tutorial?.parts?.size ?: 0
+
+    private var tutorialShow: Job? = null
+
+    /** On to the tutorial's next step, shown once the action just taken has played out; at a part's end, the next part. */
+    private fun advanceTutorial() {
+        val progress = tutorialProgress ?: return
+        progress.next()
+        val event = _game.value?.state?.lastEvent
+        // Only the action's own animation: the coach doesn't think.
+        val playOut = pacing.waitAfter(event) - pacing.thinkMillis
+        tutorialShow?.cancel()
+        tutorialShow = viewModelScope.launch {
+            pausableDelay(playOut)
+            val step = progress.current
+            when {
+                step != null -> progress.shown.value = step
+                progress.part.value < progress.script.parts.lastIndex -> {
+                    // A beat on the part's last move before the board is set out for the next.
+                    pausableDelay(pacing.thinkMillis)
+                    startTutorialPart(progress.part.value + 1)
+                }
+            }
+        }
+    }
+
+    /** Sets the board out for [tutorial]'s part [part], from its first step. */
+    private fun startTutorialPart(part: Int) {
+        val progress = tutorialProgress ?: return
+        val game = _game.value ?: return
+        cpuTurn?.cancel()
+        cpuTurn = null
+        tutorialShow?.cancel()
+        progress.begin(part)
+        commit(game.copy(state = progress.script.start(part)))
+    }
+
+    /**
+     * Starts [tutorial]'s guided game from its first part: the player under their saved name for player 1 ([defaultName]
+     * without one), and the CPU as [cpuName].
+     */
+    suspend fun startTutorial(defaultName: String, cpuName: String) {
+        val script = tutorial ?: return
+        if (_game.value != null) return
+        setupForm.setupRestored.first { it }
+        val name = setupForm.setup.value.playerSlots.first().name.trim().ifEmpty { defaultName }
+        val players = listOf(
+            PlayerConfig(1, PlayerType.HUMAN, name, colour = PlayerColour.defaultFor(TutorialScript.YOU)),
+            PlayerConfig(2, PlayerType.AI, cpuName, colour = PlayerColour.defaultFor(TutorialScript.CPU)),
+        )
+        playMark = elapsedMillis().takeIf { foreground.value }
+        tutorialProgress?.begin(0)
+        commit(StartedGame(mode = script.gameMode, players = players, state = script.start(0), rollOff = RollOff(emptyList(), TutorialScript.YOU), startedAtEpochMillis = now()))
+    }
+
+    /** The coach card's back (-1) and forward (+1): the start of the part before or after, or of this one going back. */
+    fun jumpToTutorialPart(direction: Int) {
+        val progress = tutorialProgress ?: return
+        val target = if (direction < 0 && progress.step > 0) progress.part.value else progress.part.value + direction
+        if (target !in progress.script.parts.indices) return
+        startTutorialPart(target)
     }
 
     /** While a CPU player has the turn, it rolls, then moves with its strategy, each once the screen has caught up. */
@@ -231,6 +344,18 @@ class GameViewModel(
         cpuTurn = viewModelScope.launch {
             pausableDelay(pacing.waitAfter(game.state.lastEvent))
             val now = _game.value ?: return@launch
+            val progress = tutorialProgress
+            if (progress != null) {
+                // In the tutorial, the CPU plays only its scripted steps.
+                val next = when (val step = progress.current) {
+                    is TutorialStep.CpuRoll -> LudoEngine.applyRoll(now.state, step.value)
+                    is TutorialStep.CpuMove -> LudoEngine.move(now.state, step.pawn)
+                    else -> return@launch
+                }
+                cpuTurn = null
+                update(next)
+                return@launch
+            }
             val next = when (val phase = now.state.phase) {
                 TurnPhase.AwaitingRoll -> LudoEngine.roll(now.state, random)
                 is TurnPhase.AwaitingMove -> {
@@ -252,6 +377,18 @@ class GameViewModel(
                     settingsRepository = container.settingsRepository,
                     savedGame = container.inProgressGameRepository,
                     records = container.gameRecordRepository,
+                )
+            }
+        }
+
+        /** The guided game's: [script] played, nothing kept. */
+        fun tutorialFactory(container: AppContainer, script: TutorialScript = TutorialScript.CLASSIC): ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                GameViewModel(
+                    settingsRepository = container.settingsRepository,
+                    savedGame = container.inProgressGameRepository,
+                    records = container.gameRecordRepository,
+                    tutorial = script,
                 )
             }
         }

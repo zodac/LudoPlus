@@ -79,6 +79,9 @@ class GameRecordRepository(
         dao.count()
     }
 
+    /** Whether any game has been recorded: a person has finished one. */
+    suspend fun hasFinishedGame(): Boolean = dao.count() > 0
+
     /** Forgets every game: the Leaderboard and Statistics are both empty after. */
     suspend fun reset() {
         dao.clearAll()

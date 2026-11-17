@@ -30,7 +30,7 @@ NavHost(start = "menu")
     "play/game"    GameScreen, then GameOverScreen and the scorecard review (Continue comes straight here and loads
                    the saved game)
   "scores"  ScoresScreen (the Leaderboard)   "statistics"  "achievements"  "styles"  "rules"
-  "tutorial"     GameScreen on a GameViewModel of its own, playing TutorialScript.STANDARD (Rules' How to Play page, or New Game)
+  "tutorial"     GameScreen on a GameViewModel of its own, playing TutorialScript.CLASSIC (Rules' How to Play page, or New Game)
   "settings"     SettingsScreen (About and Licences open from links at its foot)
 ```
 
@@ -63,28 +63,27 @@ NavHost(start = "menu")
 
 ## The tutorial
 
-How it's built, its scripting rules and how to add one for another mode: `TUTORIAL.md`.
+How it's built, its scripting rules, and how to add one for another mode: `TUTORIAL.md`.
 
-- **What it is.** A guided solo game of Standard (`game/Tutorial.kt`, `TutorialScript.STANDARD`): every roll's dice
-    and every move are fixed, so it plays the same each time and ends on 382. Its 13 turns show holding and rerolling to a
-    5x, Chance for a missed straight, a Large Straight, the upper section, a zero for the next missed straight, scoring
-    on the first roll, 4x adding all five dice (first scored in Fives, taken back with Undo, which the card says is
-    solo-only), a Full House, the totals, a joker (+100), the upper bonus and 3x. Every turn but the first-roll one (Fours)
-    takes all three rolls to get there (`TutorialScriptTest`).
-- **How it plays.** It's the real game screen and engine. `GameViewModel(tutorial = ...)` takes each roll's dice from
-    the script (`TutorialDice`) and moves on step by step (`tutorialStep`, shown after a roll once its dice have
-    settled): only the step's move is taken (a roll, the dice to hold, the box to score, Undo, or the totals; there are
-    no words-only steps, so a card that explains says to roll), and `LocalTutorialGuide` outlines that control in
-    pulsing gold (steady under reduced motion) and switches the rest off for TalkBack.
-- **The coach card** (`CoachCard`) takes the player tabs' place: "Coach" and "Turn 3 of 13" over the step's words. It's
-    held at the height the longest step needs at the standard font size, so nothing moves between steps; at a larger font
-    the words scroll inside it. The name and words are a polite live region, read out as each step arrives; the turn is a
-    node of its own. The totals button only takes a tap at the steps that ask for it; its pop-up then stays up while the
-    card explains it, but isn't focusable, so the one tap on the cup rolls (and the roll closes it).
-- **Nothing is kept.** No saved game (Continue stays on the player's own), scores, achievements, counters, settings or
-    first-game unlock; no cheat or golden egg, and Undo only at its step. `TutorialGameTest` plays it through against counting stores.
-- **Leaving** always asks ("Leave the tutorial?"), whatever the confirm-before-leaving setting. Its Game Over offers
-    Done (back where it was started) or New Game.
+- **What it is.** A guided game of Classic, the player (Red) against one CPU (Green), in four parts, each from a
+    position of its own (`game/Tutorial.kt`, `TutorialScript.CLASSIC`): getting out of the yard on a 6, with the 6's roll
+    again; a capture and its roll again; a pawn home with the exact roll and its roll again; and winning, after a roll too
+    big to get home. Every roll and move is fixed, so it plays the same each time (`TutorialScriptTest`).
+- **Where it opens.** Rules' How to Play page (Play the Tutorial), and New Game's "New to the game? Play the tutorial"
+    link, shown until any person has finished a game (`GameRecordRepository.hasFinishedGame`).
+- **How it plays.** The real game screen and engine. `GameViewModel(tutorial = ...)` rolls the script's numbers and
+    moves on step by step (`tutorialStep`, shown once the action before it has played out): only the step's own action is
+    taken. At a roll step the die pulses in a violet outline (steady under reduced motion); at a move step only the step's
+    pawn is ringed and offered to TalkBack. The CPU plays its scripted steps at its usual pace. A part ends with its last
+    step, and the next is set out a beat later.
+- **The coach card** (`CoachCard`) takes the player cards' place: "Coach" and "Part 2 of 4" over the step's words, with
+    back and forward strips at its edges that jump between parts. It's as tall as the longest step needs at the font in
+    use up to 130%; past that the words scroll inside it. The name and words are a polite live region, read out as each
+    step arrives; the part is a node of its own.
+- **Nothing is kept.** No saved game (Continue stays on the player's own), no records, and the setup form isn't saved.
+    `TutorialGameTest` plays it through and checks.
+- **Leaving** always asks ("Leave the tutorial?"), whatever the confirm-before-leaving setting. Its Game Over shows the
+    winner alone and a line that it's done, then Done (back where it was started) or New Game.
 
 ## The turn and the rules
 

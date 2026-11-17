@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -98,10 +100,12 @@ import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.rules_page_count
 import net.zodac.ludo.resources.rules_page_in_group_spoken
 import net.zodac.ludo.resources.rules_title
+import net.zodac.ludo.resources.rules_tutorial_start
 import net.zodac.ludo.ui.common.FooterPill
 import net.zodac.ludo.ui.common.isLargeFont
 import net.zodac.ludo.ui.common.LocalLandscapePage
 import net.zodac.ludo.ui.common.LocalReduceMotion
+import net.zodac.ludo.ui.common.MAIN_ACTION_HEIGHT
 import net.zodac.ludo.ui.common.parseInlineMarkup
 import net.zodac.ludo.ui.common.ScreenScaffold
 import net.zodac.ludo.ui.common.SoraFontFamily
@@ -157,7 +161,7 @@ fun resetRulesPageMemory() {
  * semantics so TalkBack says "Tab, 1 of 3" and "Tab, 1 of 6", the spoken form of the same hint.
  */
 @Composable
-fun RulesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun RulesScreen(onBack: () -> Unit, modifier: Modifier = Modifier, onStartTutorial: () -> Unit = {}) {
     val pagerState = rememberPagerState(initialPage = RulesPageMemory.lastPage.coerceIn(0, RULES_PAGES.size - 1), pageCount = { RULES_PAGES.size })
     // Remembered for the app's run, so the rules reopen where they were left.
     LaunchedEffect(pagerState) { snapshotFlow { pagerState.currentPage }.collect { RulesPageMemory.lastPage = it } }
@@ -233,7 +237,7 @@ fun RulesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     for (block in rulesPage.blocks.take(shownBlocks)) {
-                        RulesBlockView(block)
+                        RulesBlockView(block, onStartTutorial)
                     }
                 }
             }
@@ -431,9 +435,16 @@ private val BLOCK_GAP = 10.dp
 
 /** Draws one [RulesBlock] of a page. */
 @Composable
-private fun RulesBlockView(block: RulesBlock) {
+private fun RulesBlockView(block: RulesBlock, onStartTutorial: () -> Unit) {
     when (block) {
         is RulesText -> RulesBodyText(block.text, modifier = Modifier.padding(bottom = BLOCK_GAP))
+        RulesTutorialStart -> FilledTonalButton(
+            onClick = onStartTutorial,
+            // The gap outside the button's height: inside it, the gap would come out of the button.
+            modifier = Modifier.padding(bottom = BLOCK_GAP).fillMaxWidth().heightIn(min = MAIN_ACTION_HEIGHT),
+        ) {
+            Text(text = stringResource(Res.string.rules_tutorial_start), style = MaterialTheme.typography.titleMedium)
+        }
         is RulesDiagramBlock -> Box(modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = BLOCK_GAP), contentAlignment = Alignment.Center) {
             RulesDiagram(block.kind)
         }
