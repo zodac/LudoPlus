@@ -1,7 +1,7 @@
 name: README assets
 
-# The images README.md shows - the feature graphic (an animated GIF), and the phone and 10-inch tablet screenshots -
-# rendered from the app by scripts/generate-store-assets.sh (see .claude/STORE_ASSETS.md), shrunk to PNGs, and uploaded
+# The images README.md shows - the phone and 10-inch tablet screenshots (the feature graphic, an animated GIF, comes back
+# with the Play listing in Phase 10) - rendered from the app by scripts/generate-store-assets.sh (see .claude/STORE_ASSETS.md), shrunk to PNGs, and uploaded
 # to the standalone `readme-assets` release. It runs on its own, beside android-release.yml rather than after it: on a
 # push to main that changes what the Android app shows (the same paths android-release.yml watches), or how the
 # images are made (the store-assets script, captions and generator tests). Not waiting for the release means a push
@@ -20,9 +20,9 @@ name: README assets
 #
 # ubuntu-latest ships ImageMagick 6, without the `magick` the script uses; install_imagemagick.sh installs the same
 # ImageMagick 7 build the sandbox has.
-# Pre-1.0.0, on demand only: the store scenes (app/android/src/test/kotlin/net/zodac/ludo/store/) still need making for
-# Ludo Plus. Once they exist and VERSION reaches 1.0.0, restore the push trigger with android-release.yml's paths plus the
-# generator's own (that test package, scripts/generate-store-assets.sh and scripts/store-assets/).
+# Pre-1.0.0, on demand only. With VERSION's move to 1.0.0, restore the push trigger with android-release.yml's paths plus
+# the generator's own (app/android/src/test/kotlin/net/zodac/ludo/store/, scripts/generate-store-assets.sh, and
+# scripts/store-assets/).
 on:
   workflow_dispatch:
 
@@ -64,16 +64,15 @@ jobs:
       - name: Install ImageMagick 7
         run: .github/scripts/install_imagemagick.sh
 
-      - name: Render the feature graphic and screenshots
-        run: scripts/generate-store-assets.sh --parts feature,phone,tablet
+      - name: Render the screenshots
+        run: scripts/generate-store-assets.sh --parts phone,tablet
 
       # The store's PNGs are about 1MB each; at the README's size a few hundred KB. Phone shots at 540px wide and tablet
-      # ones at 1280px, both twice the width the README shows them at; the GIF is the script's, at 1024x500.
+      # ones at 1280px, both twice the width the README shows them at.
       - name: Shrink them for the README
         run: |
           out="assets/$(tr -d '[:space:]' < VERSION)"
           mkdir readme-assets
-          cp "$out/feature-graphic.gif" readme-assets/feature-graphic.gif
           for shot in "$out"/phone/*.png; do
             magick "$shot" -filter Lanczos -resize 540x -strip -quality 95 PNG24:"readme-assets/$(basename "$shot")"
           done
@@ -114,6 +113,6 @@ jobs:
             gh release create readme-assets \
               --title "README assets" \
               --latest=false \
-              --notes "Images for README.md: the feature graphic and screenshots of the latest release. Not a software release; its files are replaced after every release."
+              --notes "Images for README.md: screenshots of the latest release. Not a software release; its files are replaced after every release."
           fi
-          gh release upload readme-assets --clobber readme-assets/*.png readme-assets/feature-graphic.gif
+          gh release upload readme-assets --clobber readme-assets/*.png

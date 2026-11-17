@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Makes the Google Play store listing's assets from the real app: the hi-res icon, the feature graphic, captioned
-# phone and 10-inch tablet screenshots, and a promo video - into assets/<version>/, which is gitignored. See
+# Makes the store listing's assets from the real app - for now the captioned phone and 10-inch tablet screenshots, which
+# the README shows - into assets/<version>/, which is gitignored. The hi-res icon, the feature graphic, and the promo
+# video (DiceFive's, in commit 5423b6c) come back with the Play listing in Phase 10 of .claude/IMPLEMENTATION.md. See
 # .claude/STORE_ASSETS.md.
 #
-#   scripts/generate-store-assets.sh                     # everything (about 10 minutes, most of it the video)
-#   scripts/generate-store-assets.sh --parts phone,icon  # just those: icon, feature, phone, tablet, video
+#   scripts/generate-store-assets.sh                     # everything there is (a few minutes)
+#   scripts/generate-store-assets.sh --parts phone       # just those: phone, tablet
 #   scripts/generate-store-assets.sh --no-render         # re-caption/re-encode the last renders, without Gradle
 #   scripts/generate-store-assets.sh --music track.mp3   # different background music under the video's sound effects
 #   scripts/generate-store-assets.sh --no-music          # the video with the app's sounds only
@@ -18,7 +19,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
 
-PARTS="icon,feature,phone,tablet,video"
+PARTS="phone,tablet"
 RENDER=true
 MUSIC=""
 USE_MUSIC=true
@@ -35,6 +36,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 wants() { [[ ",${PARTS}," == *",$1,"* ]]; }
+for part in icon feature video; do
+    if wants "${part}"; then
+        echo "The ${part} has no generator yet: it comes back with the Play listing (Phase 10 of .claude/IMPLEMENTATION.md)." >&2
+        exit 2
+    fi
+done
 
 [[ -z "${MUSIC}" || -f "${MUSIC}" ]] || { echo "No such music file: ${MUSIC}" >&2; exit 1; }
 for tool in magick ffmpeg ffprobe python3 curl sha256sum; do
@@ -64,11 +71,12 @@ WORK="${ROOT}/build/store-assets/work"
 FONT="${ROOT}/app/shared/src/commonMain/composeResources/font/sora.ttf"
 CAPTIONS="${ROOT}/scripts/store-assets/captions.txt"
 
-# Brand colours - see UI.md's Colour section and the launcher icon. The felt's glow is brighter than the game's, so a
-# backdrop stands out from the felt on the screen in front of it.
-FELT_GLOW="#3A78C8"
-FELT_MIDDLE="#1C3D66"
-FELT_DEEP="#0B1E3A"
+# Brand colours - see UI.md's Colour section: the brand navy, lit towards violet behind the headline, so a backdrop
+# stands out from the app's own dark screen in front of it. (The MAT_*, DIE_TINT, and table colours are DiceFive's, for
+# the video's backdrop, which comes back in Phase 10.)
+FELT_GLOW="#4A3F8C"
+FELT_MIDDLE="#1E2A4A"
+FELT_DEEP="#0C1124"
 MAT_GLOW="#2F6EBB"
 MAT_MIDDLE="#1F4F8F"
 MAT_EDGE="#13315F"

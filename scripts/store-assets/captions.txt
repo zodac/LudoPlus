@@ -1,14 +1,12 @@
-# The headline over each store screenshot and each scene of the promo video, by the screen's name (the part of its
-# file name after the number - see StoreScreensGeneratorTest). One line each; keep them short (about 30 characters
-# reads well at thumbnail size) and true of the app as it ships.
+# The headline over each screenshot (the README's, and from Phase 10 the store listing's), by the screen's name (the part
+# of its file name after the number - see StoreScreensGeneratorTest). One line each; keep them short (about 30
+# characters reads well at thumbnail size) and true of the app as it ships.
 #
-# The trademark rule in CLAUDE.md applies here too: never the banned word, and "3x", "4x" and "5x" - never
-# "three/four/five of a kind".
-game=Roll, hold, and score
-modes=Twists on the classic rules
-d20=Twists on the classic rules
-styles=Unlock dozens of styles
+# The trademark rule in CLAUDE.md applies here too: "Ludo" and "the classic rules" only, never another company's name
+# for the game.
+game=Race your pawns home
+rules=The classic rules, explained
+tutorial=Learn as you play
 game-over=Beat friends or the computer
-leaderboard=Chase a high score in every mode
-statistics=Track your stats in every mode
-achievements=Earn achievements as you play
+leaderboard=Chase the fastest win
+statistics=Track your wins and captures

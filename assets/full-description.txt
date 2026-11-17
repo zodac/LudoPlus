@@ -1,0 +1,24 @@
+Ludo Plus is the classic race to home for Android. Roll the die, bring your four pawns out of the yard on a 6, race them a full lap of the board, and be the first to get them all home. Land on a rival to send them back to the start.
+
+THE CLASSIC RULES
+• Four players: friends passing the phone around, computer opponents, or any mix of the two
+• Roll a 6 to leave the yard, and roll again after a 6, a capture, or bringing a pawn home
+• Star squares and start squares are safe, and a pawn needs the exact roll to reach home
+• Play on for second, third, and last place, or end the game at the first winner
+
+COMPUTER OPPONENTS
+• Three levels: Easy plays at random, Medium weighs every move, and Hard thinks a roll ahead
+
+LEARN AS YOU PLAY
+• A guided tutorial teaches the game in four short parts: getting out, captures, home, and winning
+• The rules, a page an idea, each with a diagram of the board
+
+TRACK YOUR GAMES
+• A Leaderboard of the fastest wins
+• Statistics for every player: games, wins, streaks, captures, and pawns home
+• Leave a game at any time and continue it later
+
+MADE FOR EVERYONE
+• Built for TalkBack and large fonts, with every square and move described
+• Animation levels, and every animation can be switched off
+• No ads, no accounts, and no internet permission: your games stay on your phone

@@ -7,9 +7,49 @@ and be the first to get all four home. Land on a rival to send them back to the 
 
 > **In development.** Ludo Plus isn't released yet: there are no builds on Google Play or this repo's Releases page.
 
+## What's in it
+
+- **The classic rules** for four players, against friends passing the phone around or computer opponents at three
+    levels
+- **A guided tutorial** that teaches the game in four short parts, and the rules with a diagram for each idea
+- **A Leaderboard** of the fastest wins, and **Statistics** for every player: wins, streaks, and captures
+- Built for **TalkBack** and large fonts, with no ads and no accounts: your games stay on your phone
+
+<table>
+<tr>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-1-game.png" alt="A game in play" width="270"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-2-rules.png" alt="The Captures rules page" width="270"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-3-tutorial.png" alt="The tutorial" width="270"></td>
+</tr>
+<tr>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-4-game-over.png" alt="Game Over" width="270"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-5-leaderboard.png" alt="The Leaderboard" width="270"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-6-statistics.png" alt="Statistics" width="270"></td>
+</tr>
+</table>
+
+<details>
+<summary>On a tablet</summary>
+
+<table>
+<tr>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-1-game.png" alt="A game in play, on a tablet" width="420"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-2-rules.png" alt="The Captures rules page, on a tablet" width="420"></td>
+</tr>
+<tr>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-3-tutorial.png" alt="The tutorial, on a tablet" width="420"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-4-game-over.png" alt="Game Over, on a tablet" width="420"></td>
+</tr>
+<tr>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-5-leaderboard.png" alt="The Leaderboard, on a tablet" width="420"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-6-statistics.png" alt="Statistics, on a tablet" width="420"></td>
+</tr>
+</table>
+
+</details>
+
 ## Planned
 
-- **The classic rules** for four players, against friends passing the phone around or computer opponents
 - **2 to 8 players**, on boards made for each size
 - **Game modes and house rules** - variations on the classic, and optional modifiers to mix in
 - **Online play** with friends

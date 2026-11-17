@@ -242,7 +242,9 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 - [x] Statistics per player (`ui/records/StatisticsScreen`): games, wins, win rate, current and best streaks, fewest
     turns to win, captures, times captured, and pawns home. Added up overall; `PlayerStatistics.modes` has them per
     mode, for a mode picker once there's more than one. Both screens approved from renders 2026-11-17
-    (`RecordsScreensTest`).
+    (`RecordsScreensTest`). DiceFive's "Time played" line came back at the top of Statistics (the maintainer,
+    2026-11-17): `PlayTimeTracker` counts the time the app is in front, saved under the settings key `play_seconds`
+    (DiceFive kept it with the achievements' counters, which Phase 6 can move it to).
 - [x] A "stop at first winner" setting (Settings, off by default): `GameRules.stopAtFirstWinner`, set from it when a
     game starts and saved with the game. The game ends when the first player has every pawn home; the rest are placed
     by how far their pawns have come, a tie to who plays sooner after the winner, each finishing as the game ends.
@@ -270,7 +272,10 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
         (2026-11-17). The journey compiles in the lint job.
     - [ ] Run the journey on an emulator (the sandbox's `emulator` skill): written on a host without one, so not yet run.
     - [ ] `PawnMoveBenchmark` on a phone: frameDurationCpuMs P90 under 16ms.
-- [ ] Store-assets generator scenes for Ludo, README gallery, and `assets/full-description.txt`.
+- [x] Store-assets generator scenes for Ludo, README gallery, and `assets/full-description.txt`: six screenshots (phone
+    and 10-inch tablet) from staged games and a seeded history, in the README from the `readme-assets` release
+    (approved 2026-11-17). The icon, feature graphic, and promo video move to Phase 10 with the Play listing (the
+    maintainer, 2026-11-17).
 - [x] Privacy policy re-read against the app, and rewritten for 1.0.0 (approved 2026-11-17): no sign-in, cloud save,
     purchase, or progress files yet, and nothing leaves the device but a crash report the player posts. It must be
     updated again before Phase 10 or 11 ships.
@@ -314,6 +319,8 @@ There is no standard board for more than four. This phase designs one.
 ## Phase 10: Google Play
 
 - [ ] Create the Play Console project, the signing key and upload key, and the CI secrets (`PUBLISHING.md`).
+- [ ] The store listing's hi-res icon, feature graphic (and the README's GIF), and promo video: DiceFive's generators
+    are in `5423b6c`; the script keeps their steps, refusing those parts until then (`STORE_ASSETS.md`).
 - [ ] Play Games Services: achievements, the fastest-win leaderboards, cloud save, and sign-in (`PLAY_GAMES.md`).
 - [ ] Progress files (github flavour), restored from `5423b6c` with the cloud save format they share
     (`online/CloudSave*`, `ProgressFileCodec`, `ProgressTransfer`, the Settings card, `AndroidProgressFiles`, and the
