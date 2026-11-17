@@ -185,7 +185,7 @@ private fun DrawScope.drawCount(textMeasurer: TextMeasurer, count: Int, mark: Pa
 private operator fun Offset.div(by: Float) = Offset(x / by, y / by)
 
 /** The board itself, no pawns: squares, yards, start squares, stars, home columns, and the centre. */
-private fun DrawScope.drawBoard(unit: Float, seatColours: List<Color?>) {
+internal fun DrawScope.drawBoard(unit: Float, seatColours: List<Color?>) {
     val board = BoardLayout.geometry
     val line = BoardInk.copy(alpha = 0.45f)
     val lineWidth = 1.dp.toPx()
@@ -247,7 +247,7 @@ private fun DrawScope.drawStar(centre: Offset, radius: Float, colour: Color) {
 }
 
 /** The ivory spot a pawn that is home stands on, ringed in ink: it lifts the pawn off its own colour's triangle. */
-private fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
+internal fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
     val spot = centre + Offset(0f, -0.05f * radius)
     drawCircle(BoardIvory, radius * 1.12f, spot)
     drawCircle(BoardInk.copy(alpha = 0.6f), radius * 1.12f, spot, style = Stroke(maxOf(0.75.dp.toPx(), radius * 0.07f)))
@@ -258,7 +258,7 @@ private fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
  * the left in [colour] and outlined in ink, with a shadow at its foot. It stands within [radius] across of [centre]
  * (a little taller than wide), and a violet ring round it when [ringed].
  */
-private fun DrawScope.drawPawn(centre: Offset, radius: Float, colour: Color, ringed: Boolean) {
+internal fun DrawScope.drawPawn(centre: Offset, radius: Float, colour: Color, ringed: Boolean) {
     val r = radius
     fun at(x: Float, y: Float) = Offset(centre.x + x * r, centre.y + y * r)
     if (ringed) drawCircle(MovableRing, r * 1.3f, at(0f, -0.04f), style = Stroke(r * 0.2f))

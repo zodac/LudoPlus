@@ -14,7 +14,7 @@ reorders them.
 | 2 | The board and game screen | Done |
 | 3 | CPU opponents | Done |
 | 4 | Saving, Game Over, Statistics, and the Leaderboard | Done |
-| 5 | Rules, tutorial, sound, and polish (to 1.0.0) | Not started |
+| 5 | Rules, tutorial, sound, and polish (to 1.0.0) | In progress |
 | 6 | Achievements | Not started |
 | 7 | Styles | Not started |
 | 8 | 2-8 players | Not started |
@@ -248,7 +248,10 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 ## Phase 5: Rules, tutorial, sound, and polish (to 1.0.0)
 
 - [ ] Review the game screen in landscape with the maintainer, once every phase to 1.0.0 is in (asked 2026-11-17).
-- [ ] Rules screen: the classic rules with board diagrams.
+- [x] Rules screen: the classic rules with board diagrams. DiceFive's tabbed pages came back (`RulesScreen`, `RulesContent`,
+    the maintainer, 2026-11-17): How to Play, The Board, Your Turn, Captures, and Winning, each but the first with a
+    diagram cropped from the real board (`RulesDiagram`), one image to TalkBack. The group row (Gameplay, Modes,
+    Modifiers) shows once Phase 9 brings a second group. Approved from renders 2026-11-17.
 - [ ] Guided tutorial (`TUTORIAL.md`'s framework): a scripted first game.
 - [ ] Sounds (licensed, recorded in `app/licensing`, normalised): roll, move step, capture, home, win.
 - [ ] Baseline Profile journeys and benchmarks, restored from `5423b6c` (`app/baselineprofile`, the `baseline-profile`

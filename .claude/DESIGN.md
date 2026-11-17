@@ -691,10 +691,16 @@ Each category is two lists in the same order:
 
 `ui/rules/RulesContent.kt` (the pages: `RULES_GROUPS` and its block types) and `ui/rules/RulesScreen.kt` (drawing them).
 
-- **Layout.** Two tab rows: groups (**Gameplay**, **Modes**, **Modifiers**), then the pages of the chosen group. One
-    pager runs across every page.
-- **Accuracy.** The text is kept in step with the engine: `ScoreCategory` values, the joker rule, the tie-break order.
+- **Layout.** Two tab rows: groups, then the pages of the chosen group. One pager runs across every page. There is only
+    **Gameplay** so far (How to Play, The Board, Your Turn, Captures, and Winning), so its group row isn't shown;
+    **Modes** and **Modifiers** join it in Phase 9.
+- **Diagrams** (`RulesDiagram.kt`): a crop of the real board (`drawBoard`, `drawPawn`, and `BoardLayout`'s positions),
+    in the default seat colours, with pawns, ink arrows (dashed for a pawn sent back), and a die. One image to TalkBack,
+    described in words (`rules_*_diagram_cd`).
+- **Accuracy.** The text is kept in step with the engine and `IMPLEMENTATION.md`'s "The classic rules".
 - **New mode or modifier.** It gets its own page; see `GAME_MODES.md`.
+- Tests: `RulesTextTest` (every page's words and diagram), `RulesScreenAccessibilityTest`, `RulesTabIndicatorTest`, and
+    `RulesScrollbarThumbTest`.
 
 ## Distribution
 

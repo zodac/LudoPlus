@@ -345,11 +345,21 @@
 
     <string name="achievements_earned_percent">%1$d%</string>
 
-    <!-- Rules pages (ui/rules/RulesScreen.kt): one page per idea, in order, in three groups (rules_group_*): the rules, the game modes, then the modifiers. Body text may use markup: `backticks` for the name of a scoring category (gold, monospace), *italics* for the name of a section, mode or setting, **bold** for a number of points or a count. "Npts" is the short form of points (see rules_points_short). -->
+    <!-- Rules pages (ui/rules/RulesContent.kt): one page per idea, in order, in groups (rules_group_*); each has a title over the page and a shorter name for its tab. Body text may use markup: *italics* for the name of a setting, **bold** for a number. -->
     <string name="rules_how_to_play_title">How to Play %1$s</string>
+    <!-- A tab: keep it short. -->
+    <string name="rules_how_to_play_tab">How to Play</string>
+    <string name="rules_how_to_play_1">Race your four pawns a full lap of the board and into home, in the middle. The first player to bring all four pawns home wins.</string>
+    <string name="rules_how_to_play_2">Players take turns clockwise, each rolling one die. To decide who goes first, everyone rolls once, and the highest roll starts. Ties roll again.</string>
 
     <!-- Rules screen: everything else (ui/rules/RulesScreen.kt) -->
     <string name="rules_title">Rules</string>
+    <!-- The pill at the foot: which page of its group (rules_group_*) is showing. Spoken as rules_page_in_group_spoken. -->
+    <string name="rules_page_count">%1$d of %2$d</string>
+    <!-- The groups of pages, in the top tab row (shown once there's more than one): for now only the rules themselves. Keep them short. -->
+    <string name="rules_group_gameplay">Gameplay</string>
+    <!-- The footer read aloud: the group of pages (rules_group_*), then which of its pages is showing. -->
+    <string name="rules_page_in_group_spoken">%1$s, page %2$d of %3$d</string>
 
     <!-- Shown in place of the whole app when the file holding the scores can't be opened, typically after an update whose database change failed (ui/common/DatabaseFailurePage.kt). %1$s is the app's name. -->
     <string name="common_database_failure_title">Your scores can't be opened</string>
@@ -377,21 +387,31 @@
     <string name="player_colour_yellow">Yellow</string>
     <string name="settings_motion_die_roll">Die roll</string>
     <string name="settings_motion_pawn_move">Pawn moves</string>
-    <string name="rules_board_heading">The board</string>
+    <string name="rules_board_title">The Board</string>
+    <string name="rules_board_tab">The Board</string>
     <string name="rules_board_1">Each player has four pawns, waiting in their own coloured yard.</string>
     <string name="rules_board_2">The track runs all the way round the board, and everyone shares it. Each colour joins it at its own start square.</string>
     <string name="rules_board_3">After a full lap, a pawn turns into its own home column and races to home, in the middle of the board.</string>
-    <string name="rules_turn_heading">Your turn</string>
+    <string name="rules_turn_title">Your Turn</string>
+    <string name="rules_turn_tab">Your Turn</string>
     <string name="rules_turn_1">Roll the die, then move one of your pawns that many squares.</string>
     <string name="rules_turn_2">Only a 6 brings a pawn out of the yard, onto its start square.</string>
     <string name="rules_turn_3">Roll a 6 and you roll again. Roll three 6s in a row and your turn ends.</string>
     <string name="rules_turn_4">If none of your pawns can move, your turn passes.</string>
-    <string name="rules_capture_heading">Captures</string>
+    <string name="rules_capture_title">Captures</string>
+    <string name="rules_capture_tab">Captures</string>
     <string name="rules_capture_1">Land on a rival's pawns to send them back to their yard.</string>
     <string name="rules_capture_2">Start squares and star squares are safe: nobody can be captured there.</string>
     <string name="rules_capture_3">Your own pawns can share a square, and any pawn can pass any other.</string>
-    <string name="rules_winning_heading">Winning</string>
+    <string name="rules_winning_title">Winning</string>
+    <string name="rules_winning_tab">Winning</string>
     <string name="rules_winning_1">A pawn needs the exact roll to reach home.</string>
     <string name="rules_winning_2">The first player to bring all four pawns home wins, and everyone else plays on for the places.</string>
+    <string name="rules_winning_3">With *Stop at first winner* on in Settings, the game ends as soon as one player has every pawn home. Everyone else is placed by how far their pawns have come.</string>
+    <!-- Each Rules card's diagram (ui/rules/RulesDiagram.kt), spoken by TalkBack as one image. The diagrams show the default colours: Red, Green, Yellow, and Blue. -->
+    <string name="rules_board_diagram_cd">Diagram: Red's route. From its start square, a pawn goes a lap of the track clockwise, then up Red's home column to home in the middle.</string>
+    <string name="rules_turn_diagram_cd">Diagram: the die shows 6, so a red pawn comes out of its yard onto its start square.</string>
+    <string name="rules_capture_diagram_cd">Diagram: Red rolls 4 and lands on Green's pawn, sending it back to Green's yard. Blue's pawn is safe on a star square.</string>
+    <string name="rules_winning_diagram_cd">Diagram: a red pawn 3 squares from home needs exactly 3 to get there. Another red pawn is already home.</string>
 
 </resources>
