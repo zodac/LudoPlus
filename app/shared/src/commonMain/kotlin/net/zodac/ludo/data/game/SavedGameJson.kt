@@ -7,6 +7,7 @@ import net.zodac.ludo.data.JsonParseException
 import net.zodac.ludo.data.array
 import net.zodac.ludo.data.boolean
 import net.zodac.ludo.data.buildJsonObject
+import net.zodac.ludo.data.flag
 import net.zodac.ludo.data.int
 import net.zodac.ludo.data.intOrNull
 import net.zodac.ludo.data.ints
@@ -29,6 +30,7 @@ import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
+import net.zodac.ludo.model.GameRules
 import net.zodac.ludo.model.PawnPosition
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
@@ -41,7 +43,7 @@ import net.zodac.ludo.ui.game.StartedGame
  * The saved form of a game in progress ([StartedGame]), as JSON. Hand-written over the app's own [JsonObject] tree.
  *
  * The rules aren't written: a game follows its mode's ([GameMode.rules]) until modifiers come in Phase 9, which add
- * them under a new [VERSION]. A roll waiting for a move is written as the roll alone; its moves are worked out again.
+ * them under a new [VERSION]. The one setting that changes them, [GameRules.stopAtFirstWinner], is written when on. A roll waiting for a move is written as the roll alone; its moves are worked out again.
  * Anything that doesn't make a playable game fails [decode] with an [IllegalArgumentException] (a [JsonParseException]
  * for JSON that can't be read).
  */
@@ -58,6 +60,7 @@ object SavedGameJson {
         put("finishMillis", JsonObject(game.finishMillis.entries.associate { (player, millis) -> player.toString() to JsonNumber(millis) }))
         put("players", JsonArray(game.players.map(::encodePlayer)))
         put("rollOff", encodeRollOff(game.rollOff))
+        if (game.state.rules.stopAtFirstWinner) put("stopAtFirstWinner", true)
         put("state", encodeState(game.state))
     }.toJson()
 
@@ -68,7 +71,8 @@ object SavedGameJson {
         val mode = storedId<GameMode>(obj.string("mode"))
         val players = obj.objectList("players").map(::decodePlayer)
         val rollOff = decodeRollOff(obj.obj("rollOff"), players.size)
-        val state = decodeState(obj.obj("state"), mode, players.size)
+        val rules = mode.rules.copy(stopAtFirstWinner = obj.flag("stopAtFirstWinner"))
+        val state = decodeState(obj.obj("state"), mode, rules, players.size)
         val playMillis = obj.long("playMillis")
         require(playMillis >= 0) { "Negative play time" }
         val finishMillis = obj.obj("finishMillis").longs().entries.associate { (player, millis) ->
@@ -144,8 +148,7 @@ object SavedGameJson {
         state.lastEvent?.let { put("lastEvent", encodeEvent(it)) }
     }
 
-    private fun decodeState(obj: JsonObject, mode: GameMode, playerCount: Int): GameState {
-        val rules = mode.rules
+    private fun decodeState(obj: JsonObject, mode: GameMode, rules: GameRules, playerCount: Int): GameState {
         val board = rules.board
         val players = obj.objectList("players").map { player ->
             PlayerState(

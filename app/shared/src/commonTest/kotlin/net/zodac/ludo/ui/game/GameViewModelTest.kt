@@ -229,6 +229,19 @@ class GameViewModelTest {
         assertEquals(7_500, assertNotNull(viewModel.game.value).playMillis)
     }
 
+    @Test
+    fun `a new game follows Settings' stop at first winner`() = runTest(dispatcher) {
+        val settings = SettingsRepository(InMemoryPreferences())
+        val viewModel = GameViewModel(settings, InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao()))
+        runCurrent()
+        assertTrue(viewModel.startGame { "Player $it" })
+        assertFalse(viewModel.state.rules.stopAtFirstWinner)
+        settings.setStopAtFirstWinner(true)
+        runCurrent()
+        assertTrue(viewModel.startGame { "Player $it" })
+        assertTrue(viewModel.state.rules.stopAtFirstWinner)
+    }
+
     private companion object {
         /** When every test's game starts, by the wall clock. */
         const val START = 1_763_000_000_000L

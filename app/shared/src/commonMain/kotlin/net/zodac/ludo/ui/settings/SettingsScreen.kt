@@ -34,6 +34,7 @@ import net.zodac.ludo.resources.licences_title
 import net.zodac.ludo.resources.settings_confirm_leaving
 import net.zodac.ludo.resources.settings_graphics
 import net.zodac.ludo.resources.settings_sound
+import net.zodac.ludo.resources.settings_stop_at_first_winner
 import net.zodac.ludo.resources.settings_title
 import net.zodac.ludo.resources.settings_version
 import net.zodac.ludo.resources.settings_vibration
@@ -164,6 +165,12 @@ fun SettingsScreen(
                     stringResource(Res.string.settings_confirm_leaving),
                     toggles.confirmBeforeLeavingGame,
                     viewModel::setConfirmBeforeLeavingGame,
+                )
+                SwitchSetting(
+                    Symbols.EmojiEvents,
+                    stringResource(Res.string.settings_stop_at_first_winner),
+                    toggles.stopAtFirstWinner,
+                    viewModel::setStopAtFirstWinner,
                 )
             }
         }

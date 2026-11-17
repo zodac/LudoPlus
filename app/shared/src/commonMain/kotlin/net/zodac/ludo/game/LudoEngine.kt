@@ -86,10 +86,10 @@ object LudoEngine {
         var next = state.copy(players = players, phase = TurnPhase.AwaitingRoll)
         if (finished) next = next.copy(finishingOrder = next.finishingOrder + player)
         val unfinished = next.players.indices.filter { it !in next.finishingOrder }
-        if (unfinished.size <= 1) {
-            // The last player left takes last place.
+        if (unfinished.size <= 1 || (finished && state.rules.stopAtFirstWinner)) {
+            // The last player left takes last place; stopped at the first winner, the rest are placed as they stand.
             return next.copy(
-                finishingOrder = next.finishingOrder + unfinished,
+                finishingOrder = next.finishingOrder + placedAsTheyStand(next, unfinished),
                 phase = TurnPhase.Finished,
                 rollAgainRun = 0,
                 lastEvent = GameEvent.Moved(player, phase.roll, move, finished),
@@ -115,6 +115,18 @@ object LudoEngine {
                     .map { PawnRef(index, it) }
             }
         }
+    }
+
+    /**
+     * [unfinished] in the order they're placed when the game ends with them still racing: furthest along first (each
+     * pawn's steps from its yard added up), and a tie by who plays sooner after the current player.
+     */
+    private fun placedAsTheyStand(state: GameState, unfinished: List<Int>): List<Int> {
+        val count = state.players.size
+        return unfinished.sortedWith(
+            compareByDescending<Int> { player -> state.players[player].pawns.sumOf { it - PawnPosition.YARD_PROGRESS } }
+                .thenBy { player -> (player - state.current + count) % count },
+        )
     }
 
     /** Play passes to the next player still racing, who awaits a roll. */

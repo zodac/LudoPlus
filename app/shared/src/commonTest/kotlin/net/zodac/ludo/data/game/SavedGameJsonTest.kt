@@ -4,6 +4,8 @@ import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import net.zodac.ludo.data.JsonParseException
 import net.zodac.ludo.game.GameState
 import net.zodac.ludo.game.LudoEngine
@@ -55,6 +57,17 @@ class SavedGameJsonTest {
         }
         // Enough states to have met captures, rolls again, and players finishing.
         assert(checked > 10_000) { "Only $checked states" }
+    }
+
+    @Test
+    fun `a game stopping at its first winner comes back stopping at it`() {
+        val rules = GameMode.CLASSIC.rules.copy(stopAtFirstWinner = true)
+        val saved = game(GameState.new(GameMode.CLASSIC, 4, rules = rules))
+        val json = SavedGameJson.encode(saved)
+        assertTrue("\"stopAtFirstWinner\":true" in json)
+        assertEquals(saved, SavedGameJson.decode(json))
+        // Off, it isn't written: the format test's game shows that.
+        assertFalse("stopAtFirstWinner" in SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4))))
     }
 
     @Test

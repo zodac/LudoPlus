@@ -334,6 +334,8 @@
     <string name="settings_frame_rate_max">Max</string>
     <string name="settings_frame_rate_max_spoken">Maximum</string>
     <string name="settings_confirm_leaving">Confirm leaving game</string>
+    <!-- Ends a new game as soon as one player has every pawn home; the others are placed as they stand. -->
+    <string name="settings_stop_at_first_winner">Stop at first winner</string>
 
     <!-- The Styles screen's names, for now only the Graphics page's Styles card and its Background row (the Styles screen itself comes back in Phase 7 of .claude/IMPLEMENTATION.md). -->
     <string name="styles_title">Styles</string>

@@ -151,6 +151,10 @@ class GameViewModel(
     val confirmBeforeLeavingGame: StateFlow<Boolean> =
         settingsRepository.confirmBeforeLeavingGame.stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    /** Whether a game started now stops at its first winner (Settings' "Stop at first winner"). */
+    private val stopAtFirstWinner: StateFlow<Boolean> =
+        settingsRepository.stopAtFirstWinner.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     init {
         viewModelScope.launch { setupForm.restore(settingsRepository.snapshot()) }
     }
@@ -171,7 +175,12 @@ class GameViewModel(
             StartedGame(
                 mode = setup.gameMode,
                 players = players,
-                state = GameState.new(setup.gameMode, players.size, first = rollOff.first),
+                state = GameState.new(
+                    setup.gameMode,
+                    players.size,
+                    first = rollOff.first,
+                    rules = setup.gameMode.rules.copy(stopAtFirstWinner = stopAtFirstWinner.value),
+                ),
                 rollOff = rollOff,
                 startedAtEpochMillis = now(),
             ),

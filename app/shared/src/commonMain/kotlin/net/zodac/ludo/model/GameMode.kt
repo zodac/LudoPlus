@@ -59,6 +59,11 @@ data class GameRules(
      * run that never ends.
      */
     val rollAgainLimit: Int? = 3,
+    /**
+     * Whether the game ends as soon as one player has every pawn home (Settings' "Stop at first winner"). The others
+     * are then placed by how far their pawns have come, and a tie by who plays sooner after the winner.
+     */
+    val stopAtFirstWinner: Boolean = false,
 ) {
     init {
         require(pawnsPerPlayer > 0) { "A player needs a pawn" }

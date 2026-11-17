@@ -89,6 +89,11 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun setConfirmBeforeLeavingGame(confirm: Boolean) = set(CONFIRM_BEFORE_LEAVING_GAME_KEY, confirm)
 
+    /** Whether a new game ends as soon as one player has every pawn home ([net.zodac.ludo.model.GameRules.stopAtFirstWinner]). */
+    val stopAtFirstWinner: Flow<Boolean> = read(STOP_AT_FIRST_WINNER_KEY, default = false)
+
+    suspend fun setStopAtFirstWinner(stop: Boolean) = set(STOP_AT_FIRST_WINNER_KEY, stop)
+
     val soundEnabled: Flow<Boolean> = read(SOUND_ENABLED_KEY, default = true)
 
     suspend fun setSoundEnabled(enabled: Boolean) = set(SOUND_ENABLED_KEY, enabled)
@@ -139,6 +144,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
     private companion object {
         val CONFIRM_BEFORE_LEAVING_GAME_KEY = booleanPreferencesKey("confirm_before_leaving_game")
+        val STOP_AT_FIRST_WINNER_KEY = booleanPreferencesKey("stop_at_first_winner")
         val SOUND_ENABLED_KEY = booleanPreferencesKey("sound_enabled")
         val VIBRATION_ENABLED_KEY = booleanPreferencesKey("vibration_enabled")
         val ANIMATION_LEVEL_KEY = stringPreferencesKey("animation_level")

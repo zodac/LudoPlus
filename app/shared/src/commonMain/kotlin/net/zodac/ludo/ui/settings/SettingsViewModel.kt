@@ -18,6 +18,7 @@ data class SettingsToggles(
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
     val confirmBeforeLeavingGame: Boolean = true,
+    val stopAtFirstWinner: Boolean = false,
 )
 
 /**
@@ -34,11 +35,16 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository) : Vi
         settingsRepository.soundEnabled,
         settingsRepository.vibrationEnabled,
         settingsRepository.confirmBeforeLeavingGame,
+        settingsRepository.stopAtFirstWinner,
         ::SettingsToggles,
     ).stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun setConfirmBeforeLeavingGame(confirm: Boolean) {
         viewModelScope.launch { settingsRepository.setConfirmBeforeLeavingGame(confirm) }
+    }
+
+    fun setStopAtFirstWinner(stop: Boolean) {
+        viewModelScope.launch { settingsRepository.setStopAtFirstWinner(stop) }
     }
 
     fun setSoundEnabled(enabled: Boolean) {

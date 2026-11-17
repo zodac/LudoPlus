@@ -198,6 +198,21 @@ class LudoEngineTest {
     }
 
     @Test
+    fun `stopped at the first winner the rest are placed as they stand - furthest along first - a tie to who plays sooner`() {
+        // Green and blue have come 22 steps each, yellow 21; red brings their last pawn home with a 1.
+        val pawns = arrayOf(listOf(HOME, HOME, HOME, 55), listOf(10, 10, Y, Y), listOf(20, Y, Y, Y), listOf(10, 10, Y, Y))
+        val stopped = game(*pawns, rules = GameRules(stopAtFirstWinner = true)).roll(1).move(3)
+        assertEquals(TurnPhase.Finished, stopped.phase)
+        assertEquals(listOf(RED, GREEN, BLUE, YELLOW), stopped.finishingOrder)
+        assertEquals(GameEvent.Moved(RED, 1, Move(pawn = 3, from = 55, to = HOME), finished = true), stopped.lastEvent)
+        // Without the setting, the others race on for second.
+        val raced = game(*pawns).roll(1).move(3)
+        assertEquals(TurnPhase.AwaitingRoll, raced.phase)
+        assertEquals(listOf(RED), raced.finishingOrder)
+        assertEquals(GREEN, raced.current)
+    }
+
+    @Test
     fun `a turn is counted once however many times the player rolls again`() {
         val state = game(listOf(0, Y, Y, Y)).roll(6).move(0).roll(6).move(0).roll(3).move(0)
         assertEquals(1, state.players[RED].turns)

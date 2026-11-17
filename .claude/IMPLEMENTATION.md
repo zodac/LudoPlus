@@ -239,7 +239,9 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     turns to win, captures, times captured, and pawns home. Added up overall; `PlayerStatistics.modes` has them per
     mode, for a mode picker once there's more than one. Both screens approved from renders 2026-11-17
     (`RecordsScreensTest`).
-- [ ] A "stop at first winner" setting.
+- [x] A "stop at first winner" setting (Settings, off by default): `GameRules.stopAtFirstWinner`, set from it when a
+    game starts and saved with the game. The game ends when the first player has every pawn home; the rest are placed
+    by how far their pawns have come, a tie to who plays sooner after the winner, each finishing as the game ends.
 - [ ] Progress files (github flavour) carry the new records.
 
 ## Phase 5: Rules, tutorial, sound, and polish (to 1.0.0)
