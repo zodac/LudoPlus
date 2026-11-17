@@ -37,7 +37,7 @@ them all home first. In development, pre-1.0.0.
 | --- | --- |
 | Repo | `github.com/zodac/LudoPlus`, default branch `main`. Every push to `main` that changes what an app ships runs the checks; from VERSION 1.0.0 it also cuts a GitHub release (`android-v*`; `DESIGN.md`, "Release pipeline"). Below 1.0.0 the `apk` and `release` jobs are skipped |
 | Package | `net.zodac.ludo` (Kotlin root package; the play app's `applicationId`; the github APK is `net.zodac.ludo.github`). Code identifiers use `LudoPlus` (`LudoPlusTheme`); player text says "Ludo Plus" |
-| Version | `VERSION` at the repo root (0.1.0 in development; releases start at 1.0.0). Never hand-edit for a debug install |
+| Version | `VERSION` at the repo root (0.1.0 in development; releases start at 1.0.0). Never hand-edit for a debug install. The move to 1.0.0 is the maintainer's to make by hand: never change it to 1.0.0 yourself |
 | Platforms | Android minSdk 26, targetSdk/compileSdk 37 (`gradle/android-sdk.properties`). Android only |
 | Stack | Kotlin Multiplatform, Compose Multiplatform, Material 3 (dark only), Navigation Compose, MVVM (`ViewModel` + `StateFlow`), DataStore (settings). Room comes back for game records in Phase 4 |
 | Versions | `gradle/libs.versions.toml`, bumped monthly by CI (an entry tied to another is marked `# @update`); sandbox pins in `ai-sandbox-configuration/Dockerfile` |

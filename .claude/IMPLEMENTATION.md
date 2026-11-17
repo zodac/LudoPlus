@@ -279,7 +279,9 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 - [x] Privacy policy re-read against the app, and rewritten for 1.0.0 (approved 2026-11-17): no sign-in, cloud save,
     purchase, or progress files yet, and nothing leaves the device but a crash report the player posts. It must be
     updated again before Phase 10 or 11 ships.
-- [ ] Set VERSION to 1.0.0, which turns publishing on: the first GitHub release.
+- [ ] Set VERSION to 1.0.0, which turns publishing on: the first GitHub release. **The maintainer makes this change by
+    hand, never Claude** (the maintainer, 2026-11-17): VERSION stays 0.1.0 until then. When they do, restore
+    `readme-assets.yml`'s push trigger with it.
 
 ## Phase 6: Achievements
 
