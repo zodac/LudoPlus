@@ -20,7 +20,7 @@ reorders them.
 | 8 | 2-8 players | Done |
 | 9 | Game modes and modifiers | Done |
 | 10 | Google Play: Play Console, Play Games, and the store listing | In progress |
-| 11 | In-app purchases | Not started |
+| 11 | In-app purchases and ads | In progress |
 | 12 | Netplay | Not started |
 
 ## Decisions so far (2026-11-16)
@@ -412,11 +412,13 @@ count but 4 has a board of its own; one player on two colours was dropped.
     reset marker come with Play Games.
 - [ ] Store listing, data-safety form, and content rating. Internal testing track, then production.
 
-## Phase 11: In-app purchases
+## Phase 11: In-app purchases and ads
 
-- [ ] The "Unlock all styles" purchase, from DiceFive (`PURCHASES.md`), wired to Ludo Plus's Play Console.
-- [ ] Any further purchases: decide what they are first, since purchasable styles must stay earnable through play
-    unless the maintainer decides otherwise.
+- [x] The "Unlock all styles" purchase, from DiceFive (`PURCHASES.md`), with "Remove ads" and a combined one beside it
+    (the maintainer, 2026-11-18). Built 2026-11-18; the Play Console products and license testers wait on the Console.
+- [x] Any further purchases: none beyond those three (the maintainer, 2026-11-18). Styles stay earnable through play.
+- [ ] An ad banner in the play app, at the bottom of every page but the game, under the achievement banners and not
+    clickable while one shows; gone with "Remove ads" (the maintainer, 2026-11-18, reversing "Never ads"; `ADS.md`).
 
 ## Phase 12: Netplay
 

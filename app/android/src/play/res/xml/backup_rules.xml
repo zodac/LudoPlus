@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Auto Backup up to Android 11 (fullBackupContent), which is also what adb backup and adb restore use there - with
      USB debugging alone, no root, a backup can be edited and restored. So only the settings are in it:
-     - not the game records, achievements, game in progress, or online bookkeeping, which would reach Play Games
-       edited. A signed-in player gets them back from the cloud save. An excluded file isn't restored either. (The
-       purchase's file joins these in Phase 11 of .claude/IMPLEMENTATION.md.)
+     - not the game records, achievements, game in progress, online bookkeeping, or purchases, which would reach Play
+       Games edited, or grant a purchase not made. A signed-in player gets them back from the cloud save, and the
+       purchases from Play. An excluded file isn't restored either.
      - not Play Games' start-at-launch choice (PlayGamesServices' play_games preferences), which is this device's own -
        restored onto a new device, it would sign the player in there at launch before they'd asked.
      From Android 12 adb backup carries no app data (targetSdk 31+), and data_extraction_rules.xml keeps everything
@@ -17,4 +17,5 @@
     <exclude domain="file" path="datastore/in_progress_game.preferences_pb" />
     <exclude domain="file" path="datastore/achievements.preferences_pb" />
     <exclude domain="file" path="datastore/online.preferences_pb" />
+    <exclude domain="file" path="datastore/purchases.preferences_pb" />
 </full-backup-content>

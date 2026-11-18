@@ -1,7 +1,5 @@
 package net.zodac.ludo.ui.styles
 
-import net.zodac.ludo.navigation.StyleScrollRequests
-import net.zodac.ludo.navigation.StyleScrollRequest
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
@@ -13,11 +11,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -26,7 +26,9 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -36,29 +38,27 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.LayoutCoordinates
-import net.zodac.ludo.ui.common.isLargeFont
-import androidx.compose.foundation.layout.height
-import net.zodac.ludo.ui.common.sizeAtNormalFont
-import net.zodac.ludo.ui.common.ShrinkThenWrapText
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -69,24 +69,40 @@ import net.zodac.ludo.data.settings.SavedStyles
 import net.zodac.ludo.game.style.StyleCategory
 import net.zodac.ludo.game.style.UnlockCount
 import net.zodac.ludo.game.style.access
+import net.zodac.ludo.navigation.StyleScrollRequest
+import net.zodac.ludo.navigation.StyleScrollRequests
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.platform.isDisplayZoomed
+import net.zodac.ludo.purchases.Entitlement
+import net.zodac.ludo.purchases.LocalStore
+import net.zodac.ludo.purchases.Product
+import net.zodac.ludo.purchases.StoreState
+import net.zodac.ludo.purchases.has
 import net.zodac.ludo.resources.Res
+import net.zodac.ludo.resources.app_name
 import net.zodac.ludo.resources.common_picker_choose_action
 import net.zodac.ludo.resources.common_picker_state_spoken
 import net.zodac.ludo.resources.filter_all
+import net.zodac.ludo.resources.purchase_also_remove_ads
+import net.zodac.ludo.resources.purchase_payment_pending
+import net.zodac.ludo.resources.styles_all_unlocked
 import net.zodac.ludo.resources.styles_category_background
+import net.zodac.ludo.resources.styles_category_board
 import net.zodac.ludo.resources.styles_category_count
 import net.zodac.ludo.resources.styles_category_dice
-import net.zodac.ludo.resources.styles_category_board
 import net.zodac.ludo.resources.styles_category_pawns
 import net.zodac.ludo.resources.styles_family_colour_cd
 import net.zodac.ludo.resources.styles_title
+import net.zodac.ludo.resources.styles_unlock_all
+import net.zodac.ludo.resources.styles_unlock_all_dialog_message
+import net.zodac.ludo.resources.styles_unlock_all_dialog_title
+import net.zodac.ludo.resources.styles_unlock_all_spoken
 import net.zodac.ludo.resources.styles_unlocked_count
 import net.zodac.ludo.resources.styles_unlocked_count_short
 import net.zodac.ludo.resources.styles_unlocked_only
 import net.zodac.ludo.resources.styles_unlocked_percent
 import net.zodac.ludo.ui.common.BACK_ARROW_OUTSET
+import net.zodac.ludo.ui.common.DIALOG_ICON_SIZE
 import net.zodac.ludo.ui.common.FilterSwitchLabel
 import net.zodac.ludo.ui.common.FilterSwitchState
 import net.zodac.ludo.ui.common.FittedCountText
@@ -95,14 +111,21 @@ import net.zodac.ludo.ui.common.LocalLandscapePage
 import net.zodac.ludo.ui.common.LocalPageCover
 import net.zodac.ludo.ui.common.LocalReduceMotion
 import net.zodac.ludo.ui.common.ScreenScaffold
+import net.zodac.ludo.ui.common.ShrinkThenWrapText
 import net.zodac.ludo.ui.common.SoraFontFamily
 import net.zodac.ludo.ui.common.VerticalScrollbar
 import net.zodac.ludo.ui.common.delayWhileResumed
+import net.zodac.ludo.ui.common.isLargeFont
 import net.zodac.ludo.ui.common.percentOf
 import net.zodac.ludo.ui.common.rememberFilterSwitchState
+import net.zodac.ludo.ui.common.sizeAtNormalFont
 import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.common.textScale
 import net.zodac.ludo.ui.icons.Symbols
+import net.zodac.ludo.ui.purchases.PurchaseOfferDialog
+import net.zodac.ludo.ui.purchases.offerReady
+import net.zodac.ludo.ui.purchases.offers
+import net.zodac.ludo.ui.purchases.pending
 import net.zodac.ludo.ui.style.catalog
 import net.zodac.ludo.ui.theme.GoldAccent
 import org.jetbrains.compose.resources.StringResource
@@ -136,6 +159,18 @@ fun StylesScreen(viewModel: StylesViewModel, onBack: () -> Unit, onOpenCategory:
     LaunchedEffect(viewModel) {
         viewModel.toastMessages.collect { message -> platform.showTransientMessage(message) }
     }
+    // The "Unlock all styles" purchase: its button, and a word when a purchase completes here.
+    val store = LocalStore.current
+    val storeState by store.state.collectAsStateWithLifecycle()
+    val allUnlocked by rememberUpdatedState(stringResource(Res.string.styles_all_unlocked))
+    LaunchedEffect(store) {
+        var before = store.state.value.has(Entitlement.ALL_STYLES)
+        store.state.collect { state ->
+            val now = state.has(Entitlement.ALL_STYLES)
+            if (now == true && before == false) platform.showTransientMessage(allUnlocked)
+            if (now != null) before = now
+        }
+    }
     // Set as a field is tapped: the warm-up stops there, so the page cover's fade isn't fighting it (it carries on, from
     // the pass it reached, the next time this page is open).
     var leaving by remember { mutableStateOf(false) }
@@ -149,6 +184,7 @@ fun StylesScreen(viewModel: StylesViewModel, onBack: () -> Unit, onOpenCategory:
             picks = saved,
             focus = focus,
             onUnlockedCountTap = viewModel::onUnlockedCountTapped,
+            storeState = storeState,
             onBack = onBack,
             onOpenCategory = { category ->
                 leaving = true
@@ -182,7 +218,16 @@ internal fun StylesScaffold(
     focus: StyleScrollRequest? = null,
     driftingDice: Boolean = true,
     onUnlockedCountTap: () -> Unit = {},
+    storeState: StoreState = StoreState.Unavailable,
 ) {
+    // Never once every style is owned (the store's word as cached, or pretended), nor where there's no store.
+    val offerUnlockAll = picks != null && !picks.ownsAllStyles && storeState.offers(Entitlement.ALL_STYLES)
+    // Just its mark, without its words, where they'd push the title off its centre or onto two lines (a narrow screen, a
+    // large font): decided again for each screen size, font scale, and label.
+    val windowWidth = LocalWindowInfo.current.containerSize.width
+    val fontScale = LocalDensity.current.fontScale
+    val pending = storeState.pending(Entitlement.ALL_STYLES)
+    var compactUnlockAll by remember(windowWidth, fontScale, pending) { mutableStateOf(false) }
     ScreenScaffold(
         title = stringResource(Res.string.styles_title),
         onBack = onBack,
@@ -196,6 +241,10 @@ internal fun StylesScaffold(
                 UnlockedCountCard(picks.totalCount(), compact = true, onTap = onUnlockedCountTap, modifier = Modifier.padding(start = 8.dp))
             }
         },
+        actions = {
+            if (offerUnlockAll) UnlockAllStylesButton(storeState, compact = compactUnlockAll)
+        },
+        onTitleCrowded = { if (offerUnlockAll) compactUnlockAll = true },
     ) {
         // Nothing until the saved picks have loaded, so each field opens on its real pick. They're normally in already
         // (AppContainer.savedStyles), so the page has them from its first frame; if not, the page cover is kept up over it.
@@ -207,6 +256,56 @@ internal fun StylesScaffold(
         )
     }
 }
+
+/**
+ * The "Unlock all styles" purchase ([Product.UNLOCK_ALL_STYLES]): its mark and "Unlock All", opening a dialog that says
+ * what the purchase is, and that everything it unlocks can be earned for free, with a switch to remove ads too where
+ * that's for sale ([PurchaseOfferDialog]); its Continue opens the store's own sheet, which shows the price. Usable once
+ * the store has the product for sale; disabled while it's loading, and while a payment is pending, when it says "Payment
+ * pending" instead. [compact], it's the mark alone. TalkBack hears "Unlock all styles", with "Payment pending" as its
+ * state.
+ */
+@Composable
+private fun UnlockAllStylesButton(state: StoreState, compact: Boolean) {
+    val pending = state.pending(Entitlement.ALL_STYLES)
+    val spoken = stringResource(Res.string.styles_unlock_all_spoken)
+    val pendingText = stringResource(Res.string.purchase_payment_pending)
+    var explaining by remember { mutableStateOf(false) }
+    if (explaining && state is StoreState.Ready) {
+        val primary = MaterialTheme.colorScheme.primary
+        PurchaseOfferDialog(
+            entitlement = Entitlement.ALL_STYLES,
+            state = state,
+            icon = { UnlockAllStylesIcon(size = DIALOG_ICON_SIZE, tint = primary) },
+            title = stringResource(Res.string.styles_unlock_all_dialog_title),
+            message = stringResource(Res.string.styles_unlock_all_dialog_message, stringResource(Res.string.app_name)),
+            alsoLabel = stringResource(Res.string.purchase_also_remove_ads),
+            onDismiss = { explaining = false },
+        )
+    }
+    FilledTonalButton(
+        onClick = { explaining = true },
+        enabled = state.offerReady(Entitlement.ALL_STYLES),
+        contentPadding = if (compact) PaddingValues(horizontal = 12.dp) else PaddingValues(start = 8.dp, end = 12.dp),
+        modifier = Modifier.semantics {
+            if (pending) stateDescription = pendingText
+            if (compact) contentDescription = spoken
+        },
+    ) {
+        UnlockAllStylesIcon(size = UNLOCK_ALL_ICON_SIZE, tint = LocalContentColor.current)
+        if (!compact) {
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = if (pending) pendingText else stringResource(Res.string.styles_unlock_all),
+                maxLines = 1,
+                modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
+            )
+        }
+    }
+}
+
+/** The purchase's mark on its button: an icon's size. */
+private val UNLOCK_ALL_ICON_SIZE = 24.dp
 
 /** Everything under the Styles page's app bar: the unlocked count (portrait), and a field per category filling the rest. */
 @Composable

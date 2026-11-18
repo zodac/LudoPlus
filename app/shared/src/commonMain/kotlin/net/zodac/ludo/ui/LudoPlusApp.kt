@@ -37,6 +37,9 @@ import net.zodac.ludo.online.LocalOnlineSyncStatus
 import net.zodac.ludo.online.NoGameServices
 import net.zodac.ludo.online.OnlineSync
 import net.zodac.ludo.online.OnlineSyncRequests
+import net.zodac.ludo.purchases.LocalStore
+import net.zodac.ludo.purchases.NoStore
+import net.zodac.ludo.purchases.Store
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.app.Breadcrumbs
 import net.zodac.ludo.app.LocalAppContainer
@@ -73,10 +76,10 @@ import net.zodac.ludo.ui.theme.LudoPlusTheme
 
 /**
  * The whole app, on whatever platform hosts it: each platform's entry point builds its [AppContainer] and
- * [PlatformServices] (and, where it has one, its [GameServices]) and hands them in here, and everything below is shared.
+ * [PlatformServices] (and, where it has them, its [GameServices] and [Store]) and hands them in here, and everything
+ * below is shared.
  *
- * The achievement banners and the online sync sit here, over every page. Purchases hang off this root too, from Phase 11
- * of `.claude/IMPLEMENTATION.md`.
+ * The achievement banners, the online sync, and the purchases' cache sit here, over every page.
  */
 @OptIn(FlowPreview::class)
 @Composable
@@ -85,6 +88,8 @@ fun LudoPlusApp(
     platform: PlatformServices,
     /** The platform's online game service, where it has one. */
     gameServices: GameServices = NoGameServices,
+    /** The platform's app store, where it has one: what the player can buy, and has. */
+    store: Store = NoStore,
     /** What freezes the window's infinite animations, where it's the policy its recomposer runs under. */
     screenIdle: ScreenIdle = remember { ScreenIdle() },
 ) {
@@ -149,6 +154,8 @@ fun LudoPlusApp(
     LaunchedEffect(onlineSync) {
         gameServices.state.collect { if (it !is GameServicesState.SignedIn) onlineSync.forgetSignInSync() }
     }
+    // What the store says the player has is kept on the device, which the style locks and the ad banner read.
+    LaunchedEffect(container, store) { container.purchasesRepository.follow(store) }
     LaunchedEffect(container) {
         container.settingsRepository.syncedChanges.debounce(SETTINGS_SYNC_DELAY).collect { OnlineSyncRequests.request() }
     }
@@ -168,6 +175,7 @@ fun LudoPlusApp(
         LocalAppContainer provides container,
         LocalPlatformServices provides platform,
         LocalGameServices provides gameServices,
+        LocalStore provides store,
         LocalOnlineSyncStatus provides onlineSync.status,
         LocalDriftState provides driftState,
         LocalScreenIdle provides screenIdle,

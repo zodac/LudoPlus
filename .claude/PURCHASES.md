@@ -1,21 +1,33 @@
-# Ludo Plus: the "Unlock all styles" purchase
+# Ludo Plus: purchases
 
-> **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
-> from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
-> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
+**Built for Ludo Plus (Phase 11, 2026-11-18); no Play Console project yet.** Three one-time Google Play purchases in the
+play app, decided with the maintainer (2026-11-18): **Unlock all styles** (every style without earning it), **Remove
+ads** (no ad banner, `ADS.md`), and both together for one price. Restored from DiceFive's one purchase (`5423b6c`) and
+made three. Commits go under `[Purchases]`.
 
-**In progress: built (Phases 1-5); testing on a phone (Phase 6) is next.**
-One one-time Google Play purchase that unlocks every style without earning it. Android only. This file is the plan, in
-phases. Resume at the phase marked **Next**.
-Commits go under `[Purchases]`.
+| Product (permanent id) | Grants (`Entitlement`, stored key) | Offered |
+| --- | --- | --- |
+| `unlock_all_styles` | `ALL_STYLES` (`owns_all_styles`) | Unlock All on the Styles page's app bar |
+| `remove_ads` | `NO_ADS` (`no_ads`) | Remove ads, a row in Settings |
+| `unlock_all_styles_and_remove_ads` | both | Either dialog's "too" switch, while the account has neither |
 
-What the player gets:
+- **Shared** (`purchases/Store.kt`): `Product`, `Entitlement`, `StoreState` (`Unavailable`, `Loading`, `Ready` with a
+    `ProductState` each: `ForSale(price)`, `Pending`, `Owned`), `StoreState.has(entitlement)`, and `productFor`, which
+    offers the combined product only while neither entitlement is had. `PurchasesRepository` keeps each entitlement in
+    the `purchases` DataStore file, following the store (`follow`): never in the cloud save, never reset.
+- **Play** (`PlayBillingStore`, play flavour): asks for all three products' details and the account's purchases,
+    acknowledges each paid one, checks each one's signature against `PLAY_LICENCE_KEY` (`PurchaseSignature`).
+- **The offers** (`ui/purchases/PurchaseOffer.kt`): each button opens a dialog before Play's sheet (which shows the
+    price; the app never does), with a switch for the other entitlement where it's for sale: on, Continue buys the
+    combined product. A pending payment disables the button, which says "Payment pending" (its state to TalkBack). A
+    completed purchase says "All styles unlocked" or "Ads removed" for a moment. Tests: `PurchaseOffersTest`,
+    `PurchasesRepositoryTest`, `PlayBillingStoreTest`.
+- **`INTERNET`**: DiceFive's play manifest removed the Billing Library's network permission. Ludo's doesn't: the ad
+    banner needs the network (`ADS.md`).
+- **Play Console**: create the three products with these ids (each a one-time product, "Buy" option), their icons from
+    `scripts/export-play-console.sh` (`product-icons/`), and license testers; set the `PLAY_LICENCE_KEY` variable.
 
-- An **Unlock all** button in the Styles screen's top bar, showing Play's localised price.
-- Once bought, every style and colour is usable, Easter eggs included. Achievement banners still pop; **styles
-    banners stop** (there is nothing left to unlock).
-- A reinstall or a new phone gets it back automatically (no Restore button on Android).
-- If Play's sheet can't open after Continue, a toast says so (`styles_unlock_all_failed`), and nothing is bought.
+The rest of this file is DiceFive's plan for its one purchase, which still holds for each of Ludo's.
 
 Researched October 2026 (Play Billing Library 9.1.0). Re-check the console paths when starting: Google renamed "in-app
 products" to "one-time products" in 2025 and moves menus often.

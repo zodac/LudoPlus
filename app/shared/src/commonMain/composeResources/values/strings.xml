@@ -1176,6 +1176,35 @@
     <string name="styles_category_pawns">Pawns</string>
     <string name="styles_category_dice">Die</string>
     <string name="styles_unlocked_count">%1$d of %2$d unlocked</string>
+    <!-- The "Unlock all styles" purchase, in the Styles page's app bar (ui/styles/StylesScreen.kt). The price is the store's, on its own purchase sheet. -->
+    <!-- The button's label, beside the purchase's icon (a palette with an open padlock). -->
+    <string name="styles_unlock_all">Unlock All</string>
+    <!-- What a screen reader says for the button. -->
+    <string name="styles_unlock_all_spoken">Unlock all styles</string>
+    <!-- Shown for a moment once the purchase completes. -->
+    <string name="styles_all_unlocked">All styles unlocked</string>
+    <!-- The dialog Unlock All opens, before the store's own purchase sheet (which shows the price). Two paragraphs; %1$s is the app's name. -->
+    <string name="styles_unlock_all_dialog_title">Unlock All</string>
+    <string name="styles_unlock_all_dialog_message">Unlock every style instantly, without needing to earn achievements. Includes every board, pawn, die, and background, and even secret colours.\n\nAll styles can also be earned for free through gameplay, and this app will never lock anything behind a purchase. This is purely an optional shortcut and a way to support %1$s!</string>
+    <!-- The purchases' shared words (ui/purchases/PurchaseOffer.kt). A button while the player's payment hasn't gone through yet (cash, a slow payment method). -->
+    <string name="purchase_payment_pending">Payment pending</string>
+    <!-- Goes on from a purchase's dialog to the store's purchase sheet: nothing is bought yet. -->
+    <string name="purchase_continue">Continue</string>
+    <!-- A toast: the store's purchase sheet couldn't be opened after Continue, so nothing was bought. -->
+    <string name="purchase_failed">Couldn't open the store. Please try again later.</string>
+    <!-- A switch in the Unlock All dialog, where Remove Ads is for sale too: on, Continue buys both together. -->
+    <string name="purchase_also_remove_ads">Remove ads too</string>
+    <!-- A switch in the Remove Ads dialog, where Unlock All is for sale too: on, Continue buys both together. -->
+    <string name="purchase_also_unlock_styles">Unlock all styles too</string>
+    <!-- The "Remove ads" purchase, a row in Settings in the play app. -->
+    <string name="settings_remove_ads">Remove ads</string>
+    <!-- What a screen reader says a tap on the row does (it opens the dialog before the store's sheet). -->
+    <string name="settings_remove_ads_action">Remove ads</string>
+    <string name="settings_remove_ads_dialog_title">Remove Ads</string>
+    <!-- %1$s is the app's name. -->
+    <string name="settings_remove_ads_dialog_message">Remove the ad banner from every page, for good, on this store account.\n\nThe ads help keep %1$s free to play. Removing them is an optional way to support it!</string>
+    <!-- Shown for a moment once the purchase completes. -->
+    <string name="settings_ads_removed">Ads removed</string>
     <string name="styles_unlocked_count_short">%1$d of %2$d</string>
     <string name="styles_category_count">%1$d/%2$d</string>
     <string name="styles_unlocked_only">Unlocked</string>

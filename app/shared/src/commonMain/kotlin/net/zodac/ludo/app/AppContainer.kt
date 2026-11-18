@@ -31,6 +31,10 @@ import net.zodac.ludo.data.settings.SettingsRepository
 import net.zodac.ludo.online.CloudSaveStore
 import net.zodac.ludo.online.LocalCloudSave
 import net.zodac.ludo.online.OnlineSettingsRepository
+import net.zodac.ludo.purchases.Entitlement
+import net.zodac.ludo.purchases.PurchasesRepository
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * The app's long-lived objects, built once per process by the platform's entry point and handed to
@@ -47,6 +51,8 @@ class AppContainer(
     val achievementsRepository: AchievementStore,
     /** The online service's bookkeeping on this device ([net.zodac.ludo.online.OnlineSync]'s). */
     val onlineSettingsRepository: OnlineSettingsRepository,
+    /** What the store last said the player has bought. */
+    val purchasesRepository: PurchasesRepository,
     val buildInfo: BuildInfo,
     /** This device's side of a progress file (and, from Play Games, the cloud save): null where nothing can be merged in. */
     val cloudSave: CloudSaveStore? = null,
@@ -59,10 +65,12 @@ class AppContainer(
     val pretendOwnsAllStyles = MutableStateFlow(false)
 
     /**
-     * Whether every style is unlocked without its achievements: in a debug build only, while [pretendOwnsAllStyles]. The
-     * "Unlock all styles" purchase joins it in Phase 11.
+     * Whether every style is unlocked without its achievements: the store's last word on the purchases
+     * ([PurchasesRepository]), or, in a debug build only, [pretendOwnsAllStyles].
      */
-    val ownsAllStyles: Flow<Boolean> = pretendOwnsAllStyles.map { pretend -> pretend && buildInfo.isDebug }
+    val ownsAllStyles: Flow<Boolean> =
+        combine(purchasesRepository.has(Entitlement.ALL_STYLES), pretendOwnsAllStyles) { owns, pretend -> owns || (pretend && buildInfo.isDebug) }
+            .distinctUntilChanged()
 
     /** The saved Styles picks and what unlocks them, kept loaded for the process, so a screen has them as it opens. */
     val savedStyles: StateFlow<SavedStyles?> =
@@ -129,6 +137,7 @@ class AppContainer(
                 gameRecordRepository = records,
                 achievementsRepository = achievements,
                 onlineSettingsRepository = OnlineSettingsRepository(dataStore(PreferencesFile.ONLINE)),
+                purchasesRepository = PurchasesRepository(dataStore(PreferencesFile.PURCHASES)),
                 buildInfo = buildInfo,
                 cloudSave = LocalCloudSave(achievements, records, settings, inProgressGame),
             )

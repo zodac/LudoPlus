@@ -5,10 +5,11 @@ import androidx.activity.ComponentActivity
 import net.zodac.ludo.online.GameServices
 import net.zodac.ludo.online.PlayGamesServices
 import net.zodac.ludo.platform.ProgressFiles
+import net.zodac.ludo.purchases.PlayBillingStore
+import net.zodac.ludo.purchases.Store
 
 /**
- * The play flavour's own part of the app, for Google Play: Google Play Games, and no progress files. Play Billing comes
- * back in Phase 11 of .claude/IMPLEMENTATION.md.
+ * The play flavour's own part of the app, for Google Play: Google Play Games, Play Billing, and no progress files.
  */
 internal object Distribution {
 
@@ -16,6 +17,8 @@ internal object Distribution {
     fun initialize(application: Application) = PlayGamesServices.initialize(application)
 
     fun gameServices(activity: ComponentActivity): GameServices = PlayGamesServices.attach(activity)
+
+    fun store(activity: ComponentActivity): Store = PlayBillingStore.attach(activity)
 
     /** None: a file's progress could otherwise reach Play Games' achievements and leaderboards. */
     fun progressFiles(activity: ComponentActivity): ProgressFiles? = null

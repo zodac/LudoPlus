@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -20,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -30,30 +33,41 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.remember
 import kotlinx.coroutines.flow.flowOf
 import net.zodac.ludo.app.LocalAppContainer
 import net.zodac.ludo.online.GameServicesState
 import net.zodac.ludo.online.LocalGameServices
 import net.zodac.ludo.online.LocalOnlineSyncStatus
 import net.zodac.ludo.platform.LocalPlatformServices
+import net.zodac.ludo.purchases.Entitlement
+import net.zodac.ludo.purchases.LocalStore
+import net.zodac.ludo.purchases.StoreState
+import net.zodac.ludo.purchases.has
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.about_title
 import net.zodac.ludo.resources.app_name
 import net.zodac.ludo.resources.common_cancel
 import net.zodac.ludo.resources.licences_title
+import net.zodac.ludo.resources.purchase_also_unlock_styles
+import net.zodac.ludo.resources.purchase_payment_pending
+import net.zodac.ludo.resources.settings_ads_removed
 import net.zodac.ludo.resources.settings_already_developer
 import net.zodac.ludo.resources.settings_confirm_leaving
 import net.zodac.ludo.resources.settings_graphics
 import net.zodac.ludo.resources.settings_import_progress_confirm
 import net.zodac.ludo.resources.settings_import_progress_message
 import net.zodac.ludo.resources.settings_import_progress_title
+import net.zodac.ludo.resources.settings_remove_ads
+import net.zodac.ludo.resources.settings_remove_ads_action
+import net.zodac.ludo.resources.settings_remove_ads_dialog_message
+import net.zodac.ludo.resources.settings_remove_ads_dialog_title
 import net.zodac.ludo.resources.settings_sound
 import net.zodac.ludo.resources.settings_steps_from_developer
 import net.zodac.ludo.resources.settings_stop_at_first_winner
 import net.zodac.ludo.resources.settings_title
 import net.zodac.ludo.resources.settings_version
 import net.zodac.ludo.resources.settings_vibration
+import net.zodac.ludo.ui.common.DIALOG_ICON_SIZE
 import net.zodac.ludo.ui.common.FooterPill
 import net.zodac.ludo.ui.common.HoldPageCover
 import net.zodac.ludo.ui.common.LocalLandscapePage
@@ -64,6 +78,10 @@ import net.zodac.ludo.ui.common.TwoPanes
 import net.zodac.ludo.ui.common.pluralStringResource
 import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.icons.Symbols
+import net.zodac.ludo.ui.purchases.PurchaseOfferDialog
+import net.zodac.ludo.ui.purchases.offerReady
+import net.zodac.ludo.ui.purchases.offers
+import net.zodac.ludo.ui.purchases.pending
 
 /** How far the About and Licences row is lifted into the gap above it, and the version below it with it. */
 private val LINKS_RAISE = (-8).dp
@@ -167,6 +185,17 @@ fun SettingsScreen(
     val platform = LocalPlatformServices.current
     val progressFiles = platform.progressFiles
     val progressFilesStatus by viewModel.progressFilesStatus.collectAsStateWithLifecycle()
+    val store = LocalStore.current
+    val storeState by store.state.collectAsStateWithLifecycle()
+    val adsRemoved by rememberUpdatedState(stringResource(Res.string.settings_ads_removed))
+    LaunchedEffect(store) {
+        var before = store.state.value.has(Entitlement.NO_ADS)
+        store.state.collect { state ->
+            val now = state.has(Entitlement.NO_ADS)
+            if (now == true && before == false) platform.showTransientMessage(adsRemoved)
+            if (now != null) before = now
+        }
+    }
     val alreadyDeveloper = stringResource(Res.string.settings_already_developer)
     // Index 0 is steps-away 1: resolved in composition, as the plural form and numerals need it.
     val stepsAway = (1 until SettingsViewModel.VERSION_TAP_TARGET).map { pluralStringResource(Res.plurals.settings_steps_from_developer, it, it) }
@@ -230,6 +259,12 @@ fun SettingsScreen(
                 )
             }
         }
+        // The "Remove ads" purchase, where the store sells it and the account hasn't bought it.
+        val removeAdsCard = @Composable {
+            if (storeState.offers(Entitlement.NO_ADS)) {
+                CompactSettingsCard { RemoveAdsSetting(storeState) }
+            }
+        }
         // The Orientation, the Animations level and its Advanced settings, on a page of their own.
         val graphicsCard = @Composable {
             CompactSettingsCard {
@@ -276,6 +311,7 @@ fun SettingsScreen(
                 },
                 end = {
                     graphicsCard()
+                    removeAdsCard()
                     licencesLink(Modifier.fillMaxWidth())
                 },
             )
@@ -284,6 +320,7 @@ fun SettingsScreen(
             progressCard()
             switchesCard()
             graphicsCard()
+            removeAdsCard()
             // Side by side, each taking half the width, so a label that wraps at a large font stays inside its half.
             // Raised into the page's gap above it: a button's 48dp touch target has air round its text, which the gap
             // would otherwise double. The target stays whole, and inside the gap.
@@ -332,3 +369,38 @@ fun SettingsScreen(
         AboutDialog(onDismissRequest = { showAbout = false }, debugCrashes = LocalAppContainer.current.buildInfo.isDebug)
     }
 }
+
+/**
+ * The "Remove ads" purchase ([net.zodac.ludo.purchases.Product.REMOVE_ADS]): a whole-row button opening a dialog that
+ * says what it does, with a switch to unlock every style too where that's for sale ([PurchaseOfferDialog]); its Continue
+ * opens the store's own sheet, which shows the price. Disabled until the store has it for sale, and while a payment is
+ * pending, when "Payment pending" shows under its label. TalkBack hears "Remove ads, button, double-tap to remove ads".
+ */
+@Composable
+private fun RemoveAdsSetting(state: StoreState) {
+    var explaining by remember { mutableStateOf(false) }
+    val enabled = state.offerReady(Entitlement.NO_ADS)
+    if (explaining && state is StoreState.Ready) {
+        PurchaseOfferDialog(
+            entitlement = Entitlement.NO_ADS,
+            state = state,
+            icon = { Icon(imageVector = Symbols.Block, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(DIALOG_ICON_SIZE)) },
+            title = stringResource(Res.string.settings_remove_ads_dialog_title),
+            message = stringResource(Res.string.settings_remove_ads_dialog_message, stringResource(Res.string.app_name)),
+            alsoLabel = stringResource(Res.string.purchase_also_unlock_styles),
+            onDismiss = { explaining = false },
+        )
+    }
+    SettingRow(
+        icon = Symbols.Block,
+        headline = { SettingLabel(stringResource(Res.string.settings_remove_ads)) },
+        supporting = if (state.pending(Entitlement.NO_ADS)) stringResource(Res.string.purchase_payment_pending) else null,
+        modifier = Modifier.clickable(
+            enabled = enabled,
+            role = Role.Button,
+            onClickLabel = stringResource(Res.string.settings_remove_ads_action),
+            onClick = { explaining = true },
+        ),
+    )
+}
+
