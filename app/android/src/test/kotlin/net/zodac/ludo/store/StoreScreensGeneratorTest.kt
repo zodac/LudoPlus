@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -16,10 +17,14 @@ import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.File
 import java.time.Duration
+import kotlin.random.Random
 import net.zodac.ludo.MainActivity
+import net.zodac.ludo.app.AchievementEvent
+import net.zodac.ludo.app.AchievementEvents
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.device.AndroidAppContainer
 import net.zodac.ludo.game.GameState
+import net.zodac.ludo.model.GameMode
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -68,6 +73,92 @@ class StoreScreensGeneratorTest {
     // Landscape, where a tablet's game screen lays the board out beside the players.
     @Config(qualifiers = "w1280dp-h800dp-land-xhdpi")
     fun `10-inch tablet screenshots`() = screenshots("tablet-10")
+
+    /**
+     * The promo video's scenes, one folder of 60fps frames each, in playing order, each named for its caption
+     * (`scripts/store-assets/captions.txt`). The script lays each over its caption and joins them, with the end card
+     * ([StoreArtGeneratorTest]) last.
+     */
+    @Test
+    @StorePart(StoreAssets.VIDEO)
+    // The screenshots' 9:16 phone: in a 16:9 frame the screen's height is what limits it.
+    @Config(qualifiers = "w412dp-h732dp-xhdpi", shadows = [RecordingSoundPool::class])
+    fun `promo video frames`() {
+        val root = File(StoreAssets.outDir, "video").apply { deleteRecursively(); mkdirs() }
+        StoreState.seed(container)
+        // Earned already, so no banner covers a scene but the last scene's own, which unlocks one of those left.
+        StoreState.unlockAllBut(container, Scenes.VIDEO_LOCKED)
+        val dealt = DealtRandom()
+        container.diceRandom = dealt
+
+        // A first turn: a 6 brings a pawn out, and earns another roll, which moves it on.
+        resume(GameState.new(GameMode.CLASSIC, 4, first = 0))
+        FrameRecorder(compose, File(root, "1-turn")).apply {
+            hold(700)
+            dealt.deal(6)
+            tap(compose.onNode(DIE))
+            holdUntil(5_000) { exists(moveLabelled { it.startsWith("Bring") }) }
+            hold(500)
+            tap(compose.onAllNodes(moveLabelled { it.startsWith("Bring") })[0])
+            holdUntil(5_000) { exists(DIE and hasClickAction()) }
+            hold(500)
+            dealt.deal(5)
+            tap(compose.onNode(DIE))
+            hold(900)
+            if (exists(moveLabelled { it.startsWith("Move") })) tap(compose.onAllNodes(moveLabelled { it.startsWith("Move") })[0])
+            hold(1_800)
+            finish()
+        }
+        leaveGame()
+
+        // A capture, from the screenshot's game in full swing.
+        resume(Scenes.midGame())
+        FrameRecorder(compose, File(root, "2-capture")).apply {
+            hold(800)
+            tap(compose.onAllNodes(moveLabelled { "capturing" in it })[0])
+            hold(2_600)
+            finish()
+        }
+        leaveGame()
+
+        // The Rules' Captures page, with its diagram.
+        openFromMenu("Rules")
+        compose.onNode(isTab and hasText("Captures")).performSemanticsAction(SemanticsActions.OnClick)
+        settle()
+        FrameRecorder(compose, File(root, "3-rules")).apply {
+            hold(2_400)
+            finish()
+        }
+        back()
+
+        // Sam's last pawn home: the win, then the results' celebration.
+        resume(Scenes.lastMove())
+        FrameRecorder(compose, File(root, "4-win")).apply {
+            hold(700)
+            tap(compose.onNode(WINNING_MOVE))
+            holdUntil(20_000) { exists(hasText("Winner")) }
+            hold(2_600)
+            finish()
+        }
+        back()
+
+        openFromMenu("Leaderboard")
+        FrameRecorder(compose, File(root, "5-leaderboard")).apply {
+            hold(2_400)
+            finish()
+        }
+        back()
+
+        // An achievement unlocking, banner and all.
+        openFromMenu("Achievements")
+        FrameRecorder(compose, File(root, "6-achievements")).apply {
+            hold(500)
+            AchievementEvents.emit(AchievementEvent.Unlocked(Scenes.VIDEO_UNLOCK))
+            hold(3_000)
+            finish()
+        }
+        container.diceRandom = Random.Default
+    }
 
     /**
      * Six screens, the strongest first: names are listing order, and the script captions each
@@ -134,6 +225,11 @@ class StoreScreensGeneratorTest {
     /** The board square whose move brings a pawn home: in [Scenes.lastMove], Sam's last, which wins. */
     private val WINNING_MOVE = SemanticsMatcher("offers the move home") { node ->
         node.config.getOrElseNullable(SemanticsActions.OnClick) { null }?.label?.endsWith("reaching home") == true
+    }
+
+    /** A board square offering a move whose label [wanted] says yes to ("Bring Red pawn 1 out of the yard", say). */
+    private fun moveLabelled(wanted: (String) -> Boolean) = SemanticsMatcher("offers a move") { node ->
+        node.config.getOrElseNullable(SemanticsActions.OnClick) { null }?.label?.let(wanted) == true
     }
 
     private fun exists(matcher: SemanticsMatcher): Boolean = compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()

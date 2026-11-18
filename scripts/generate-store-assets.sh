@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Makes the store listing's assets from the real app - the captioned phone and 10-inch tablet screenshots, which the
-# README shows, the hi-res icon, and the feature graphic - into assets/<version>/, which is gitignored. The promo video
-# (DiceFive's, in commit 5423b6c) comes back later in Phase 10 of .claude/IMPLEMENTATION.md. See .claude/STORE_ASSETS.md.
+# README shows, the hi-res icon, the feature graphic, and the promo video - into assets/<version>/, which is gitignored.
+# See .claude/STORE_ASSETS.md.
 #
 #   scripts/generate-store-assets.sh                     # the screenshots (a few minutes)
-#   scripts/generate-store-assets.sh --parts phone       # just those: phone, tablet, icon, feature
+#   scripts/generate-store-assets.sh --parts phone       # just those: phone, tablet, icon, feature, video
 #   scripts/generate-store-assets.sh --no-render         # re-caption/re-encode the last renders, without Gradle
 #   scripts/generate-store-assets.sh --music track.mp3   # different background music under the video's sound effects
 #   scripts/generate-store-assets.sh --no-music          # the video with the app's sounds only
@@ -35,10 +35,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 wants() { [[ ",${PARTS}," == *",$1,"* ]]; }
-if wants video; then
-    echo "The video has no generator yet: it comes back with the Play listing (Phase 10 of .claude/IMPLEMENTATION.md)." >&2
-    exit 2
-fi
 
 [[ -z "${MUSIC}" || -f "${MUSIC}" ]] || { echo "No such music file: ${MUSIC}" >&2; exit 1; }
 for tool in magick ffmpeg ffprobe python3 curl sha256sum; do
@@ -69,16 +65,10 @@ FONT="${ROOT}/app/shared/src/commonMain/composeResources/font/sora.ttf"
 CAPTIONS="${ROOT}/scripts/store-assets/captions.txt"
 
 # Brand colours - see UI.md's Colour section: the brand navy, lit towards violet behind the headline, so a backdrop
-# stands out from the app's own dark screen in front of it. (The MAT_*, DIE_TINT, and table colours are DiceFive's, for
-# the video's backdrop, which comes back in Phase 10.)
+# stands out from the app's own dark screen in front of it: the screenshots' captions and the video's backdrop alike.
 FELT_GLOW="#4A3F8C"
 FELT_MIDDLE="#1E2A4A"
 FELT_DEEP="#0C1124"
-MAT_GLOW="#2F6EBB"
-MAT_MIDDLE="#1F4F8F"
-MAT_EDGE="#13315F"
-MAT_RING="#E6C278"
-DIE_TINT="#9CC4F2"
 GOLD="#F2C46A"
 
 # The video's default music: "Happy Vibes" by Ruskerdax, CC0 (public domain - no credit required), chosen by the
@@ -158,55 +148,12 @@ backdrop() {
     felt_grain "${out}"
 }
 
-# A faint die in the air: its face in DIE_TINT, its pips cut out, turned by angle and softened by blur.
-faint_die() {
-    local image="$1" size="$2" value="$3" angle="$4" left="$5" top="$6" alpha="$7" blur="$8"
-    local near=$(( size * 27 / 100 )) centre=$(( size / 2 )) far=$(( size * 73 / 100 )) pip=$(( size * 9 / 100 ))
-    local corner=$(( size * 18 / 100 )) pips="" point pip_x pip_y
-    local -a points
-    case "${value}" in
-        1) points=("${centre},${centre}") ;;
-        2) points=("${near},${near}" "${far},${far}") ;;
-        3) points=("${near},${near}" "${centre},${centre}" "${far},${far}") ;;
-        4) points=("${near},${near}" "${far},${near}" "${near},${far}" "${far},${far}") ;;
-        5) points=("${near},${near}" "${far},${near}" "${centre},${centre}" "${near},${far}" "${far},${far}") ;;
-        *) points=("${near},${near}" "${far},${near}" "${near},${centre}" "${far},${centre}" "${near},${far}" "${far},${far}") ;;
-    esac
-    for point in "${points[@]}"; do
-        pip_x="${point%,*}"
-        pip_y="${point#*,}"
-        pips+="circle ${pip_x},${pip_y} $(( pip_x + pip )),${pip_y} "
-    done
-    magick -size "${size}x${size}" xc:"${DIE_TINT}" \
-        \( -size "${size}x${size}" xc:black -fill white -draw "roundrectangle 0,0 $(( size - 1 )),$(( size - 1 )) ${corner},${corner}" \
-           -fill black -draw "${pips}" \) \
-        -alpha off -compose CopyOpacity -composite -compose over -background none -rotate "${angle}" \
-        -channel A -evaluate multiply "${alpha}" +channel -blur "0x${blur}" "${WORK}/die.png"
-    magick "${image}" "${WORK}/die.png" -geometry "+${left}+${top}" -compose over -composite -alpha off "${image}"
-}
-
-# The video's backdrop, the launcher icon's composition at 1920x1080: lit felt with faint dice clear of the headline,
-# the mat's gold arc across the foot, and the phone standing on the mat where the icon's cup stands, with its shadow.
-table_backdrop() {
-    local out="$1" phone_centre="$2" phone_width="$3"
-    local width=1920 height=1080
-    radial_fill "${width}" "${height}" 620 330 1500 1020 "${FELT_GLOW}" "${FELT_MIDDLE}" "${FELT_DEEP}" 48 "${out}"
-    faint_die "${out}" 170 5 -18 90 60 0.15 2
-    faint_die "${out}" 120 2 24 500 110 0.15 1.2
-    faint_die "${out}" 90 4 -32 800 40 0.15 1
-    faint_die "${out}" 150 6 16 1600 90 0.15 1.6
-    faint_die "${out}" 100 3 -24 1760 330 0.15 1
-    faint_die "${out}" 125 1 30 1580 520 0.15 1.2
+# The video's backdrop at 1920x1080: the screenshots' lit navy, its light behind the headline on the left, and the phone's
+# shadow under it on the right.
+video_backdrop() {
+    local out="$1" width=1920 height=1080
+    radial_fill "${width}" "${height}" 560 480 1500 1000 "${FELT_GLOW}" "${FELT_MIDDLE}" "${FELT_DEEP}" 48 "${out}"
     vignette "${out}" "${width}" "${height}"
-    radial_fill "${width}" "${height}" "${phone_centre}" 1040 1250 290 "${MAT_GLOW}" "${MAT_MIDDLE}" "${MAT_EDGE}" 60 "${WORK}/mat.png"
-    magick "${WORK}/mat.png" \
-        \( -size "${width}x${height}" xc:black -fill white -draw "ellipse 960,1330 1560,470 0,360" -blur 0x0.7 \) \
-        -alpha off -compose CopyOpacity -composite "${WORK}/mat.png"
-    magick "${out}" "${WORK}/mat.png" -compose over -composite \
-        -fill none -stroke "${MAT_RING}" -strokewidth 5 -draw "ellipse 960,1330 1560,470 0,360" \
-        \( -size "${width}x${height}" xc:none -fill "rgba(0,0,0,0.62)" -stroke none \
-           -draw "ellipse ${phone_centre},1012 $(( phone_width * 70 / 100 )),58 0,360" -blur 0x26 \) -composite \
-        -alpha off "${out}"
     felt_grain "${out}"
 }
 
@@ -306,7 +253,7 @@ if wants video; then
 
     magick -size "${phone_w}x${phone_h}" xc:black -fill white \
         -draw "roundrectangle 0,0 $((phone_w - 1)),$((phone_h - 1)) ${radius},${radius}" "${video_work}/mask.png"
-    table_backdrop "${video_work}/backdrop.png" "$(( phone_x + phone_w / 2 ))" "${phone_w}"
+    video_backdrop "${video_work}/backdrop.png"
     # The phone's shadow and rim, painted once into the backdrop.
     magick "${video_work}/backdrop.png" \
         \( -size "${phone_w}x${phone_h}" xc:none -fill black -draw "roundrectangle 0,0 $((phone_w - 1)),$((phone_h - 1)) ${radius},${radius}" \

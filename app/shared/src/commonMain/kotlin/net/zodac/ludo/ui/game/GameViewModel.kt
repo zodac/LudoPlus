@@ -531,6 +531,7 @@ class GameViewModel(
                     achievements = container.achievementUnlocker,
                     isDebugBuild = container.buildInfo.isDebug,
                     savedStyles = container.savedStyles,
+                    random = container.diceRandom,
                 )
             }
         }

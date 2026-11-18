@@ -1,13 +1,23 @@
 package net.zodac.ludo.store
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Paint
+import android.media.SoundPool
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.test.core.app.ApplicationProvider
 import java.io.File
+import java.time.Duration
 import kotlin.random.Random
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -18,6 +28,8 @@ import net.zodac.ludo.game.GameState
 import net.zodac.ludo.game.LudoEngine
 import net.zodac.ludo.game.RollOff
 import net.zodac.ludo.game.TurnPhase
+import net.zodac.ludo.model.Achievement
+import net.zodac.ludo.model.AchievementCategory
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.PlayerConfig
@@ -26,6 +38,10 @@ import net.zodac.ludo.ui.game.StartedGame
 import org.junit.Assume.assumeTrue
 import org.junit.rules.TestRule
 import org.junit.runners.model.Statement
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
+import org.robolectric.shadows.ShadowSoundPool
 
 /**
  * Shared by the store-asset generators ([StoreScreensGeneratorTest], [StoreArtGeneratorTest]): where they write, which parts a run asked for, the
@@ -131,6 +147,12 @@ internal object StoreState {
     /** A staged game's time on screen so far, so its results say how long it took. */
     private const val STAGED_PLAY_MILLIS = 23 * 60_000L + 41_000L
 
+    /** Records every achievement but [locked] as earned, quietly: no banner, as a long-played app has them. */
+    fun unlockAllBut(container: AppContainer, locked: Set<Achievement>) = runBlocking {
+        val now = System.currentTimeMillis()
+        container.achievementsRepository.record(Achievement.entries.filter { it !in locked }.associateWith { now - DAY_MILLIS }, emptyMap())
+    }
+
     /** Saves [state] as the game to continue, at [Cast.TABLE]. */
     fun saveGame(container: AppContainer, state: GameState) {
         container.inProgressGameRepository.save(StartedGame(GameMode.CLASSIC, Cast.TABLE, state, RollOff(emptyList(), 0), playMillis = STAGED_PLAY_MILLIS))
@@ -153,6 +175,18 @@ internal object StoreState {
 
 /** The staged games: each a real game, played by the CPU for everyone up to the moment shown, found by a seed search. */
 internal object Scenes {
+
+    /** The achievement the video's last scene unlocks, banner and all. */
+    val VIDEO_UNLOCK = Achievement.LAP_OF_HONOUR
+
+    /**
+     * What the video leaves locked: its own unlock, the longest climbs, so the Achievements page isn't all done, and the
+     * Easter eggs, which would count past the total ("102 of 100") and look like a slip.
+     */
+    val VIDEO_LOCKED: Set<Achievement> = setOf(
+        VIDEO_UNLOCK, Achievement.COMPLETIONIST, Achievement.PUBLIC_ENEMY, Achievement.LIFETIME_ACHIEVEMENT, Achievement.ULTRAMARATHON,
+        Achievement.IMMORTAL, Achievement.DIE_HARD, Achievement.GLOBETROTTER,
+    ) + Achievement.entries.filter { it.category == AchievementCategory.EASTER_EGGS }
 
     /**
      * Mid-game, Sam to move with a choice: two or more moves, one of them a capture, and every player with pawns out on
@@ -229,4 +263,174 @@ private fun windowViews(): List<View> {
     val views = (field.get(instance) as List<View>).filter { it.isAttachedToWindow }
     val main = views.maxBy { it.width.toLong() * it.height }
     return listOf(main) + views.filter { it !== main }
+}
+
+/**
+ * Deals [deal]t values to the next draws of a die, in order, then draws at random again. A roll takes one
+ * `nextInt(from, until)` per die, so a value a die deals a roll. Installed as [AppContainer.diceRandom] so the video's
+ * rolls land on what it means to show; a CPU's choices that draw from it first take the dealt values, so deal only
+ * what the next roll uses.
+ */
+internal class DealtRandom(private val fallback: Random = Random(5)) : Random() {
+    private val dealt = ArrayDeque<Int>()
+
+    fun deal(vararg values: Int) {
+        dealt.addAll(values.toList())
+    }
+
+    override fun nextBits(bitCount: Int): Int = fallback.nextBits(bitCount)
+
+    override fun nextInt(from: Int, until: Int): Int {
+        val next = dealt.removeFirstOrNull() ?: return fallback.nextInt(from, until)
+        require(next in from until until) { "Dealt $next, but this draw is from $from until $until" }
+        return next
+    }
+}
+
+/**
+ * Records the screen one frame at a time on the test's own clocks (Compose's and the main looper's, where the game's
+ * own waits run), so every frame is exactly one frame on from the last however long it took to draw: the video plays
+ * smoothly at 60fps whatever the machine. A tap draws a fading touch ring, like Android's "Show taps", so a viewer can
+ * see what was pressed. Each sound the app plays is logged with its frame ([SoundLog]): the test needs
+ * [RecordingSoundPool] as a shadow for that.
+ */
+internal class FrameRecorder(private val compose: ComposeTestRule, private val dir: File) {
+    private var frame = 0
+    private val taps = mutableListOf<Pair<Offset, Int>>()
+
+    init {
+        dir.deleteRecursively()
+        dir.mkdirs()
+        SoundLog.file = File(dir, "sounds.txt").apply { writeText("") }
+        SoundLog.frame = 0
+        compose.mainClock.autoAdvance = false
+    }
+
+    /** Records [millis] of whatever the screen is doing. */
+    fun hold(millis: Long) {
+        repeat(((millis + FRAME_MILLIS - 1) / FRAME_MILLIS).toInt()) { step() }
+    }
+
+    /** Records until [done], or [timeoutMillis]. */
+    fun holdUntil(timeoutMillis: Long, done: () -> Boolean) {
+        var waited = 0L
+        while (!done()) {
+            check(waited < timeoutMillis) { "Still waiting after ${timeoutMillis}ms" }
+            step()
+            waited += FRAME_MILLIS
+        }
+    }
+
+    /** Hands the clock back to the test, to move on to the next scene. */
+    fun finish() {
+        SoundLog.file = null
+        compose.mainClock.autoAdvance = true
+    }
+
+    /** Taps [node] (its click action, at the centre of its bounds) and shows the touch. */
+    fun tap(node: SemanticsNodeInteraction) {
+        taps += node.fetchSemanticsNode().boundsInRoot.center to frame
+        node.performSemanticsAction(SemanticsActions.OnClick)
+    }
+
+    private fun step() {
+        SoundLog.frame = frame
+        compose.mainClock.advanceTimeBy(FRAME_MILLIS)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(FRAME_MILLIS))
+        val screen = compose.captureScreen()
+        drawTaps(screen)
+        StoreAssets.save(screen, File(dir, "%05d.png".format(frame)))
+        frame++
+    }
+
+    private fun drawTaps(screen: Bitmap) {
+        val canvas = Canvas(screen)
+        val density = screen.width / 412f
+        for ((at, start) in taps) {
+            val age = frame - start
+            if (age !in 0 until TAP_FRAMES) continue
+            val fade = 1f - age / TAP_FRAMES.toFloat()
+            val radius = (22f + age * 1.2f) * density
+            canvas.drawCircle(at.x, at.y, radius, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.argb((90 * fade).toInt(), 255, 255, 255) })
+            canvas.drawCircle(
+                at.x, at.y, radius,
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.STROKE
+                    strokeWidth = 2.5f * density
+                    color = android.graphics.Color.argb((200 * fade).toInt(), 255, 255, 255)
+                },
+            )
+        }
+    }
+
+    private companion object {
+        /** The Compose test clock's frame. The video is encoded at 60fps, so it plays 4% slower than the app: unnoticeable. */
+        const val FRAME_MILLIS = 16L
+        const val TAP_FRAMES = 18
+    }
+}
+
+/**
+ * Where [RecordingSoundPool] writes each sound the app plays while a [FrameRecorder] is running: one line per sound,
+ * `<frame> <clip> <volume>`, the clip being its res/raw name. The script mixes those clips in at those frames, so the
+ * video's sound is the app's own, in step with what's on screen.
+ */
+internal object SoundLog {
+    var file: File? = null
+    var frame: Int = 0
+
+    fun played(clip: String, volume: Float) {
+        file?.appendText("$frame $clip $volume\n")
+    }
+}
+
+/**
+ * Robolectric's SoundPool, but every clip loads at once and every play is written to [SoundLog]. Its own shadow never
+ * reports a clip loaded, so the app (which waits for that before playing: see AndroidSoundPlayer) would play nothing.
+ * A clip is reported loaded as it's loaded, to a listener already registered (AndroidSoundPlayer registers first), and
+ * to one registered later for those loaded before it.
+ */
+@Implements(SoundPool::class)
+class RecordingSoundPool : ShadowSoundPool() {
+    private val clipById = mutableMapOf<Int, Int>()
+
+    @Implementation
+    override fun load(context: Context, resId: Int, priority: Int): Int =
+        super.load(context, resId, priority).also {
+            clipById[it] = resId
+            notifyResourceLoaded(resId, true)
+        }
+
+    @Implementation
+    override fun setOnLoadCompleteListener(listener: SoundPool.OnLoadCompleteListener?) {
+        super.setOnLoadCompleteListener(listener)
+        clipById.values.forEach { notifyResourceLoaded(it, true) }
+    }
+
+    /** Set while a play is being passed on: one variant of `_play` calls the other, and a play is logged once. */
+    private var playing = false
+
+    @Implementation
+    override fun _play(soundId: Int, leftVolume: Float, rightVolume: Float, priority: Int, loop: Int, rate: Float): Int =
+        recording(soundId, leftVolume) { super._play(soundId, leftVolume, rightVolume, priority, loop, rate) }
+
+    @Implementation
+    override fun _play(soundId: Int, leftVolume: Float, rightVolume: Float, priority: Int, loop: Int, rate: Float, playerIId: Int): Int =
+        recording(soundId, leftVolume) { super._play(soundId, leftVolume, rightVolume, priority, loop, rate, playerIId) }
+
+    private fun recording(soundId: Int, volume: Float, play: () -> Int): Int {
+        if (playing) return play()
+        record(soundId, volume)
+        playing = true
+        try {
+            return play()
+        } finally {
+            playing = false
+        }
+    }
+
+    private fun record(soundId: Int, volume: Float) {
+        val resId = clipById[soundId] ?: return
+        SoundLog.played(ApplicationProvider.getApplicationContext<Context>().resources.getResourceEntryName(resId), volume)
+    }
 }

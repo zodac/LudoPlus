@@ -386,12 +386,13 @@ count but 4 has a board of its own; one player on two colours was dropped.
 ## Phase 10: Google Play
 
 - [ ] Create the Play Console project, the signing key and upload key, and the CI secrets (`PUBLISHING.md`).
-- [ ] The store listing's hi-res icon, feature graphic (and the README's GIF), and promo video: DiceFive's generators
+- [x] The store listing's hi-res icon, feature graphic (and the README's GIF), and promo video: DiceFive's generators
     are in `5423b6c`; the script keeps their steps, refusing those parts until then (`STORE_ASSETS.md`).
     - [x] The icon and feature graphic (`StoreArtGeneratorTest`), approved 2026-11-18. The icon follows the launcher
         icon, still the placeholder pawn (kept for now, the maintainer, 2026-11-18).
-    - [ ] The promo video: a turn, a capture, the Rules' diagram, the tutorial's coach card, a pawn home and the win,
-        Game Over, the Leaderboard, and an achievement unlocking, then the end card (the maintainer, 2026-11-18).
+    - [x] The promo video: a turn, a capture, the Rules' diagram, a pawn home and the win, Game Over, the Leaderboard,
+        and an achievement unlocking, then the end card; no tutorial (the maintainer, 2026-11-18). Approved 2026-11-18
+        (`STORE_ASSETS.md`).
 - [ ] Play Games Services: achievements, the fastest-win leaderboards, cloud save, and sign-in (`PLAY_GAMES.md`).
     Decided with the maintainer (2026-11-18): a leaderboard for each built-in mode and player count, 2-8 (21 of Play's
     70), each the turns in a win, fewer better. Play ranks one number, so the local captures tie-break doesn't carry.

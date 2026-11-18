@@ -5,7 +5,9 @@ import net.zodac.ludo.data.settings.SavedStyles
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.Flow
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.annotation.VisibleForTesting
 import androidx.room.RoomDatabase
+import kotlin.random.Random
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -74,6 +76,13 @@ class AppContainer(
 
     /** The Styles page's Unlocked switch, loaded with the container so the page opens already filtered: null until then. */
     val unlockedOnlyStyles: StateFlow<Boolean?> = settingsRepository.unlockedOnlyStyles.stateIn(scope, SharingStarted.Eagerly, null)
+
+    /**
+     * The die every game rolls ([net.zodac.ludo.ui.game.GameViewModel]'s random). Replaced only by the store-asset
+     * generator, to deal the rolls its promo video shows: see `.claude/STORE_ASSETS.md`.
+     */
+    @set:VisibleForTesting
+    var diceRandom: Random = Random.Default
 
     private val mutableDatabaseFailure = MutableStateFlow<String?>(null)
 

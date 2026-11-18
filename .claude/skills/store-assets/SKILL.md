@@ -11,12 +11,12 @@ before changing scenes, captions, or the generator.
 
 ```sh
 scripts/generate-store-assets.sh                     # the screenshots, a few minutes
-scripts/generate-store-assets.sh --parts phone       # some of: phone, tablet
+scripts/generate-store-assets.sh --parts phone       # some of: phone, tablet, icon, feature, video
 scripts/generate-store-assets.sh --no-render         # re-caption the last renders, no Gradle
 ```
 
-The icon, the feature graphic, and the video come back with the Play listing (Phase 10 of `IMPLEMENTATION.md`); until
-then the script refuses those parts. It checks every file against Play's rules and exits non-zero on a failure.
+`--parts icon,feature,video` makes the Play listing's art: the hi-res icon, the feature graphic (and its README GIF), and the
+promo video (which fetches its CC0 music). It checks every file against Play's rules and exits non-zero on a failure.
 Intermediate files go to `build/store-assets/`.
 
 ## Each change to what the screenshots show

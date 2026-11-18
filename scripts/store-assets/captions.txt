@@ -10,3 +10,9 @@ tutorial=Learn as you play
 game-over=Beat friends or the computer
 leaderboard=Chase the fastest win
 statistics=Track your wins and captures
+# The promo video's scenes (StoreScreensGeneratorTest's `promo video frames`), by the part of each folder's name after
+# the number; rules and leaderboard are the screenshots' own.
+turn=Roll a 6 to get going
+capture=Send rivals back to the yard
+win=Bring them all home to win
+achievements=Over 100 achievements

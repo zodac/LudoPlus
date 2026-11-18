@@ -3,16 +3,26 @@
 How the listing's graphics are made, what to change, and the traps. **Running the script** is the `store-assets` skill.
 The rest of the Play submission is in `PUBLISHING.md`.
 
-The generator makes the **screenshots**, which the README shows, the **hi-res icon**, and the **feature graphic** (and its
-README GIF), back for the Play listing in Phase 10 (`StoreArtGeneratorTest`, approved 2026-11-18). The **promo video** is
-next: DiceFive's scenes are in commit `5423b6c` (`app/android/src/test/kotlin/net/zodac/ludo/store/`), and the script
-still holds its encoding (the backdrop and sound mix among them), switched off until then.
+The generator makes the **screenshots**, which the README shows, the **hi-res icon**, the **feature graphic** (and its
+README GIF), and the **promo video**, back for the Play listing in Phase 10 (`StoreArtGeneratorTest`, approved
+2026-11-18; the video's scenes in `StoreScreensGeneratorTest`). `scripts/generate-store-assets.sh` makes the screenshots
+alone by default; `--parts icon,feature,video` the rest.
 
 - **Icon** (`icon` part): the launcher icon's two layers, the middle 76dp of their 108dp canvas, so it follows the
     launcher icon. That is still the placeholder pawn (kept for now, the maintainer, 2026-11-18).
 - **Feature graphic** (`feature` part): the menu's backdrop with its pawns drifting, the menu's logo centred in the left
     half, and the board mid-game (`Scenes.midGame`) in the right, nothing that matters in the middle (Play's play button)
     or at an edge (its crops). The GIF is 6 seconds of the drift. The video's end card is the same scene at 16:9.
+- **Promo video** (`video` part, `LudoPlus-Promo-1080p60-<version>.mp4`, about 21 seconds): six scenes recorded from the
+    real app a frame at a time (`FrameRecorder`, both clocks stepped), each beside its caption on the screenshots' lit
+    navy, cross-faded, then the end card. A first turn (a dealt 6 brings a pawn out, a 5 moves it), a capture
+    (`Scenes.midGame`), the Rules' Captures page, the win and the results (`Scenes.lastMove`),
+    the Leaderboard, and Lap Of Honour unlocking on the Achievements page. Rolls are dealt through `AppContainer.diceRandom`
+    (`DealtRandom`). Every achievement but `Scenes.VIDEO_LOCKED` is earned first, quietly, so no banner covers a scene
+    but the last's, and the page reads "92 of 100" (an Easter egg would count past the total). The sound is the app's own
+    clips, logged at their frames (`RecordingSoundPool`, `SoundLog`) and mixed in, under CC0 music ("Happy Vibes" by
+    Ruskerdax, fetched by the script), with `video-description.txt` for YouTube. No tutorial: it's not important enough
+    for the video (the maintainer, 2026-11-18).
 
 ## Output (`assets/<version>/`, gitignored)
 
@@ -23,6 +33,8 @@ still holds its encoding (the backdrop and sound mix among them), switched off u
 | `icon-512.png`                                                    | 512x512, 32-bit PNG      |
 | `feature-graphic-1024x500.png`                                    | 1024x500, no alpha       |
 | `feature-graphic.gif`                                             | not uploaded: the README |
+| `LudoPlus-Promo-1080p60-<version>.mp4`                            | YouTube, then its URL    |
+| `video-description.txt`                                           | the video's description  |
 | `contact-sheet.png`                                               | not uploaded: for review |
 
 - **File names** start with the device, so the two folders can't be mixed up in an upload.
