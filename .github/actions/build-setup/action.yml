@@ -47,18 +47,47 @@ runs:
           "$SDKMANAGER" "${packages[@]}"
         fi
 
-    # scripts/normalize-audio.sh shells out to ffmpeg to peak-normalise the clips in app/audio/ (for
-    # Android's normalizeOggAudio task), and ubuntu-latest runners don't ship it. The runner's own package
-    # lists are tried first - refreshing them is most of this step's time - and only refreshed if they
-    # can't find it.
-    - name: Install ffmpeg
+    # ffmpeg's packages (~66 MB) are cached: Ubuntu's mirrors served them in ten seconds to some jobs and in ten to
+    # sixteen minutes to others of the same release run. Keyed on the runner image, whose package lists pick the
+    # versions; a new image restores the last image's packages, and apt downloads only the ones that changed. The
+    # runner's own environment isn't in the `env` context, so the key is read in a step.
+    - name: Name the ffmpeg packages' cache
+      id: ffmpeg-cache-key
       if: inputs.ffmpeg == 'true'
       shell: bash
       run: |
-        sudo apt-get install -y --no-install-recommends ffmpeg || {
+        echo "dir=$HOME/ffmpeg-debs" >> "$GITHUB_OUTPUT"
+        echo "prefix=ffmpeg-debs-${ImageOS:-unknown}-" >> "$GITHUB_OUTPUT"
+        echo "key=ffmpeg-debs-${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+
+    - name: Restore the ffmpeg packages
+      if: inputs.ffmpeg == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.ffmpeg-cache-key.outputs.dir }}
+        key: ${{ steps.ffmpeg-cache-key.outputs.key }}
+        restore-keys: ${{ steps.ffmpeg-cache-key.outputs.prefix }}
+
+    # scripts/normalize-audio.sh shells out to ffmpeg to peak-normalise the clips in app/audio/ (for
+    # Android's normalizeOggAudio task), and ubuntu-latest runners don't ship it. apt keeps its downloads in the
+    # cached directory, using any package already there. The runner's own package lists are tried first, and only
+    # refreshed if they can't find it.
+    - name: Install ffmpeg
+      if: inputs.ffmpeg == 'true'
+      shell: bash
+      env:
+        DEBS: ${{ steps.ffmpeg-cache-key.outputs.dir }}
+      run: |
+        mkdir -p "$DEBS"
+        # As apt's own archives/partial is, so its downloads stay sandboxed as _apt.
+        sudo install -d -o _apt -g root -m 700 "$DEBS/partial"
+        install() { sudo apt-get install -y --no-install-recommends -o Dir::Cache::Archives="$DEBS" ffmpeg; }
+        install || {
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg
+          install
         }
+        # Readable by the cache's save, which runs as the runner's user.
+        sudo chmod -R a+rX "$DEBS"
 
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
