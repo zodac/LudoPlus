@@ -20,10 +20,31 @@ name: README assets
 #
 # ubuntu-latest ships ImageMagick 6, without the `magick` the script uses; install_imagemagick.sh installs the same
 # ImageMagick 7 build the sandbox has.
-# Pre-1.0.0, on demand only. With VERSION's move to 1.0.0, restore the push trigger with android-release.yml's paths plus
-# the generator's own (app/android/src/test/kotlin/net/zodac/ludo/store/, scripts/generate-store-assets.sh, and
-# scripts/store-assets/).
+# The push trigger's paths are android-release.yml's plus the generator's own; keep them in step.
 on:
+  push:
+    branches: [main]
+    paths:
+      - "VERSION"
+      - "app/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "build-logic/**"
+      - "gradle.properties"
+      - "scripts/normalize-audio.sh"
+      # ...except test code and documentation inside those.
+      - "!app/**/src/test/**"
+      - "!app/**/src/testPlay/**"
+      - "!app/**/src/testGithub/**"
+      - "!app/**/src/commonTest/**"
+      - "!app/**/src/androidHostTest/**"
+      - "!app/**/src/androidTest/**"
+      - "!app/**/*.md"
+      # How the images are made: listed after the exclusions, which would otherwise drop the generator tests.
+      - "app/android/src/test/kotlin/net/zodac/ludo/store/**"
+      - "scripts/generate-store-assets.sh"
+      - "scripts/store-assets/**"
   workflow_dispatch:
 
 permissions:

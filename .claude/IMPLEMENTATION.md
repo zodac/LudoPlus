@@ -29,7 +29,7 @@ reorders them. Phase 13 waits for the launch: the production release at the end 
 - **Name.** Ludo Plus. "Frustration" (the working title) is Hasbro's UK trademark and is banned (`CLAUDE.md`, "Banned
     words"). Package `net.zodac.ludo`, repo `github.com/zodac/LudoPlus`.
 - **Gutting.** Interim red builds were fine while gutting (the maintainer, 2026-11-16).
-- **Releases.** VERSION 0.1.0. CI runs every check, but publishes nothing until VERSION reaches 1.0.0.
+- **Releases.** VERSION 1.0.0 (2026-11-18): every push to `main` that changes what an app ships cuts a release.
 - **Languages.** en-GB only until a later phase. Every string still goes through Compose resources.
 - **Brand.** DiceFive's dark-only M3 tonal system, re-seeded: primary violet `#9C6BFF` (not a player colour, so it
     never reads as "your turn"), secondary navy `#1E2A4A`, tertiary ivory `#F1E4C3` (the board's cream squares). Sora
@@ -284,9 +284,9 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 - [x] Privacy policy re-read against the app, and rewritten for 1.0.0 (approved 2026-11-17): no sign-in, cloud save,
     purchase, or progress files yet, and nothing leaves the device but a crash report the player posts. It must be
     updated again before Phase 10 or 11 ships.
-- [ ] Set VERSION to 1.0.0, which turns publishing on: the first GitHub release. **The maintainer makes this change by
-    hand, never Claude** (the maintainer, 2026-11-17): VERSION stays 0.1.0 until then. When they do, restore
-    `readme-assets.yml`'s push trigger with it.
+- [x] Set VERSION to 1.0.0, which turns publishing on: the first GitHub release. **The maintainer makes this change by
+    hand, never Claude** (the maintainer, 2026-11-17). Done 2026-11-18, at the maintainer's word, with
+    `readme-assets.yml`'s push trigger restored.
 
 ## Phase 6: Achievements
 
