@@ -56,6 +56,11 @@ class AdMobAds private constructor(private val application: Application) : Ads {
 
     private fun attach(activity: ComponentActivity) {
         this.activity = WeakReference(activity)
+        // The window's decor is installed here, on the main thread, before UMP is called: UMP 4.0.0 reads the decor view
+        // from its own thread, and while onCreate hasn't installed it yet, the two threads race to build it. One run
+        // threw ("Window couldn't find content container view"); another left the window on an empty decor, a black
+        // screen with the app's content never shown.
+        activity.window.decorView
         // A choice made in an earlier session counts at once; the update below may then ask again.
         update()
         consent.requestConsentInfoUpdate(

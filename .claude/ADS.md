@@ -39,6 +39,10 @@ app/android/src/play/.../ads/AdMobAds   the only com.google.android.gms.ads and 
 
 - `Distribution.ads` gives `AdMobAds.attach(activity)` in the play app (on a device with Google Play services; any build,
     a debug one showing test ads) and `NoAds` in the github app; `MainActivity` hands it to `LudoPlusApp`.
+- **The decor first**: `attach` installs the window's decor view on the main thread before calling UMP, which reads it
+    from its own thread. Called from `onCreate` before `setContent`, the two raced to build it: the 1.0.0 release's
+    Baseline Profile journey got a black screen with no app content on its third launch (and a caught "Window couldn't
+    find content container view" on its second).
 - **Ids**: AdMob's app id (the manifest's `com.google.android.gms.ads.APPLICATION_ID`, from the `admobAppId` placeholder)
     and the banner's ad unit id (`BuildConfig.ADMOB_BANNER_ID`) come from CI's `ADMOB_APP_ID` and `ADMOB_BANNER_ID`
     repository variables (public ids, not secrets). Without them, Google's published test ids. **A debug build always
