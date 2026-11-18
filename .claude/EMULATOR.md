@@ -56,9 +56,9 @@ drawing Ludo Plus**.
 
 ## The Baseline Profile journey in CI
 
-`android-release.yml`'s `baseline-profile` job runs the journey on a GitHub-hosted runner for every release APK (from
-1.0.0): 3 laps, or 10 if the journey or a profile file changed beyond its comments and blank lines. The `apk` job builds
-with the profile it makes.
+`android-release.yml`'s `baseline-profile` job runs the journey on a GitHub-hosted runner for every release APK: 3
+laps, or 10 if the journey or a profile file changed beyond its comments and blank lines. The `apk` job builds with the
+profile it makes.
 
 **`.github/scripts/ci_emulator.sh` is `emulator.sh`'s twin.** It uses the same API (read from the Dockerfile's
 `ARG EMULATOR_API`), the same image, the same boot and the same renderer fix. The differences:

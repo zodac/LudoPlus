@@ -5,7 +5,7 @@
 ## The project
 
 A Ludo race game for Android: roll a die, bring your four pawns out of base, race them a lap of the board, and get
-them all home first. In development, pre-1.0.0.
+them all home first. Releasing from 1.0.0 (2026-11-18).
 
 - **Where it came from.** The repo was copied whole from DiceFive (`github.com/zodac/DiceFive`, the maintainer's
     five-dice scorecard game) and renamed. Its build, CI, scripts, sandbox, Claude set-up and app chrome are kept; its
@@ -42,7 +42,7 @@ them all home first. In development, pre-1.0.0.
 
 | | |
 | --- | --- |
-| Repo | `github.com/zodac/LudoPlus`, default branch `main`. Every push to `main` that changes what an app ships runs the checks; from VERSION 1.0.0 it also cuts a GitHub release (`android-v*`; `DESIGN.md`, "Release pipeline"). Below 1.0.0 the `apk` and `release` jobs are skipped |
+| Repo | `github.com/zodac/LudoPlus`, default branch `main`. Every push to `main` that changes what an app ships runs the checks and cuts a GitHub release (`android-v*`; `DESIGN.md`, "Release pipeline") |
 | Package | `net.zodac.ludo` (Kotlin root package; the play app's `applicationId`; the github APK is `net.zodac.ludo.github`). Code identifiers use `LudoPlus` (`LudoPlusTheme`); player text says "Ludo Plus" |
 | Version | `VERSION` at the repo root (1.0.0 from 2026-11-18, set at the maintainer's word: releases are on). Never hand-edit for a debug install |
 | Platforms | Android minSdk 26, targetSdk/compileSdk 37 (`gradle/android-sdk.properties`). Android only |

@@ -82,7 +82,6 @@ jobs:
       name: ${{ steps.version.outputs.name }}
       sha: ${{ steps.version.outputs.sha }}
       release: ${{ steps.version.outputs.release }}
-      publish: ${{ steps.version.outputs.publish }}
       previous_tag: ${{ steps.version.outputs.previous_tag }}
     steps:
       - name: Checkout
@@ -111,16 +110,6 @@ jobs:
             echo "::notice::Nothing on main since $previous_tag but the version bump - nothing to release"
           fi
           echo "release=$release" >> "$GITHUB_OUTPUT"
-          # Pre-1.0.0 (the app is in development, with no Play listing yet): every check still runs, but nothing is
-          # built for release, tagged or published. Setting VERSION to 1.0.0 or later (scripts/set-version.sh) turns
-          # publishing on.
-          publish=false
-          if [ "$release" = true ] && [ "${version%%.*}" -ge 1 ]; then
-            publish=true
-          elif [ "$release" = true ]; then
-            echo "::notice::VERSION $version is below 1.0.0 - checks only, no release is published"
-          fi
-          echo "publish=$publish" >> "$GITHUB_OUTPUT"
           echo "previous_tag=$previous_tag" >> "$GITHUB_OUTPUT"
           echo "Releasing: $release (android-v$version, $sha; previous release: ${previous_tag:-none})"
 
@@ -257,7 +246,7 @@ jobs:
   # watches them and stops itself when one does - see watch_checks.sh.
   baseline-profile:
     needs: version
-    if: needs.version.outputs.publish == 'true'
+    if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 210
     permissions:
@@ -452,11 +441,11 @@ jobs:
   # again (three attempts in all). What the upgrade itself did (the script's exit status 2) is never retried: a game lost
   # now and then is still a game lost.
   #
-  # Only for a release with one before it to upgrade from: from 1.0.0 (publish), and not the first. Pre-1.0.0 it would
-  # drive screens that don't exist yet; its script's labels follow the app from Phase 4 (saved games).
+  # Only for a release with one before it to upgrade from: not the first. Its script's labels follow the app from
+  # Phase 4 (saved games).
   upgrade-check:
     needs: version
-    if: needs.version.outputs.publish == 'true' && needs.version.outputs.previous_tag != ''
+    if: needs.version.outputs.release == 'true' && needs.version.outputs.previous_tag != ''
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -551,7 +540,7 @@ jobs:
     needs: [version, android-tests, shared-tests, lint, upgrade-check, baseline-profile]
     # The upgrade check may be skipped (the first release has nothing to upgrade from); every other check must pass.
     if: >-
-      !cancelled() && needs.version.outputs.publish == 'true'
+      !cancelled() && needs.version.outputs.release == 'true'
       && needs.android-tests.result == 'success' && needs.shared-tests.result == 'success' && needs.lint.result == 'success'
       && needs.baseline-profile.result == 'success'
       && contains(fromJSON('["success", "skipped"]'), needs.upgrade-check.result)

@@ -83,6 +83,6 @@ not a software release (no version, never Latest). `README.md` embeds them as `r
 the phone shots under the introduction, the tablet ones in a collapsed section. A failed run leaves the previous images
 up.
 
-- **Pre-1.0.0 it runs on demand only** (`gh workflow run readme-assets.yml`, or the Actions tab). With VERSION's move to
-    1.0.0 its push trigger comes back: `android-release.yml`'s paths plus the generator's own.
+- **It runs on a push** that touches `android-release.yml`'s paths or the generator's own, and on demand
+    (`gh workflow run readme-assets.yml`, or the Actions tab).
 - Until it has run once, the README's images don't exist.
