@@ -23,7 +23,7 @@ name: Android release
 # commit afterwards also empties that file, ready for the next release's notes.
 #
 # Every release attaches its build assets: the signed github APK (for sideloading; an app of its own,
-# net.zodac.ludo.github, with progress files and no Play Games), the signed play App Bundle (.aab) for
+# net.zodac.ludoplus.github, with progress files and no Play Games), the signed play App Bundle (.aab) for
 # Google Play, and R8's mapping.txt for each, for reading obfuscated stack traces.
 # Both are signed with the RELEASE_KEY* secrets' key, which is the app's
 # Play App Signing upload key - Play re-signs the bundle with its own key.

@@ -1,11 +1,11 @@
 import com.android.build.api.variant.impl.VariantOutputImpl
-import net.zodac.ludo.buildlogic.LicencePolicy
-import net.zodac.ludo.buildlogic.MinutesSinceEpoch
-import net.zodac.ludo.buildlogic.appVersion
-import net.zodac.ludo.buildlogic.tasks.CollectThirdPartyNoticesTask
-import net.zodac.ludo.buildlogic.tasks.NormalizeOggAudioTask
-import net.zodac.ludo.buildlogic.tasks.VerifyAssetSourcesTask
-import net.zodac.ludo.buildlogic.tasks.VerifyLicenseReportTask
+import net.zodac.ludoplus.buildlogic.LicencePolicy
+import net.zodac.ludoplus.buildlogic.MinutesSinceEpoch
+import net.zodac.ludoplus.buildlogic.appVersion
+import net.zodac.ludoplus.buildlogic.tasks.CollectThirdPartyNoticesTask
+import net.zodac.ludoplus.buildlogic.tasks.NormalizeOggAudioTask
+import net.zodac.ludoplus.buildlogic.tasks.VerifyAssetSourcesTask
+import net.zodac.ludoplus.buildlogic.tasks.VerifyLicenseReportTask
 
 plugins {
     // SDK levels, Java version, and the strict compiler and lint rules: build-logic's AndroidApplicationConventionPlugin.
@@ -42,7 +42,7 @@ val hasReleaseSigningConfig = !releaseKeystorePath.isNullOrBlank() &&
     !releaseKeyPassword.isNullOrBlank()
 
 android {
-    namespace = "net.zodac.ludo"
+    namespace = "net.zodac.ludoplus"
     // compileSdk, buildToolsVersion and ndkVersion: gradle/android-sdk.properties, through build-logic.
 
     // Output names start LudoPlus- instead of app- (the APKs' are set in full below).
@@ -63,7 +63,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "net.zodac.ludo"
+        applicationId = "net.zodac.ludoplus"
         versionCode = appVersionCode
         versionName = appVersionName
 

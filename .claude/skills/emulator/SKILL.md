@@ -30,7 +30,7 @@ emulator.sh stop                # ALWAYS stop when done: it holds ~4GB RAM and 4
 ```sh
 emulator.sh start
 ./gradlew -q assembleGithubDebug -PdevStamp && adb install -r "$(ls -t app/android/build/outputs/apk/github/debug/*.apk | head -1)"
-adb shell monkey -p net.zodac.ludo.github -c android.intent.category.LAUNCHER 1
+adb shell monkey -p net.zodac.ludoplus.github -c android.intent.category.LAUNCHER 1
 emulator.sh screenshot <scratchpad>/screen.png
 ```
 
@@ -39,7 +39,7 @@ emulator.sh screenshot <scratchpad>/screen.png
 ```sh
 emulator.sh start
 adb shell settings put system font_scale 1.0   # the emulator's settings outlast a session; CI's is 1.0
-adb uninstall net.zodac.ludo 2>/dev/null   # a debug build's higher versionCode makes the benchmark install a no-op
+adb uninstall net.zodac.ludoplus 2>/dev/null   # a debug build's higher versionCode makes the benchmark install a no-op
 ./gradlew :app:android:generatePlayReleaseBaselineProfile -Pandroid.testInstrumentationRunnerArguments.journeyLaps=1
 emulator.sh stop
 ```

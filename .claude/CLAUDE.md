@@ -43,7 +43,7 @@ them all home first. Releasing from 1.0.0 (2026-11-18).
 | | |
 | --- | --- |
 | Repo | `github.com/zodac/LudoPlus`, default branch `main`. Every push to `main` that changes what an app ships runs the checks and cuts a GitHub release (`android-v*`; `DESIGN.md`, "Release pipeline") |
-| Package | `net.zodac.ludo` (Kotlin root package; the play app's `applicationId`; the github APK is `net.zodac.ludo.github`). The name is one word, `LudoPlus`, in code identifiers (`LudoPlusTheme`) and player text alike (the maintainer, 2026-11-19) |
+| Package | `net.zodac.ludoplus` (Kotlin root package; the play app's `applicationId`; the github APK is `net.zodac.ludoplus.github`; was `net.zodac.ludo` until 2026-11-19, before any release). The name is one word, `LudoPlus`, in code identifiers (`LudoPlusTheme`) and player text alike (the maintainer, 2026-11-19) |
 | Version | `VERSION` at the repo root (1.0.0 from 2026-11-18, set at the maintainer's word: releases are on). Never hand-edit for a debug install |
 | Platforms | Android minSdk 26, targetSdk/compileSdk 37 (`gradle/android-sdk.properties`). Android only |
 | Stack | Kotlin Multiplatform, Compose Multiplatform, Material 3 (dark only), Navigation Compose, MVVM (`ViewModel` + `StateFlow`), DataStore (settings). Room comes back for game records in Phase 4 |

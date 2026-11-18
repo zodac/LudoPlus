@@ -20,15 +20,15 @@ gradlePlugin {
     plugins {
         register("androidApplication") {
             id = "ludo.android.application"
-            implementationClass = "net.zodac.ludo.buildlogic.AndroidApplicationConventionPlugin"
+            implementationClass = "net.zodac.ludoplus.buildlogic.AndroidApplicationConventionPlugin"
         }
         register("androidTest") {
             id = "ludo.android.test"
-            implementationClass = "net.zodac.ludo.buildlogic.AndroidTestConventionPlugin"
+            implementationClass = "net.zodac.ludoplus.buildlogic.AndroidTestConventionPlugin"
         }
         register("kotlinMultiplatform") {
             id = "ludo.kotlin.multiplatform"
-            implementationClass = "net.zodac.ludo.buildlogic.KotlinMultiplatformConventionPlugin"
+            implementationClass = "net.zodac.ludoplus.buildlogic.KotlinMultiplatformConventionPlugin"
         }
     }
 }

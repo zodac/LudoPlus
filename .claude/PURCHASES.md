@@ -272,7 +272,7 @@ page opened on 2026-10-23, a day after it was published there.
      content. Leave "multi-quantity" off.
    - **Activate** the product and its purchase option (a draft can't be bought).
 2. Add your license-tester accounts to the **internal testing** track's tester list, and install from its opt-in link
-   once (afterwards debug builds with package `net.zodac.ludo` can buy too, as license testers).
+   once (afterwards debug builds with package `net.zodac.ludoplus` can buy too, as license testers).
 3. Optional: install **Play Billing Lab** on the test phone for country overrides.
 
 ### Phase 4: entitlement in the styles rules (code; done 2026-10-23)

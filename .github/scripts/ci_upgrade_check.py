@@ -25,8 +25,8 @@ import time
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 
-PACKAGE = "net.zodac.ludo.github"
-ACTIVITY = f"{PACKAGE}/net.zodac.ludo.MainActivity"
+PACKAGE = "net.zodac.ludoplus.github"
+ACTIVITY = f"{PACKAGE}/net.zodac.ludoplus.MainActivity"
 
 # What the app shows. A release that relabels one of these needs the old label kept here beside the new one until a
 # release with the new one is the last release.

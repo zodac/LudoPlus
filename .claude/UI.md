@@ -10,7 +10,7 @@ for particular screens:
 
 Code comments that cite one of those sections under `UI.md` now find it in the companion file.
 
-All UI is shared Compose Multiplatform code in `app/shared/src/commonMain/kotlin/net/zodac/ludo/ui/`; the paths
+All UI is shared Compose Multiplatform code in `app/shared/src/commonMain/kotlin/net/zodac/ludoplus/ui/`; the paths
 below are relative to it. It must stay platform-neutral: no Android or JVM API (`CommonCodeIsPlatformNeutralTest`; `MULTIPLATFORM.md`), resources
 through `Res.*`, and device work through `PlatformServices`.
 

@@ -43,7 +43,7 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
     everything through. No polling.
 - **The engine and `GameMode` never learn the network exists.** Per-mode data is a field (`onlineLeaderboardKey`).
 - **The play app only.** Play Games is the `play` flavour's (`DESIGN.md`, "Distribution"): the SDK, the manifest's
-    `APP_ID`, Sidekick and the disabled init provider are all in `src/play`. The github APK (`net.zodac.ludo.github`)
+    `APP_ID`, Sidekick and the disabled init provider are all in `src/play`. The github APK (`net.zodac.ludoplus.github`)
     has none of it, so a Play Games credential, which is per package, can't sign it in either; it has progress files
     instead, which the play app never has, signed in or not.
 - **Play-only installs.** A play release build uses Play Games only when installed by Play (`com.android.vending`) on a

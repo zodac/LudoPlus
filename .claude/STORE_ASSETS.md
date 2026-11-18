@@ -53,7 +53,7 @@ tutorial's coach card, Game Over in the middle of the celebration, the Leaderboa
 
 - **Captions**: `scripts/store-assets/captions.txt`, keyed by screen name. Rerun with `--no-render`. The banned-words rule
     applies, and each caption must stay true of the app.
-- **Screens and order**: `screenshots()` in `app/android/src/test/kotlin/net/zodac/ludo/store/StoreScreensGeneratorTest.kt`.
+- **Screens and order**: `screenshots()` in `app/android/src/test/kotlin/net/zodac/ludoplus/store/StoreScreensGeneratorTest.kt`.
     A new screen needs a caption, and the README's gallery and `readme-assets.yml` name each file.
 - **Staged games**: `Scenes` in `StoreAssets.kt`. Each is a real game, played by the Medium CPU for every seat up to the
     moment shown, found by a seed search: `midGame` (Sam to choose between moves, one a capture, everyone out on the

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "net.zodac.ludo.baselineprofile"
+    namespace = "net.zodac.ludoplus.baselineprofile"
     defaultConfig {
         minSdk = 28 // Baseline Profile generation needs API 28+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

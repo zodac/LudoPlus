@@ -7,5 +7,5 @@
 # (src/release/generated/baselineProfiles/, from :app:baselineprofile) is merged with this file, not
 # a replacement for it; whether this one can go needs a startup benchmark on a phone (StartupBenchmark, and
 # .claude/BENCHMARKS.md).
-HSPLnet/zodac/ludo/**->**(**)**
-Lnet/zodac/ludo/**;
+HSPLnet/zodac/ludoplus/**->**(**)**
+Lnet/zodac/ludoplus/**;

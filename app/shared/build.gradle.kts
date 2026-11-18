@@ -15,7 +15,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "net.zodac.ludo.shared"
+        namespace = "net.zodac.ludoplus.shared"
         // Compose Multiplatform resources (composeResources/) ship inside the AAR as Android assets.
         androidResources { enable = true }
     }
@@ -76,7 +76,7 @@ kotlin.sourceSets.matching { it.name.endsWith("Test") }.configureEach {
 }
 
 compose.resources {
-    packageOfResClass = "net.zodac.ludo.resources"
+    packageOfResClass = "net.zodac.ludoplus.resources"
     publicResClass = false
 }
 

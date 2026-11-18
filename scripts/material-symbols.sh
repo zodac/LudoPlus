@@ -11,7 +11,7 @@
 set -euo pipefail
 
 root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-output="${root_dir}/app/shared/src/commonMain/kotlin/net/zodac/ludo/ui/icons/Symbols.kt"
+output="${root_dir}/app/shared/src/commonMain/kotlin/net/zodac/ludoplus/ui/icons/Symbols.kt"
 
 python3 -I - "${output}" <<'PYTHON'
 import re
@@ -227,7 +227,7 @@ if [l.split()[0] for l in lines] != sorted(l.split()[0] for l in lines):
 with ThreadPoolExecutor(16) as pool:
     entries = list(pool.map(fetch, lines))
 
-source = f"""package net.zodac.ludo.ui.icons
+source = f"""package net.zodac.ludoplus.ui.icons
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor

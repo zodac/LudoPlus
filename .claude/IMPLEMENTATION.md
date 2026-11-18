@@ -27,7 +27,7 @@ reorders them. Phase 13 waits for the launch: the production release at the end 
 ## Decisions so far (2026-11-16)
 
 - **Name.** LudoPlus. "Frustration" (the working title) is Hasbro's UK trademark and is banned (`CLAUDE.md`, "Banned
-    words"). Package `net.zodac.ludo`, repo `github.com/zodac/LudoPlus`.
+    words"). Package `net.zodac.ludoplus`, repo `github.com/zodac/LudoPlus`.
 - **Gutting.** Interim red builds were fine while gutting (the maintainer, 2026-11-16).
 - **Releases.** VERSION 1.0.0 (2026-11-18): every push to `main` that changes what an app ships cuts a release.
 - **Languages.** en-GB only until a later phase. Every string still goes through Compose resources.

@@ -1,0 +1,192 @@
+package net.zodac.ludoplus
+
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isToggleable
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import net.zodac.ludoplus.data.records.GameRecordRepository
+import net.zodac.ludoplus.data.records.InMemoryGameResultDao
+import net.zodac.ludoplus.model.HouseRule
+import net.zodac.ludoplus.model.PlayerType
+import net.zodac.ludoplus.model.TeamMode
+import net.zodac.ludoplus.platform.LocalPlatformServices
+import net.zodac.ludoplus.platform.SilentPlatformServices
+import net.zodac.ludoplus.ui.game.GameViewModel
+import net.zodac.ludoplus.ui.setup.GameSetupScreen
+import net.zodac.ludoplus.ui.theme.LudoPlusTheme
+
+/** The screen this class's tests are drawn on. */
+private val SCREEN = TestScreen(411, 891)
+
+/**
+ * The New Game form's words - and that an empty name field shows its seat's default as a hint, not as text that was typed.
+ * On a wide phone: at 360dp a computer player's difficulties are their initials (see DifficultySelector).
+ */
+class SetupTextTest : UiTest() {
+
+    private val showcase = Showcase { compose }
+
+    private fun show(viewModel: GameViewModel = gameViewModel()) = showcase.show {
+        CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
+            LudoPlusTheme { GameSetupScreen(viewModel = viewModel, onStartGame = {}, onBack = {}) }
+        }
+    }
+
+    @Test
+    fun `the form's words - its title and section - a seat's default as a hint - a clash with it - and the seat chips and difficulties`() = uiTest(SCREEN) {
+        val viewModel = gameViewModel()
+        show(viewModel)
+        listOf("New Game", "Game Mode", "Start Game").forEach { compose.onAllNodesWithText(it).assertCountEquals(1) }
+
+        // An empty name field shows its seat's default as a hint - and a name typed over it replaces it.
+        compose.onNodeWithText("Player 1").assertExists()
+        viewModel.setupForm.setPlayerName(1, "Wolfgang")
+        compose.waitForIdle()
+        compose.onNodeWithText("Wolfgang").assertExists()
+        compose.onAllNodesWithText("Player 1").assertCountEquals(0)
+        compose.onNodeWithContentDescription("Player 1 name").assertExists()
+
+        // A seat's default clashes with another seat that typed the same words.
+        val clash = gameViewModel()
+        clash.setupForm.setPlayerType(2, PlayerType.HUMAN)
+        clash.setupForm.setPlayerType(3, PlayerType.HUMAN)
+        clash.setupForm.setPlayerName(2, "player 3")
+        show(clash)
+        compose.onNodeWithText("Names must be unique").assertExists()
+
+        // The seat chips and a computer player's difficulties are named: seats 2 to 4 are computer players by default.
+        show(gameViewModel())
+        compose.onAllNodesWithText("CPU").assertCountEquals(3)
+        listOf("Easy", "Medium", "Hard").forEach { compose.onAllNodesWithText(it).assertCountEquals(3) }
+    }
+
+    @Test
+    fun `the tutorial link shows until a first game is finished - and opens the tutorial`() = uiTest(SCREEN) {
+        var opened = 0
+        val viewModel = gameViewModel()
+        var link by mutableStateOf(true)
+        showcase.show {
+            CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
+                LudoPlusTheme { GameSetupScreen(viewModel = viewModel, onStartGame = {}, onBack = {}, showTutorialLink = link, onTutorial = { opened++ }) }
+            }
+        }
+        compose.onNodeWithText("New to the game? Play the tutorial").performClick()
+        assertEquals(1, opened)
+        link = false
+        compose.waitForIdle()
+        compose.onAllNodesWithText("New to the game? Play the tutorial").assertCountEquals(0)
+    }
+
+    @Test
+    fun `the Players row - each number said as a count of players - picking one shows that many players`() = uiTest(SCREEN) {
+        val viewModel = gameViewModel()
+        show(viewModel)
+        compose.onAllNodesWithText("Players").assertCountEquals(1)
+        (2..8).forEach { compose.onNodeWithContentDescription("$it players").assertExists() }
+        compose.onAllNodesWithContentDescription("Player 5 colour", substring = true).assertCountEquals(0)
+        compose.onNodeWithContentDescription("8 players").performClick()
+        compose.waitForIdle()
+        assertEquals(8, viewModel.setupForm.setup.value.playerCount)
+        compose.onAllNodesWithContentDescription("Player 8 colour, Purple").assertCountEquals(1)
+    }
+
+    @Test
+    fun `the Teams card - three choices with 4, 6, or 8 players - what each makes said - and its two switches`() = uiTest(SCREEN) {
+        val viewModel = gameViewModel()
+        viewModel.setupForm.setPlayerCount(5)
+        show(viewModel)
+        compose.onNodeWithText("Teams need 4, 6, or 8 players").assertExists()
+        viewModel.setupForm.setPlayerCount(6)
+        compose.waitForIdle()
+        listOf("Off", "Two Teams", "Pairs").forEach { compose.onNodeWithText(it).assertExists() }
+        compose.onAllNodesWithText("Partners can capture each other").assertCountEquals(0)
+        compose.onNodeWithText("Two Teams").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Two teams of 3, seats alternating").assertExists()
+        viewModel.setupForm.setTeamMode(TeamMode.PAIRS)
+        compose.waitForIdle()
+        compose.onNodeWithText("3 teams of two, partners opposite").assertExists()
+        // Each switch is one toggle, named by its words.
+        compose.onNode(hasText("Partners can capture each other") and isToggleable()).assertIsOff().performClick()
+        compose.onNode(hasText("Roll for a partner once your pawns are home") and isToggleable()).assertIsOn()
+        compose.waitForIdle()
+        assertEquals(true, viewModel.setupForm.setup.value.partnerCaptures)
+        assertEquals(listOf(0, 1, 2, 0, 1, 2), viewModel.setupForm.setup.value.teams)
+    }
+
+    @Test
+    fun `the House Rules card - locked until a game is finished - then none on - a switch each - and what a game with any on doesn't count towards`() = uiTest(SCREEN) {
+        // Locked: the card is one note, said as one.
+        show(gameViewModel())
+        compose.onNode(hasText("House Rules") and hasText("Finish a game to unlock house rules")).assertExists()
+        compose.onAllNodesWithText("None").assertCountEquals(0)
+
+        val viewModel = gameViewModel(records = GameRecordRepository(InMemoryGameResultDao(finishedGame = true)))
+        show(viewModel)
+        compose.onAllNodesWithText("Finish a game to unlock house rules").assertCountEquals(0)
+        compose.onNodeWithText("House Rules").assertExists()
+        compose.onNodeWithText("None").assertExists()
+        compose.onNodeWithText("Common changes to the classic rules, in any mix").assertExists().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Blockades").assertExists()
+        compose.onNodeWithText("Two of your pawns on one square make a blockade: no other player's pawn can pass it or land on it.").assertExists()
+        compose.onNode(hasText("Must Capture") and isToggleable()).assertIsOff().performClick()
+        compose.waitForIdle()
+        assertEquals(setOf(HouseRule.MUST_CAPTURE), viewModel.setupForm.setup.value.houseRules)
+        compose.onNodeWithText("Done").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("1 enabled").assertExists()
+        compose.onNodeWithText("Off the Leaderboard and Statistics, and no achievements").assertExists()
+    }
+
+    @Test
+    fun `a custom mode - made with a name and a house rule - picked - its rules said on the House Rules card - and deleted after asking`() = uiTest(SCREEN) {
+        val viewModel = gameViewModel(records = GameRecordRepository(InMemoryGameResultDao(finishedGame = true)))
+        show(viewModel)
+        compose.onNodeWithText("New Custom Mode").performScrollTo().performClick()
+        compose.waitForIdle()
+        // Nothing to save until it has a name and a house rule.
+        compose.onNodeWithText("Give it a name.").assertExists()
+        compose.onNode(hasText("Save") and hasClickAction()).assertIsNotEnabled()
+        compose.onNode(hasSetTextAction() and hasText("Name")).performTextInput("Classic")
+        compose.onNodeWithText("There's a mode by that name already.").assertExists()
+        compose.onNode(hasSetTextAction() and hasText("Name")).performTextReplacement("Cut-Throat")
+        compose.onNodeWithText("Switch on a house rule: without one, it's just Classic.").assertExists()
+        compose.onNode(hasText("Must Capture") and isToggleable()).performScrollTo().performClick()
+        compose.onNode(hasText("Blockades") and isToggleable()).performScrollTo().performClick()
+        compose.onNode(hasText("Save") and hasClickAction()).assertIsEnabled().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Cut-Throat").assertExists()
+        compose.onNodeWithText("Classic, with Blockades and Must Capture").assertExists()
+        compose.onNodeWithText("Set by Cut-Throat: Blockades and Must Capture.").assertExists()
+        compose.onNodeWithText("Delete").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Delete Cut-Throat?").assertExists()
+        compose.onNodeWithText("It goes from New Game for good.").assertExists()
+        compose.onAllNodes(hasText("Delete") and hasClickAction()).onLast().performClick()
+        compose.waitForIdle()
+        assertEquals(emptyList(), viewModel.setupForm.setup.value.customModes)
+        compose.onAllNodesWithText("Cut-Throat").assertCountEquals(0)
+    }
+}

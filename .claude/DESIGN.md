@@ -744,7 +744,7 @@ Two apps from one source, one per way the app reaches players: product flavours 
 | | `play` | `github` |
 | --- | --- | --- |
 | Ships as | The App Bundle, uploaded to Google Play on demand (`play-release.yml`) | The APK on each GitHub release |
-| `applicationId` | `net.zodac.ludo` | `net.zodac.ludo.github` |
+| `applicationId` | `net.zodac.ludoplus` | `net.zodac.ludoplus.github` |
 | Google Play Games | Yes (`PLAY_GAMES.md`): the SDK, its manifest entries, Sidekick | None: no SDK, no manifest entries, `NoGameServices` |
 | Progress files | None, signed in or not | Export and Import, in Settings |
 
@@ -754,7 +754,7 @@ Two apps from one source, one per way the app reaches players: product flavours 
     edited `adb` backup: up to Android 11 the play app's backup holds only the settings (`PLAY_GAMES.md`, "Account and
     sign-in"). Pinned by `GithubFlavourTest` and `PlayFlavourTest`.
 - **The github app is a different app.** It installs beside the play app, not over it; a GitHub install from before
-    the split (`net.zodac.ludo`, 1.0.0) doesn't update to it.
+    the split (`net.zodac.ludoplus`, 1.0.0) doesn't update to it.
 - **Progress files** (`online/ProgressFileCodec`, `ProgressTransfer`; on Android `AndroidProgressFiles`, through the
     system's pickers, with no storage permission).
     - **What's in one**: everything a cloud save holds (`CloudSaveStore.snapshot`), as its own bytes (`CloudSaveCodec`).

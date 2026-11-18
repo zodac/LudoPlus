@@ -20,7 +20,7 @@ app/
 ├── shared/      :app:shared - KMP library (com.android.kotlin.multiplatform.library)
 │   ├── schemas/                 Room's exported schemas (commit every new version)
 │   └── src/
-│       ├── commonMain/kotlin/net/zodac/ludo/
+│       ├── commonMain/kotlin/net/zodac/ludoplus/
 │       │   ├── model/ game/     the rules engine; game/style/ is which styles exist and what unlocks them (no art)
 │       │   ├── data/            Room (scores), DataStore (settings, achievements, in-progress game), GameStateJson
 │       │   ├── app/             AppContainer, BuildInfo, and the services every screen shares: AchievementUnlocker,
@@ -53,7 +53,7 @@ app/
 
 `build-logic/` is compiled before the modules' build scripts, so each script holds only what is its own.
 
-- **Convention plugins** (`build-logic/src/main/kotlin/net/zodac/ludo/buildlogic/`):
+- **Convention plugins** (`build-logic/src/main/kotlin/net/zodac/ludoplus/buildlogic/`):
     - `ludo.kotlin.multiplatform` (`:app:shared`): the Android library target and its host tests.
     - `ludo.android.application` (`:app:android`), and `ludo.android.test` (`:app:baselineprofile`).
     - Each sets the SDK levels, the Java version, and the strict rules (`StrictChecks.kt`: compiler warnings are errors,

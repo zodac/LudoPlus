@@ -42,7 +42,7 @@ on:
       - "!app/**/src/androidTest/**"
       - "!app/**/*.md"
       # How the images are made: listed after the exclusions, which would otherwise drop the generator tests.
-      - "app/android/src/test/kotlin/net/zodac/ludo/store/**"
+      - "app/android/src/test/kotlin/net/zodac/ludoplus/store/**"
       - "scripts/generate-store-assets.sh"
       - "scripts/store-assets/**"
   workflow_dispatch:

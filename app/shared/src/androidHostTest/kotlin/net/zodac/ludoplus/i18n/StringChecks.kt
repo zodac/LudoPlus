@@ -1,0 +1,58 @@
+package net.zodac.ludoplus.i18n
+
+/** The rules a translation file has to keep to, as functions over parsed entries so they can be tested on hand-made input. */
+internal object StringChecks {
+
+    /**
+     * Locale folders in a script the brand font (Sora, Latin-1 only) doesn't hold at all. Their titles and mode names are drawn in the
+     * system font by design, so the Sora character-set guards skip them; every other locale is held to Latin-1.
+     */
+    val localesOutsideSora = setOf("values-ar")
+
+    private val argument = Regex("""%\d+\$[sd]""")
+
+    /** Plural entries are keyed `name[quantity]`. */
+    private fun pluralName(key: String) = key.substringBefore('[')
+
+    /** Problems with [translation] measured against [base]: extra keys, changed arguments. Empty if none. */
+    fun translationProblems(locale: String, base: Map<String, String>, translation: Map<String, String>): List<String> {
+        val problems = mutableListOf<String>()
+        val baseNames = base.keys.map(::pluralName).toSet()
+        for ((key, text) in translation) {
+            if (pluralName(key) !in baseNames) {
+                problems += "$locale: '$key' isn't in the base strings"
+                continue
+            }
+            // A plural form the base doesn't have (Russian "few") is fine: compare against any base form of that plural.
+            val baseText = base[key] ?: base.entries.firstOrNull { pluralName(it.key) == pluralName(key) }?.value ?: continue
+            val missing = argument.findAll(baseText).map { it.value }.toSet() - argument.findAll(text).map { it.value }.toSet()
+            if (missing.isNotEmpty()) problems += "$locale: '$key' is missing $missing from the base string"
+        }
+        return problems
+    }
+
+    /** Every base plural must have an `other` item. */
+    fun pluralsWithoutOther(base: Map<String, String>): List<String> {
+        val names = base.keys.filter { '[' in it }.map(::pluralName).toSet()
+        return names.filter { "$it[other]" !in base }.sorted().map { "plural '$it' has no 'other' item" }
+    }
+
+    /**
+     * Other companies' trademarked names for Ludo-family games (CLAUDE.md, "Banned words"), as patterns, matched
+     * ignoring case. "Trouble" and "Sorry!" are banned as games' names too, but they're everyday words, so they're left
+     * to review rather than matched here.
+     */
+    val TRADEMARKS = listOf("frustration", "parcheesi", "mensch [aä]rgere dich nicht", "ludo (king|club|star)")
+
+    /** Every base (English) plural must spell out `one` as well as `other`, so a translator sees both forms to begin from. */
+    fun pluralsWithoutOne(base: Map<String, String>): List<String> {
+        val names = base.keys.filter { '[' in it }.map(::pluralName).toSet()
+        return names.filter { "$it[one]" !in base }.sorted().map { "plural '$it' has no 'one' item" }
+    }
+
+    private val banned = TRADEMARKS.map { Regex(it, RegexOption.IGNORE_CASE) }
+
+    /** Entries whose text contains a banned word (see CLAUDE.md's working agreements). */
+    fun bannedWords(strings: Map<String, String>): List<String> =
+        strings.filter { (_, text) -> banned.any { it.containsMatchIn(text) } }.keys.sorted()
+}

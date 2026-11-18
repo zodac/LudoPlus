@@ -1,0 +1,175 @@
+package net.zodac.ludoplus
+
+import net.zodac.ludoplus.ui.style.PawnStyles
+import net.zodac.ludoplus.ui.style.BoardStyles
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasStateDescription
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlinx.coroutines.flow.MutableStateFlow
+import net.zodac.ludoplus.data.InMemoryPreferences
+import net.zodac.ludoplus.data.achievements.AchievementsState
+import net.zodac.ludoplus.data.settings.SavedStyles
+import net.zodac.ludoplus.data.settings.SettingsRepository
+import net.zodac.ludoplus.game.style.StyleAccess
+import net.zodac.ludoplus.game.style.UnlockCount
+import net.zodac.ludoplus.model.Achievement
+import net.zodac.ludoplus.platform.LocalPlatformServices
+import net.zodac.ludoplus.platform.SilentPlatformServices
+import net.zodac.ludoplus.ui.style.DiceStyles
+import net.zodac.ludoplus.ui.style.TableBackgrounds
+import net.zodac.ludoplus.ui.styles.StylesScreen
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.SemanticsMatcher
+import net.zodac.ludoplus.game.style.StyleCategory
+import net.zodac.ludoplus.ui.styles.StyleCategoryScreen
+import net.zodac.ludoplus.ui.theme.LudoPlusTheme
+
+/**
+ * The Styles pages' words: the Styles page's title, its fields and what TalkBack says of each; a category page's title,
+ * and how a style - locked, or in several colours - is named and what a tap is called.
+ *
+ * Android only: it steps the clock through seconds of whole pages, which the desktop test harness draws frame by frame.
+ */
+class StylesTextTest : UiTest() {
+
+    private val showcase = Showcase { compose }
+
+    // Unlocked only is stored by the settings, so each test starts from a new repository with it off.
+    private val settings = SettingsRepository(InMemoryPreferences())
+
+    private fun viewModel(achievements: AchievementsState) = stylesViewModel(
+        MutableStateFlow<SavedStyles?>(SavedStyles(BoardStyles.default.id, PawnStyles.default.id, DiceStyles.default.id, TableBackgrounds.default.id, achievements)),
+        settings,
+    )
+
+    /** The Styles page, reporting each field opened to [opened]. */
+    private fun showStyles(achievements: AchievementsState, opened: MutableList<StyleCategory> = mutableListOf()) {
+        val viewModel = viewModel(achievements)
+        showcase.show {
+            LudoPlusTheme {
+                CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) { StylesScreen(viewModel = viewModel, onBack = {}, onOpenCategory = { opened += it }) }
+            }
+        }
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.waitForIdle()
+    }
+
+    /** [category]'s page. */
+    private fun showCategory(achievements: AchievementsState, category: StyleCategory = StyleCategory.DICE) {
+        val viewModel = viewModel(achievements)
+        showcase.show {
+            LudoPlusTheme { CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) { StyleCategoryScreen(viewModel = viewModel, category = category, onBack = {}) } }
+        }
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.waitForIdle()
+    }
+
+    @Test
+    fun `the Styles page is titled Styles - each category one button saying its pick and count - and a tap opens its page`() = uiTest {
+        val achievements = AchievementsState(unlockedAt = mapOf(Achievement.MIDNIGHT_RUN to 0L))
+        val opened = mutableListOf<StyleCategory>()
+        showStyles(achievements, opened)
+        compose.onNodeWithText("Styles").assertExists()
+        val count = { catalog: net.zodac.ludoplus.ui.style.StyleCatalog<*> -> catalog.unlockCount(StyleAccess(achievements)).let { "${it.unlocked} of ${it.total} unlocked" } }
+        val expected = listOf(
+            Triple("Board", "Classic. ${count(BoardStyles)}", StyleCategory.BOARD),
+            Triple("Pawns", "Classic. ${count(PawnStyles)}", StyleCategory.PAWNS),
+            Triple("Die", "Classic, Ivory. ${count(DiceStyles)}", StyleCategory.DICE),
+            Triple("Background", "Classic, Navy. ${count(TableBackgrounds)}", StyleCategory.BACKGROUND),
+        )
+        val buttons = compose.onAllNodes(hasRole(Role.Button) and hasClickLabelStartingChoose()).fetchSemanticsNodes()
+            .associate { it.config[SemanticsProperties.ContentDescription].single() to it.config }
+        for ((title, state, category) in expected) {
+            val button = buttons.getValue(title)
+            assertEquals(state, button[SemanticsProperties.StateDescription], title)
+            assertEquals("Choose $title", button[SemanticsActions.OnClick].label)
+            compose.onNode(hasRole(Role.Button) and hasContentDescription(title)).performClick()
+            assertEquals(category, opened.last())
+        }
+        // The heading over each field is the button's to say, not a stop of its own.
+        compose.onNodeWithText("Pawns").assertDoesNotExist()
+        assertEquals(expected.map { it.third }, opened)
+    }
+
+    @Test
+    fun `the Styles page counts every colour unlocked - each field's count drawn as a fraction`() = uiTest {
+        val achievements = AchievementsState(unlockedAt = mapOf(Achievement.MIDNIGHT_RUN to 0L))
+        showStyles(achievements)
+        val counts = listOf(BoardStyles, PawnStyles, DiceStyles, TableBackgrounds).map { it.unlockCount(StyleAccess(achievements)) }
+        val total = counts.reduce(UnlockCount::plus)
+        compose.onNodeWithText("${total.unlocked} of ${total.total} unlocked").assertExists()
+        for (count in counts) compose.onAllNodesWithText("${count.unlocked}/${count.total}", useUnmergedTree = true).onFirst().assertExists()
+    }
+
+    @Test
+    fun `a category page is titled with its category - a locked style and one in several colours named and their taps`() = uiTest {
+        showCategory(AchievementsState())
+        compose.onNodeWithText("Die").assertExists()
+        compose.onNodeWithText("${DiceStyles.unlockCount(StyleAccess(AchievementsState())).let { "${it.unlocked} of ${it.total}" }} unlocked").assertExists()
+        // A locked style says Locked - and its tap is called Show how to unlock.
+        val frosted = compose.onAllNodesWithContentDescription("Frosted").onFirst().fetchSemanticsNode().config
+        assertEquals("Locked", frosted[SemanticsProperties.StateDescription])
+        assertEquals("Show how to unlock Frosted", frosted[SemanticsActions.OnClick].label)
+
+        // A style in several colours names the colour showing - and a long press is called Choose colour.
+        showCategory(AchievementsState(unlockedAt = Achievement.entries.associateWith { 0L }))
+        val metal = compose.onNode(hasContentDescription("Metal, Gold")).fetchSemanticsNode().config
+        assertEquals("Select", metal[SemanticsActions.OnClick].label)
+        assertEquals("Choose Metal colour", metal[SemanticsActions.OnLongClick].label)
+    }
+
+    @Test
+    fun `a locked style tile shows the unlock requirement dialog with resolved style name`() = uiTest {
+        showCategory(AchievementsState())
+        val metal = compose.onAllNodesWithContentDescription("Metal").onFirst()
+        metal.performScrollTo()
+        metal.performTouchInput { longClick() }
+        compose.waitForIdle()
+        compose.onNodeWithText("Earn 20 achievements to unlock Metal. You've earned 0 so far.").assertExists()
+    }
+
+    @Test
+    fun `The Unlocked switch is one switch - on it hides every locked style but keeps the unlocked ones - and stays on when the page is opened again`() = uiTest {
+        showCategory(AchievementsState())
+        // The label is "All" while it's off and "Unlocked" while it's on.
+        val switch = compose.onNodeWithText("All").fetchSemanticsNode().config
+        assertEquals(Role.Switch, switch[SemanticsProperties.Role])
+        assertEquals(ToggleableState.Off, switch[SemanticsProperties.ToggleableState])
+        compose.onAllNodesWithContentDescription("Frosted").onFirst().assertExists()
+
+        val widthOff = compose.onNodeWithText("All").fetchSemanticsNode().size.width
+        compose.onNodeWithText("All").performClick()
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.waitForIdle()
+        assertEquals(ToggleableState.On, compose.onNodeWithText("Unlocked").fetchSemanticsNode().config[SemanticsProperties.ToggleableState])
+        // The label holds the longer word's width either way, so nothing beside it moves.
+        assertEquals(widthOff, compose.onNodeWithText("Unlocked").fetchSemanticsNode().size.width)
+        assertEquals(0, compose.onAllNodesWithContentDescription("Frosted").fetchSemanticsNodes().size)
+        assertEquals(0, compose.onAllNodes(hasStateDescription("Locked")).fetchSemanticsNodes().size)
+        compose.onAllNodesWithContentDescription("Classic", substring = true).onFirst().assertExists()
+
+        // Another category's page too, as the switch is one setting for every page.
+        showCategory(AchievementsState(), StyleCategory.BACKGROUND)
+        assertEquals(ToggleableState.On, compose.onNodeWithText("Unlocked").fetchSemanticsNode().config[SemanticsProperties.ToggleableState])
+        assertEquals(0, compose.onAllNodes(hasStateDescription("Locked")).fetchSemanticsNodes().size)
+    }
+
+    private fun hasRole(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)
+
+    // A field's button: its tap is called "Choose ...".
+    private fun hasClickLabelStartingChoose() = SemanticsMatcher("tap called Choose") { it.config.getOrNull(SemanticsActions.OnClick)?.label?.startsWith("Choose ") == true }
+}
