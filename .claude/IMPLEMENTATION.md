@@ -5,7 +5,7 @@ The phased plan for turning the DiceFive copy into Ludo Plus. Read it before any
 
 Phases are ordered so each one ends with a playable debug APK. Phases 0-5 build the 4-player classic game up to the
 first release, 1.0.0. Phases 6-12 are the features that come after it, in the order below unless the maintainer
-reorders them.
+reorders them. Phase 13 waits for the launch: the production release at the end of Phase 10.
 
 | Phase | What | Status |
 | --- | --- | --- |
@@ -22,6 +22,7 @@ reorders them.
 | 10 | Google Play: Play Console, Play Games, and the store listing | In progress |
 | 11 | In-app purchases and ads | In progress |
 | 12 | Netplay | In progress |
+| 13 | Remote netplay: phones in different places | Planned (after the launch) |
 
 ## Decisions so far (2026-11-16)
 
@@ -442,3 +443,26 @@ The biggest change: it ends "no account, no network". Decide the approach before
     untested on phones).
 - [x] Privacy policy, data-safety form, and the `CLAUDE.md` aims updated (the form's answers drafted in
     `PUBLISHING.md`; the maintainer fills it in, and checks a game on two phones, once there's a Play Console project).
+
+## Phase 13: Remote netplay
+
+Two or more phones in different places play one game over the internet (the maintainer, 2026-11-18). It starts once
+the app has launched: after Phase 10's production release. The design is in `NETPLAY.md`, "Remote play (Phase 13)".
+
+- [ ] Confirm the relay and the new network use (the maintainer). Proposed: Firebase Realtime Database on the free
+    Spark plan, in the play app only. `CLAUDE.md`'s aims list the play app's network use, and remote games join it.
+- [ ] The Firebase project (the maintainer's steps): the Spark plan, the play app registered, anonymous sign-in, App
+    Check with Play Integrity, and the database's security rules.
+- [ ] The relay's `NetLink`, in the play flavour: a room under a short join code, carrying the protocol Phase 12 built.
+    `HostSession`, `GuestSession`, and `NetMessage` stay as they are.
+- [ ] Hosting and joining: a "Remote player" seat type beside "Nearby player"; the lobby shows the join code (spoken
+    by TalkBack character by character); "Join with a code" beside "Join a game nearby".
+- [ ] Away and back: the relay's presence marks a guest away, and the rejoining by token, the turn timeout, and the
+    CPU standing in work as they do over Nearby.
+- [ ] Rooms tidied away: a room is removed when its game ends or its host leaves (the database's on-disconnect
+    removal; Spark has no Cloud Functions), and the rules refuse writes to a room older than a day.
+- [ ] The limits: at Spark's cap (100 connections at once) a host or join fails at once with a message, never a hang.
+- [ ] The APK's growth measured (the Firebase libraries, play app only), and the licence guard passed.
+- [ ] Privacy policy, data-safety form, `CLAUDE.md`'s aims, `README.md`, and the store description updated: game data
+    passes through Google's servers under an anonymous id, deleted when the room is.
+- [ ] Checked on two phones on different networks (one on mobile data).

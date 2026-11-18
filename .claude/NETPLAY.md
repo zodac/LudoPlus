@@ -6,7 +6,8 @@ Connections: no server, no accounts. This file is the plan and the one source on
 
 ## Decisions (the maintainer, 2026-11-18)
 
-- **Transport: Nearby Connections first.** An internet relay may follow as a second transport, behind the same seam.
+- **Transport: Nearby Connections first.** An internet relay follows as a second transport, behind the same seam, in
+    Phase 13, after the launch ("Remote play (Phase 13)" below).
 - **The play app only**: Nearby is part of Google Play services, which the github app has none of.
 - **Seats: the host sets them**, on its New Game form as now, with one more seat type, **Nearby player**: an open
     seat a joining phone takes. Each joining phone takes one. The host's other seats are people passing its phone, or
@@ -74,3 +75,29 @@ Connections: no server, no accounts. This file is the plan and the one source on
 Known gaps: a guest's Game Over "Play Again" starts a game on its own form; a host that leaves ends the session for
 everyone (each guest sees "The host ended the game"); a guest isn't warned before its turn runs out; and a guest that
 rejoins a host of the same name that isn't its own is refused, and gives up rather than trying another.
+
+## Remote play (Phase 13)
+
+**Planned** (the maintainer, 2026-11-18), for after the launch (`IMPLEMENTATION.md`, Phase 13). Phones in different
+places play one game through a relay, as a second transport behind `NetLink`. The protocol, the sessions, the host's
+authority, and each phone counting its own seat stay as they are.
+
+- **The relay, proposed: Firebase Realtime Database on the free Spark plan.** Spark never bills: at a limit it stops
+    serving. Its limits are 100 connections at once (about 50 two-player games), 1 GB stored, and 10 GB downloaded a
+    month. A game sends a few KB per change, so connections are the limit that binds. Check the current limits before
+    building.
+- **Ruled out.** Google Play Games' real-time and turn-based multiplayer were shut down in 2020. Phone-to-phone over
+    the internet (WebRTC) needs a paid TURN relay for the networks that block direct links, and its library adds
+    several MB to the APK. A server of our own (Cloudflare Workers, or a free VM) has to be written, run, and patched.
+    Sending each move as a message is too slow for a game of quick moves.
+- **Rooms.** The host makes a room under a short join code and shares it however it likes; there's no matchmaking, so
+    players only meet people they gave the code to, and nothing needs moderating. The host writes `Lobby`, `Game`, and
+    `Ended` to the room; each guest writes its own `Hello`, `Roll`, `Move`, and `Leave`. Each phone signs in
+    anonymously, out of sight: no account.
+- **Security rules**: only the room's host writes the host's messages, a guest writes only its own, a message's size is
+    capped, and a room older than a day takes no writes. App Check keeps other apps off the free quota.
+- **Presence.** The database's connection state and on-disconnect writes mark a guest away, and remove a room whose
+    host has gone. Spark has no Cloud Functions, so nothing runs on the server.
+- **Play app only**, as Nearby: the github app stays off the network.
+- **Privacy.** Game data, player names included, passes through Google's servers under an anonymous id, and goes with
+    the room. The privacy policy, the data-safety form, and `CLAUDE.md`'s aims say so before release.
