@@ -149,7 +149,8 @@ fun JoinScreen(viewModel: GameViewModel, onPlaying: () -> Unit, onBack: () -> Un
             }
             GuestState.Lost -> stringResource(Res.string.netplay_lost)
             GuestState.Ended -> stringResource(Res.string.netplay_ended)
-            is GuestState.Playing -> ""
+            // On the board by then.
+            is GuestState.Playing, is GuestState.Reconnecting -> ""
         }
         Text(status, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         when (val now = state) {

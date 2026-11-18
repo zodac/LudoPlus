@@ -47,12 +47,15 @@ sealed interface LinkEvent {
 /** A game found nearby: its host's [name], as it advertises it. */
 data class FoundGame(val endpoint: String, val name: String)
 
-/** A phone hosting: findable until [stopFinding], linked to its guests until [close]. */
+/** A phone hosting: findable while [setFindable] says so (from the start), linked to its guests until [close]. */
 interface Hosting {
     fun send(endpoint: String, bytes: ByteArray)
 
-    /** No longer findable (the game has started); guests already linked stay linked. */
-    fun stopFinding()
+    /**
+     * Whether phones looking for games find this one: not once the game has started, but again while a guest's seat
+     * waits for it to come back. Guests already linked stay linked.
+     */
+    fun setFindable(findable: Boolean)
 
     fun close()
 }
@@ -77,7 +80,7 @@ object NoNearby : Nearby {
     override fun host(name: String, events: (LinkEvent) -> Unit): Hosting = object : Hosting {
         override fun send(endpoint: String, bytes: ByteArray) = Unit
 
-        override fun stopFinding() = Unit
+        override fun setFindable(findable: Boolean) = Unit
 
         override fun close() = Unit
     }

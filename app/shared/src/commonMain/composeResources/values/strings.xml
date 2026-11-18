@@ -517,6 +517,15 @@
     <string name="netplay_refused_version">That phone has another version of the app. Update both, then try again.</string>
     <string name="netplay_lost">Lost the host's phone.</string>
     <string name="netplay_ended">The host ended the game.</string>
+    <!-- On a guest's board while its link to the host is down in a game: it's finding the host again to get its seat back. -->
+    <string name="netplay_reconnecting">Reconnecting to the host...</string>
+    <!-- On the host's board while a guest's phone is out of the game, until it's back: %1$s is its player's name. -->
+    <string name="netplay_seat_away">%1$s dropped out: the CPU plays for now</string>
+    <!-- On the host's board while more than one guest's phone is out of the game: %1$d is how many. -->
+    <plurals name="netplay_seats_away">
+        <item quantity="one">%1$d player dropped out: the CPU plays for now</item>
+        <item quantity="other">%1$d players dropped out: the CPU plays for now</item>
+    </plurals>
     <!-- Nearby's permissions were refused. -->
     <string name="netplay_no_permission">Playing with phones nearby needs permission to find and connect to them. Allow it in the app's settings, then try again.</string>
     <!-- A computer player's difficulty. If the three don't fit side by side their first letters are shown instead. -->

@@ -48,6 +48,7 @@ import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerConfig
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.withHouseRules
+import net.zodac.ludo.netplay.Discovery
 import net.zodac.ludo.netplay.FoundGame
 import net.zodac.ludo.netplay.GuestAction
 import net.zodac.ludo.netplay.GuestSession
@@ -174,7 +175,11 @@ class GameViewModel(
         _game.value = timed
         // The tutorial keeps nothing.
         if (tutorial != null) return
-        hostSession?.takeIf { it.started }?.gameChanged(timed)
+        hostSession?.takeIf { it.started }?.let { session ->
+            session.gameChanged(timed)
+            if (timedOutSeat != timed.state.current) timedOutSeat = null
+            timeGuestTurn(timed)
+        }
         tracker?.let { record(it.playTime(timed.playMillis)) }
         // A guest's game is the host's to keep: nothing to save here, but its own seat's records.
         if (timed.guestSeat != null) {
@@ -527,10 +532,15 @@ class GameViewModel(
     /** While a CPU player has the turn, it rolls, then moves with its strategy, each once the screen has caught up. */
     private fun playCpuTurn() {
         val game = _game.value ?: return
-        if (!game.currentIsComputer || game.state.isFinished || cpuTurn?.isActive == true) return
+        if (!computerPlays(game) || game.state.isFinished || cpuTurn?.isActive == true) return
         cpuTurn = viewModelScope.launch {
             pausableDelay(pacing.waitAfter(game.state.lastEvent))
             val now = _game.value ?: return@launch
+            // A guest back in its seat plays it again.
+            if (!computerPlays(now)) {
+                cpuTurn = null
+                return@launch
+            }
             val progress = tutorialProgress
             if (progress != null) {
                 // In the tutorial, the CPU plays only its scripted steps.
@@ -565,6 +575,47 @@ class GameViewModel(
     private var hosting: Hosting? = null
     private var guestActions: Job? = null
 
+    private val _awaySeats = MutableStateFlow<Set<Int>>(emptySet())
+
+    /** The Nearby seats whose phone has dropped out of the game this phone hosts: the CPU plays them until they're back. */
+    val awaySeats: StateFlow<Set<Int>> = _awaySeats.asStateFlow()
+
+    /** The seat whose guest let its turn run out ([GUEST_TURN_MILLIS]): the CPU plays the rest of that turn for it. */
+    private var timedOutSeat: Int? = null
+    private var guestTurn: Job? = null
+    private var guestTurnState: GameState? = null
+
+    /**
+     * Whether the computer plays the current player's turn: a CPU player's; and on the host, a Nearby seat's whose phone
+     * is away, or whose turn has run out.
+     */
+    private fun computerPlays(game: StartedGame): Boolean {
+        if (game.currentIsComputer) return true
+        val seat = game.state.current
+        val session = hostSession?.takeIf { it.started } ?: return false
+        return game.players[seat].type == PlayerType.NEARBY && (seat in session.away.value || seat == timedOutSeat)
+    }
+
+    /**
+     * On the host, gives a guest whose turn it is [GUEST_TURN_MILLIS] (while the game is on screen) for each roll and
+     * move: one it doesn't make by then, the CPU makes, and the rest of the turn with it.
+     */
+    private fun timeGuestTurn(game: StartedGame) {
+        val waiting = !game.state.isFinished && game.players[game.state.current].type == PlayerType.NEARBY && !computerPlays(game)
+        if (waiting && guestTurn?.isActive == true && guestTurnState == game.state) return
+        guestTurn?.cancel()
+        guestTurn = null
+        if (!waiting) return
+        guestTurnState = game.state
+        guestTurn = viewModelScope.launch {
+            pausableDelay(GUEST_TURN_MILLIS)
+            guestTurn = null
+            if (_game.value?.state != game.state) return@launch
+            timedOutSeat = game.state.current
+            playCpuTurn()
+        }
+    }
+
     /** The lobby's table while this phone hosts, or null while it doesn't. */
     private val _lobby = MutableStateFlow<List<LobbySeat>?>(null)
     val lobby: StateFlow<List<LobbySeat>?> = _lobby.asStateFlow()
@@ -598,6 +649,13 @@ class GameViewModel(
         hostSession = session
         hosting = link
         viewModelScope.launch { session.seats.collect { _lobby.value = it } }
+        viewModelScope.launch {
+            session.away.collect { away ->
+                _awaySeats.value = away
+                // Findable again while a guest's seat waits for it.
+                if (session.started) link.setFindable(away.isNotEmpty())
+            }
+        }
         guestActions = viewModelScope.launch { session.actions.collect(::onGuestAction) }
     }
 
@@ -605,7 +663,7 @@ class GameViewModel(
     fun startHostedGame(defaultName: (slot: Int) -> String): Boolean {
         val session = hostSession ?: return false
         if (!session.start()) return false
-        hosting?.stopFinding()
+        hosting?.setFindable(false)
         return startGame(defaultName, session.seats.value).also { started -> if (started) _game.value?.let(session::gameChanged) }
     }
 
@@ -614,32 +672,51 @@ class GameViewModel(
         hostSession?.end()
         hosting?.close()
         guestActions?.cancel()
+        guestTurn?.cancel()
         hostSession = null
         hosting = null
         _lobby.value = null
+        _awaySeats.value = emptySet()
     }
 
-    /** A guest's roll, move, or leaving, checked as a tap at this phone is, from its own seat on its own turn. */
+    /**
+     * A guest's roll, move, leaving, or link dropping or coming back, checked as a tap at this phone is, from its own seat
+     * on its own turn. A guest's roll or move takes back a turn that ran out.
+     */
     private fun onGuestAction(action: GuestAction) {
         val game = _game.value ?: return
+        if (game.players.getOrNull(action.seat)?.type != PlayerType.NEARBY) return
+        val theirTurn = game.state.current == action.seat
         when (action) {
             is GuestAction.Left -> {
-                if (game.players.getOrNull(action.seat)?.type != PlayerType.NEARBY) return
                 commit(game.copy(players = game.players.mapIndexed { seat, it -> if (seat == action.seat) it.copy(type = PlayerType.AI) else it }))
                 playCpuTurn()
             }
+            is GuestAction.Away -> {
+                timeGuestTurn(game)
+                playCpuTurn()
+            }
+            is GuestAction.Back -> if (theirTurn) takeBackTurn(game)
             is GuestAction.Roll -> {
-                if (game.state.current != action.seat || game.players[action.seat].type != PlayerType.NEARBY) return
-                if (game.state.phase != TurnPhase.AwaitingRoll) return
+                if (!theirTurn || game.state.phase != TurnPhase.AwaitingRoll) return
+                takeBackTurn(game)
                 update(rolled(game.state))
             }
             is GuestAction.Move -> {
-                if (game.state.current != action.seat || game.players[action.seat].type != PlayerType.NEARBY) return
                 val phase = game.state.phase as? TurnPhase.AwaitingMove ?: return
-                if (phase.moves.none { it.pawn == action.pawn && it.owner == action.owner && (action.die == null || it.roll == action.die) }) return
+                if (!theirTurn || phase.moves.none { it.pawn == action.pawn && it.owner == action.owner && (action.die == null || it.roll == action.die) }) return
+                takeBackTurn(game)
                 update(LudoEngine.move(game.state, action.pawn, action.owner, action.die))
             }
         }
+    }
+
+    /** The current guest plays its own turn again: the CPU's, if it was playing it, stops, and the guest's time starts. */
+    private fun takeBackTurn(game: StartedGame) {
+        timedOutSeat = null
+        cpuTurn?.cancel()
+        cpuTurn = null
+        timeGuestTurn(game)
     }
 
     // ---- Nearby: joining ----
@@ -652,31 +729,83 @@ class GameViewModel(
     /** Where this phone is in a game it joined, or null while it hasn't joined one. */
     val guestState: StateFlow<GuestState?> = _guestState.asStateFlow()
 
+    /** Finding the host again after the link dropped: its discovery, and the time left before giving up. */
+    private var reconnecting: Discovery? = null
+    private var reconnectTimeout: Job? = null
+
     /** Joins [found] over [nearby] as [name] in [colour] (the host may give another): see [guestState]. */
     fun join(nearby: Nearby, found: FoundGame, name: String, colour: PlayerColour?) {
         if (guestSession != null) return
-        lateinit var link: Joining
-        val session = GuestSession { link.send(NetCodec.encode(it)) }
-        link = nearby.join(found, name) { event ->
-            when (event) {
-                is LinkEvent.Connected -> session.hello(name, colour)
-                is LinkEvent.Received -> session.received(event.bytes)
-                is LinkEvent.Disconnected -> session.lost()
-            }
-        }
+        val session = GuestSession { message -> joining?.send(NetCodec.encode(message)) }
         guestSession = session
-        joining = link
+        link(nearby, session, found, name) { session.hello(name, colour) }
         viewModelScope.launch {
             session.state.collect { state ->
                 _guestState.value = state
                 if (state is GuestState.Playing) showGuestGame(state.game.copy(guestSeat = state.seat))
+                if (state is GuestState.Reconnecting) reconnect(nearby, session, found.name, name) else stopReconnecting()
             }
         }
+    }
+
+    /** Links [session] to [found] as [name], [onConnected] once it's up: its events count only while it's the link of the moment. */
+    private fun link(nearby: Nearby, session: GuestSession, found: FoundGame, name: String, onConnected: () -> Unit) {
+        var link: Joining? = null
+        link = nearby.join(found, name) { event ->
+            if (joining !== link) return@join
+            when (event) {
+                is LinkEvent.Connected -> onConnected()
+                is LinkEvent.Received -> session.received(event.bytes)
+                is LinkEvent.Disconnected -> {
+                    joining = null
+                    session.lost()
+                    // A new link that failed: try the next the search finds.
+                    reconnectTo?.invoke()
+                }
+            }
+        }
+        joining = link
+    }
+
+    /** While reconnecting with no link up: links to the host if the search has found it. */
+    private var reconnectTo: (() -> Unit)? = null
+
+    /**
+     * Looks for [hostName]'s game again, and, once found, asks for [session]'s seat back over a new link: for
+     * [RECONNECT_MILLIS] at most (while the game is on screen), then gives up.
+     */
+    private fun reconnect(nearby: Nearby, session: GuestSession, hostName: String, name: String) {
+        if (reconnecting != null) return
+        joining?.close()
+        joining = null
+        var games = emptyList<FoundGame>()
+        val tryLink = {
+            val host = games.firstOrNull { it.name == hostName }
+            if (joining == null && host != null) link(nearby, session, host, name, session::rejoin)
+        }
+        reconnectTo = tryLink
+        reconnecting = nearby.discover {
+            games = it
+            tryLink()
+        }
+        reconnectTimeout = viewModelScope.launch {
+            pausableDelay(RECONNECT_MILLIS)
+            session.giveUp()
+        }
+    }
+
+    private fun stopReconnecting() {
+        reconnecting?.stop()
+        reconnecting = null
+        reconnectTo = null
+        reconnectTimeout?.cancel()
+        reconnectTimeout = null
     }
 
     /** Leaves the game joined, telling its host. */
     fun leaveJoined() {
         guestSession?.leave()
+        stopReconnecting()
         joining?.close()
         guestSession = null
         joining = null
@@ -702,6 +831,12 @@ class GameViewModel(
     }
 
     companion object {
+        /** How long a guest has for each roll and move before the CPU makes it: see [timeGuestTurn]. */
+        const val GUEST_TURN_MILLIS = 60_000L
+
+        /** How long a guest whose link dropped looks for its host before giving up. */
+        const val RECONNECT_MILLIS = 120_000L
+
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 GameViewModel(

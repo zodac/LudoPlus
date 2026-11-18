@@ -65,14 +65,24 @@ internal class NearbyConnections private constructor(context: Context) : Nearby 
     }
 
     override fun host(name: String, events: (LinkEvent) -> Unit): Hosting {
-        client.startAdvertising(name, SERVICE_ID, lifecycle(events), AdvertisingOptions.Builder().setStrategy(STRATEGY).build())
-            .addOnFailureListener { Log.w(LOG_TAG, "startAdvertising failed", it) }
+        val links = lifecycle(events)
+        val advertise = {
+            client.startAdvertising(name, SERVICE_ID, links, AdvertisingOptions.Builder().setStrategy(STRATEGY).build())
+                .addOnFailureListener { Log.w(LOG_TAG, "startAdvertising failed", it) }
+        }
+        advertise()
         return object : Hosting {
+            private var findable = true
+
             override fun send(endpoint: String, bytes: ByteArray) {
                 client.sendPayload(endpoint, Payload.fromBytes(bytes)).addOnFailureListener { Log.w(LOG_TAG, "sendPayload failed", it) }
             }
 
-            override fun stopFinding() = client.stopAdvertising()
+            override fun setFindable(findable: Boolean) {
+                if (findable == this.findable) return
+                this.findable = findable
+                if (findable) advertise() else client.stopAdvertising()
+            }
 
             override fun close() {
                 client.stopAdvertising()

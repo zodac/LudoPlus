@@ -64,10 +64,16 @@ import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.game.TutorialStep
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
+import net.zodac.ludo.netplay.GuestState
 import net.zodac.ludo.platform.LocalPlatformServices
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.common_default_player_name
 import net.zodac.ludo.resources.game_die_first_cd
+import net.zodac.ludo.resources.netplay_ended
+import net.zodac.ludo.resources.netplay_lost
+import net.zodac.ludo.resources.netplay_reconnecting
+import net.zodac.ludo.resources.netplay_seat_away
+import net.zodac.ludo.resources.netplay_seats_away
 import net.zodac.ludo.resources.game_die_second_cd
 import net.zodac.ludo.resources.game_die_selected_spoken
 import net.zodac.ludo.resources.game_die_showing_named_cd
@@ -189,6 +195,8 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
     }
     val tutorialStep by viewModel.tutorialStep.collectAsStateWithLifecycle()
     val tutorialPart by viewModel.tutorialPart.collectAsStateWithLifecycle()
+    val guestState by viewModel.guestState.collectAsStateWithLifecycle()
+    val awaySeats by viewModel.awaySeats.collectAsStateWithLifecycle()
     SuperuserRollPicker(viewModel)
     val window = LocalWindowInfo.current.containerSize
     val sideways = window.width > window.height
@@ -206,6 +214,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
             onMove = { viewModel.move(it) },
             onBack = leave,
             onResults = { finishedView = FinishedView.RESULTS },
+            notice = netplayNotice(guestState, awaySeats, started),
             tutorial = if (isTutorial) {
                 TutorialView(tutorialStep, tutorialPart, viewModel.tutorialParts, viewModel.tutorialSteps, viewModel::jumpToTutorialPart)
             } else {
@@ -213,6 +222,21 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
             },
         )
     }
+}
+
+/**
+ * How a Nearby game's link stands, where it isn't as it should be: on a guest's phone, the host's phone lost (for now or
+ * for good) or the game ended by the host; on the host's, the guests' phones that dropped out. Null otherwise.
+ */
+@Composable
+private fun netplayNotice(guestState: GuestState?, awaySeats: Set<Int>, game: StartedGame): String? = when {
+    guestState is GuestState.Reconnecting -> stringResource(Res.string.netplay_reconnecting)
+    guestState == GuestState.Lost -> stringResource(Res.string.netplay_lost)
+    guestState == GuestState.Ended && !game.state.isFinished -> stringResource(Res.string.netplay_ended)
+    game.state.isFinished -> null
+    awaySeats.size == 1 -> stringResource(Res.string.netplay_seat_away, game.players[awaySeats.single()].name)
+    awaySeats.isNotEmpty() -> pluralStringResource(Res.plurals.netplay_seats_away, awaySeats.size, awaySeats.size)
+    else -> null
 }
 
 /**
@@ -298,6 +322,7 @@ fun GameContent(
     onMove: (Move) -> Unit,
     onBack: () -> Unit,
     onResults: () -> Unit,
+    notice: String? = null,
     tutorial: TutorialView? = null,
 ) {
     val seatColours = List(started.state.board.seats) { seat ->
@@ -316,7 +341,10 @@ fun GameContent(
     val dice = DiceChoice(selectedDie, onSelect = pick.takeIf { dieValues.size > 1 })
     val moves = allMoves.filter { it.roll == null || it.roll == selectedDie }
     val rollStep = tutorial?.step is TutorialStep.Roll
-    val players = @Composable { if (tutorial == null) PlayerCards(started, columns = 2) else TutorialCoachCard(tutorial) }
+    val players = @Composable {
+        if (notice != null) NetplayNotice(notice)
+        if (tutorial == null) PlayerCards(started, columns = 2) else TutorialCoachCard(tutorial)
+    }
     val background = LocalGameVisualTheme.current.background
     ScreenScaffold(
         title = started.customName ?: stringResource(started.mode.displayName),
@@ -353,6 +381,21 @@ fun GameContent(
             }
         }
     }
+}
+
+/** A Nearby game's [notice] over the players: TalkBack hears it as it comes and as it changes (a polite live region). */
+@Composable
+private fun NetplayNotice(notice: String) {
+    Text(
+        text = notice,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSecondaryContainer,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth()
+            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+    )
 }
 
 /** [background] filling the room it's given: its brush, and over it any decoration it draws, running while it's shown. */

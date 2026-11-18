@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -43,12 +44,15 @@ import net.zodac.ludo.netplay.PROTOCOL_VERSION
 import net.zodac.ludo.netplay.SeatKind
 
 /** A Nearby that links nothing: what's sent, kept; each side's events, delivered by hand. */
-private class FakeNearby : Nearby {
+internal class FakeNearby : Nearby {
     override val available = true
     var hostEvents: ((LinkEvent) -> Unit)? = null
     var joinEvents: ((LinkEvent) -> Unit)? = null
     val hostSent = mutableListOf<Pair<String, NetMessage>>()
     val guestSent = mutableListOf<NetMessage>()
+    var findable = true
+    var found: ((List<FoundGame>) -> Unit)? = null
+    val joined = mutableListOf<FoundGame>()
 
     override suspend fun requestPermissions() = true
 
@@ -59,18 +63,26 @@ private class FakeNearby : Nearby {
                 hostSent += endpoint to checkNotNull(NetCodec.decode(bytes))
             }
 
-            override fun stopFinding() = Unit
+            override fun setFindable(findable: Boolean) {
+                this@FakeNearby.findable = findable
+            }
 
             override fun close() = Unit
         }
     }
 
-    override fun discover(found: (List<FoundGame>) -> Unit): Discovery = object : Discovery {
-        override fun stop() = Unit
+    override fun discover(found: (List<FoundGame>) -> Unit): Discovery {
+        this.found = found
+        return object : Discovery {
+            override fun stop() {
+                this@FakeNearby.found = null
+            }
+        }
     }
 
     override fun join(game: FoundGame, name: String, events: (LinkEvent) -> Unit): Joining {
         joinEvents = events
+        joined += game
         return object : Joining {
             override fun send(bytes: ByteArray) {
                 guestSent += checkNotNull(NetCodec.decode(bytes))
@@ -151,13 +163,87 @@ class NetplayGameTest {
         assertEquals(SavedGameJson.encode(host.game.value!!), (nearby.hostSent.last().second as NetMessage.Game).json)
     }
 
+    /** A seed whose roll-off puts Jo, seat 2, first. */
+    private val joFirst = generateSequence(0) { it + 1 }.first { RollOff.roll(2, 6, Random(it)).first == 1 }
+
+    /** A seed whose roll-off puts Jo first, who then rolls a 6: a pawn to bring out. */
+    private val joFirstWithASix = generateSequence(0) { it + 1 }.first { seed ->
+        val random = Random(seed)
+        RollOff.roll(2, 6, random).first == 1 && random.nextInt(1, 7) == 6
+    }
+
     @Test
     fun `a guest that leaves a game under way is played by the CPU`() = runTest(dispatcher) {
         val nearby = FakeNearby()
         val host = hostWithGuest(nearby)
-        checkNotNull(nearby.hostEvents)(LinkEvent.Disconnected("jo"))
+        nearby.fromGuest("jo", NetMessage.Leave)
         runCurrent()
         assertEquals(PlayerType.AI, host.game.value?.players?.get(1)?.type)
+        assertTrue(host.awaySeats.value.isEmpty())
+    }
+
+    @Test
+    fun `a guest whose phone drops out is played by the CPU until it's back - the host findable meanwhile`() = runTest(dispatcher) {
+        val nearby = FakeNearby()
+        val host = hostWithGuest(nearby, joFirst)
+        assertFalse(nearby.findable)
+        checkNotNull(nearby.hostEvents)(LinkEvent.Disconnected("jo"))
+        runCurrent()
+        assertEquals(setOf(1), host.awaySeats.value)
+        assertEquals(PlayerType.NEARBY, host.game.value?.players?.get(1)?.type)
+        assertTrue(nearby.findable)
+        // The CPU rolls for Jo, after its usual wait.
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertNotNull(host.game.value?.state?.lastEvent)
+
+        val token = nearby.hostSent.first { it.first == "jo" && it.second is NetMessage.Welcome }.second.let { (it as NetMessage.Welcome).token }
+        checkNotNull(nearby.hostEvents)(LinkEvent.Connected("jo-again"))
+        nearby.fromGuest("jo-again", NetMessage.Hello(PROTOCOL_VERSION, "Jo", null, token))
+        runCurrent()
+        assertTrue(host.awaySeats.value.isEmpty())
+        assertFalse(nearby.findable)
+        assertEquals(SavedGameJson.encode(host.game.value!!), (nearby.hostSent.last { it.first == "jo-again" }.second as NetMessage.Game).json)
+    }
+
+    @Test
+    fun `a guest that lets its turn run out has the rest of it played by the CPU`() = runTest(dispatcher) {
+        val nearby = FakeNearby()
+        val host = hostWithGuest(nearby, joFirst)
+        advanceTimeBy(GameViewModel.GUEST_TURN_MILLIS - 1)
+        runCurrent()
+        assertNull(host.game.value?.state?.lastEvent)
+        // Out of time: the CPU plays the rest of Jo's turn, after its usual wait.
+        advanceTimeBy(1_000)
+        runCurrent()
+        val after = assertNotNull(host.game.value)
+        assertNotNull(after.state.lastEvent)
+        advanceTimeBy(10_000)
+        runCurrent()
+        assertEquals(0, host.game.value?.state?.current)
+
+        // Sam's turn, at this phone: never timed.
+        advanceTimeBy(GameViewModel.GUEST_TURN_MILLIS * 2)
+        runCurrent()
+        assertEquals(0, host.game.value?.state?.current)
+    }
+
+    @Test
+    fun `a guest that plays once its time is out takes its turn back from the CPU`() = runTest(dispatcher) {
+        val nearby = FakeNearby()
+        val host = hostWithGuest(nearby, joFirstWithASix)
+        advanceTimeBy(GameViewModel.GUEST_TURN_MILLIS)
+        runCurrent()
+        // The CPU is about to roll for Jo, but Jo rolls first: a 6.
+        nearby.fromGuest("jo", NetMessage.Roll)
+        runCurrent()
+        val rolled = assertNotNull(host.game.value).state
+        assertIs<TurnPhase.AwaitingMove>(rolled.phase)
+        assertEquals(1, rolled.current)
+        // And the move is Jo's to make, in Jo's own time.
+        advanceTimeBy(GameViewModel.GUEST_TURN_MILLIS - 1)
+        runCurrent()
+        assertEquals(rolled, host.game.value?.state)
     }
 
     @Test
@@ -168,7 +254,7 @@ class NetplayGameTest {
         guest.join(nearby, FoundGame("host", "Sam"), "Jo", null)
         checkNotNull(nearby.joinEvents)(LinkEvent.Connected("host"))
         assertEquals(NetMessage.Hello(PROTOCOL_VERSION, "Jo", null), nearby.guestSent.single())
-        nearby.fromHost(NetMessage.Welcome(1))
+        nearby.fromHost(NetMessage.Welcome(1, "t1"))
         runCurrent()
         assertIs<GuestState.Seated>(guest.guestState.value)
 
@@ -195,5 +281,46 @@ class NetplayGameTest {
         val rows = dao.allByPlayer()
         assertEquals(listOf("Jo"), rows.map { it.playerName })
         assertTrue(rows.single().isPrimaryPlayer)
+    }
+
+    @Test
+    fun `a guest that loses the host in a game finds it again - gets its seat back - and plays on - or gives up in time`() = runTest(dispatcher) {
+        val nearby = FakeNearby()
+        val guest = viewModel()
+        guest.join(nearby, FoundGame("host", "Sam"), "Jo", null)
+        checkNotNull(nearby.joinEvents)(LinkEvent.Connected("host"))
+        nearby.fromHost(NetMessage.Welcome(1, "t1"))
+        val players = listOf(PlayerConfig(1, PlayerType.HUMAN, "Sam"), PlayerConfig(2, PlayerType.NEARBY, "Jo"))
+        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), RollOff(emptyList(), 0), id = "a".repeat(32))
+        nearby.fromHost(NetMessage.Game(1, SavedGameJson.encode(start)))
+        runCurrent()
+
+        checkNotNull(nearby.joinEvents)(LinkEvent.Disconnected("host"))
+        runCurrent()
+        assertIs<GuestState.Reconnecting>(guest.guestState.value)
+        // The board stays up meanwhile.
+        assertEquals(1, guest.game.value?.guestSeat)
+        // Another game, then the host's, under a new id.
+        checkNotNull(nearby.found)(listOf(FoundGame("other", "Ada")))
+        checkNotNull(nearby.found)(listOf(FoundGame("other", "Ada"), FoundGame("host2", "Sam")))
+        assertEquals(FoundGame("host2", "Sam"), nearby.joined.last())
+        checkNotNull(nearby.joinEvents)(LinkEvent.Connected("host2"))
+        assertEquals(NetMessage.Hello(PROTOCOL_VERSION, "Jo", null, token = "t1"), nearby.guestSent.last())
+        nearby.fromHost(NetMessage.Welcome(1, "t1"))
+        nearby.fromHost(NetMessage.Game(2, SavedGameJson.encode(start.copy(state = start.state.copy(current = 1)))))
+        runCurrent()
+        assertIs<GuestState.Playing>(guest.guestState.value)
+        assertNull(nearby.found)
+        guest.roll()
+        assertEquals(NetMessage.Roll, nearby.guestSent.last())
+
+        // Lost again, and the host not found in time.
+        checkNotNull(nearby.joinEvents)(LinkEvent.Disconnected("host2"))
+        runCurrent()
+        assertIs<GuestState.Reconnecting>(guest.guestState.value)
+        advanceTimeBy(GameViewModel.RECONNECT_MILLIS + 1)
+        runCurrent()
+        assertEquals(GuestState.Lost, guest.guestState.value)
+        assertNull(nearby.found)
     }
 }

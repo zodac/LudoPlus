@@ -24,8 +24,11 @@ sealed interface NetMessage {
 
     // ---- Guest to host ----
 
-    /** A guest's first message: its protocol, and its player's name and colour, which the host may give another. */
-    data class Hello(val protocol: Int, val name: String, val colour: PlayerColour?) : NetMessage
+    /**
+     * A guest's first message: its protocol, and its player's name and colour, which the host may give another. With a
+     * [token] (its [Welcome]'s), it's coming back to the seat it dropped out of.
+     */
+    data class Hello(val protocol: Int, val name: String, val colour: PlayerColour?, val token: String? = null) : NetMessage
 
     /** The guest's player rolls, on their turn. */
     data object Roll : NetMessage
@@ -38,8 +41,8 @@ sealed interface NetMessage {
 
     // ---- Host to guest ----
 
-    /** The guest's [seat], taken. */
-    data class Welcome(val seat: Int) : NetMessage
+    /** The guest's [seat], taken, and the [token] that takes it back after a dropped link. */
+    data class Welcome(val seat: Int, val token: String) : NetMessage
 
     /** Not taken: why. The link closes after. */
     data class Refused(val reason: RefusedReason) : NetMessage
@@ -95,6 +98,7 @@ object NetCodec {
             put("protocol", message.protocol)
             put("name", message.name)
             message.colour?.let { put("colour", it.id) }
+            message.token?.let { put("token", it) }
         }
         NetMessage.Roll -> buildJsonObject { put("type", "roll") }
         is NetMessage.Move -> buildJsonObject {
@@ -107,6 +111,7 @@ object NetCodec {
         is NetMessage.Welcome -> buildJsonObject {
             put("type", "welcome")
             put("seat", message.seat)
+            put("token", message.token)
         }
         is NetMessage.Refused -> buildJsonObject {
             put("type", "refused")
@@ -139,11 +144,16 @@ object NetCodec {
     fun decode(bytes: ByteArray): NetMessage? = runCatching {
         val obj = parseJson(bytes.decodeToString()) as JsonObject
         when (obj.string("type")) {
-            "hello" -> NetMessage.Hello(obj.int("protocol"), obj.string("name"), obj.stringOrNull("colour")?.let { storedIdOf<PlayerColour>(it) })
+            "hello" -> NetMessage.Hello(
+                obj.int("protocol"),
+                obj.string("name"),
+                obj.stringOrNull("colour")?.let { storedIdOf<PlayerColour>(it) },
+                obj.stringOrNull("token"),
+            )
             "roll" -> NetMessage.Roll
             "move" -> NetMessage.Move(obj.int("pawn"), obj.intOrNull("owner"), obj.intOrNull("die"))
             "leave" -> NetMessage.Leave
-            "welcome" -> NetMessage.Welcome(obj.int("seat"))
+            "welcome" -> NetMessage.Welcome(obj.int("seat"), obj.string("token"))
             "refused" -> NetMessage.Refused(RefusedReason.entries.first { it.id == obj.string("reason") })
             "lobby" -> NetMessage.Lobby(
                 obj.objectList("seats").map { seat ->

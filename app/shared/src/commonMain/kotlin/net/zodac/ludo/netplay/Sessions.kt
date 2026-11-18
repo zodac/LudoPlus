@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlin.uuid.Uuid
 import net.zodac.ludo.data.game.SavedGameJson
 import net.zodac.ludo.game.TurnPhase
 import net.zodac.ludo.model.PlayerColour
@@ -23,15 +24,27 @@ sealed interface GuestAction {
 
     /** The guest at [seat] left a game under way: the CPU plays its seat from now on. */
     data class Left(override val seat: Int) : GuestAction
+
+    /** The guest at [seat] lost its link to a game under way: the CPU plays its seat until it's [Back]. */
+    data class Away(override val seat: Int) : GuestAction
+
+    /** The guest at [seat], [Away] until now, is linked again, and plays its seat. */
+    data class Back(override val seat: Int) : GuestAction
 }
 
 /**
  * The host's side of a Nearby session, as a state machine: the lobby filling its [SeatKind.NEARBY] seats from guests'
  * [NetMessage.Hello]s, then, once [start]ed, each guest's actions passed on ([actions]) and each new state of the game
- * sent to every guest ([gameChanged]). [send] hands a message to the transport for one guest, by its endpoint id. No
- * radio here: the transport calls [connected], [received], and [disconnected]. Main thread only.
+ * sent to every guest ([gameChanged]). A guest whose link drops in the game is [away] until it comes back with its
+ * [NetMessage.Welcome]'s token, at any time before the game ends, to the seat it had. [send] hands a message to the
+ * transport for one guest, by its endpoint id; [newToken] makes each seat's token. No radio here: the transport calls
+ * [connected], [received], and [disconnected]. Main thread only.
  */
-class HostSession(seats: List<LobbySeat>, private val send: (endpoint: String, NetMessage) -> Unit) {
+class HostSession(
+    seats: List<LobbySeat>,
+    private val newToken: () -> String = { Uuid.random().toHexString() },
+    private val send: (endpoint: String, NetMessage) -> Unit,
+) {
 
     private val mutableSeats = MutableStateFlow(seats)
 
@@ -40,6 +53,17 @@ class HostSession(seats: List<LobbySeat>, private val send: (endpoint: String, N
 
     /** Each guest's seat, by endpoint id: a guest is here from its [NetMessage.Welcome] until it leaves. */
     private val guests = LinkedHashMap<String, Int>()
+
+    /** Each taken seat's token, by seat: forgotten as its guest leaves for good. */
+    private val tokens = HashMap<Int, String>()
+
+    private val mutableAway = MutableStateFlow<Set<Int>>(emptySet())
+
+    /** The seats whose guest's link dropped in the game, and hasn't come back yet: the CPU plays them meanwhile. */
+    val away: StateFlow<Set<Int>> = mutableAway.asStateFlow()
+
+    /** The last game sent, for a guest coming back. */
+    private var lastGame: NetMessage.Game? = null
 
     private val mutableActions = MutableSharedFlow<GuestAction>(extraBufferCapacity = 64, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
@@ -72,13 +96,18 @@ class HostSession(seats: List<LobbySeat>, private val send: (endpoint: String, N
             is NetMessage.Move -> guests[endpoint]?.takeIf { started }?.let {
                 mutableActions.tryEmit(GuestAction.Move(it, message.pawn, message.owner, message.die))
             }
-            NetMessage.Leave -> disconnected(endpoint)
+            NetMessage.Leave -> left(endpoint)
             // A host's message, sent to a host: nothing to do.
             else -> Unit
         }
     }
 
     private fun hello(endpoint: String, hello: NetMessage.Hello) {
+        val returning = hello.token?.let { token -> tokens.entries.firstOrNull { it.value == token }?.key }
+        if (started && returning != null && hello.protocol == PROTOCOL_VERSION) {
+            rejoin(endpoint, returning)
+            return
+        }
         val refusal = when {
             hello.protocol != PROTOCOL_VERSION -> RefusedReason.VERSION
             started -> RefusedReason.STARTED
@@ -91,6 +120,7 @@ class HostSession(seats: List<LobbySeat>, private val send: (endpoint: String, N
             return
         }
         val seat = guests[endpoint] ?: mutableSeats.value.indexOfFirst { it.open }.also { guests[endpoint] = it }
+        val token = tokens.getOrPut(seat, newToken)
         val name = sanitizePlayerName(hello.name).trim().ifEmpty { DEFAULT_GUEST_NAME }
         mutableSeats.value = mutableSeats.value.mapIndexed { index, lobbySeat ->
             if (index != seat) return@mapIndexed lobbySeat
@@ -98,19 +128,54 @@ class HostSession(seats: List<LobbySeat>, private val send: (endpoint: String, N
             val colour = hello.colour?.takeIf { wanted -> mutableSeats.value.withIndex().none { (other, it) -> other != seat && it.colour == wanted } }
             lobbySeat.copy(name = name, colour = colour ?: lobbySeat.colour)
         }
-        send(endpoint, NetMessage.Welcome(seat))
+        send(endpoint, NetMessage.Welcome(seat, token))
         broadcast(NetMessage.Lobby(mutableSeats.value))
     }
 
-    /** A guest's link is gone, or it left: its seat opens again in the lobby, or the CPU takes it in a game. */
+    /**
+     * The guest at [endpoint] comes back to [seat], the game under way sent it at once. A link of the seat's that the
+     * transport hasn't yet seen drop is forgotten.
+     */
+    private fun rejoin(endpoint: String, seat: Int) {
+        guests.entries.removeAll { it.value == seat && it.key != endpoint }
+        guests[endpoint] = seat
+        send(endpoint, NetMessage.Welcome(seat, checkNotNull(tokens[seat])))
+        lastGame?.let { send(endpoint, it) }
+        if (seat in mutableAway.value) {
+            mutableAway.value -= seat
+            mutableActions.tryEmit(GuestAction.Back(seat))
+        }
+    }
+
+    /**
+     * A guest's link is gone: its seat opens again in the lobby; in the game, it's [away], the CPU playing it until the
+     * guest comes back.
+     */
     fun disconnected(endpoint: String) {
         val seat = guests.remove(endpoint) ?: return
+        if (!started) {
+            open(seat)
+            return
+        }
+        mutableAway.value += seat
+        mutableActions.tryEmit(GuestAction.Away(seat))
+    }
+
+    /** A guest left: its seat opens again in the lobby, or the CPU takes it for good in the game. */
+    private fun left(endpoint: String) {
+        val seat = guests.remove(endpoint) ?: return
+        tokens.remove(seat)
         if (started) {
             mutableActions.tryEmit(GuestAction.Left(seat))
         } else {
-            mutableSeats.value = mutableSeats.value.mapIndexed { index, it -> if (index == seat) it.copy(name = null) else it }
-            broadcast(NetMessage.Lobby(mutableSeats.value))
+            open(seat)
         }
+    }
+
+    private fun open(seat: Int) {
+        tokens.remove(seat)
+        mutableSeats.value = mutableSeats.value.mapIndexed { index, it -> if (index == seat) it.copy(name = null) else it }
+        broadcast(NetMessage.Lobby(mutableSeats.value))
     }
 
     /** Starts the game, once every Nearby seat is [full]: false otherwise, and nothing changes. */
@@ -122,13 +187,17 @@ class HostSession(seats: List<LobbySeat>, private val send: (endpoint: String, N
 
     /** Sends every guest the game as it now stands. */
     fun gameChanged(game: StartedGame) {
-        broadcast(NetMessage.Game(++gameNumber, SavedGameJson.encode(game)))
+        val message = NetMessage.Game(++gameNumber, SavedGameJson.encode(game))
+        lastGame = message
+        broadcast(message)
     }
 
     /** Ends the session for every guest. */
     fun end() {
         broadcast(NetMessage.Ended)
         guests.clear()
+        tokens.clear()
+        mutableAway.value = emptySet()
     }
 
     private fun broadcast(message: NetMessage) {
@@ -152,19 +221,23 @@ sealed interface GuestState {
     /** In the game, at [seat]: [game] as the host last sent it. */
     data class Playing(val seat: Int, val game: StartedGame) : GuestState
 
+    /** The link to the host dropped in the game, at [seat]: finding it again to take the seat back ([game] the last sent). */
+    data class Reconnecting(val seat: Int, val game: StartedGame) : GuestState
+
     data class Refused(val reason: RefusedReason) : GuestState
 
     /** The host ended the session. */
     data object Ended : GuestState
 
-    /** The link to the host is gone. */
+    /** The link to the host is gone, for good. */
     data object Lost : GuestState
 }
 
 /**
  * A guest's side of a Nearby session, as a state machine: its [NetMessage.Hello], then the host's answers ([state]), and
- * its player's roll and move sent while it's their turn. [send] hands a message to the transport for the host. No radio
- * here: the transport calls [received] and [lost]. Main thread only.
+ * its player's roll and move sent while it's their turn. A link [lost] in a game under way is [GuestState.Reconnecting]
+ * until a new one [rejoin]s or it [giveUp]. [send] hands a message to the transport for the host, over the link of the
+ * moment. No radio here: the transport calls [received] and [lost]. Main thread only.
  */
 class GuestSession(private val send: (NetMessage) -> Unit) {
 
@@ -174,9 +247,28 @@ class GuestSession(private val send: (NetMessage) -> Unit) {
     /** The number of the last game the host sent: an older one, arriving late, is ignored. */
     private var gameNumber = 0
 
+    /** The host's [NetMessage.Welcome] token: the way back to this guest's seat. */
+    private var token: String? = null
+
+    private var name = ""
+    private var colour: PlayerColour? = null
+
     /** Asks the host for a seat, for a player called [name] in [colour], if it's free. */
     fun hello(name: String, colour: PlayerColour?) {
+        this.name = name
+        this.colour = colour
         send(NetMessage.Hello(PROTOCOL_VERSION, name, colour))
+    }
+
+    /** Asks the host, over a new link, for this guest's seat back, while [GuestState.Reconnecting]. */
+    fun rejoin() {
+        if (mutableState.value !is GuestState.Reconnecting) return
+        send(NetMessage.Hello(PROTOCOL_VERSION, name, colour, token))
+    }
+
+    /** No longer looking for the host: the link is [GuestState.Lost] for good. */
+    fun giveUp() {
+        if (mutableState.value is GuestState.Reconnecting) mutableState.value = GuestState.Lost
     }
 
     fun received(bytes: ByteArray) {
@@ -186,7 +278,12 @@ class GuestSession(private val send: (NetMessage) -> Unit) {
     fun handle(message: NetMessage) {
         val now = mutableState.value
         mutableState.value = when (message) {
-            is NetMessage.Welcome -> GuestState.Seated(message.seat, (now as? GuestState.Seated)?.seats.orEmpty())
+            is NetMessage.Welcome -> {
+                token = message.token
+                // Back in its seat: the game it's sent next carries on.
+                if (now is GuestState.Reconnecting) return
+                GuestState.Seated(message.seat, (now as? GuestState.Seated)?.seats.orEmpty())
+            }
             is NetMessage.Lobby -> (now as? GuestState.Seated)?.copy(seats = message.seats) ?: now
             is NetMessage.Game -> {
                 val seat = seatOf(now) ?: return
@@ -195,16 +292,24 @@ class GuestSession(private val send: (NetMessage) -> Unit) {
                 gameNumber = message.number
                 GuestState.Playing(seat, game)
             }
-            is NetMessage.Refused -> GuestState.Refused(message.reason)
+            // A host that won't have it back has lost it for good.
+            is NetMessage.Refused -> if (now is GuestState.Reconnecting) GuestState.Lost else GuestState.Refused(message.reason)
             NetMessage.Ended -> GuestState.Ended
             // A guest's message, sent to a guest: nothing to do.
             else -> now
         }
     }
 
-    /** The link to the host is gone, unless the session had already ended. */
+    /**
+     * The link to the host is gone, unless the session had already ended: in a game under way, until it's found again
+     * ([GuestState.Reconnecting]); for good otherwise.
+     */
     fun lost() {
-        if (mutableState.value !is GuestState.Ended && mutableState.value !is GuestState.Refused) mutableState.value = GuestState.Lost
+        mutableState.value = when (val now = mutableState.value) {
+            GuestState.Ended, is GuestState.Refused, is GuestState.Reconnecting -> return
+            is GuestState.Playing -> if (now.game.state.isFinished) GuestState.Lost else GuestState.Reconnecting(now.seat, now.game)
+            else -> GuestState.Lost
+        }
     }
 
     /** Rolls, while it's this guest's player's turn to. */
@@ -228,6 +333,7 @@ class GuestSession(private val send: (NetMessage) -> Unit) {
     private fun seatOf(state: GuestState): Int? = when (state) {
         is GuestState.Seated -> state.seat
         is GuestState.Playing -> state.seat
+        is GuestState.Reconnecting -> state.seat
         else -> null
     }
 }
