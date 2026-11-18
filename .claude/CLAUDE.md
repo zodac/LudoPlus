@@ -15,9 +15,9 @@ them all home first. In development, pre-1.0.0.
     tutorial, Play Games and purchases were removed with the dice game. Their code, built and tested, is in commit
     `5423b6c` (the renamed copy, before the gut): restore what a phase needs from there (`git show 5423b6c:<path>`)
     rather than writing it again, then make it Ludo's. Docs that still describe DiceFive say so in a note at their top.
-- **Players.** 4 per game to start (any mix of pass-and-play and CPU opponents); 2-8 later.
-- **Planned content.** Custom game modes, house-rule modifiers, netplay, achievements, styles for the board, pawns
-    and die, and in-app purchases (`IMPLEMENTATION.md`).
+- **Players.** 2-8 per game: any mix of pass-and-play, CPU opponents, and, in the play app, phones nearby (`NETPLAY.md`).
+- **Content.** Custom game modes, house-rule modifiers, Nearby netplay, achievements, styles for the board, pawns and
+    die, and in-app purchases, all built through Phase 12 (`IMPLEMENTATION.md`).
 - **Aims.**
     - A polished, offline-first game for the Play Store: no account needed, and play never waits on the network; data
         stays on the device. The play app's only network use is its ad banner, the optional Play Games, Billing, and

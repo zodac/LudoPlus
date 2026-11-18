@@ -23,10 +23,10 @@ Connections: no server, no accounts. This file is the plan and the one source on
     the game it was sent, and sends the host its player's roll or move, which the host checks as it checks a tap.
 - **The protocol** (`netplay/NetMessage.kt`): small JSON messages, each with a type, over Nearby's byte payloads.
     The host's game is sent as `SavedGameJson`, the format that already round-trips every state.
-    - Guest to host: `Hello` (protocol version, the player's name and colour), `Roll`, `Move` (pawn, owner, die),
-        `Leave`.
-    - Host to guest: `Welcome` (the seat it took) or `Refused` (full, started, another version), `Lobby` (the seats and
-        who has taken them), `Game` (the whole game, numbered), `Ended`.
+    - Guest to host: `Hello` (protocol version, the player's name and colour, and, coming back, its seat's token),
+        `Roll`, `Move` (pawn, owner, die), `Leave`.
+    - Host to guest: `Welcome` (the seat it took, and the token that takes it back) or `Refused` (full, started,
+        another version), `Lobby` (the seats and who has taken them), `Game` (the whole game, numbered), `Ended`.
     - A version mismatch is refused at `Hello`, with "update the app".
 - **Sessions** (`HostSession`, `GuestSession`): the lobby and the game's messages as pure state machines over a
     `NetLink` (send, receive, connected): tested without radios.
@@ -51,9 +51,26 @@ Connections: no server, no accounts. This file is the plan and the one source on
     its own seat (`StartedGame.guestSeat`), sends its roll and move, saves nothing, and records and earns for its own
     seat alone (`AchievementTracker(mySeat)`, `AchievementEngine.atGameStart(mySeat)`, `GameRecordRepository.recordGame`).
     A finished game can now be sent (`SavedGameJson`'s `finished` flag), never continued.
-4. Reconnect (a guest that drops can come back to its seat), turn timeouts, and the CPU stepping in for a guest gone
-    for good.
-5. The privacy policy (done: section 4a), data-safety answers, `CLAUDE.md`'s aims, and a check on two phones.
+4. **Built** (2026-11-18; untested on phones): reconnecting, turn timeouts, and the CPU stepping in.
+    - A guest that sends `Leave` is gone for good: the CPU takes its seat (`PlayerType.AI`) and its token is forgotten.
+    - A guest whose link drops in the game is **away** (`HostSession.away`): its seat stays Nearby, the CPU plays it,
+        and the host is findable again (`Hosting.setFindable`) while any seat is away. The guest
+        (`GuestState.Reconnecting`, the board still up) looks for a game under its host's name for `RECONNECT_MILLIS`
+        (2 minutes on screen) and says `Hello` with its token over the new link; the host gives the seat back with
+        `Welcome` and the latest `Game`. A token's seat is taken back even from a link the host hasn't yet seen drop.
+        Not found in time, or refused, it's `Lost`. A link lost in the lobby, or after the game, is lost for good.
+    - **Turn timeout**: on the host, a guest has `GUEST_TURN_MILLIS` (60 s, while the host's game is on screen) for each
+        roll and move; one it doesn't make, the CPU makes, and the rest of that turn. A roll or move from the guest
+        takes the turn back.
+    - The board says so in a line over the players (a polite live region): the guest's "Reconnecting to the host...",
+        "Lost the host's phone.", or "The host ended the game."; the host's "Jo dropped out: the CPU plays for now"
+        (or how many did) (`NetplayNoticeTest`).
+5. **Done but the phones** (2026-11-18): the privacy policy (section 4a, a dropped phone's rejoining too), the
+    data-safety draft (`PUBLISHING.md`, "Data safety": nothing collected, as the phones talk directly), `CLAUDE.md`'s
+    aims, and `README.md` and the store description (`assets/full-description.txt`). Left for the maintainer: the check
+    on two phones, which needs a Play-signed build from an internal testing track (`PLAY_GAMES.md`, "Testing"), so a
+    Play Console project first, and the data-safety form itself.
 
-Known gaps for slice 4: a guest's Game Over "Play Again" starts a game on its own form; a host that leaves ends the
-session for everyone (each guest sees "The host ended the game"); a dropped guest can't come back to its seat yet.
+Known gaps: a guest's Game Over "Play Again" starts a game on its own form; a host that leaves ends the session for
+everyone (each guest sees "The host ended the game"); a guest isn't warned before its turn runs out; and a guest that
+rejoins a host of the same name that isn't its own is refused, and gives up rather than trying another.

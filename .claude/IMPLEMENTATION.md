@@ -436,7 +436,9 @@ The biggest change: it ends "no account, no network". Decide the approach before
         needs moderation, and changes the privacy policy;
     - Nearby Connections, which works only in the same room, needs no server, and keeps privacy simple;
     - both, with Nearby first.
-- [ ] The engine is already deterministic (Phase 1), so the host is the authority: it rolls, and the clients send
-    their moves and get the state back.
-- [ ] Lobby, invites, reconnect, turn timeouts, and the CPU stepping in for a player who drops out.
-- [ ] Privacy policy, data-safety form, and the `CLAUDE.md` aims updated.
+- [x] The engine is already deterministic (Phase 1), so the host is the authority: it rolls, and the clients send
+    their moves and get the state back (slices 1 and 3; untested on phones).
+- [x] Lobby, invites, reconnect, turn timeouts, and the CPU stepping in for a player who drops out (slices 2 and 4;
+    untested on phones).
+- [x] Privacy policy, data-safety form, and the `CLAUDE.md` aims updated (the form's answers drafted in
+    `PUBLISHING.md`; the maintainer fills it in, and checks a game on two phones, once there's a Play Console project).

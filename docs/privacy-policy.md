@@ -88,8 +88,9 @@ join such a game, for permission to find and connect to nearby devices (on older
 permission, which Android requires for this; the App doesn't use your location).
 
 While you host or look for a game, your phone shows the player name you set up to phones nearby running the App. In a
-game, the phones send each other the game itself: its players' names and the moves. Nothing is sent to us or kept
-anywhere but on the phones in the game.
+game, the phones send each other the game itself: its players' names and the moves. If a phone drops out of a game, the
+host's phone shows its game to phones nearby again until that phone is back. Nothing is sent to us or kept anywhere but
+on the phones in the game.
 
 ## 5. Purchases (the Google Play version)
 

@@ -9,6 +9,10 @@ THE CLASSIC RULES
 COMPUTER OPPONENTS
 • Three levels: Easy plays at random, Medium weighs every move, and Hard thinks a roll ahead
 
+PLAY TOGETHER NEARBY
+• One game across several phones in the same room, linked directly, with no internet needed
+• A player whose phone drops out can rejoin, and the computer plays for them meanwhile
+
 LEARN AS YOU PLAY
 • A guided tutorial teaches the game in four short parts: getting out, captures, home, and winning
 • The rules, a page an idea, each with a diagram of the board
