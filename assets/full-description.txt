@@ -1,26 +1,44 @@
-Ludo Plus is the classic race to home for Android. Roll the die, bring your four pawns out of the yard on a 6, race them a full lap of the board, and be the first to get them all home. Land on a rival to send them back to the start.
+Ludo Plus is the classic race to home, with a few twists of its own. Roll the die, bring your pawns out of the yard on a 6, race them a full lap of the board, and be the first to get them all home. Land on a rival to send them back to the start.
 
 THE CLASSIC RULES
-• Four players: friends passing the phone around, computer opponents, or any mix of the two
+• 2 to 8 players, on a board made for each size
+• Friends passing the phone around, computer opponents, or any mix of the two
+• Play in teams with 4, 6, or 8 players: two teams, or pairs with partners opposite
 • Roll a 6 to leave the yard, and roll again after a 6, a capture, or bringing a pawn home
 • Star squares and start squares are safe, and a pawn needs the exact roll to reach home
-• Play on for second, third, and last place, or end the game at the first winner
+• Play on for every place, or end the game at the first winner
 
-COMPUTER OPPONENTS
-• Three levels: Easy plays at random, Medium weighs every move, and Hard thinks a roll ahead
+THREE WAYS TO PLAY
+• Classic: four pawns each, by the classic rules
+• Quick: two pawns each, for a shorter race
+• Two Dice: roll two dice and move by each in turn; a 6 on either brings a pawn out, and doubles roll again
+
+HOUSE RULES
+Mix in the rules your family plays by: Must Capture, Guarded Starts, Free Start, Three Tries, Out on a 1, Blockades, No Capture Roll, No Home Roll, and Endless 6s. Save your favourite mix as a custom mode of your own.
 
 PLAY TOGETHER NEARBY
 • One game across several phones in the same room, linked directly, with no internet needed
 • A player whose phone drops out can rejoin, and the computer plays for them meanwhile
+
+COMPUTER OPPONENTS
+• Three levels: Easy plays at random, Medium weighs every move, and Hard thinks a roll ahead
 
 LEARN AS YOU PLAY
 • A guided tutorial teaches the game in four short parts: getting out, captures, home, and winning
 • The rules, a page an idea, each with a diagram of the board
 
 TRACK YOUR GAMES
-• A Leaderboard of the fastest wins
+• A Leaderboard of the fastest wins for every mode and number of players
 • Statistics for every player: games, wins, streaks, captures, and pawns home
 • Leave a game at any time and continue it later
+
+ACHIEVEMENTS AND STYLES
+• Over 100 achievements to chase, for captures, comebacks, close finishes, and a few hidden surprises
+• Achievements unlock styles: 8 boards, 7 sets of pawns, 35 dice, and 20 backgrounds for the table
+• Unlock every style at once with an optional purchase
+
+GOOGLE PLAY GAMES
+• Sign in, if you like, for achievements on your Play Games profile, global leaderboards, and your progress saved across your devices
 
 MADE FOR EVERYONE
 • Built for TalkBack and large fonts, with every square and move described

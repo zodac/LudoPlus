@@ -88,20 +88,24 @@ until the player signs in.
 
 - **Graphics**: generated (the `store-assets` skill). The hi-res icon follows the launcher icon. The video goes to
     YouTube; Play takes its URL.
-- **Short description** (80 chars max), 78 chars:
+- **Short description** (80 chars max), 55 chars:
 
     ```text
-    The family classic where you roll five dice to make poker hands and score big!
+    The classic race to home, with a few twists of its own.
     ```
 
     It's the tagline: also `README.md`'s first line, the GitHub repo description, and the opening of the full
     description. Keep them the same.
-- **Full description**: `assets/full-description.txt`, about 3000 of 4000 characters. Keep its counts and lists true:
-    - the modes under "Seven ways to play" (and that heading's count);
-    - the modifiers under "House rules";
-    - "Over 100 achievements" (110 today: 100 count towards completion, plus 10 Easter eggs);
-    - "over 200 styles" (each colour of a style counts: about 270 today), and its examples;
-    - what "Google Play Games" says sign-in brings (`PLAY_GAMES.md`).
+- **Full description**: `assets/full-description.txt`, about 2650 of 4000 characters (2026-11-18). Keep its counts and
+    lists true, and in step with `README.md`'s "What's in it":
+    - the player counts and team set-ups under "The classic rules";
+    - the built-in modes under "Three ways to play" (and that heading's count);
+    - the house rules under "House rules", all nine, and custom modes;
+    - "Play together nearby" (the play app's Nearby games, `NETPLAY.md`);
+    - "Over 100 achievements" (110 today: 100 count towards completion, plus 10 Easter Eggs);
+    - the style counts (8 boards, 7 sets of pawns, 35 dice, and 20 backgrounds), as `README.md` gives them;
+    - what "Google Play Games" says sign-in brings (`PLAY_GAMES.md`);
+    - the purchases ("Unlock all styles", "Remove ads"; `PURCHASES.md`) and the ad banner (`ADS.md`).
 - **The banned-word rule applies.** Play also rejects listings that lean on another product's trademark. Use 3x/4x/5x.
 - **Open-source notices are done in-app** (Settings > Licences, generated with a copyleft guard).
     - The build strips each AndroidX `META-INF/androidx/**/LICENSE.txt`, which is fine because the dialog ships the
