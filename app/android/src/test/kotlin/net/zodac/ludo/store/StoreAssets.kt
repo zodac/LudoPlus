@@ -28,7 +28,7 @@ import org.junit.rules.TestRule
 import org.junit.runners.model.Statement
 
 /**
- * Shared by the store-asset generators ([StoreScreensGeneratorTest]): where they write, which parts a run asked for, the
+ * Shared by the store-asset generators ([StoreScreensGeneratorTest], [StoreArtGeneratorTest]): where they write, which parts a run asked for, the
  * app state they stage, and how a screen is captured. See `.claude/STORE_ASSETS.md` - the script
  * `scripts/generate-store-assets.sh` runs these and finishes what they write.
  */
@@ -37,6 +37,9 @@ internal object StoreAssets {
     /** The parts a generator test can be asked for, by `-PstoreAssetParts` (all of them when it's empty). */
     const val PHONE = "phone"
     const val TABLET = "tablet"
+    const val ICON = "icon"
+    const val FEATURE = "feature"
+    const val VIDEO = "video"
 
     /** The raw renders, before the script captions and flattens them. Never inside the repo's tracked files. */
     val outDir: File

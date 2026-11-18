@@ -3,11 +3,16 @@
 How the listing's graphics are made, what to change, and the traps. **Running the script** is the `store-assets` skill.
 The rest of the Play submission is in `PUBLISHING.md`.
 
-For now the generator makes the **screenshots** alone, which the README shows (Phase 5 of `IMPLEMENTATION.md`). The
-hi-res icon, the feature graphic (and its README GIF), and the promo video come back with the Play listing in Phase 10:
-DiceFive's generators for all three are in commit `5423b6c` (`app/android/src/test/kotlin/net/zodac/ludo/store/`), and
-the script still holds their captioning and encoding (the video's backdrop and sound mix among them), switched off
-until then.
+The generator makes the **screenshots**, which the README shows, the **hi-res icon**, and the **feature graphic** (and its
+README GIF), back for the Play listing in Phase 10 (`StoreArtGeneratorTest`, approved 2026-11-18). The **promo video** is
+next: DiceFive's scenes are in commit `5423b6c` (`app/android/src/test/kotlin/net/zodac/ludo/store/`), and the script
+still holds its encoding (the backdrop and sound mix among them), switched off until then.
+
+- **Icon** (`icon` part): the launcher icon's two layers, the middle 76dp of their 108dp canvas, so it follows the
+    launcher icon. That is still the placeholder pawn (kept for now, the maintainer, 2026-11-18).
+- **Feature graphic** (`feature` part): the menu's backdrop with its pawns drifting, the menu's logo centred in the left
+    half, and the board mid-game (`Scenes.midGame`) in the right, nothing that matters in the middle (Play's play button)
+    or at an edge (its crops). The GIF is 6 seconds of the drift. The video's end card is the same scene at 16:9.
 
 ## Output (`assets/<version>/`, gitignored)
 
@@ -15,6 +20,9 @@ until then.
 |-------------------------------------------------------------------|--------------------------|
 | `phone/phone-1-game.png` ... `phone-6-statistics.png`             | 1440x2560                |
 | `tablet-10/tablet-10-1-game.png` ... `tablet-10-6-statistics.png` | 2560x1440 (landscape)    |
+| `icon-512.png`                                                    | 512x512, 32-bit PNG      |
+| `feature-graphic-1024x500.png`                                    | 1024x500, no alpha       |
+| `feature-graphic.gif`                                             | not uploaded: the README |
 | `contact-sheet.png`                                               | not uploaded: for review |
 
 - **File names** start with the device, so the two folders can't be mixed up in an upload.

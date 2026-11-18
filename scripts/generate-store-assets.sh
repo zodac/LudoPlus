@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Makes the store listing's assets from the real app - for now the captioned phone and 10-inch tablet screenshots, which
-# the README shows - into assets/<version>/, which is gitignored. The hi-res icon, the feature graphic, and the promo
-# video (DiceFive's, in commit 5423b6c) come back with the Play listing in Phase 10 of .claude/IMPLEMENTATION.md. See
-# .claude/STORE_ASSETS.md.
+# Makes the store listing's assets from the real app - the captioned phone and 10-inch tablet screenshots, which the
+# README shows, the hi-res icon, and the feature graphic - into assets/<version>/, which is gitignored. The promo video
+# (DiceFive's, in commit 5423b6c) comes back later in Phase 10 of .claude/IMPLEMENTATION.md. See .claude/STORE_ASSETS.md.
 #
-#   scripts/generate-store-assets.sh                     # everything there is (a few minutes)
-#   scripts/generate-store-assets.sh --parts phone       # just those: phone, tablet
+#   scripts/generate-store-assets.sh                     # the screenshots (a few minutes)
+#   scripts/generate-store-assets.sh --parts phone       # just those: phone, tablet, icon, feature
 #   scripts/generate-store-assets.sh --no-render         # re-caption/re-encode the last renders, without Gradle
 #   scripts/generate-store-assets.sh --music track.mp3   # different background music under the video's sound effects
 #   scripts/generate-store-assets.sh --no-music          # the video with the app's sounds only
@@ -36,12 +35,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 wants() { [[ ",${PARTS}," == *",$1,"* ]]; }
-for part in icon feature video; do
-    if wants "${part}"; then
-        echo "The ${part} has no generator yet: it comes back with the Play listing (Phase 10 of .claude/IMPLEMENTATION.md)." >&2
-        exit 2
-    fi
-done
+if wants video; then
+    echo "The video has no generator yet: it comes back with the Play listing (Phase 10 of .claude/IMPLEMENTATION.md)." >&2
+    exit 2
+fi
 
 [[ -z "${MUSIC}" || -f "${MUSIC}" ]] || { echo "No such music file: ${MUSIC}" >&2; exit 1; }
 for tool in magick ffmpeg ffprobe python3 curl sha256sum; do
