@@ -47,7 +47,8 @@ app/android/src/play/.../ads/AdMobAds   the only com.google.android.gms.ads and 
     and the banner's ad unit id (`BuildConfig.ADMOB_BANNER_ID`) come from CI's `ADMOB_APP_ID` and `ADMOB_BANNER_ID`
     repository variables (public ids, not secrets). Without them, Google's published test ids. **A debug build always
     asks for the test banner** (`AdMobAds.bannerId`): real ads must never be shown to or tapped by a developer. The release
-    workflow refuses to build without real ids (`android-release.yml`, "Check the AdMob ids").
+    workflow refuses to build the Play bundle without real ids (`android-release.yml`, "Check the AdMob ids"), and
+    builds none while they and `PLAY_LICENCE_KEY` are all unset.
 - **Licences**: AdMob, UMP, and what they pull in are Google's ASDKL, allowed in `LicencePolicy`; `checker-qual` (MIT)
     is credited in `app/licensing/libraries/`.
 - **Tests**: `AdBannerTest` (where it shows, gone for a buyer, untouchable under an achievement banner),

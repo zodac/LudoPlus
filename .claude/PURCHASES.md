@@ -109,9 +109,10 @@ app/android/src/play/.../purchases/  PlayBillingStore - the only com.android.bil
     SHA1withRSA signature of `Purchase.originalJson` (`PurchaseSignature`, in `PlayBillingStore.unlockAllStyles`), so a
     fake billing service's purchase is treated as none: not owned, not acknowledged. The key is Play Console's Base64
     licence key (Monetise with Play > Monetisation setup > Licensing), from the `PLAY_LICENCE_KEY` repository
-    variable (a public key, so not a secret; set 2026-10-28) as `BuildConfig.PLAY_LICENCE_KEY` (play flavour only). A
-    local or debug build has no key and counts every purchase Play reports. The release workflow's apk job fails without
-    a one-line Base64 key, so a release never ships unchecked. Tests: `PlayBillingStoreTest`.
+    variable (a public key, so not a secret; not set yet) as `BuildConfig.PLAY_LICENCE_KEY` (play flavour only). A
+    local or debug build has no key and counts every purchase Play reports. The release workflow builds no Play bundle
+    while the key and the AdMob ids are all unset, and fails without a one-line Base64 key once any is set, so a bundle
+    never ships unchecked. Tests: `PlayBillingStoreTest`.
 - **Debug builds**: "pretend all styles are owned" (decided 2026-10-23): tap the Styles page's unlocked count
     `PRETEND_TAP_TARGET` (5) times, as the Achievements page's superuser mode is entered; a toast says on or off. It's
     `AppContainer.pretendOwnsAllStyles`, ORed into `ownsAllStyles` only in a debug build, for the process and never

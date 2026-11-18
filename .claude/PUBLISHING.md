@@ -35,6 +35,18 @@ In order:
     ships (`PURCHASES.md`, Phase 7). They're under Play Console > the app > **Policy and programs > App content**; the data safety answers are below.
 - **Play App Signing.** Play takes the upload certificate from the first signed `.aab`
     (`keytool -export -rfc -alias upload` if App integrity asks first).
+- **The upload key**, made as DiceFive's was (its certificate: `CN=DiceFiveUpload, O=zodac, C=NZ`, RSA 2048, 10,000
+    days), on the maintainer's own machine:
+
+    ```text
+    keytool -genkeypair -v -keystore upload.jks -storetype PKCS12 -alias upload \
+      -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=LudoPlusUpload, O=zodac, C=NZ"
+    ```
+
+    - It asks only for the password: PKCS12 keeps one for the store and the key, so `RELEASE_KEYSTORE_PASSWORD` and
+        `RELEASE_KEY_PASSWORD` are the same, and `RELEASE_KEY_ALIAS` is `upload`.
+    - `RELEASE_KEYSTORE_BASE64` is `base64 -w0 upload.jks`. Back up the file and its password: a lost upload key needs
+        Play support to reset.
 - **Closed testing.** 12+ testers for 14+ days before requesting production.
 - **Play Games Services.** Link it, register the SHA-1s and add testers (`PLAY_GAMES.md`).
 - **The "Unlock all styles" product** and its license testers: done (`PURCHASES.md`).

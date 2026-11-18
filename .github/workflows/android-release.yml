@@ -580,10 +580,28 @@ jobs:
             exit 1
           fi
 
+      # The Play bundle needs Play Console's licence key and the AdMob ids, which only exist once those accounts do. Until
+      # all three are set, a release is the github APK alone, with a notice; once any is set, all three are checked below
+      # and the bundle is built, so a half-set one fails rather than quietly dropping the bundle.
+      - name: Decide whether the Play bundle is built
+        id: play
+        env:
+          PLAY_LICENCE_KEY: ${{ vars.PLAY_LICENCE_KEY }}
+          ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+          ADMOB_BANNER_ID: ${{ vars.ADMOB_BANNER_ID }}
+        run: |
+          if [[ -z "$PLAY_LICENCE_KEY$ADMOB_APP_ID$ADMOB_BANNER_ID" ]]; then
+            echo "::notice::PLAY_LICENCE_KEY, ADMOB_APP_ID and ADMOB_BANNER_ID are unset - this release is the github APK only, with no Play bundle"
+            echo "bundle=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "bundle=true" >> "$GITHUB_OUTPUT"
+          fi
+
       # The play app checks each purchase's signature with this (app/android/build.gradle.kts, PLAY_LICENCE_KEY): the
       # app's Base64 RSA licence key from Play Console. A public key, so a repository variable, not a secret. Without it
       # the play app would count every purchase Play reports, so the release is refused instead.
       - name: Check the Play licence key
+        if: steps.play.outputs.bundle == 'true'
         env:
           PLAY_LICENCE_KEY: ${{ vars.PLAY_LICENCE_KEY }}
         run: |
@@ -596,6 +614,7 @@ jobs:
       # banner's ad unit id, public ids, so repository variables. Without them the play app would show Google's test ads,
       # so the release is refused instead.
       - name: Check the AdMob ids
+        if: steps.play.outputs.bundle == 'true'
         env:
           ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
           ADMOB_BANNER_ID: ${{ vars.ADMOB_BANNER_ID }}
@@ -628,19 +647,26 @@ jobs:
           PLAY_LICENCE_KEY: ${{ vars.PLAY_LICENCE_KEY }}
           ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
           ADMOB_BANNER_ID: ${{ vars.ADMOB_BANNER_ID }}
-        run: ./gradlew :app:android:assembleGithubRelease :app:android:bundlePlayRelease --console=plain
+          BUNDLE: ${{ steps.play.outputs.bundle }}
+        run: |
+          tasks=(:app:android:assembleGithubRelease)
+          if [[ "$BUNDLE" == "true" ]]; then tasks+=(:app:android:bundlePlayRelease); fi
+          ./gradlew "${tasks[@]}" --console=plain
 
       # app/android/build.gradle.kts names the APK LudoPlus-<version>-<flavour>-<buildType>.apk (signed here, so no
       # -unsigned suffix - a missing secret fails this copy). The bundle's name has no version and no
       # unsigned suffix (only APK names can be set), so its signature is checked here instead: Play
       # refuses an unsigned one.
       - name: Rename the release files
+        env:
+          BUNDLE: ${{ steps.play.outputs.bundle }}
         run: |
           version="${{ needs.version.outputs.name }}"
           mkdir release-files
           cp "app/android/build/outputs/apk/github/release/LudoPlus-$version-github-release.apk" "release-files/LudoPlus-$version.apk"
-          cp app/android/build/outputs/bundle/playRelease/LudoPlus-play-release.aab "release-files/LudoPlus-$version.aab"
           cp app/android/build/outputs/mapping/githubRelease/mapping.txt "release-files/LudoPlus-$version-mapping.txt"
+          if [[ "$BUNDLE" != "true" ]]; then exit 0; fi
+          cp app/android/build/outputs/bundle/playRelease/LudoPlus-play-release.aab "release-files/LudoPlus-$version.aab"
           cp app/android/build/outputs/mapping/playRelease/mapping.txt "release-files/LudoPlus-$version-play-mapping.txt"
           if ! keytool -printcert -jarfile "release-files/LudoPlus-$version.aab" | grep -q '^Owner:'; then
             echo "::error::The App Bundle is not signed - check the RELEASE_KEY* secrets"

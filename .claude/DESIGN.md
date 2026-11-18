@@ -834,8 +834,9 @@ Two apps from one source, one per way the app reaches players: product flavours 
 - **`PROGRESS_FILE_KEY`** (a repo secret): the github APK's progress file key ("Distribution"). The apk job fails
     without it.
 - **`PLAY_LICENCE_KEY`** (a repository variable, not a secret: it's a public key): the play app's licence key, which
-    purchase signatures are checked with (`PURCHASES.md`, "Entitlement"). The apk job fails without it, or on one that
-    isn't one-line Base64.
+    purchase signatures are checked with (`PURCHASES.md`, "Entitlement"). With it and the AdMob ids all unset (no Play
+    Console or AdMob account yet), a release is the github APK alone, with a notice and no Play bundle. Once any of the
+    three is set, the apk job fails without all of them, or on a licence key that isn't one-line Base64.
 - **R8** shrinks and obfuscates release builds (`app/android/r8-rules.pro`). Release dex is stored uncompressed.
     - It lays the dex out from the startup profile (`dexLayoutOptimization`): the code a cold start runs to the menu
         (`StartupProfileGenerator`) goes first. The release workflow fails if it generates no `startup-prof.txt`.
