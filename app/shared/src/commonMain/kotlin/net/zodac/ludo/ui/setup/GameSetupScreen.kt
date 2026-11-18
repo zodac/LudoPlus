@@ -1,17 +1,11 @@
 package net.zodac.ludo.ui.setup
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import net.zodac.ludo.ui.icons.Symbols
-import net.zodac.ludo.ui.common.spokenList
-import net.zodac.ludo.ui.common.LudoPlusDialog
-import net.zodac.ludo.model.CustomMode
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,7 +28,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -56,12 +52,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.zodac.ludo.model.BoardGeometry
+import net.zodac.ludo.model.CustomMode
 import net.zodac.ludo.model.Difficulty
 import net.zodac.ludo.model.GameMode
 import net.zodac.ludo.model.HouseRule
 import net.zodac.ludo.model.PlayerColour
 import net.zodac.ludo.model.PlayerType
 import net.zodac.ludo.model.TeamMode
+import net.zodac.ludo.netplay.LocalNearby
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.common_cancel
 import net.zodac.ludo.resources.common_cpu_cd
@@ -81,7 +79,9 @@ import net.zodac.ludo.resources.setup_house_rules_active_note
 import net.zodac.ludo.resources.setup_house_rules_custom
 import net.zodac.ludo.resources.setup_house_rules_description
 import net.zodac.ludo.resources.setup_house_rules_locked
+import net.zodac.ludo.resources.setup_join_nearby
 import net.zodac.ludo.resources.setup_names_unique
+import net.zodac.ludo.resources.setup_nearby_seat
 import net.zodac.ludo.resources.setup_partner_captures
 import net.zodac.ludo.resources.setup_player_count_spoken
 import net.zodac.ludo.resources.setup_player_name_cd
@@ -94,11 +94,13 @@ import net.zodac.ludo.resources.setup_teams_two_teams_description
 import net.zodac.ludo.resources.setup_teams_unavailable
 import net.zodac.ludo.resources.setup_title
 import net.zodac.ludo.resources.setup_tutorial_link
+import net.zodac.ludo.resources.setup_type_nearby
 import net.zodac.ludo.resources.setup_type_user
 import net.zodac.ludo.ui.common.ChoicePicker
 import net.zodac.ludo.ui.common.FittedSegmentedChoiceRow
 import net.zodac.ludo.ui.common.HoldPageCover
 import net.zodac.ludo.ui.common.LocalLandscapePage
+import net.zodac.ludo.ui.common.LudoPlusDialog
 import net.zodac.ludo.ui.common.MAIN_ACTION_HEIGHT
 import net.zodac.ludo.ui.common.MIN_READABLE_FONT_SIZE
 import net.zodac.ludo.ui.common.ModifierPicker
@@ -107,12 +109,14 @@ import net.zodac.ludo.ui.common.ScreenScaffold
 import net.zodac.ludo.ui.common.ScrollingColumn
 import net.zodac.ludo.ui.common.SoraFontFamily
 import net.zodac.ludo.ui.common.pluralStringResource
+import net.zodac.ludo.ui.common.spokenList
 import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.common.textScale
 import net.zodac.ludo.ui.game.GameSetupForm
 import net.zodac.ludo.ui.game.GameSetupState
 import net.zodac.ludo.ui.game.GameViewModel
 import net.zodac.ludo.ui.game.PlayerSetupSlot
+import net.zodac.ludo.ui.icons.Symbols
 
 /**
  * Fixed width for the per-row User/CPU control, so the name fields above and below it all end at
@@ -136,6 +140,10 @@ fun GameSetupScreen(
     modifier: Modifier = Modifier,
     showTutorialLink: Boolean = false,
     onTutorial: () -> Unit = {},
+    /** Opens the lobby, for a game with a Nearby seat. */
+    onHost: () -> Unit = {},
+    /** Opens joining a game hosted on a phone nearby, where there can be one. */
+    onJoin: () -> Unit = {},
 ) {
     val setup by viewModel.setupForm.setup.collectAsStateWithLifecycle()
     val setupRestored by viewModel.setupForm.setupRestored.collectAsStateWithLifecycle()
@@ -180,12 +188,21 @@ fun GameSetupScreen(
                     // A name field still focused would keep blinking its cursor on the fading-out page, and the
                     // keyboard up, for the frames the next screen takes to arrive.
                     focusManager.clearFocus()
-                    if (viewModel.startGame(defaultName)) onStartGame()
+                    when {
+                        viewModel.setupHasNearbySeats -> onHost()
+                        viewModel.startGame(defaultName) -> onStartGame()
+                    }
                 },
                 enabled = duplicateNameSlots.isEmpty(),
                 modifier = Modifier.fillMaxWidth().heightIn(min = MAIN_ACTION_HEIGHT),
             ) {
                 Text(text = stringResource(Res.string.setup_start), style = MaterialTheme.typography.titleMedium)
+            }
+            // A game hosted on a phone nearby, where this one can join one.
+            if (LocalNearby.current.available) {
+                TextButton(onClick = onJoin, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(Res.string.setup_join_nearby))
+                }
             }
         }
 
@@ -416,6 +433,13 @@ private fun PlayerRow(
                     onSelect = onDifficultyChange,
                     modifier = Modifier.weight(1f),
                 )
+
+                PlayerType.NEARBY -> Text(
+                    text = stringResource(Res.string.setup_nearby_seat),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f).padding(start = 12.dp),
+                )
             }
         }
     }
@@ -425,22 +449,40 @@ private fun PlayerRow(
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val labelStyle = MaterialTheme.typography.labelLarge.copy(fontFamily = SoraFontFamily, fontWeight = FontWeight.Bold)
-    val labelWidth = with(density) { maxOf(measurer.measure(userLabel, labelStyle).size.width, measurer.measure(cpuLabel, labelStyle).size.width).toDp() }
+    val nearbyLabel = stringResource(Res.string.setup_type_nearby)
+    val nearby = LocalNearby.current.available
+    val labelWidth = with(density) {
+        listOf(userLabel, cpuLabel, nearbyLabel).maxOf { measurer.measure(it, labelStyle).size.width }.toDp()
+    }
     val typeControlWidth = maxOf(TYPE_CONTROL_WIDTH * fontScale.coerceAtLeast(1f), labelWidth + TYPE_CHIP_PADDING)
     val typeControl: @Composable () -> Unit = {
         if (isTypeLocked) {
             Spacer(modifier = Modifier.width(typeControlWidth))
         } else {
             FilterChip(
-                selected = slot.type == PlayerType.AI,
-                onClick = { onTypeChange(if (slot.type == PlayerType.AI) PlayerType.HUMAN else PlayerType.AI) },
+                selected = slot.type != PlayerType.HUMAN,
+                // Player, then CPU, then (where phones nearby can join) a Nearby player, then Player again.
+                onClick = {
+                    onTypeChange(
+                        when (slot.type) {
+                            PlayerType.HUMAN -> PlayerType.AI
+                            PlayerType.AI -> if (nearby) PlayerType.NEARBY else PlayerType.HUMAN
+                            PlayerType.NEARBY -> PlayerType.HUMAN
+                        },
+                    )
+                },
                 label = {
                     // FilterChip's own Row left-aligns its label rather than centering it, so at a
                     // fixed chip width the leftover space all landed on one side - most visible as
                     // "CPU" and "Player" sitting at different horizontal positions. A label that fills
                     // the whole slot and centers its own text isn't subject to that.
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text(if (slot.type == PlayerType.AI) cpuLabel else userLabel, fontFamily = SoraFontFamily, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                        val label = when (slot.type) {
+                            PlayerType.HUMAN -> userLabel
+                            PlayerType.AI -> cpuLabel
+                            PlayerType.NEARBY -> nearbyLabel
+                        }
+                        Text(label, fontFamily = SoraFontFamily, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                     }
                 },
                 modifier = Modifier.width(typeControlWidth),

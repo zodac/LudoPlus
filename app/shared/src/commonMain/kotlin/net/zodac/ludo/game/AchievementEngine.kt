@@ -71,17 +71,20 @@ object AchievementEngine {
 
     /**
      * What a new game for [players] earns as it starts, at [localHour] on the phone's clock. [previousGame] is
-     * the finished game it replaced on the same screen ([Achievement.ONE_MORE_TIME] when player 1 lost it), or null.
+     * the finished game it replaced on the same screen ([Achievement.ONE_MORE_TIME] when this device's player lost it),
+     * or null. [mySeat] is this device's player's seat: seat 0, but for a guest's in a Nearby game.
      */
-    fun atGameStart(players: List<PlayerConfig>, previousGame: GameState?, localHour: Int): GameFeats {
-        if (players.firstOrNull()?.type != PlayerType.HUMAN) return GameFeats()
+    fun atGameStart(players: List<PlayerConfig>, previousGame: GameState?, localHour: Int, mySeat: Int = 0): GameFeats {
+        val me = players.getOrNull(mySeat) ?: return GameFeats()
+        if (me.type == PlayerType.AI) return GameFeats()
+        val people = setOf(PlayerType.HUMAN, PlayerType.NEARBY)
         val earned = buildSet {
             add(Achievement.THE_JOURNEY_BEGINS)
-            if (previousGame != null && previousGame.isFinished && previousGame.placeOf(0) != 1) add(Achievement.ONE_MORE_TIME)
-            if (players.drop(1).any { it.type == PlayerType.HUMAN && it.name == CREATOR_NAME }) add(Achievement.BIG_FAN)
+            if (previousGame != null && previousGame.isFinished && previousGame.placeOf(mySeat) != 1) add(Achievement.ONE_MORE_TIME)
+            if (players.withIndex().any { (seat, it) -> seat != mySeat && it.type in people && it.name == CREATOR_NAME }) add(Achievement.BIG_FAN)
             if (localHour in MIDNIGHT_HOURS) add(Achievement.MIDNIGHT_RUN)
             if (players.any { it.name.equals(LUDO_NAME, ignoreCase = true) }) add(Achievement.WHOS_LUDO)
-            if (players.first().name.equals(CPU_NAME, ignoreCase = true)) add(Achievement.I_AM_NOT_A_ROBOT)
+            if (me.name.equals(CPU_NAME, ignoreCase = true)) add(Achievement.I_AM_NOT_A_ROBOT)
             if (players.map { it.name.firstOrNull()?.lowercaseChar() }.distinct().singleOrNull()?.isLetter() == true) add(Achievement.ALLITERATION)
             if (players.any { it.type == PlayerType.HUMAN && it.name.nameWidth() >= maxPlayerNameLength(BoardGeometry.MAX_PLAYERS) }) add(Achievement.WHATS_IN_A_NAME)
             if (players.withIndex().all { (seat, player) -> player.colour != PlayerColour.defaultFor(seat) }) add(Achievement.MUSICAL_CHAIRS)

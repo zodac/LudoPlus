@@ -103,7 +103,7 @@ object SavedGameJson {
         require(playMillis >= 0) { "Negative play time" }
         val finishMillis = obj.obj("finishMillis").longs().entries.associate { (player, millis) ->
             val index = player.toIntOrNull()?.takeIf { it in players.indices } ?: throw JsonParseException("No player \"$player\"")
-            require(state.players[index].isFinished(state.board) && millis in 0..playMillis) { "Player $index's finish time doesn't fit" }
+            require((state.isFinished || state.players[index].isFinished(state.board)) && millis in 0..playMillis) { "Player $index's finish time doesn't fit" }
             index to millis
         }
         require(finishMillis.keys == state.finishingOrder.toSet()) { "A finished player has no finish time" }
@@ -183,6 +183,8 @@ object SavedGameJson {
         if (state.rollingAgain) put("rollingAgain", true)
         if (state.yardTriesUsed > 0) put("yardTriesUsed", state.yardTriesUsed)
         put("finishingOrder", jsonInts(state.finishingOrder))
+        // Over: never saved, but a Nearby host sends its guests the game's end (`.claude/NETPLAY.md`).
+        if (state.isFinished) put("finished", true)
         state.lastEvent?.let { put("lastEvent", encodeEvent(it)) }
     }
 
@@ -209,6 +211,19 @@ object SavedGameJson {
         val current = obj.int("current")
         require(current in 0..<playerCount) { "No player $current to play" }
         val finishingOrder = obj.array("finishingOrder").ints()
+        // An ended game: every player placed (the last ones as they stood, where it stopped at its first winner).
+        if (obj.flag("finished")) {
+            require(finishingOrder.sorted() == players.indices.toList()) { "An ended game hasn't placed every player" }
+            return GameState(
+                mode = mode,
+                rules = rules,
+                players = players,
+                current = current,
+                phase = TurnPhase.Finished,
+                finishingOrder = finishingOrder,
+                lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
+            )
+        }
         require(finishingOrder.distinct() == finishingOrder && finishingOrder.all { players.getOrNull(it)?.isFinished(board) == true }) {
             "The finishing order isn't the finished players"
         }

@@ -120,7 +120,7 @@ fun GameOverScreen(
     val order = state.finishingOrder
     // One winner, or in a team game the first team's players, each with their card.
     val winners = order.filter { state.placeOf(it) == 1 }
-    val personWon = winners.any { game.players[it].type == PlayerType.HUMAN }
+    val personWon = winners.any { game.players[it].type != PlayerType.AI }
     // Latched at first composition: [onCelebrated] clears the caller's flag at once, which mustn't cut these short.
     val celebrateNow = remember { celebrate && personWon }
     val sounds = rememberSoundEffects()

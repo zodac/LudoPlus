@@ -44,6 +44,21 @@ class SavedGameJsonTest {
     )
 
     @Test
+    fun `an ended game - a Nearby host's last word - comes back ended - every player placed - its last ones as they stood`() {
+        val random = Random(9)
+        var state = GameState.new(GameMode.CLASSIC, 4, first = 1).let { it.copy(rules = it.rules.copy(stopAtFirstWinner = true)) }
+        while (!state.isFinished) {
+            state = when (val phase = state.phase) {
+                is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random).pawn)
+                else -> LudoEngine.roll(state, random)
+            }
+        }
+        val ended = game(state)
+        assertEquals(ended, SavedGameJson.decode(SavedGameJson.encode(ended)))
+        assertEquals(TurnPhase.Finished, SavedGameJson.decode(SavedGameJson.encode(ended)).state.phase)
+    }
+
+    @Test
     fun `a game saved without an id or steps - by an older build - reads as none`() {
         val saved = game(GameState.new(GameMode.CLASSIC, 4, first = 1))
         val older = SavedGameJson.encode(saved).replace(",\"id\":\"0123456789abcdef0123456789abcdef\"", "").replace(",\"steps\":17", "")

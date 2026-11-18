@@ -12,6 +12,14 @@ object Screen {
     const val PLAY_SETUP = "play/setup"
     const val PLAY_GAME = "play/game"
 
+    /** The host's Nearby lobby, in the play graph, between New Game and the board. */
+    const val PLAY_LOBBY = "play/lobby"
+
+    /** Joining a Nearby game: the graph, finding a game, and its board, which share one view model. */
+    const val JOIN_GRAPH = "join"
+    const val JOIN_FIND = "join/find"
+    const val JOIN_GAME = "join/game"
+
     const val SETTINGS = "settings"
 
     /** The Graphics page, opened from its row in Settings. */

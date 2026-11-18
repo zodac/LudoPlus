@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import net.zodac.ludo.ads.Ads
 import net.zodac.ludo.ads.NoAds
 import net.zodac.ludo.device.AndroidProgressFiles
+import net.zodac.ludo.netplay.Nearby
+import net.zodac.ludo.netplay.NoNearby
 import net.zodac.ludo.online.GameServices
 import net.zodac.ludo.online.NoGameServices
 import net.zodac.ludo.platform.ProgressFiles
@@ -27,6 +29,9 @@ internal object Distribution {
 
     /** None: the github app has no ads, and no network. */
     fun ads(activity: ComponentActivity): Ads = NoAds
+
+    /** None: netplay needs Google Play services. */
+    fun nearby(activity: ComponentActivity): Nearby = NoNearby
 
     /** [activity]'s progress files: registered as it's created, before it starts. */
     fun progressFiles(activity: ComponentActivity): ProgressFiles = AndroidProgressFiles.attach(activity)

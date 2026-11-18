@@ -231,6 +231,8 @@ class GameSetupForm {
             val name = when (slot.type) {
                 PlayerType.HUMAN -> resolvePlayerName(slot.name, defaultName(slot.slot))
                 PlayerType.AI -> aiNames.next()
+                // Named by the guest who takes the seat (the lobby's); this until then.
+                PlayerType.NEARBY -> defaultName(slot.slot)
             }
             PlayerConfig(slot = slot.slot, type = slot.type, name = name, difficulty = slot.difficulty, colour = slot.colour)
         }

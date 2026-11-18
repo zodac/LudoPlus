@@ -20,8 +20,9 @@ them all home first. In development, pre-1.0.0.
     and die, and in-app purchases (`IMPLEMENTATION.md`).
 - **Aims.**
     - A polished, offline-first game for the Play Store: no account needed, and play never waits on the network; data
-        stays on the device. The play app's only network use is its ad banner and the optional Play Games, Billing, and
-        cloud save; the github app has none (decided 2026-11-18).
+        stays on the device. The play app's only network use is its ad banner, the optional Play Games, Billing, and
+        cloud save, and Nearby games between phones in the same room (`NETPLAY.md`); the github app has none (decided
+        2026-11-18).
     - Accessible: TalkBack and large fonts are first-class.
     - Smooth: 60fps minimum unless the player picks a lower Animations level.
     - Small APK.

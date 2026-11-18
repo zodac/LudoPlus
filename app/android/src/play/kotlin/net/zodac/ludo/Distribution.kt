@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.activity.ComponentActivity
 import net.zodac.ludo.ads.AdMobAds
 import net.zodac.ludo.ads.Ads
+import net.zodac.ludo.netplay.Nearby
+import net.zodac.ludo.netplay.NearbyConnections
 import net.zodac.ludo.online.GameServices
 import net.zodac.ludo.online.PlayGamesServices
 import net.zodac.ludo.platform.ProgressFiles
@@ -24,6 +26,8 @@ internal object Distribution {
     fun store(activity: ComponentActivity): Store = PlayBillingStore.attach(activity)
 
     fun ads(activity: ComponentActivity): Ads = AdMobAds.attach(activity)
+
+    fun nearby(activity: ComponentActivity): Nearby = NearbyConnections.attach(activity)
 
     /** None: a file's progress could otherwise reach Play Games' achievements and leaderboards. */
     fun progressFiles(activity: ComponentActivity): ProgressFiles? = null

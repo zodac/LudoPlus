@@ -490,6 +490,35 @@
     <string name="setup_player_name_cd">Player %1$d name</string>
     <!-- The chip that switches a seat between a person ("Player") and the computer ("CPU", common_cpu_cd). -->
     <string name="setup_type_user">Player</string>
+    <!-- The seat type for a person at another phone nearby, in a Nearby game (on the type chip, after Player and CPU). -->
+    <string name="setup_type_nearby">Nearby</string>
+    <!-- In a Nearby seat's row, in place of a name: a phone nearby takes the seat in the lobby. -->
+    <string name="setup_nearby_seat">For a nearby phone</string>
+    <!-- New Game's way to join a game hosted on a phone nearby (ui/netplay/NetplayScreens.kt). -->
+    <string name="setup_join_nearby">Join a game nearby</string>
+    <!-- The host's lobby: the page's title, what it says, and its button. -->
+    <string name="netplay_lobby_title">Nearby Game</string>
+    <string name="netplay_host_hint">Ask the other players to open New Game on their phones and choose Join a game nearby. Each takes a Nearby seat.</string>
+    <string name="netplay_start">Start Game</string>
+    <!-- A Nearby seat no phone has taken yet. -->
+    <string name="netplay_open_seat">Waiting for a phone...</string>
+    <!-- A CPU seat in the lobby's list: %1$s is its name. -->
+    <string name="netplay_cpu_seat">%1$s (CPU)</string>
+    <!-- Joining: the page's title, and where it has got to. -->
+    <string name="netplay_join_title">Join a Game</string>
+    <string name="netplay_looking">Looking for games nearby...</string>
+    <string name="netplay_found_games">Games nearby:</string>
+    <!-- A game found nearby, as a button: %1$s is its host's name. -->
+    <string name="netplay_join_action">Join %1$s's game</string>
+    <string name="netplay_joining">Joining...</string>
+    <string name="netplay_seated">You're in! Waiting for the host to start the game.</string>
+    <string name="netplay_refused_full">That game has no seat left.</string>
+    <string name="netplay_refused_started">That game has already started.</string>
+    <string name="netplay_refused_version">That phone has another version of the app. Update both, then try again.</string>
+    <string name="netplay_lost">Lost the host's phone.</string>
+    <string name="netplay_ended">The host ended the game.</string>
+    <!-- Nearby's permissions were refused. -->
+    <string name="netplay_no_permission">Playing with phones nearby needs permission to find and connect to them. Allow it in the app's settings, then try again.</string>
     <!-- A computer player's difficulty. If the three don't fit side by side their first letters are shown instead. -->
     <string name="setup_difficulty_easy">Easy</string>
     <string name="setup_difficulty_medium">Medium</string>

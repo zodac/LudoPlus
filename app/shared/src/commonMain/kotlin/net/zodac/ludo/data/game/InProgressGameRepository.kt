@@ -99,7 +99,8 @@ class InProgressGameRepository(
     suspend fun load(): StartedGame? {
         awaitWrites()
         val json = dataStore.data.first()[GAME_KEY] ?: return null
-        return runCatching { SavedGameJson.decode(json) }.getOrElse {
+        // An ended game (only ever a Nearby host's message) is nothing to continue.
+        return runCatching { SavedGameJson.decode(json).also { require(!it.state.isFinished) { "An ended game" } } }.getOrElse {
             orNullOnFailure { dataStore.edit { prefs -> if (prefs[GAME_KEY] == json) prefs.remove(GAME_KEY) } }
             null
         }

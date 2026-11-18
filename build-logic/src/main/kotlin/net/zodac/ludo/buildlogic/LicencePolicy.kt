@@ -27,7 +27,7 @@ object LicencePolicy {
         // app's own licence, provided those guidelines are followed.
         "LicenseRef-Google-Play-Games-Branding" to listOf("google-play-games-branding-icons"),
         // Google's own terms for the Play SDKs (Play Games Services, the Play Billing Library, Google Mobile Ads and its
-        // consent form, and what they pull in): proprietary, free to ship in an app, with no condition on the app's own
+        // consent form, Nearby Connections, and what they pull in): proprietary, free to ship in an app, with no condition on the app's own
         // licence.
         "ASDKL" to listOf(
             "com.android.billingclient:billing",
@@ -42,6 +42,7 @@ object LicencePolicy {
             "com.google.android.gms:play-services-location",
             "com.google.android.gms:play-services-measurement-base",
             "com.google.android.gms:play-services-measurement-sdk-api",
+            "com.google.android.gms:play-services-nearby",
             "com.google.android.gms:play-services-places-placereport",
             "com.google.android.gms:play-services-tasks",
             "com.google.android.play:hsdp",

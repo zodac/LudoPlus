@@ -1,14 +1,9 @@
 package net.zodac.ludo.navigation
 
-import net.zodac.ludo.ui.styles.StylesWarmUp
-import androidx.compose.foundation.layout.BoxWithConstraints
-import net.zodac.ludo.ui.styles.StylesViewModel
-import net.zodac.ludo.ui.styles.StylesScreen
-import net.zodac.ludo.ui.styles.StyleCategoryScreen
-import net.zodac.ludo.game.style.StyleCategory
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -28,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import net.zodac.ludo.app.AppContainer
 import net.zodac.ludo.app.LocalAppContainer
 import net.zodac.ludo.data.orNullOnFailure
+import net.zodac.ludo.game.style.StyleCategory
 import net.zodac.ludo.model.Achievement
 import net.zodac.ludo.resources.Res
 import net.zodac.ludo.resources.common_default_player_name
@@ -43,6 +39,8 @@ import net.zodac.ludo.ui.common.stringResource
 import net.zodac.ludo.ui.game.GameScreen
 import net.zodac.ludo.ui.game.GameViewModel
 import net.zodac.ludo.ui.menu.MenuScreen
+import net.zodac.ludo.ui.netplay.HostLobbyScreen
+import net.zodac.ludo.ui.netplay.JoinScreen
 import net.zodac.ludo.ui.records.LeaderboardScreen
 import net.zodac.ludo.ui.records.LeaderboardViewModel
 import net.zodac.ludo.ui.records.StatisticsScreen
@@ -53,6 +51,10 @@ import net.zodac.ludo.ui.settings.GraphicsViewModel
 import net.zodac.ludo.ui.settings.SettingsScreen
 import net.zodac.ludo.ui.settings.SettingsViewModel
 import net.zodac.ludo.ui.setup.GameSetupScreen
+import net.zodac.ludo.ui.styles.StyleCategoryScreen
+import net.zodac.ludo.ui.styles.StylesScreen
+import net.zodac.ludo.ui.styles.StylesViewModel
+import net.zodac.ludo.ui.styles.StylesWarmUp
 
 /**
  * The app's pages. Opening one is done under the [cover] (see [PageCover]), never with the NavHost's own transitions: one
@@ -136,6 +138,17 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
                 onBack = navigateUp,
                 showTutorialLink = firstGame,
                 onTutorial = { navigate(Screen.TUTORIAL) },
+                onHost = { navigate(Screen.PLAY_LOBBY) },
+                onJoin = { navigate(Screen.JOIN_GRAPH) },
+            )
+        }
+        composable(Screen.PLAY_LOBBY) { backStackEntry ->
+            val playGraphEntry = remember(backStackEntry) { navController.getBackStackEntry(Screen.PLAY_GRAPH) }
+            HostLobbyScreen(
+                viewModel = viewModel<GameViewModel>(playGraphEntry, factory = GameViewModel.factory(container)),
+                // The board in the lobby's place, so back from the game doesn't land in a closed lobby.
+                onStart = { change { navController.navigate(Screen.PLAY_GAME) { popUpTo(Screen.PLAY_LOBBY) { inclusive = true } } } },
+                onBack = navigateUp,
             )
         }
         composable(Screen.PLAY_GAME) { backStackEntry ->
@@ -147,6 +160,25 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
                 if (gameViewModel.game.value == null && !gameViewModel.resumeGame()) backToMenu()
             }
             GameScreen(viewModel = gameViewModel, onBackToMenu = backToMenu)
+        }
+    }
+
+    navigation(startDestination = Screen.JOIN_FIND, route = Screen.JOIN_GRAPH) {
+        composable(Screen.JOIN_FIND) { backStackEntry ->
+            val joinGraphEntry = remember(backStackEntry) { navController.getBackStackEntry(Screen.JOIN_GRAPH) }
+            JoinScreen(
+                viewModel = viewModel<GameViewModel>(joinGraphEntry, factory = GameViewModel.factory(container)),
+                onPlaying = { change { navController.navigate(Screen.JOIN_GAME) { popUpTo(Screen.JOIN_FIND) { inclusive = true } } } },
+                onBack = navigateUp,
+            )
+        }
+        composable(Screen.JOIN_GAME) { backStackEntry ->
+            val joinGraphEntry = remember(backStackEntry) { navController.getBackStackEntry(Screen.JOIN_GRAPH) }
+            val gameViewModel = viewModel<GameViewModel>(joinGraphEntry, factory = GameViewModel.factory(container))
+            GameScreen(viewModel = gameViewModel, onBackToMenu = {
+                gameViewModel.leaveJoined()
+                backToMenu()
+            })
         }
     }
 

@@ -46,6 +46,9 @@ import net.zodac.ludo.data.settings.AnimationLevel
 import net.zodac.ludo.navigation.AchievementScrollRequest
 import net.zodac.ludo.navigation.AchievementScrollRequests
 import net.zodac.ludo.navigation.LudoPlusNavHost
+import net.zodac.ludo.netplay.LocalNearby
+import net.zodac.ludo.netplay.Nearby
+import net.zodac.ludo.netplay.NoNearby
 import net.zodac.ludo.navigation.Screen
 import net.zodac.ludo.navigation.StyleScrollRequest
 import net.zodac.ludo.navigation.StyleScrollRequests
@@ -104,6 +107,8 @@ fun LudoPlusApp(
     store: Store = NoStore,
     /** The platform's ad network, where it has one: the banner at the foot of the screen. */
     ads: Ads = NoAds,
+    /** The platform's way of playing with phones in the same room, where it has one. */
+    nearby: Nearby = NoNearby,
     /** What freezes the window's infinite animations, where it's the policy its recomposer runs under. */
     screenIdle: ScreenIdle = remember { ScreenIdle() },
 ) {
@@ -191,6 +196,7 @@ fun LudoPlusApp(
         LocalGameServices provides gameServices,
         LocalStore provides store,
         LocalAds provides ads,
+        LocalNearby provides nearby,
         LocalOnlineSyncStatus provides onlineSync.status,
         LocalDriftState provides driftState,
         LocalScreenIdle provides screenIdle,

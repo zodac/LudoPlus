@@ -80,6 +80,17 @@ are signed in:
 This information is held by Google under Google's Privacy Policy. You can sign out in the App's Settings. You can delete
 the App's data from Google Play Games in your Play Games profile or your Google Account.
 
+## 4a. Playing With Phones Nearby (the Google Play version)
+
+You can play one game across several phones in the same room, using Google's Nearby Connections. It finds and links
+the phones directly, over Bluetooth and Wi-Fi, with no server in between. To do so the App asks, when you first host or
+join such a game, for permission to find and connect to nearby devices (on older versions of Android, location
+permission, which Android requires for this; the App doesn't use your location).
+
+While you host or look for a game, your phone shows the player name you set up to phones nearby running the App. In a
+game, the phones send each other the game itself: its players' names and the moves. Nothing is sent to us or kept
+anywhere but on the phones in the game.
+
 ## 5. Purchases (the Google Play version)
 
 The App offers optional one-time purchases ("Unlock all styles", "Remove ads", and both together). Purchases are made
@@ -117,6 +128,7 @@ The Google Play version uses these Google services, each under Google's Privacy 
 - Google AdMob and Google's consent form (advertising, section 3)
 - Google Play Games Services (optional sign-in, section 4)
 - Google Play Billing (optional purchases, section 5)
+- Google Nearby Connections (playing with phones nearby, section 4a)
 
 The GitHub version uses no third-party online services.
 

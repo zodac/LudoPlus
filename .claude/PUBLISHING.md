@@ -76,6 +76,9 @@ until the player signs in.
     - Location > **Approximate location** (from the IP address): collected by the SDK for ads, as Google lists it.
     - App activity > **App interactions** (ad impressions and taps), and App info and performance > **Crash logs**,
         **Diagnostics**: collected by the SDK.
+- **Nearby games** (from 2026-11-18): the phones send each other the game, the player names among it, directly, with no
+    server; nothing reaches the developer. Google's guidance treats data sent device to device without passing through
+    a server the developer controls as not collected; check the form's current wording when filling it in.
 - **The crash page's GitHub report isn't collection by the app.** The player posts it from their own browser and account,
     the app sends nothing, and the play app has no `INTERNET` permission. The privacy policy still describes it.
 - **Progress files aren't in the form.** They're only in the GitHub APK, which isn't on Play.

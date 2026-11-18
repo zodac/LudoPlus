@@ -32,21 +32,25 @@ class GameRecordRepository(
     val writes: StateFlow<Long> = writeCount.asStateFlow()
 
     /**
-     * Records the finished [game]'s people, in one write: each one's place (their team's, in a team game), finish time,
-     * turns, captures, times captured, and pawns home, with the game's mode, length, and [endedAtEpochMillis]. The
-     * computer's players aren't recorded, and a game with no person in it writes nothing.
+     * Records the finished [game]'s people at this phone, in one write: each one's place (their team's, in a team game),
+     * finish time, turns, captures, times captured, and pawns home, with the game's mode, length, and
+     * [endedAtEpochMillis]. The computer's players and a Nearby game's other phones' players aren't recorded, and a game
+     * with no person in it writes nothing. On a guest's phone ([StartedGame.guestSeat]) only its own seat is, as the
+     * device's own: elsewhere that's seat 0.
      */
     suspend fun recordGame(game: StartedGame, endedAtEpochMillis: Long = nowEpochMillis()) {
         val state = game.state
         require(state.isFinished) { "Only a finished game is recorded" }
+        val mySeat = game.guestSeat ?: 0
         val rows = game.players.mapIndexedNotNull { index, player ->
-            if (player.type != PlayerType.HUMAN) return@mapIndexedNotNull null
+            val atThisPhone = if (game.guestSeat != null) index == game.guestSeat else player.type == PlayerType.HUMAN
+            if (!atThisPhone) return@mapIndexedNotNull null
             val side = state.players[index]
             val place = requireNotNull(state.placeOf(index)) { "Player $index isn't placed" }
             GameResult(
                 playerName = player.name,
                 playerKey = playerNameKey(player.name),
-                isPrimaryPlayer = index == 0,
+                isPrimaryPlayer = index == mySeat,
                 gameModeId = game.mode.id,
                 // A team's win is its players' together, not a race of one: team games stay off the Leaderboard, and so
                 // do games with house rules, which stay out of Statistics too.

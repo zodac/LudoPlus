@@ -421,6 +421,8 @@ dependencies {
     // flavour's alone: the github APK has no ads and no network.
     "playImplementation"(libs.play.services.ads)
     "playImplementation"(libs.user.messaging.platform)
+    // Nearby Connections: netplay between phones in the same room (netplay/NearbyConnections). The play flavour's alone.
+    "playImplementation"(libs.play.services.nearby)
     constraints {
         // play-services-base asks for androidx.fragment 1.1.0, which Play Console flags as an outdated SDK.
         "playImplementation"(libs.androidx.fragment)

@@ -39,10 +39,21 @@ Connections: no server, no accounts. This file is the plan and the one source on
 
 ## Slices
 
-1. The protocol and the sessions, pure and tested.
-2. The transport (Nearby, permissions) and the lobby: host and join from New Game, the seat list filling in.
-3. The game over the link: the guest's screen showing the host's game, its own turns sent; records and achievements
-    for each phone's own seat.
+1. **Done** (2026-11-18): the protocol and the sessions, pure and tested (`NetplaySessionsTest`).
+2. **Built** (2026-11-18; untested on phones): the transport (`NearbyConnections`, its permissions asked for as the
+    lobby or join page opens) and the lobby: New Game's type chip cycles Player, CPU, Nearby (where Nearby is
+    available); Start with a Nearby seat opens the lobby (`PLAY_LOBBY`), whose Start is enabled once every Nearby seat is
+    taken; "Join a game nearby" under New Game's Start opens the join page (`JOIN_GRAPH`), listing the games found.
+3. **Built** (2026-11-18; untested on phones): the game over the link (`NetplayGameTest`). The host's `GameViewModel`
+    sends the game after every change and takes a guest's roll or move only for its own seat on its turn; its own taps
+    don't play a Nearby seat (`StartedGame.currentIsCpu` covers them); a guest that leaves is played by the CPU, and a
+    hosted game continued later has the CPU in every Nearby seat. The guest's `GameViewModel` shows the host's game at
+    its own seat (`StartedGame.guestSeat`), sends its roll and move, saves nothing, and records and earns for its own
+    seat alone (`AchievementTracker(mySeat)`, `AchievementEngine.atGameStart(mySeat)`, `GameRecordRepository.recordGame`).
+    A finished game can now be sent (`SavedGameJson`'s `finished` flag), never continued.
 4. Reconnect (a guest that drops can come back to its seat), turn timeouts, and the CPU stepping in for a guest gone
     for good.
-5. The privacy policy, data-safety answers, `CLAUDE.md`'s aims, and a check on two phones.
+5. The privacy policy (done: section 4a), data-safety answers, `CLAUDE.md`'s aims, and a check on two phones.
+
+Known gaps for slice 4: a guest's Game Over "Play Again" starts a game on its own form; a host that leaves ends the
+session for everyone (each guest sees "The host ended the game"); a dropped guest can't come back to its seat yet.

@@ -18,9 +18,13 @@ import net.zodac.ludo.model.PlayerType
  * Player 1's rolls, 6s, and squares moved wait to be counted with the next step that earns anything else,
  * or until [flush], so a roll alone doesn't write the store.
  */
-class AchievementTracker(private val players: List<PlayerConfig>) {
+class AchievementTracker(
+    private val players: List<PlayerConfig>,
+    /** The seat this device's player is in: seat 0, but for a guest's in a Nearby game (`.claude/NETPLAY.md`). */
+    private val mySeat: Int = 0,
+) {
 
-    private val active = players.firstOrNull()?.type == PlayerType.HUMAN
+    private val active = players.getOrNull(mySeat)?.type.let { it == PlayerType.HUMAN || it == PlayerType.NEARBY }
 
     /** Player 1's rolls, 6s, and squares moved not yet handed over: see the class doc. */
     private val pending = mutableMapOf<AchievementCounter, Int>()
@@ -104,7 +108,7 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
         val pawnsPerPlayer = after.rules.pawnsPerPlayer
         val lastTrackSquare = board.trackSteps - 1
         val startsTurn = event !is GameEvent.Moved && !before.rollingAgain
-        if (event.player == PLAYER_ONE) {
+        if (event.player == mySeat) {
             if (event !is GameEvent.Moved) {
                 if (startsTurn) {
                     turnCaptures = 0
@@ -115,11 +119,11 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
             when (event) {
                 is GameEvent.RollAgainLimit -> feats += Achievement.TOO_MUCH_OF_A_GOOD_THING
                 is GameEvent.NoMove -> {
-                    val me = before.players[PLAYER_ONE]
+                    val me = before.players[mySeat]
                     if (me.pawnsHome(board) == pawnsPerPlayer - 1 && me.pawns.any { it == board.homeProgress - 1 } && ++nearMisses >= NEAR_MISSES) {
                         feats += Achievement.SO_NEAR_YET_SO_FAR
                     }
-                    val now = after.players[PLAYER_ONE]
+                    val now = after.players[mySeat]
                     if (now.turns >= LOCKED_OUT_TURNS && now.pawns.all { it == PawnPosition.YARD_PROGRESS } && now.timesCaptured == 0) {
                         feats += Achievement.LOCKED_OUT
                     }
@@ -130,12 +134,12 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
         } else {
             if (startsTurn) theirTurnCaptures = 0
             if (event is GameEvent.Moved) {
-                val mine = event.move.captures.filter { it.player == PLAYER_ONE }
+                val mine = event.move.captures.filter { it.player == mySeat }
                 if (mine.isNotEmpty()) {
                     if (mine.size >= 2) feats += Achievement.SITTING_DUCKS
                     theirTurnCaptures += mine.size
                     if (theirTurnCaptures >= 2) feats += Achievement.INSULT_TO_INJURY
-                    if (mine.any { before.players[PLAYER_ONE].pawns[it.pawn] == lastTrackSquare }) feats += Achievement.BACK_TO_SQUARE_ONE
+                    if (mine.any { before.players[mySeat].pawns[it.pawn] == lastTrackSquare }) feats += Achievement.BACK_TO_SQUARE_ONE
                     for (pawn in mine) {
                         val times = (timesEachCaptured[pawn.pawn] ?: 0) + 1
                         timesEachCaptured[pawn.pawn] = times
@@ -143,14 +147,14 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
                         if (pawn.pawn == lapPawn) lapPawn = null
                         leftYardOnTurn -= pawn.pawn
                     }
-                    payback = event.player to after.players[PLAYER_ONE].turns + 1
+                    payback = event.player to after.players[mySeat].turns + 1
                 }
             }
         }
-        if (after.players[PLAYER_ONE].timesCaptured >= PUNCHING_BAG_CAPTURES) feats += Achievement.PUNCHING_BAG
+        if (after.players[mySeat].timesCaptured >= PUNCHING_BAG_CAPTURES) feats += Achievement.PUNCHING_BAG
         // A partner isn't an opponent: in a team game, they're racing for player 1's place too.
-        val opponents = after.players.indices.filter { it != PLAYER_ONE && !after.rules.arePartners(PLAYER_ONE, it) }
-        val myHome = after.players[PLAYER_ONE].pawnsHome(board)
+        val opponents = after.players.indices.filter { it != mySeat && !after.rules.arePartners(mySeat, it) }
+        val myHome = after.players[mySeat].pawnsHome(board)
         if (opponents.any { after.players[it].pawnsHome(board) > myHome }) everBehind = true
         if (myHome == 0 && opponents.any { after.players[it].pawnsHome(board) == pawnsPerPlayer - 1 }) trailedBadly = true
         if (myHome == pawnsPerPlayer - 1 && opponents.all { after.players[it].pawnsHome(board) == 0 }) ledBadly = true
@@ -158,13 +162,13 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
 
         var won: Boolean? = null
         if (before.winner == null && after.winner != null) {
-            won = after.placeOf(PLAYER_ONE) == 1
+            won = after.placeOf(mySeat) == 1
             feats += if (won) wonAchievements(after, opponents) else lostAchievements(after)
             if (won) counts.add(AchievementCounter.GAMES_WON)
         }
-        if (PLAYER_ONE !in before.finishingOrder && PLAYER_ONE in after.finishingOrder) {
+        if (mySeat !in before.finishingOrder && mySeat in after.finishingOrder) {
             counts.add(AchievementCounter.GAMES_PLAYED)
-            if (after.isFinished && after.placeOf(PLAYER_ONE) == after.placeOf(after.finishingOrder.last())) {
+            if (after.isFinished && after.placeOf(mySeat) == after.placeOf(after.finishingOrder.last())) {
                 feats += Achievement.WOODEN_SPOON
                 counts.add(AchievementCounter.LAST_PLACES)
             }
@@ -197,7 +201,7 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
 
     private fun playerOneRolled(roll: Int, before: GameState, startsTurn: Boolean, feats: MutableSet<Achievement>) {
         pending.add(AchievementCounter.DIE_ROLLS)
-        val first = startsTurn && before.players[PLAYER_ONE].turns == 0
+        val first = startsTurn && before.players[mySeat].turns == 0
         if (first) {
             seenFromStart = true
             firstRolls = mutableListOf()
@@ -238,8 +242,8 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
         val board = after.board
         val move = event.move
         val pawnsPerPlayer = after.rules.pawnsPerPlayer
-        val me = before.players[PLAYER_ONE]
-        val turn = after.players[PLAYER_ONE].turns
+        val me = before.players[mySeat]
+        val turn = after.players[mySeat].turns
         nearMisses = 0
         pending.add(AchievementCounter.SQUARES_MOVED, move.to - move.from)
         val captures = move.captures
@@ -262,8 +266,8 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
                 if (progress in 1..WELCOME_PARTY_SQUARES) feats += Achievement.WELCOME_PARTY
                 if (victim.pawnsHome(board) == pawnsPerPlayer - 1) feats += Achievement.TALL_POPPY
             }
-            if (capturesOf.keys.containsAll(after.players.indices - PLAYER_ONE)) feats += Achievement.NOBODY_IS_SAFE
-            if (after.players[PLAYER_ONE].captures >= WARPATH_CAPTURES) feats += Achievement.ON_THE_WARPATH
+            if (capturesOf.keys.containsAll(after.players.indices - mySeat)) feats += Achievement.NOBODY_IS_SAFE
+            if (after.players[mySeat].captures >= WARPATH_CAPTURES) feats += Achievement.ON_THE_WARPATH
             val (capturer, paybackTurn) = payback ?: (null to null)
             if (captures.any { it.player == capturer } && turn == paybackTurn) feats += Achievement.PAYBACK
         }
@@ -271,7 +275,7 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
             val neverOut: (PlayerState) -> Boolean = { player ->
                 player.pawns.all { it == PawnPosition.YARD_PROGRESS } && player.timesCaptured == 0
             }
-            val opponents = before.players.indices.filter { it != PLAYER_ONE && !before.rules.arePartners(PLAYER_ONE, it) }
+            val opponents = before.players.indices.filter { it != mySeat && !before.rules.arePartners(mySeat, it) }
             if (neverOut(me)) {
                 if (opponents.all { neverOut(before.players[it]) }) feats += Achievement.EARLY_BIRD
                 if (opponents.none { neverOut(before.players[it]) }) lastOut = true
@@ -295,12 +299,12 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
                 if (turns >= SCENIC_TURNS) feats += Achievement.SCENIC_ROUTE
             }
         }
-        val pawns = after.players[PLAYER_ONE].pawns
+        val pawns = after.players[mySeat].pawns
         val onBoard = pawns.filter { it in 0..<board.homeProgress }
         if (onBoard.size != onBoard.toSet().size) feats += Achievement.BUDDY_SYSTEM
         if (onBoard.size == pawnsPerPlayer) feats += Achievement.ALL_HANDS_ON_DECK
         if (pawns.all { it in board.trackSteps..<board.homeProgress }) feats += Achievement.FULL_HOUSE
-        if (pawns.all { it in 0..<board.trackSteps && board.isSafe(board.trackSquare(after.players[PLAYER_ONE].seat, it)) }) {
+        if (pawns.all { it in 0..<board.trackSteps && board.isSafe(board.trackSquare(after.players[mySeat].seat, it)) }) {
             feats += Achievement.SAFETY_FIRST
         }
         if (passedOver(before, move) >= LEAPFROG_PAWNS) feats += Achievement.LEAPFROG
@@ -309,9 +313,9 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
     /** How many opponents' pawns stand on the track squares [move] passes over, between where it starts and lands. */
     private fun passedOver(state: GameState, move: Move): Int {
         val board = state.board
-        val seat = state.players[PLAYER_ONE].seat
+        val seat = state.players[mySeat].seat
         val squares = (maxOf(move.from + 1, 0) until minOf(move.to, board.trackSteps)).map { board.trackSquare(seat, it) }.toSet()
-        return state.players.withIndex().filter { it.index != PLAYER_ONE }.sumOf { (_, player) ->
+        return state.players.withIndex().filter { it.index != mySeat }.sumOf { (_, player) ->
             player.pawns.count { it in 0..<board.trackSteps && board.trackSquare(player.seat, it) in squares }
         }
     }
@@ -319,7 +323,7 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
     /** What player 1's win of [after] earned, against [opponents]. */
     private fun wonAchievements(after: GameState, opponents: List<Int>): Set<Achievement> = buildSet {
         val board = after.board
-        val me = after.players[PLAYER_ONE]
+        val me = after.players[mySeat]
         add(Achievement.FIRST_VICTORY)
         if (trailedBadly) add(Achievement.COMEBACK_KID)
         if (opponents.all { after.players[it].pawnsHome(board) == 0 }) add(Achievement.CLEAN_SWEEP)
@@ -329,7 +333,7 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
         if (me.timesCaptured >= NEVER_SAY_DIE_CAPTURED) add(Achievement.NEVER_SAY_DIE)
         if (me.turns <= SPEED_DEMON_TURNS) add(Achievement.SPEED_DEMON)
         if (me.turns <= LIGHTNING_TURNS) add(Achievement.LIGHTNING_FAST)
-        if (firstHome == PLAYER_ONE) add(Achievement.FRONT_RUNNER)
+        if (firstHome == mySeat) add(Achievement.FRONT_RUNNER)
         if (lastOut) add(Achievement.LATE_BLOOMER)
         if (seenFromStart && !everBehind) add(Achievement.WIRE_TO_WIRE)
         if (opponents.any { after.players[it].isOneFromFinishing(after) }) add(Achievement.PHOTO_FINISH)
@@ -348,7 +352,7 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
     private fun lostAchievements(after: GameState): Set<Achievement> = buildSet {
         if (players[after.winner ?: return@buildSet].type == PlayerType.AI) add(Achievement.I_ROBOT)
         if (ledBadly) add(Achievement.DEFEAT_FROM_THE_JAWS_OF_VICTORY)
-        val me = after.players[PLAYER_ONE]
+        val me = after.players[mySeat]
         if (me.isOneFromFinishing(after)) add(Achievement.PIPPED_TO_THE_POST)
         if (me.pawns.all { it == PawnPosition.YARD_PROGRESS }) add(Achievement.NEVER_LEFT_HOME)
     }
@@ -364,7 +368,6 @@ class AchievementTracker(private val players: List<PlayerConfig>) {
     }
 
     private companion object {
-        const val PLAYER_ONE = 0
         const val SIX = 6
 
         const val HAT_TRICK_CAPTURES = 3
