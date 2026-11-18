@@ -170,5 +170,6 @@ and limit; read a whole doc only when the change spans it.
 | `.claude/PUBLISHING.md` | Play Store submission checklist, the app's licence and third-party licence scope |
 | `.claude/PLAY_GAMES.md` | Anything touching Google Play Games Services: sign-in, achievement mirror, leaderboards, cloud save, Sidekick |
 | `.claude/PURCHASES.md` | The purchases (Unlock all styles, Remove ads, both): Play Billing, the entitlements, the offers, the maintainer's Play Console steps |
+| `.claude/NETPLAY.md` | Netplay over Nearby: the decisions, the protocol, the sessions, the transport, and the slices |
 | `.claude/ADS.md` | The play app's ad banner: AdMob, consent, where it shows and when it doesn't, the ids, the maintainer's steps |
 | `.claude/MULTIPLATFORM.md` | Module layout and platform seams, KMP gotchas |

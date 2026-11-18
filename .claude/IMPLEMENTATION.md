@@ -21,7 +21,7 @@ reorders them.
 | 9 | Game modes and modifiers | Done |
 | 10 | Google Play: Play Console, Play Games, and the store listing | In progress |
 | 11 | In-app purchases and ads | In progress |
-| 12 | Netplay | Not started |
+| 12 | Netplay | In progress |
 
 ## Decisions so far (2026-11-16)
 
@@ -429,7 +429,9 @@ count but 4 has a board of its own; one player on two colours was dropped.
 
 The biggest change: it ends "no account, no network". Decide the approach before building it.
 
-- [ ] Choose the transport. Google Play Games' real-time multiplayer API was shut down in 2020, so it's one of:
+- [x] Choose the transport (the maintainer, 2026-11-18): **Nearby first**, in the play app; host-set seats with a
+    "Nearby player" seat type, anything the host picks for rules, and each phone counting its own seat (`NETPLAY.md`).
+    Google Play Games' real-time multiplayer API was shut down in 2020, so it was one of:
     - a hosted relay (a small server, or a managed realtime database), which works over the internet, but costs money,
         needs moderation, and changes the privacy policy;
     - Nearby Connections, which works only in the same room, needs no server, and keeps privacy simple;
