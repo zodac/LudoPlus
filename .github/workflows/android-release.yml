@@ -441,11 +441,11 @@ jobs:
   # again (three attempts in all). What the upgrade itself did (the script's exit status 2) is never retried: a game lost
   # now and then is still a game lost.
   #
-  # Only for a release with one before it to upgrade from: not the first. Its script's labels follow the app from
-  # Phase 4 (saved games).
+  # Every release has one before it to upgrade from (1.0.0 was the first); none found fails the job. Its script's labels
+  # follow the app from Phase 4 (saved games).
   upgrade-check:
     needs: version
-    if: needs.version.outputs.release == 'true' && needs.version.outputs.previous_tag != ''
+    if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -538,12 +538,8 @@ jobs:
   # release job as an artifact, with the mapping.txt each R8 run wrote.
   apk:
     needs: [version, android-tests, shared-tests, lint, upgrade-check, baseline-profile]
-    # The upgrade check may be skipped (the first release has nothing to upgrade from); every other check must pass.
-    if: >-
-      !cancelled() && needs.version.outputs.release == 'true'
-      && needs.android-tests.result == 'success' && needs.shared-tests.result == 'success' && needs.lint.result == 'success'
-      && needs.baseline-profile.result == 'success'
-      && contains(fromJSON('["success", "skipped"]'), needs.upgrade-check.result)
+    # Every check must pass (Actions' default: a job runs only once every job it needs has succeeded).
+    if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
