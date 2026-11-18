@@ -30,9 +30,9 @@ class GithubFlavourTest {
     }
 
     @Test
-    fun `a debug build is Ludo Plus Debug on the launcher`() {
+    fun `a debug build is LudoPlus Debug on the launcher`() {
         val label = context.packageManager.getApplicationLabel(context.applicationInfo).toString()
-        assertEquals(if (BuildConfig.DEBUG) "Ludo Plus Debug" else "Ludo Plus", label)
+        assertEquals(if (BuildConfig.DEBUG) "LudoPlus Debug" else "LudoPlus", label)
     }
 
     @Test

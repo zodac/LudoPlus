@@ -1,8 +1,8 @@
-# Ludo Plus: the game screen (UI detail)
+# LudoPlus: the game screen (UI detail)
 
 > **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
 > from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
-> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
+> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for LudoPlus as part of that phase.
 
 Board, tray and cup layout and decisions. General UI rules are in `UI.md`, and mode rules in `GAME_MODES.md`. Unless
 noted, every layout here has been checked only as Robolectric renders (411dp, 360dp, and for fonts 100/130/200%), not

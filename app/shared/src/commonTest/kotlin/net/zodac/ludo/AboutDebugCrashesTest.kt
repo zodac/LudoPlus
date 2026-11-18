@@ -65,10 +65,10 @@ class AboutDebugCrashesTest : UiTest() {
 
     /** Taps the author's name in the Author section, [times] times. */
     private fun tapAuthorName(times: Int) {
-        val body = compose.onNodeWithText("Ludo Plus is created by zodac.").performScrollTo()
+        val body = compose.onNodeWithText("LudoPlus is created by zodac.").performScrollTo()
         val layouts = mutableListOf<TextLayoutResult>()
         body.fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
-        val name = layouts.single().getBoundingBox("Ludo Plus is created by z".length)
+        val name = layouts.single().getBoundingBox("LudoPlus is created by z".length)
         // The text is drawn below its 4dp top padding, which the node's bounds include.
         val top = with(compose.density) { 4.dp.toPx() }
         repeat(times) { body.performTouchInput { click(Offset(name.center.x, name.center.y + top)) } }

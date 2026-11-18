@@ -15,7 +15,7 @@ class CrashReportTest {
 
     private fun report(trace: String = "java.lang.IllegalStateException: Boom\n\tat Game.roll(Game.kt:1)", lastActions: List<String> = listOf("Opened menu", "Rolled, player 1")) =
         CrashReport(
-            app = "Ludo Plus 1.3.0 (play release)",
+            app = "LudoPlus 1.3.0 (play release)",
             android = "17 (API 37)",
             device = "Google Pixel 9",
             screen = "411x914dp, font 1.0x",
@@ -29,7 +29,7 @@ class CrashReportTest {
     fun `the page's text has every field, the last actions oldest first, then the trace`() {
         assertEquals(
             """
-            App: Ludo Plus 1.3.0 (play release)
+            App: LudoPlus 1.3.0 (play release)
             Android: 17 (API 37)
             Device: Google Pixel 9
             Screen: 411x914dp, font 1.0x
@@ -65,7 +65,7 @@ class CrashReportTest {
 
             | | |
             |---|---|
-            | App | Ludo Plus 1.3.0 (play release) |
+            | App | LudoPlus 1.3.0 (play release) |
             | Android | 17 (API 37) |
             | Device | Google Pixel 9 |
             | Screen | 411x914dp, font 1.0x |
@@ -113,7 +113,7 @@ class CrashReportTest {
         assertEquals("game-worker", report.thread)
         assertEquals(error.stackTraceToString(), report.trace)
         assertEquals("Scored CHANCE, player 1", report.lastActions.last())
-        assertTrue(report.app.startsWith("Ludo Plus "))
+        assertTrue(report.app.startsWith("LudoPlus "))
     }
 
     @Test

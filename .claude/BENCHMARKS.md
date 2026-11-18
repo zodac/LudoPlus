@@ -1,10 +1,10 @@
-# Ludo Plus: frame cost
+# LudoPlus: frame cost
 
 > **Partly inherited from DiceFive.** Phase 0 of `IMPLEMENTATION.md` removed DiceFive's dice game. Sections on what
 > is still in the app (the stack, errors and the crash page, settings, distribution, and the release pipeline) hold;
 > sections on the dice, the scorecard, modes, the CPU, achievements, styles, scores, and saved games describe the code
 > in commit `5423b6c` (`git show 5423b6c:<path>`), for bringing a feature back in its phase. Rewrite a section for
-> Ludo Plus when the code it describes is.
+> LudoPlus when the code it describes is.
 
 The patterns that keep frames cheap, what the art costs today, and what's still open. Read this for a reported
 stutter, or before adding art that draws every frame. **How to measure** is the `benchmark` skill.

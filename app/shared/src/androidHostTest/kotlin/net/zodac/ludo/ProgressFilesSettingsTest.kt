@@ -154,7 +154,7 @@ class ProgressFilesSettingsTest : UiTest() {
         val message = compose.onNodeWithText("Choose a file exported", substring = true).fetchSemanticsNode()
             .config[SemanticsProperties.Text].joinToString("") { it.text }
         assertEquals(
-            "Choose a file exported from Ludo Plus. Its achievements and game records are added to this device's, and where both have a setting " +
+            "Choose a file exported from LudoPlus. Its achievements and game records are added to this device's, and where both have a setting " +
                 "or a saved game, the newer one is kept. This can't be undone.",
             message,
         )
@@ -176,9 +176,9 @@ class ProgressFilesSettingsTest : UiTest() {
             return outcome(platform)
         }
         assertEquals("Progress imported", import(ProgressFileResult.Done(ProgressFileCodec.encode(CloudSave(), files.key))))
-        assertEquals("That isn't a Ludo Plus progress file, or it has been changed", import(ProgressFileResult.Done(ByteArray(64))))
+        assertEquals("That isn't a LudoPlus progress file, or it has been changed", import(ProgressFileResult.Done(ByteArray(64))))
         assertEquals(
-            "That file is from a newer version of Ludo Plus. Update the app, then import it again.",
+            "That file is from a newer version of LudoPlus. Update the app, then import it again.",
             import(ProgressFileResult.Done(ProgressFileCodec.encode(CloudSave(version = 99), files.key))),
         )
         assertEquals("Couldn't read the file", import(ProgressFileResult.Failed))

@@ -26,7 +26,7 @@
     <string name="common_list_locale">en-US</string>
 
     <!-- The app's name, passed as %1$s to the strings that mention it (about_*_body, common_crash_body, common_database_failure_body, licences_intro, rules_how_to_play_title, rules_modes_1) and drawn on the main menu. A brand name: every language keeps it. The launcher label is app/android's own app_name. -->
-    <string name="app_name">Ludo Plus</string>
+    <string name="app_name">LudoPlus</string>
 
     <!--
         How a date and time is written ("28 Sep 2026 14:05"), as a CLDR date pattern: MMM is the short month name,
@@ -981,7 +981,7 @@
     <!-- Opens a new issue on the app's GitHub page with the details filled in, for the player to post. GitHub is a brand name. -->
     <string name="common_crash_report">Report on GitHub</string>
 
-    <!-- Ludo Plus: the game modes, the placeholder game screen (Phase 0 of .claude/IMPLEMENTATION.md), and the rules. -->
+    <!-- LudoPlus: the game modes, the placeholder game screen (Phase 0 of .claude/IMPLEMENTATION.md), and the rules. -->
     <string name="mode_classic">Classic</string>
     <string name="mode_classic_description">The classic rules: roll a 6 to leave the yard, and race all four pawns home</string>
     <string name="mode_quick">Quick</string>

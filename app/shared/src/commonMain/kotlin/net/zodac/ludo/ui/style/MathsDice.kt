@@ -29,7 +29,7 @@ import org.jetbrains.compose.resources.Font
  */
 private class Glyph(val advance: Float, val left: Float, val bottom: Float, val right: Float, val top: Float)
 
-// Ludo Plus Maths Regular (MathJax_Main Regular, cut down): the digits, the operators, the brackets and "ln".
+// LudoPlus Maths Regular (MathJax_Main Regular, cut down): the digits, the operators, the brackets and "ln".
 private val MainGlyphs = mapOf(
     '0' to Glyph(0.5f, 0.039f, -0.022f, 0.46f, 0.666f),
     '2' to Glyph(0.5f, 0.05f, 0f, 0.449f, 0.666f),
@@ -43,7 +43,7 @@ private val MainGlyphs = mapOf(
     '√' to Glyph(0.833f, 0.072f, -0.2f, 0.853f, 0.8f),
 )
 
-// Ludo Plus Maths Italic (MathJax_Math Italic, cut down): the variable and the constants.
+// LudoPlus Maths Italic (MathJax_Math Italic, cut down): the variable and the constants.
 private val ItalicGlyphs = mapOf(
     'x' to Glyph(0.572f, 0.035f, -0.011f, 0.522f, 0.442f),
     'e' to Glyph(0.466f, 0.039f, -0.011f, 0.429f, 0.442f),
@@ -141,7 +141,7 @@ private const val LAYOUT_EM_PX = 100f
 
 /**
  * Maths dice: every face a small formula that works out to its value - x⁰, ln e², ⌊π⌋, 2², √25 and 3! -
- * set in the Ludo Plus Maths fonts: the MathJax TeX fonts cut down to these characters, the Computer
+ * set in the LudoPlus Maths fonts: the MathJax TeX fonts cut down to these characters, the Computer
  * Modern faces Wikipedia's formulas are drawn in (see `scripts/subset-maths-fonts.sh` and
  * `app/licensing/`), in [ink] on a face shading from [light] to [dark].
  */

@@ -31,11 +31,11 @@ class CrashPageTest : UiTest() {
 
     @Test
     fun `the page names what happened under a heading - what's kept - with the details hidden until asked for`() = uiTest(SCREEN) {
-        val details = "Ludo Plus 1.3.0 (github debug)\nThread: main\njava.lang.IllegalStateException: Boom\n\tat Game.roll(Game.kt:1)"
+        val details = "LudoPlus 1.3.0 (github debug)\nThread: main\njava.lang.IllegalStateException: Boom\n\tat Game.roll(Game.kt:1)"
         compose.setContent { LudoPlusTheme { CrashPage(details = details, onRestart = {}, onCopy = {}, onReport = {}) } }
         compose.onNode(isHeading and hasText("Something went wrong")).assertIsDisplayed()
         listOf(
-            "Ludo Plus ran into a problem it couldn't recover from, so it has stopped here.",
+            "LudoPlus ran into a problem it couldn't recover from, so it has stopped here.",
             "Your scores, achievements, and settings are kept, but a game in progress may have lost its last move.",
         ).forEach { compose.onNodeWithText(it).assertIsDisplayed() }
         listOf("If it keeps happening, these details will help when you report it:", "Copy Details", details)

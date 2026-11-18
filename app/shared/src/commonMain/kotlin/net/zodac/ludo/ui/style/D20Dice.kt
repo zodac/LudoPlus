@@ -153,7 +153,7 @@ private const val TWO_DIGIT_HEIGHT = 0.375f
 private const val ROLL_ONE_DIGIT_HEIGHT = 0.64f
 private const val ROLL_TWO_DIGIT_HEIGHT = 0.575f
 
-/** How tall Ludo Plus D20's digits are, baseline to top, as a fraction of the font size: numbers are sized by their ink, not their line. */
+/** How tall LudoPlus D20's digits are, baseline to top, as a fraction of the font size: numbers are sized by their ink, not their line. */
 internal const val D20_DIGIT_HEIGHT_EM = 0.73f
 
 // Light from above, left and in front, in camera space.
@@ -268,7 +268,7 @@ class D20DiceStyle(
         // each had its own to fill on the first roll, which was the lag.
         val measurer = sharedMeasurer(LocalFontFamilyResolver.current, LocalDensity.current, LocalLayoutDirection.current)
         // No colour in the style (it's applied as the number is drawn), so fading a number doesn't make it a new layout.
-        // The numbers are set in Ludo Plus D20 (Andika's digits: a 1 with a foot, a 7 with a bar), so a 1 never reads as a 7.
+        // The numbers are set in LudoPlus D20 (Andika's digits: a 1 with a foot, a 7 with a bar), so a 1 never reads as a 7.
         // Keyed on the font itself: where a font resource loads asynchronously, the first composition gets a stand-in.
         val font = Font(Res.font.ludo_d20)
         val style = remember(font) { TextStyle(fontFamily = FontFamily(font), fontSize = 40.sp, fontWeight = FontWeight.Bold) }

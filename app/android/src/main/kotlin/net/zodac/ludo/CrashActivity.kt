@@ -96,7 +96,7 @@ class CrashActivity : ComponentActivity() {
         private const val EXTRA_GAME_REMOVED = "net.zodac.ludo.GAME_REMOVED"
 
         /** What the clipboard says it holds. */
-        private const val CLIP_LABEL = "Ludo Plus crash report"
+        private const val CLIP_LABEL = "LudoPlus crash report"
 
         /** Where Compose resources keep their context: the library's own, internal to it, and kept by name by r8-rules.pro. */
         internal const val RESOURCES_CONTEXT_CLASS = "org.jetbrains.compose.resources.AndroidContextProvider"

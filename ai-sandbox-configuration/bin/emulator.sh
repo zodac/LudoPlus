@@ -19,7 +19,7 @@
 #   --privileged and `dev` has passwordless sudo, so the device node is opened up (this container's copy
 #   only - the host's is untouched).
 # - The emulator's software GLES path (gfxstream + SwiftShader) segfaults in its render thread while
-#   drawing Ludo Plus, silently killing the emulator (exit status 139, no crash report) a few seconds
+#   drawing LudoPlus, silently killing the emulator (exit status 139, no crash report) a few seconds
 #   after the app opens - it shows up as `adb: device offline`. Its Vulkan path doesn't, so the app's UI
 #   renderer is switched to Vulkan after boot (debug.hwui.renderer=skiavk, which resets on every boot, so
 #   this script sets it every time). The app draws correctly under it.

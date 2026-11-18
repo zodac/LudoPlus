@@ -70,10 +70,10 @@ emulator.sh stop
 - Wait for things rather than checking once: `hasText` only after an `await`.
 - A tap whose effect later steps rely on goes through `tapUntil` (or `setChecked`, `selectTab`), which taps again until
     that effect shows: a starved emulator drops taps.
-- Open screens with `openFromMenu`, which retries until the "Ludo Plus" wordmark is gone.
+- Open screens with `openFromMenu`, which retries until the "LudoPlus" wordmark is gone.
 - A check read straight after a tap can still see the screen from before it. So a tap's check must not hold before the
     tap: `tapUntil` won't tap while it holds (read once idle).
 - To shake out races, pin the emulator and two busy loops to two cores (`taskset -c 0-1`) and run two laps.
 
 If the emulator dies (`adb: device offline`, exit 139), see `.claude/EMULATOR.md`, "If the emulator dies". **Never
-remove the `debug.hwui.renderer=skiavk` step**: without it the emulator segfaults when Ludo Plus draws.
+remove the `debug.hwui.renderer=skiavk` step**: without it the emulator segfaults when LudoPlus draws.

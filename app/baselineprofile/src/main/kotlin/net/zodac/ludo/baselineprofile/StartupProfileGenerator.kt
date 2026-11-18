@@ -32,7 +32,7 @@ class StartupProfileGenerator {
         ) {
             pressHome()
             startActivityAndWait()
-            await(By.text("Ludo Plus"), "the menu's Ludo Plus wordmark")
+            await(By.text("LudoPlus"), "the menu's LudoPlus wordmark")
         }
     }
 }

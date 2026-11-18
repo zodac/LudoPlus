@@ -31,11 +31,11 @@ nothing here lists dependencies. This folder only holds what the plugin can't di
 - `sources/` - the untouched originals: MathJax's (`MathJax_Main-Regular.otf`, `MathJax_Math-Italic.otf`) and
     Andika's (`Andika-Bold.ttf`).
     They don't ship: `scripts/subset-maths-fonts.sh` cuts them down to the characters the dice draw and
-    renames them `ludo_maths_regular.otf` and `ludo_maths_italic.otf` ("Ludo Plus Maths"), as the
+    renames them `ludo_maths_regular.otf` and `ludo_maths_italic.otf` ("LudoPlus Maths"), as the
     OFL requires of a modified font with a Reserved Font Name. `MathsFontCoverageTest` fails if a die
     draws a character the cut-down fonts lack, or if they keep a MathJax name.
     `scripts/subset-d20-font.sh` likewise cuts Andika down to the digits, with its crossed seven as the 7, and
-    renames it `ludo_d20.ttf` ("Ludo Plus D20"); `D20FontCoverageTest` guards it.
+    renames it `ludo_d20.ttf` ("LudoPlus D20"); `D20FontCoverageTest` guards it.
 
 - `asset-sources.json` - where every bundled asset file came from: each file under any of
     `app/android`'s source sets' `res/` (except `values*/`) and `assets/`, the sound effects in `app/audio/`, and under

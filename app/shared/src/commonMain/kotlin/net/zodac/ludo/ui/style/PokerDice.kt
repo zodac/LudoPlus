@@ -50,7 +50,7 @@ private const val ACE_SUIT_RADIUS = 0.24f
 /**
  * Playing-card dice: every face a card - an Ace for 1, then 2 to 6 - each in a different suit from
  * the one before (see [PokerSuits]), with its rank and suit in two opposite corners in a formal serif
- * (the bundled Ludo Plus Maths font, MathJax's Computer Modern) and its suit pips laid out the way a
+ * (the bundled LudoPlus Maths font, MathJax's Computer Modern) and its suit pips laid out the way a
  * card's are, the lower ones upside down. On a coloured roll every suit takes the roll's pip colour.
  */
 class PokerDiceStyle(

@@ -33,15 +33,15 @@ class ProgressFileCodecTest {
     @Test
     fun `it starts with the app's name and its format`() {
         val bytes = ProgressFileCodec.encode(save, key, nonce)
-        assertEquals("Ludo Plus", bytes.copyOfRange(0, 9).decodeToString())
-        assertEquals(ProgressFileCodec.FORMAT, bytes[9])
-        assertTrue(bytes.copyOfRange(10, 26).contentEquals(nonce))
+        assertEquals("LudoPlus", bytes.copyOfRange(0, 8).decodeToString())
+        assertEquals(ProgressFileCodec.FORMAT, bytes[8])
+        assertTrue(bytes.copyOfRange(9, 25).contentEquals(nonce))
     }
 
     @Test
     fun `the save inside can't be read without the key - it isn't the cloud save's gzip`() {
         val bytes = ProgressFileCodec.encode(save, key, nonce)
-        val body = bytes.copyOfRange(26, bytes.size - 32)
+        val body = bytes.copyOfRange(25, bytes.size - 32)
         assertEquals(CloudSaveCodec.encode(save).size, body.size)
         assertFalse(body.contentEquals(CloudSaveCodec.encode(save)))
         assertNull(CloudSaveCodec.decode(body))
@@ -78,13 +78,13 @@ class ProgressFileCodecTest {
 
     @Test
     fun `a format this app doesn't know is no file it can read`() {
-        val bytes = ProgressFileCodec.encode(save, key, nonce).also { it[9] = (ProgressFileCodec.FORMAT + 1).toByte() }
+        val bytes = ProgressFileCodec.encode(save, key, nonce).also { it[8] = (ProgressFileCodec.FORMAT + 1).toByte() }
         assertNull(ProgressFileCodec.decode(bytes, key))
     }
 
     @Test
     fun `a cloud save or any other file is not a progress file`() {
         assertNull(ProgressFileCodec.decode(CloudSaveCodec.encode(save), key))
-        assertNull(ProgressFileCodec.decode("Ludo Plus, but not really a progress file at all".encodeToByteArray(), key))
+        assertNull(ProgressFileCodec.decode("LudoPlus, but not really a progress file at all".encodeToByteArray(), key))
     }
 }

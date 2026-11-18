@@ -37,7 +37,7 @@ class MainActivitySmokeTest {
 
     @Test
     fun `a game can be started from the menu, left with system back once confirmed, and continued`() {
-        compose.onNodeWithText("Ludo Plus").assertExists()
+        compose.onNodeWithText("LudoPlus").assertExists()
 
         compose.onNodeWithText("Play").performClick()
         // The form (and its button) only appears once the last game's choices are read back from disk.

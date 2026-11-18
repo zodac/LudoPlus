@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The Play Games ids: none until Ludo Plus's Play Console project exists, and from the first mapped, every achievement
+ * The Play Games ids: none until LudoPlus's Play Console project exists, and from the first mapped, every achievement
  * and board once each, each a Play id.
  */
 class PlayGamesIdsTest {

@@ -35,7 +35,7 @@ class RulesTextTest : UiTest() {
     private val pages = listOf(
         Page(
             "How to Play",
-            "How to Play Ludo Plus",
+            "How to Play LudoPlus",
             listOf(
                 "Race your four pawns a full lap of the board and into home, in the middle. The first player to bring all four pawns home wins.",
                 "Players take turns clockwise, each rolling one die. To decide who goes first, everyone rolls once, and the highest roll starts. Ties roll again.",

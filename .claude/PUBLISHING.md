@@ -1,4 +1,4 @@
-# Ludo Plus: Play Store publishing
+# LudoPlus: Play Store publishing
 
 What a Play Store submission needs beyond the normal build. The GitHub release pipeline is in `DESIGN.md`.
 
@@ -50,7 +50,7 @@ until the player signs in.
 - **Does the app collect or share user data?** Yes: the ad banner (AdMob) shares data with Google for ads, and Play
     Games and cloud save send data off the device.
 - **Encrypted in transit?** Yes (AdMob and Play Games Services use HTTPS).
-- **Account creation**: "My app does not allow users to create an account". Ludo Plus has no account or identity of
+- **Account creation**: "My app does not allow users to create an account". LudoPlus has no account or identity of
     its own; sign-in uses the player's existing Google Play Games profile, which Google owns. So no account-deletion URL
     is required. Then:
     - **Can users log in with accounts created outside the app?** Yes, **Other**: "Optional sign-in with an existing

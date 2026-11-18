@@ -116,7 +116,7 @@ internal class CrashReport(
         fun of(context: Context, thread: Thread, error: Throwable): CrashReport {
             val configuration = context.resources.configuration
             return CrashReport(
-                app = "Ludo Plus ${BuildConfig.VERSION_NAME} (${BuildConfig.FLAVOR} ${BuildConfig.BUILD_TYPE})",
+                app = "LudoPlus ${BuildConfig.VERSION_NAME} (${BuildConfig.FLAVOR} ${BuildConfig.BUILD_TYPE})",
                 android = "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
                 device = "${Build.MANUFACTURER} ${Build.MODEL}",
                 screen = "${configuration.screenWidthDp}x${configuration.screenHeightDp}dp, font ${configuration.fontScale}x",

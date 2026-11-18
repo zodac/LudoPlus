@@ -1,4 +1,4 @@
-# Ludo Plus's own Baseline Profile rules, merged at build time with the ones every Compose/AndroidX
+# LudoPlus's own Baseline Profile rules, merged at build time with the ones every Compose/AndroidX
 # library already ships (installed by androidx.profileinstaller, which Compose brings in).
 #
 # Hand-written: these wildcards mark every class and method in the app's package as hot, used at

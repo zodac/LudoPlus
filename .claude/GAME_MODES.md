@@ -1,6 +1,6 @@
 # Game modes
 
-How Ludo Plus's modes and house rules are built, and how to add one. DiceFive's version of this doc (its dice modes:
+How LudoPlus's modes and house rules are built, and how to add one. DiceFive's version of this doc (its dice modes:
 Stud, Third Wind, Hit List, and the rest) is in commit `5423b6c` (`git show 5423b6c:.claude/GAME_MODES.md`). The
 achievement audit (what each mode or house rule blocks or guards) is in `GAME_MODES_AUDIT.md`.
 

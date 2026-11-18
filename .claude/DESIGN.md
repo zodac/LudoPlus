@@ -1,11 +1,11 @@
-# Ludo Plus: design reference
+# LudoPlus: design reference
 
 > **Partly inherited from DiceFive.** Phase 0 of `IMPLEMENTATION.md` removed DiceFive's dice game. Sections on what
 > is still in the app (the stack, errors and the crash page, settings, achievements, styles, distribution, and the
 > release pipeline) hold, and so do Game modes and Modifiers (rewritten in Phase 9);
 > sections on the dice, the scorecard, the CPU, scores, and saved games describe the code
 > in commit `5423b6c` (`git show 5423b6c:<path>`), for bringing a feature back in its phase. Rewrite a section for
-> Ludo Plus when the code it describes is.
+> LudoPlus when the code it describes is.
 
 What the app does and why. The interface is in `UI.md` (plus `UI_BOARD.md` and `UI_SCREENS.md`), modes in
 `GAME_MODES.md`, and art in `STYLE_ART.md`.
@@ -267,7 +267,7 @@ the records.
 Everything is in app-private storage. **Every stored id is permanent once released**, because achievements and modes
 will map to Play Games.
 
-**Ludo Plus today** (Phase 10, 2026-11-18). The rest of this section is DiceFive's, kept for Play Games.
+**LudoPlus today** (Phase 10, 2026-11-18). The rest of this section is DiceFive's, kept for Play Games.
 
 - **Game records**: Room, `ludo.db`, table `results` (`GameResult`), version 3. Each row has a random `uuid` (32 hex
     digits, unique index), its id on every device; `id` is the device's own. Version 3's migration gives every older row
@@ -653,7 +653,7 @@ Each category is two lists in the same order:
 
 ## Sound, haptics and motion
 
-- **Clips** (Ludo Plus): `mat_landing` (the die landing), `pawn_step` (at 0.5 volume, once for each square a pawn moves,
+- **Clips** (LudoPlus): `mat_landing` (the die landing), `pawn_step` (at 0.5 volume, once for each square a pawn moves,
     in time with it), `capture` and `pawn_home` (in place of the landing's step), and `celebration` (a person's win, with
     gold fireworks). All CC0 from Freesound, chosen by the maintainer 2026-11-17. The cues are `moveSoundCues`
     (`ui/game/GamePacing.kt`): with Pawn moves motion off, only the landing's sound.
@@ -761,7 +761,7 @@ Two apps from one source, one per way the app reaches players: product flavours 
     - **An import is a merge**: `CloudSaveStore.merge` (settings, the saved game, achievements, then records), then what
         the merged counters reach (`unlockReachedTargets`), as the cloud save will (`PLAY_GAMES.md`, "Cloud save"). Nothing is picked or
         thrown away, and importing a file twice changes nothing. A newer app's file is refused whole, with "update the app".
-    - **Sealed, not plain**: `Ludo Plus`, a format byte and a random nonce, then the save XORed with an HMAC-SHA256
+    - **Sealed, not plain**: `LudoPlus`, a format byte and a random nonce, then the save XORed with an HMAC-SHA256
         keystream, then an HMAC-SHA256 of all of it. A file changed by one bit, or sealed by another build, isn't a progress
         file. The key is CI's `PROGRESS_FILE_KEY` secret (64 hex digits), never in the source; a build without it uses an
         all-zero key, and the release workflow refuses to build the APK without it. **The key is permanent**: files made

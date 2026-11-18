@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-# Ludo Plus's layer of the sandbox image: the toolchains this project needs, on top of the shared
+# LudoPlus's layer of the sandbox image: the toolchains this project needs, on top of the shared
 # ai-sandbox base (Debian 13, nested Docker, Node, git, gh, jq, python3 - ai-sandbox/image/base/).
 # Claude Code and the sandbox scripts are added ABOVE this layer by ai-sandbox/image/final/, so a
 # Claude release never rebuilds anything here. Built by ai-sandbox/sandbox.sh, with this directory
@@ -317,14 +317,14 @@ ENV JAVA_HOME=/opt/java/openjdk \
     PATH=/opt/java/openjdk/bin:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:${PATH}
 
 # ── Project tooling ───────────────────────────────────────────────────────────
-# Everything Ludo Plus needs at RUNTIME beyond the shared base (which already has git, gh, jq, python3 +
+# Everything LudoPlus needs at RUNTIME beyond the shared base (which already has git, gh, jq, python3 +
 # pip/venv, less, lsof, iproute2, procps, sudo, tzdata, unzip, and vim).
 #
 # python3-fonttools: `app/shared/src/commonMain/composeResources/font/sora.ttf` is a static weight-700
 # instance produced with `python3 -m fontTools.varLib.instancer`, subset to printable ASCII with
 # `python3 -m fontTools.subset` (see AppLogo.kt's SoraFontFamily doc) - a one-off, not a build-time step,
 # so regenerating it later still needs this package. scripts/subset-maths-fonts.sh (the Maths dice's
-# cut-down Ludo Plus Maths fonts) needs it too. Image rasterising is ImageMagick, its own stage above (the
+# cut-down LudoPlus Maths fonts) needs it too. Image rasterising is ImageMagick, its own stage above (the
 # same build CI uses). fonttools is the distro `python3-fonttools` package, NOT pip: the base image's
 # Python is PEP-668 "externally managed", so `pip install fonttools` is refused.
 #

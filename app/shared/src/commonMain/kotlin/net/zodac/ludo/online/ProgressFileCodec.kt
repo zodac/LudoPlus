@@ -22,7 +22,7 @@ object ProgressFileCodec {
     /** The envelope's format: how the save is sealed, not the save's own ([CloudSave.version]). */
     const val FORMAT: Byte = 1
 
-    private val MAGIC = "Ludo Plus".encodeUtf8()
+    private val MAGIC = "LudoPlus".encodeUtf8()
     private const val NONCE_BYTES = 16
     private const val MAC_BYTES = 32
     private val HEADER_BYTES = MAGIC.size + 1 + NONCE_BYTES
@@ -64,7 +64,7 @@ object ProgressFileCodec {
 
     private fun mac(key: ByteArray, body: ByteString): ByteString = body.hmacSha256(derive(key, "check"))
 
-    private fun derive(key: ByteArray, purpose: String): ByteString = "Ludo Plus progress file: $purpose".encodeUtf8().hmacSha256(key.toByteString())
+    private fun derive(key: ByteArray, purpose: String): ByteString = "LudoPlus progress file: $purpose".encodeUtf8().hmacSha256(key.toByteString())
 
     private fun constantTimeEquals(a: ByteString, b: ByteString): Boolean {
         if (a.size != b.size) return false

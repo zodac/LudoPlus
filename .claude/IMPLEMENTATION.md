@@ -1,6 +1,6 @@
-# Ludo Plus: implementation plan
+# LudoPlus: implementation plan
 
-The phased plan for turning the DiceFive copy into Ludo Plus. Read it before any gameplay or feature work. Keep the
+The phased plan for turning the DiceFive copy into LudoPlus. Read it before any gameplay or feature work. Keep the
 **Status** line of each phase current, and tick items off as they land (in the same commit as the work).
 
 Phases are ordered so each one ends with a playable debug APK. Phases 0-5 build the 4-player classic game up to the
@@ -26,7 +26,7 @@ reorders them. Phase 13 waits for the launch: the production release at the end 
 
 ## Decisions so far (2026-11-16)
 
-- **Name.** Ludo Plus. "Frustration" (the working title) is Hasbro's UK trademark and is banned (`CLAUDE.md`, "Banned
+- **Name.** LudoPlus. "Frustration" (the working title) is Hasbro's UK trademark and is banned (`CLAUDE.md`, "Banned
     words"). Package `net.zodac.ludo`, repo `github.com/zodac/LudoPlus`.
 - **Gutting.** Interim red builds were fine while gutting (the maintainer, 2026-11-16).
 - **Releases.** VERSION 1.0.0 (2026-11-18): every push to `main` that changes what an app ships cuts a release.
@@ -108,7 +108,7 @@ Sources: [Wikipedia, "Ludo"](https://en.wikipedia.org/wiki/Ludo),
 
 ## Phase 0: Gut the dice game, rebrand the chrome
 
-**Goal:** a building app with DiceFive's chrome and infrastructure, Ludo Plus's name and colours, and no dice game.
+**Goal:** a building app with DiceFive's chrome and infrastructure, LudoPlus's name and colours, and no dice game.
 The game screen is a placeholder.
 
 **What was kept (the skeleton).** `ui/common` (scaffold, dialogs, pickers, scrollbars, page cover, crash and failure

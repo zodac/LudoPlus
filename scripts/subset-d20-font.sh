@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the D20 dice's font from the untouched Andika Bold original in app/licensing/sources/: cut down
 # to the digits 0-9, with Andika's crossed seven (its "seven.Bar" glyph) as the 7, so a 7 is never read
-# as a 1 (whose foot Andika draws by default), and renamed "Ludo Plus D20", because the OFL keeps the
+# as a 1 (whose foot Andika draws by default), and renamed "LudoPlus D20", because the OFL keeps the
 # Reserved Font Names Andika and SIL for the unmodified font. The copyright and licence entries stay as
 # they are.
 #
@@ -35,7 +35,7 @@ subsetter = subset.Subsetter(options)
 subsetter.populate(text="0123456789")
 subsetter.subset(font)
 
-family, style = "Ludo Plus D20", "Bold"
+family, style = "LudoPlus D20", "Bold"
 full = f"{family} {style}"
 postscript = f"{family.replace(' ', '')}-{style}"
 names = font["name"]

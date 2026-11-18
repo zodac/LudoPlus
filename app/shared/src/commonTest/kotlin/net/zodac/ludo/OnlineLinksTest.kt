@@ -74,7 +74,7 @@ class OnlineLinksTest : UiTest() {
         }
         compose.onNode(
             hasText(
-                "Ludo Plus holds no user data. Your games, scores, and settings stay on this device, unless you sign in to Test Games. " +
+                "LudoPlus holds no user data. Your games, scores, and settings stay on this device, unless you sign in to Test Games. " +
                     "There are no ads, analytics, or tracking.",
             ),
             useUnmergedTree = true,

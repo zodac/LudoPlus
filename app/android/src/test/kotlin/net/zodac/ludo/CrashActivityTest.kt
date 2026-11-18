@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config
 class CrashActivityTest {
 
     private val report = CrashReport(
-        app = "Ludo Plus test",
+        app = "LudoPlus test",
         android = "17 (API 37)",
         device = "Google Pixel",
         screen = "411x914dp, font 1.0x",

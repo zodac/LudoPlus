@@ -11,8 +11,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * The cut-down Ludo Plus D20 font (`scripts/subset-d20-font.sh`) holds every digit the D20 draws, draws its 7 crossed
- * (Andika's `seven.Bar`) and is named Ludo Plus D20: the OFL keeps the Andika original's Reserved Font Names for the
+ * The cut-down LudoPlus D20 font (`scripts/subset-d20-font.sh`) holds every digit the D20 draws, draws its 7 crossed
+ * (Andika's `seven.Bar`) and is named LudoPlus D20: the OFL keeps the Andika original's Reserved Font Names for the
  * unmodified font. JVM-only: it reads the font files in the source tree.
  */
 class D20FontCoverageTest {
@@ -38,8 +38,8 @@ class D20FontCoverageTest {
     }
 
     @Test
-    fun `the font is named Ludo Plus D20, not Andika`() {
-        assertEquals("Ludo Plus D20", d20.family)
+    fun `the font is named LudoPlus D20, not Andika`() {
+        assertEquals("LudoPlus D20", d20.family)
         assertTrue("Andika" !in d20.fontName && "Andika" !in d20.psName, "${d20.fontName} (${d20.psName}) keeps a Reserved Font Name")
     }
 

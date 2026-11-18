@@ -1,4 +1,4 @@
-# Ludo Plus: multiplatform layout
+# LudoPlus: multiplatform layout
 
 The app is Android-only (decided 2026-11-03), built with Kotlin Multiplatform and Compose Multiplatform. The shared
 code has one target, Android. A JVM (desktop) target was dropped then; "Adding a target back" says how to restore it.

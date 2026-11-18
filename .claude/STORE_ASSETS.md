@@ -1,4 +1,4 @@
-# Ludo Plus: store listing assets
+# LudoPlus: store listing assets
 
 How the listing's graphics are made, what to change, and the traps. **Running the script** is the `store-assets` skill.
 The rest of the Play submission is in `PUBLISHING.md`.

@@ -1,6 +1,6 @@
-# Ludo Plus Documentation
+# LudoPlus Documentation
 
-Welcome to the documentation for **Ludo Plus**.
+Welcome to the documentation for **LudoPlus**.
 
 ## Available Documents
 

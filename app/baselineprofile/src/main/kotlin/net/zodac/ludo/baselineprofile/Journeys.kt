@@ -177,8 +177,8 @@ private fun MacrobenchmarkScope.scrollTabIntoView(text: String) {
 /** True if [text] is on screen right now, without waiting. */
 private fun MacrobenchmarkScope.hasText(text: String): Boolean = device.hasObject(By.text(text))
 
-/** The menu's "Ludo Plus" wordmark (AppLogo): only the menu shows it, so its going says the menu has. */
-private val MENU = By.text("Ludo Plus")
+/** The menu's "LudoPlus" wordmark (AppLogo): only the menu shows it, so its going says the menu has. */
+private val MENU = By.text("LudoPlus")
 
 /** The die, whatever it shows: on screen means the board is. */
 private val DIE = By.desc(Pattern.compile("Die( showing \\d)?"))
@@ -332,7 +332,7 @@ internal fun MacrobenchmarkScope.resumeGame() {
  */
 private fun MacrobenchmarkScope.leaveGame() {
     back()
-    await(By.text(Pattern.compile("Leave game\\?|Ludo Plus")), "the leave dialog or the menu after leaving a game")
+    await(By.text(Pattern.compile("Leave game\\?|LudoPlus")), "the leave dialog or the menu after leaving a game")
     if (hasText("Leave game?")) closeDialog(By.text("Leave"), "the leave dialog's Leave button")
     await(MENU, "the menu after leaving a game")
 }
@@ -340,7 +340,7 @@ private fun MacrobenchmarkScope.leaveGame() {
 /** Back press in a game, then "Cancel" on the leave dialog (if the setting asks): the game carries on. */
 private fun MacrobenchmarkScope.cancelLeaving() {
     back()
-    await(By.text(Pattern.compile("Leave game\\?|Ludo Plus")), "the leave dialog or the menu after a back press")
+    await(By.text(Pattern.compile("Leave game\\?|LudoPlus")), "the leave dialog or the menu after a back press")
     if (hasText("Leave game?")) {
         closeDialog(By.text("Cancel"), "the leave dialog's Cancel button")
         await(DIE, "the board after cancelling the leave dialog")

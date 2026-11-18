@@ -1,8 +1,8 @@
-# Ludo Plus: Google Play Games Services
+# LudoPlus: Google Play Games Services
 
-**Built for Ludo Plus (Phase 10, 2026-11-18); no Play Console project yet.** Sign-in, achievements mirrored both ways,
+**Built for LudoPlus (Phase 10, 2026-11-18); no Play Console project yet.** Sign-in, achievements mirrored both ways,
 a leaderboard per mode and player count, cloud save across devices, and Play Games Sidekick, restored from DiceFive
-(`5423b6c`), where each was checked by the maintainer on real phones. In Ludo Plus none has run against Play yet: the
+(`5423b6c`), where each was checked by the maintainer on real phones. In LudoPlus none has run against Play yet: the
 ids are empty until the Play Console project exists ("Play Console"). This file is the one source on the subject: where
 another doc disagrees, follow this one.
 
@@ -107,7 +107,7 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
 
 ## Leaderboards
 
-**Ludo Plus (decided 2026-11-18):** a board for each built-in mode and player count, 2-8 (3 modes × 7 = 21 of the 70),
+**LudoPlus (decided 2026-11-18):** a board for each built-in mode and player count, 2-8 (3 modes × 7 = 21 of the 70),
 each the turns in seat 1's win under the mode's own rules, smaller better. Play ranks one number, ties by submission time,
 so the local Leaderboard's captures tie-break doesn't carry.
 

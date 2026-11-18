@@ -22,7 +22,7 @@ Day-to-day use (start, screenshot, running the Baseline Profile journey) is the 
 ## The renderer setting (do not remove it)
 
 **The crash.** The emulator's software GLES path (gfxstream + SwiftShader) **segfaults in its render thread while
-drawing Ludo Plus**.
+drawing LudoPlus**.
 
 - The emulator exits with 139 a few seconds after the app opens, leaving no report.
 - Everything above it shows a vague symptom: `adb: device offline`, a vanished device, or a

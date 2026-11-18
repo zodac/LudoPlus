@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the Maths and Poker dice's fonts from the untouched MathJax 2.7.9 originals in
-# app/licensing/sources/: cut down to the characters the dice draw, and renamed to "Ludo Plus Maths",
+# app/licensing/sources/: cut down to the characters the dice draw, and renamed to "LudoPlus Maths",
 # because the OFL keeps the Reserved Font Names MathJax_Main and MathJax_Math for the unmodified
 # fonts. The copyright and licence entries stay as they are.
 #
@@ -51,8 +51,8 @@ PYTHON
 }
 
 subset "${sources}/MathJax_Main-Regular.otf" "${main_characters}" "${fonts}/ludo_maths_regular.otf"
-rename "${fonts}/ludo_maths_regular.otf" "Ludo Plus Maths" "Regular"
+rename "${fonts}/ludo_maths_regular.otf" "LudoPlus Maths" "Regular"
 subset "${sources}/MathJax_Math-Italic.otf" "${italic_characters}" "${fonts}/ludo_maths_italic.otf"
-rename "${fonts}/ludo_maths_italic.otf" "Ludo Plus Maths Italic" "Italic"
+rename "${fonts}/ludo_maths_italic.otf" "LudoPlus Maths Italic" "Italic"
 
 ls -l "${fonts}"/ludo_maths_*.otf

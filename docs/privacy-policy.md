@@ -4,7 +4,7 @@
 
 **Last updated:** set when published
 
-This Privacy Policy explains how Ludo Plus ("the App") handles information when you use the App.
+This Privacy Policy explains how LudoPlus ("the App") handles information when you use the App.
 
 The App comes in two versions:
 
@@ -150,4 +150,4 @@ If you have questions about this Privacy Policy or the App's handling of informa
 
 <zodacapps@gmail.com>
 
-Ludo Plus
+LudoPlus

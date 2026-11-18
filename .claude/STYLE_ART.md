@@ -1,4 +1,4 @@
-# Ludo Plus: making table art (boards, pawns, dice, backgrounds)
+# LudoPlus: making table art (boards, pawns, dice, backgrounds)
 
 The working method and the drawing techniques. Elsewhere:
 
@@ -6,7 +6,7 @@ The working method and the drawing techniques. Elsewhere:
 - rendering for review: the `render` skill;
 - frame cost: `BENCHMARKS.md` and the `benchmark` skill.
 
-The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and frames Ludo Plus doesn't have.
+The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and frames LudoPlus doesn't have.
 
 ## Working with the maintainer on art
 

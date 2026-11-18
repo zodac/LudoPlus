@@ -1,6 +1,6 @@
-# Ludo Plus: purchases
+# LudoPlus: purchases
 
-**Built for Ludo Plus (Phase 11, 2026-11-18); no Play Console project yet.** Three one-time Google Play purchases in the
+**Built for LudoPlus (Phase 11, 2026-11-18); no Play Console project yet.** Three one-time Google Play purchases in the
 play app, decided with the maintainer (2026-11-18): **Unlock all styles** (every style without earning it), **Remove
 ads** (no ad banner, `ADS.md`), and both together for one price. Restored from DiceFive's one purchase (`5423b6c`) and
 made three. Commits go under `[Purchases]`.
@@ -151,7 +151,7 @@ Built (Phase 5): as `UI_SCREENS.md`, "The Styles screen", describes. Decided wit
 "Unlock All", **no price** (Play's sheet shows it, so the app never handles one), and the mark alone wherever the words
 would move the title. A tap opens a dialog before Play's sheet (decided 2026-10-23), in the maintainer's words: what
 the purchase unlocks, and that every style can be earned for free, so "this app will never lock anything behind a
-purchase" and paying is "an optional shortcut and a way to support Ludo Plus". Cancel / Continue. The plan as it was:
+purchase" and paying is "an optional shortcut and a way to support LudoPlus". Cancel / Continue. The plan as it was:
 
 - Label "Unlock all" plus Play's price (`ProductDetails...formattedPrice`, already localised by Play; never format it
     ourselves). States:
@@ -208,7 +208,7 @@ Payments verification can take days, so start early. In order:
      legal name and address it shows before submitting.
    - It asks for business details: the name buyers see on receipts (the legal name), a physical address (no PO
      box), a business website, the product category, a customer support email (<zodacapps@gmail.com>) and the name
-     on card statements (e.g. "Ludo Plus").
+     on card statements (e.g. "LudoPlus").
    - The business country **can't be changed** later.
    - Afterwards it's managed at **pay.google.com** (Google payments centre) and Play Console > **Settings >
      Payments profile**.

@@ -15,7 +15,7 @@
 #               found, taken back and stepped down to the newest version that builds (see "Build
 #               verification"), which is what makes crossing a major safe to do unattended.
 #                 - the sandbox's project layer (ai-sandbox-configuration/Dockerfile) - the toolchains
-#                   Ludo Plus adds on top of the shared ai-sandbox base image:
+#                   LudoPlus adds on top of the shared ai-sandbox base image:
 #                     JDK   - eclipse-temurin:X.Y.Z_B-jdk: the newest patch, and a newer LTS major only
 #                             once the project is proven to build on it (see "Java" below)
 #                 - the Debian tag of its download stage (FROM debian:X.Y), kept on the ai-sandbox base's

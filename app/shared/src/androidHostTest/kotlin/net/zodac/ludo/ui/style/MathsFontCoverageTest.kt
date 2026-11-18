@@ -7,8 +7,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * The cut-down Ludo Plus Maths fonts (`scripts/subset-maths-fonts.sh`) hold every character the Maths
- * and Poker dice draw in them, and are named Ludo Plus Maths: the OFL keeps the MathJax originals'
+ * The cut-down LudoPlus Maths fonts (`scripts/subset-maths-fonts.sh`) hold every character the Maths
+ * and Poker dice draw in them, and are named LudoPlus Maths: the OFL keeps the MathJax originals'
  * Reserved Font Names for the unmodified fonts. JVM-only: it reads the font files in the source tree.
  */
 class MathsFontCoverageTest {
@@ -29,9 +29,9 @@ class MathsFontCoverageTest {
     }
 
     @Test
-    fun `the fonts are named Ludo Plus Maths, not MathJax`() {
-        assertEquals("Ludo Plus Maths", regular.family)
-        assertEquals("Ludo Plus Maths Italic", italic.family)
+    fun `the fonts are named LudoPlus Maths, not MathJax`() {
+        assertEquals("LudoPlus Maths", regular.family)
+        assertEquals("LudoPlus Maths Italic", italic.family)
         for (font in listOf(regular, italic)) {
             assertTrue("MathJax" !in font.fontName && "MathJax" !in font.psName, "${font.fontName} (${font.psName}) keeps a Reserved Font Name")
         }

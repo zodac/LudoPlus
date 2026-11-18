@@ -70,9 +70,9 @@ class TutorialScreenTest : UiTest() {
     @Test
     fun `the coach card is read out as each step arrives - its part a node of its own`() = uiTest(TestScreen(411, 891)) {
         showTutorial()
-        val card = compose.onNode(hasText("Coach", substring = true) and hasText("Welcome to Ludo Plus!", substring = true))
+        val card = compose.onNode(hasText("Coach", substring = true) and hasText("Welcome to LudoPlus!", substring = true))
         assertEquals(
-            listOf("Coach", "Welcome to Ludo Plus! You're Red, racing Green. First, getting out of your yard. Tap the die to roll."),
+            listOf("Coach", "Welcome to LudoPlus! You're Red, racing Green. First, getting out of your yard. Tap the die to roll."),
             card.fetchSemanticsNode().config[SemanticsProperties.Text].map { it.text },
         )
         assertEquals(LiveRegionMode.Polite, card.fetchSemanticsNode().config[SemanticsProperties.LiveRegion])

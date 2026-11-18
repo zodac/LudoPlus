@@ -105,7 +105,7 @@ class RulesScreenAccessibilityTest : UiTest() {
         )
 
         // A swipe on the page moves to the next one.
-        compose.onNode(hasScrollAction() and hasAnyChild(isHeading and hasText("How to Play Ludo Plus"))).performTouchInput { swipeLeft() }
+        compose.onNode(hasScrollAction() and hasAnyChild(isHeading and hasText("How to Play LudoPlus"))).performTouchInput { swipeLeft() }
         compose.waitForIdle()
         compose.onNode(isTab and hasText("The Board")).assertIsSelected()
         compose.onNode(hasContentDescription("Gameplay, page 2 of 5")).assertExists()

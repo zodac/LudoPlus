@@ -6,7 +6,7 @@ import net.zodac.ludo.model.GameMode
 
 /**
  * Each achievement's id on Play Games, from Play Console's Achievements > Get resources (matched by English name),
- * saved as `assets/play-console/achievements/achievement-ids.xml`. Empty until Ludo Plus's Play Console project exists
+ * saved as `assets/play-console/achievements/achievement-ids.xml`. Empty until LudoPlus's Play Console project exists
  * (`.claude/PLAY_GAMES.md`, "Play Console"): an achievement with no id is never sent. Once the first is mapped,
  * `PlayGamesIdsTest` fails until every one is.
  */

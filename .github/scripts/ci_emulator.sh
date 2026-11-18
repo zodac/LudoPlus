@@ -15,7 +15,7 @@
 #               - /dev/kvm is opened to the runner user, or the emulator falls back to software CPU
 #                 emulation, far too slow to drive the app.
 #               - The app's UI renderer is switched to Vulkan after boot (debug.hwui.renderer=skiavk): the
-#                 emulator's software GLES path segfaults while drawing Ludo Plus. The property resets on
+#                 emulator's software GLES path segfaults while drawing LudoPlus. The property resets on
 #                 every boot, so `start` sets it every time.
 #               - The device's API level is written into its config (target=android-<api>) and Vulkan is checked
 #                 once it's up: the runner's avdmanager wrote a target the emulator read as API 3, so it left
@@ -202,7 +202,7 @@ set_target() {
 
 # Fails the boot if the device has no Vulkan GPU: every app's UI is drawn through Vulkan (skiavk, set
 # above), and without one each app's RenderThread aborts on launch ("Assertion failed: !gpuCount") - SystemUI,
-# the launcher and Ludo Plus alike. The emulator decides at boot whether to offer Vulkan, from the API level
+# the launcher and LudoPlus alike. The emulator decides at boot whether to offer Vulkan, from the API level
 # (see set_target); its -verbose log, in the report artifact, records what it decided and why. Forcing it
 # on with `-feature Vulkan` is not enough: without GLDirectMem, apps then crash allocating Vulkan memory.
 check_vulkan() {

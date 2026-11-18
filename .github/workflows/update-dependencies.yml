@@ -194,7 +194,7 @@ jobs:
             sed 's/^/- /' "$update/update-summary.txt"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          git config user.name "Ludo Plus dependency updater"
+          git config user.name "LudoPlus dependency updater"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -F "$RUNNER_TEMP/commit-message.txt"
           git push origin HEAD:main

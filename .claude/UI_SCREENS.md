@@ -1,11 +1,11 @@
-# Ludo Plus: screen-specific UI detail
+# LudoPlus: screen-specific UI detail
 
 > **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
 > from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
-> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for Ludo Plus as part of that phase.
+> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for LudoPlus as part of that phase.
 >
 > **Achievements (Phase 6) and Styles (Phase 7).** "The achievements list", "Achievement banners", "Style locks", and
-> "The Styles screen" hold for Ludo Plus, except: no online count button yet (Phase 10), and no row dialogs (DiceFive's
+> "The Styles screen" hold for LudoPlus, except: no online count button yet (Phase 10), and no row dialogs (DiceFive's
 > mode limits and missing-entry lists). A row is one TalkBack item: its title, description, and when it was earned or
 > how far along it is, then, for a style reward, the reward's sentence, with the action "Show which style this
 > unlocks", whose tap shows that sentence as a tip. The Easter Eggs' fixed colours are Big Fan's red heart, Are You A
@@ -174,7 +174,7 @@ available. `StyleRegistryTest` keeps the counts within what can be earned.
     - Devil die (Too Much Of A Good Thing);
     - Starry die and background (Midnight Run).
 - **Secret colours** (`StyleVariant.secretAchievement`) are left out entirely until earned. None yet: DiceFive's (the
-    Irish Multicolour, the D20 colours, the gold Egg) are ordinary colours in Ludo Plus.
+    Irish Multicolour, the D20 colours, the gold Egg) are ordinary colours in LudoPlus.
 - **On the Achievements screen**, a row whose achievement unlocks a style reads the reward's sentence with the row
     ("Earn this to unlock the 'Maths' die style"; one style's items named once, as the unlock banner does: "'Starry'
     die and background"), and a tap shows it as a tooltip that **stays until the row is tapped again**. Its action is
@@ -359,7 +359,7 @@ a copy of the launcher icon.
     - Only a tall cup's overhang is reserved, as top padding.
     - Every cup is drawn at the same scale per grid unit, hanging from one top line. Standing on a shared base hid squat
         cups.
-- Keep the "Ludo Plus" text: `MainActivitySmokeTest` asserts on it.
+- Keep the "LudoPlus" text: `MainActivitySmokeTest` asserts on it.
 - **Tapping the cup shakes it** (`shakeCupOnTap`, the menu only): the same `CupCanvas` shake, ending upright, with no
     sound and no reward.
     - The hit area is the logo's `detectTapGestures` plus `isOnLogoCup`'s rectangle.

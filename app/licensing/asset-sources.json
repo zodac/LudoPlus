@@ -43,36 +43,36 @@
   },
   "app/android/src/main/res/drawable/ic_launcher_background.xml": {
     "description": "Launcher icon background layer: flat brand navy (placeholder)",
-    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721",
+    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721",
     "copyright": "Copyright 2026 zodac.net",
     "license": "LicenseRef-LudoPlus-AllRightsReserved"
   },
   "app/android/src/main/res/drawable/ic_launcher_foreground.xml": {
     "description": "Launcher icon artwork: an ivory pawn (placeholder)",
-    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721",
+    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721",
     "copyright": "Copyright 2026 zodac.net",
     "license": "LicenseRef-LudoPlus-AllRightsReserved"
   },
   "app/android/src/main/res/drawable/ic_launcher_monochrome.xml": {
     "description": "Themed-icon (monochrome) layer of the launcher icon: the pawn of ic_launcher_foreground as one flat silhouette",
-    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721",
+    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721",
     "copyright": "Copyright 2026 zodac.net",
     "license": "LicenseRef-LudoPlus-AllRightsReserved"
   },
   "app/android/src/main/res/mipmap-anydpi/ic_launcher.xml": {
     "description": "Adaptive launcher icon wrapper around ic_launcher_background, ic_launcher_foreground, and ic_launcher_monochrome",
-    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01XHKZahXD9TiHU4GnGuV2FB (commit 67eae6c)",
+    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01XHKZahXD9TiHU4GnGuV2FB (commit 67eae6c)",
     "copyright": "Copyright 2026 zodac.net",
     "license": "LicenseRef-LudoPlus-AllRightsReserved"
   },
   "app/android/src/main/res/resources.properties": {
     "description": "Android resource config declaring British English (en-GB) as the language of the untranslated resources, for the per-app language setting",
-    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01Fznrb6vve3wanYg6gqhABJ (the i18n work)",
+    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01Fznrb6vve3wanYg6gqhABJ (the i18n work)",
     "copyright": "Copyright 2026 zodac.net",
     "license": "LicenseRef-LudoPlus-AllRightsReserved"
   },
   "app/shared/src/commonMain/composeResources/font/ludo_d20.ttf": {
-    "description": "Ludo Plus D20: Andika Bold, for the D20 dice's numbers - its 1 has a foot and its 7 is crossed, so neither reads as the other. Modified, a modification the OFL permits: cut down to the digits 0-9, the crossed seven (Andika's seven.Bar) made the 7, and renamed, as the OFL requires of a modified font with a Reserved Font Name, by scripts/subset-d20-font.sh from the original kept in app/licensing/sources/ (ofl/andika/Andika-Bold.ttf in github.com/google/fonts)",
+    "description": "LudoPlus D20: Andika Bold, for the D20 dice's numbers - its 1 has a foot and its 7 is crossed, so neither reads as the other. Modified, a modification the OFL permits: cut down to the digits 0-9, the crossed seven (Andika's seven.Bar) made the 7, and renamed, as the OFL requires of a modified font with a Reserved Font Name, by scripts/subset-d20-font.sh from the original kept in app/licensing/sources/ (ofl/andika/Andika-Bold.ttf in github.com/google/fonts)",
     "source": "https://github.com/google/fonts/blob/main/ofl/andika/Andika-Bold.ttf",
     "license": "OFL-1.1",
     "libraries": [
@@ -80,7 +80,7 @@
     ]
   },
   "app/shared/src/commonMain/composeResources/font/ludo_maths_italic.otf": {
-    "description": "Ludo Plus Maths Italic: MathJax_Math Italic (Computer Modern math italic, as in Wikipedia's formulas) for the Maths dice's x, e and π - modified, a modification the OFL permits: cut down to those characters and renamed, as the OFL requires of a modified font with a Reserved Font Name, by scripts/subset-maths-fonts.sh from the original kept in app/licensing/sources/ (fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf in MathJax 2.7.9)",
+    "description": "LudoPlus Maths Italic: MathJax_Math Italic (Computer Modern math italic, as in Wikipedia's formulas) for the Maths dice's x, e and π - modified, a modification the OFL permits: cut down to those characters and renamed, as the OFL requires of a modified font with a Reserved Font Name, by scripts/subset-maths-fonts.sh from the original kept in app/licensing/sources/ (fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf in MathJax 2.7.9)",
     "source": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf",
     "license": "OFL-1.1",
     "libraries": [
@@ -88,7 +88,7 @@
     ]
   },
   "app/shared/src/commonMain/composeResources/font/ludo_maths_regular.otf": {
-    "description": "Ludo Plus Maths Regular: MathJax_Main Regular (Computer Modern roman, as in Wikipedia's formulas) for the Maths dice's digits, root sign, floor brackets, \"ln\" and factorial and the Poker dice's ranks - modified, a modification the OFL permits: cut down to those characters and renamed, as the OFL requires of a modified font with a Reserved Font Name, by scripts/subset-maths-fonts.sh from the original kept in app/licensing/sources/ (fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf in MathJax 2.7.9)",
+    "description": "LudoPlus Maths Regular: MathJax_Main Regular (Computer Modern roman, as in Wikipedia's formulas) for the Maths dice's digits, root sign, floor brackets, \"ln\" and factorial and the Poker dice's ranks - modified, a modification the OFL permits: cut down to those characters and renamed, as the OFL requires of a modified font with a Reserved Font Name, by scripts/subset-maths-fonts.sh from the original kept in app/licensing/sources/ (fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf in MathJax 2.7.9)",
     "source": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf",
     "license": "OFL-1.1",
     "libraries": [
@@ -113,19 +113,19 @@
   },
   "app/android/src/play/res/xml/backup_rules.xml": {
     "description": "Auto Backup rules up to Android 11: leaves out Play Games' start-at-launch choice",
-    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_011pQ5G3K1HaY2XL2VD7bzXF",
+    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_011pQ5G3K1HaY2XL2VD7bzXF",
     "copyright": "Copyright 2026 zodac.net",
     "license": "LicenseRef-LudoPlus-AllRightsReserved"
   },
   "app/android/src/play/res/xml/data_extraction_rules.xml": {
     "description": "Backup and device-transfer rules from Android 12: leaves out Play Games' start-at-launch choice",
-    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_011pQ5G3K1HaY2XL2VD7bzXF",
+    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_011pQ5G3K1HaY2XL2VD7bzXF",
     "copyright": "Copyright 2026 zodac.net",
     "license": "LicenseRef-LudoPlus-AllRightsReserved"
   },
   "app/android/src/play/res/xml/sidekick_config.xml": {
     "description": "Play Games Sidekick config: the tab's default position and the first-session snooze",
-    "source": "Created for Ludo Plus in Claude Code session https://claude.ai/code/session_01B2fBbenxLkeAc4xpD93yyf",
+    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01B2fBbenxLkeAc4xpD93yyf",
     "copyright": "Copyright 2026 zodac.net",
     "license": "LicenseRef-LudoPlus-AllRightsReserved"
   }

@@ -155,7 +155,7 @@ internal class NearbyConnections private constructor(context: Context) : Nearby 
         /** Why a call failed, in logcat: `adb logcat -s LudoPlusNearby`. */
         const val LOG_TAG = "LudoPlusNearby"
 
-        /** What a Ludo Plus game advertises as: only another Ludo Plus phone finds it. Permanent once released. */
+        /** What a LudoPlus game advertises as: only another LudoPlus phone finds it. Permanent once released. */
         internal const val SERVICE_ID = "net.zodac.ludo.netplay"
 
         private val STRATEGY = Strategy.P2P_STAR

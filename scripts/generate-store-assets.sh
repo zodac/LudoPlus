@@ -361,8 +361,8 @@ with open(os.path.join(root, "app/android/build.gradle.kts")) as f:
     app_id = re.search(r'applicationId\s*=\s*"([^"]+)"', f.read()).group(1)
 
 def credit(description):
-    # A Freesound attribution, "<work> -- <link> -- License: <licence> (<url>). Modified for Ludo Plus: ...", becomes
-    # "<work> (<link>) -- modified for Ludo Plus: ...". Anything else is used as it is.
+    # A Freesound attribution, "<work> -- <link> -- License: <licence> (<url>). Modified for LudoPlus: ...", becomes
+    # "<work> (<link>) -- modified for LudoPlus: ...". Anything else is used as it is.
     match = re.fullmatch(r"(.+?) -- (\S+) -- License: [^()]+\([^()]+\)\.\s*(.*)", description)
     if not match:
         return description

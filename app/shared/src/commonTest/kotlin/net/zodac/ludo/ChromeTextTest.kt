@@ -62,9 +62,9 @@ class ChromeTextTest : UiTest() {
         listOf("Author", "The game", "Privacy", "Source code on GitHub", "Ludo on Wikipedia", "Full privacy policy").forEach {
             compose.onNodeWithText(it).assertExists()
         }
-        compose.onNodeWithText("Ludo Plus is created by zodac.").assertExists()
-        compose.onNodeWithText("Ludo Plus plays the rules of Ludo, the race game that grew from the ancient Indian game Pachisi.").assertExists()
-        compose.onNodeWithText("Ludo Plus holds no user data. Your games, scores, and settings stay on this device, and there are no ads, analytics, or tracking.")
+        compose.onNodeWithText("LudoPlus is created by zodac.").assertExists()
+        compose.onNodeWithText("LudoPlus plays the rules of Ludo, the race game that grew from the ancient Indian game Pachisi.").assertExists()
+        compose.onNodeWithText("LudoPlus holds no user data. Your games, scores, and settings stay on this device, and there are no ads, analytics, or tracking.")
             .assertExists()
     }
 }

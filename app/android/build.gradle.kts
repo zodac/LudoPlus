@@ -125,10 +125,10 @@ android {
     }
 
     buildTypes {
-        // "Ludo Plus Debug" on the launcher, in every language, so a tester's debug build is never taken for a release.
+        // "LudoPlus Debug" on the launcher, in every language, so a tester's debug build is never taken for a release.
         // Only the label: the GitHub APK and the Play bundle (release builds) keep app_name.
         debug {
-            manifestPlaceholders["appLabel"] = "Ludo Plus Debug"
+            manifestPlaceholders["appLabel"] = "LudoPlus Debug"
         }
         release {
             isMinifyEnabled = true

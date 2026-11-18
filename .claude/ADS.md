@@ -1,4 +1,4 @@
-# Ludo Plus: the ad banner
+# LudoPlus: the ad banner
 
 **Built (Phase 11, 2026-11-18); no AdMob account yet.** The maintainer's decision of 2026-11-18, reversing DiceFive's
 "Never ads": one AdMob banner in the play app. This file is the one source on the subject. Commits go under `[Ads]`.

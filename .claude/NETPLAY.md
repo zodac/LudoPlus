@@ -1,4 +1,4 @@
-# Ludo Plus: netplay (Nearby)
+# LudoPlus: netplay (Nearby)
 
 **In progress (Phase 12, from 2026-11-18).** Phones in the same room play one game together over Google's Nearby
 Connections: no server, no accounts. This file is the plan and the one source on the subject. Commits go under

@@ -1,4 +1,4 @@
-# Ludo Plus: UI reference
+# LudoPlus: UI reference
 
 How the interface is built, and the decisions that are easy to undo by accident. Two companion files hold the detail
 for particular screens:
