@@ -34,6 +34,8 @@ uiautomator = "2.4.0"
 profileinstaller = "1.4.1"
 playGames = "22.1.0"
 playBilling = "9.1.0"
+playServicesAds = "25.5.0"
+userMessagingPlatform = "4.0.0"
 # Not used by the app: Play Games' play-services-base still asks for fragment 1.1.0, which Play Console reports as
 # outdated, so the Android module raises it to this through a constraint.
 fragment = "1.9.1"
@@ -64,6 +66,8 @@ androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchm
 androidx-fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
 play-services-games-v2 = { group = "com.google.android.gms", name = "play-services-games-v2", version.ref = "playGames" }
 play-billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "playBilling" }
+play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
+user-messaging-platform = { group = "com.google.android.ump", name = "user-messaging-platform", version.ref = "userMessagingPlatform" }
 aboutlibraries-core = { group = "com.mikepenz", name = "aboutlibraries-core", version.ref = "aboutLibraries" }
 
 jetbrains-compose-runtime = { group = "org.jetbrains.compose.runtime", name = "runtime", version.ref = "composeMultiplatform" }

@@ -26,17 +26,26 @@ object LicencePolicy {
         // Google's branding guidelines for Play Games, for its controller badge: no pre-approval needed, and no condition on the
         // app's own licence, provided those guidelines are followed.
         "LicenseRef-Google-Play-Games-Branding" to listOf("google-play-games-branding-icons"),
-        // Google's own terms for the Play SDKs (Play Games Services, the Play Billing Library, and what they pull in):
-        // proprietary, free to ship in an app, with no condition on the app's own licence.
+        // Google's own terms for the Play SDKs (Play Games Services, the Play Billing Library, Google Mobile Ads and its
+        // consent form, and what they pull in): proprietary, free to ship in an app, with no condition on the app's own
+        // licence.
         "ASDKL" to listOf(
             "com.android.billingclient:billing",
             "com.android.billingclient:billing-ktx",
+            "com.google.android.gms:play-services-ads",
+            "com.google.android.gms:play-services-ads-api",
+            "com.google.android.gms:play-services-ads-identifier",
+            "com.google.android.gms:play-services-appset",
             "com.google.android.gms:play-services-base",
             "com.google.android.gms:play-services-basement",
             "com.google.android.gms:play-services-games-v2",
             "com.google.android.gms:play-services-location",
+            "com.google.android.gms:play-services-measurement-base",
+            "com.google.android.gms:play-services-measurement-sdk-api",
             "com.google.android.gms:play-services-places-placereport",
             "com.google.android.gms:play-services-tasks",
+            "com.google.android.play:hsdp",
+            "com.google.android.ump:user-messaging-platform",
         ),
     )
 }

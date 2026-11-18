@@ -603,6 +603,23 @@ jobs:
             exit 1
           fi
 
+      # The play app's ad banner (app/android/build.gradle.kts, ADMOB_APP_ID and ADMOB_BANNER_ID): AdMob's app id and the
+      # banner's ad unit id, public ids, so repository variables. Without them the play app would show Google's test ads,
+      # so the release is refused instead.
+      - name: Check the AdMob ids
+        env:
+          ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+          ADMOB_BANNER_ID: ${{ vars.ADMOB_BANNER_ID }}
+        run: |
+          if ! [[ "$ADMOB_APP_ID" =~ ^ca-app-pub-[0-9]+~[0-9]+$ && "$ADMOB_BANNER_ID" =~ ^ca-app-pub-[0-9]+/[0-9]+$ ]]; then
+            echo "::error::The ADMOB_APP_ID and ADMOB_BANNER_ID repository variables must be set to the app's AdMob ids - see .claude/ADS.md"
+            exit 1
+          fi
+          if [[ "$ADMOB_APP_ID" == ca-app-pub-3940256099942544~* ]]; then
+            echo "::error::ADMOB_APP_ID is Google's test id - see .claude/ADS.md"
+            exit 1
+          fi
+
       # Through env, never ${{ }} in the script: the secret is then never part of the script's text.
       - name: Decode release keystore
         env:
@@ -620,6 +637,8 @@ jobs:
           ANDROID_RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
           PROGRESS_FILE_KEY: ${{ secrets.PROGRESS_FILE_KEY }}
           PLAY_LICENCE_KEY: ${{ vars.PLAY_LICENCE_KEY }}
+          ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+          ADMOB_BANNER_ID: ${{ vars.ADMOB_BANNER_ID }}
         run: ./gradlew :app:android:assembleGithubRelease :app:android:bundlePlayRelease --console=plain
 
       # app/android/build.gradle.kts names the APK LudoPlus-<version>-<flavour>-<buildType>.apk (signed here, so no

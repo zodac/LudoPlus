@@ -612,7 +612,9 @@
     <string name="online_sign_out">Sign Out</string>
     <!-- The Achievements page's count banner, signed in: what a screen reader says a tap does. %1$s is the service's name. -->
     <string name="achievements_online_action">Open %1$s</string>
-    <!-- About's privacy paragraph in the play app. %1$s is the app's name, %2$s the online service's. -->
+    <!-- About's privacy paragraph where the app shows its ad banner (the play app). %1$s is the app's name. -->
+    <string name="about_privacy_body_ads">%1$s holds no user data of its own. Your games, scores, and settings stay on this device, unless you sign in to save them online. The ad banner comes from Google, which may use your device's advertising ID to choose its ads, as your ad privacy choices allow. There are no analytics of our own.</string>
+    <!-- About's privacy paragraph in the play app without ads. %1$s is the app's name, %2$s the online service's. -->
     <string name="about_privacy_body_online">%1$s holds no user data. Your games, scores, and settings stay on this device, unless you sign in to %2$s. There are no ads, analytics, or tracking.</string>
     <!-- A merge's progress, after a spinner and above a progress bar: %1$s is the step (one of online_sync_step_*), %2$d which step it is, and %3$d how many there are. -->
     <string name="online_sync_progress">%1$s (%2$d/%3$d)</string>
@@ -1205,6 +1207,10 @@
     <string name="settings_remove_ads_dialog_message">Remove the ad banner from every page, for good, on this store account.\n\nThe ads help keep %1$s free to play. Removing them is an optional way to support it!</string>
     <!-- Shown for a moment once the purchase completes. -->
     <string name="settings_ads_removed">Ads removed</string>
+    <!-- A row in Settings where the law asks for a way back to the ad network's consent choices (the UK and the EU): opens its own form. -->
+    <string name="settings_ad_privacy">Ad privacy choices</string>
+    <!-- What a screen reader says a tap on the row does. -->
+    <string name="settings_ad_privacy_action">Change ad privacy choices</string>
     <string name="styles_unlocked_count_short">%1$d of %2$d</string>
     <string name="styles_category_count">%1$d/%2$d</string>
     <string name="styles_unlocked_only">Unlocked</string>

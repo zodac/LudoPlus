@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The play flavour's own entries: Google Play Games and Sidekick, which the github flavour has none of. -->
+<!-- The play flavour's own entries: Google Play Games, Sidekick, and AdMob, which the github flavour has none of. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
@@ -10,6 +10,11 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         tools:targetApi="31">
+
+        <!-- AdMob's app id (build.gradle.kts, admobAppId): the SDK refuses to start without it. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
 
         <meta-data
             android:name="com.google.android.gms.games.APP_ID"

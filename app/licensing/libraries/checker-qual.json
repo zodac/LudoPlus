@@ -1,0 +1,8 @@
+{
+  "uniqueId": "org.checkerframework:checker-qual",
+  "name": "Checker Framework qualifiers",
+  "description": "Copyright 2004-present by the Checker Framework developers",
+  "licenses": [
+    "MIT"
+  ]
+}

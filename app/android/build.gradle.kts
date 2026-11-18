@@ -33,6 +33,9 @@ val releaseKeyPassword = System.getenv("ANDROID_RELEASE_KEY_PASSWORD")
 val progressFileKey: String = System.getenv("PROGRESS_FILE_KEY")?.takeIf { it.isNotBlank() }?.trim()?.lowercase()
     ?.also { require(Regex("[0-9a-f]{64}").matches(it)) { "PROGRESS_FILE_KEY must be 64 hex digits" } }
     ?: "0".repeat(64)
+// Google's published test ids for AdMob, which only ever show test ads: a local or debug build's.
+val ADMOB_TEST_APP_ID = "ca-app-pub-3940256099942544~3347511713"
+val ADMOB_TEST_BANNER_ID = "ca-app-pub-3940256099942544/9214589741"
 val hasReleaseSigningConfig = !releaseKeystorePath.isNullOrBlank() &&
     !releaseKeystorePassword.isNullOrBlank() &&
     !releaseKeyAlias.isNullOrBlank() &&
@@ -81,6 +84,11 @@ android {
             // CI's PLAY_LICENCE_KEY repository variable (a public key, so not a secret). Without it (a local build) purchases
             // go unchecked.
             buildConfigField("String", "PLAY_LICENCE_KEY", "\"${System.getenv("PLAY_LICENCE_KEY")?.trim().orEmpty()}\"")
+            // AdMob's app id and the banner's ad unit id (ads/AdMobAds): CI's ADMOB_APP_ID and ADMOB_BANNER_ID repository
+            // variables (public ids, not secrets). Without them, Google's published test ids, which show test ads only;
+            // the release workflow refuses to build without them. A debug build always shows test ads (AdMobAds).
+            manifestPlaceholders["admobAppId"] = System.getenv("ADMOB_APP_ID")?.trim()?.takeIf { it.isNotEmpty() } ?: ADMOB_TEST_APP_ID
+            buildConfigField("String", "ADMOB_BANNER_ID", "\"${System.getenv("ADMOB_BANNER_ID")?.trim()?.takeIf { it.isNotEmpty() } ?: ADMOB_TEST_BANNER_ID}\"")
         }
         create("github") {
             dimension = "distribution"
@@ -409,6 +417,10 @@ dependencies {
     "playImplementation"(libs.play.services.games.v2)
     // Google Play Billing: the purchases (purchases/PlayBillingStore). The play flavour's alone.
     "playImplementation"(libs.play.billing.ktx)
+    // Google Mobile Ads (AdMob) and its consent form (the User Messaging Platform): the ad banner (ads/AdMobAds). The play
+    // flavour's alone: the github APK has no ads and no network.
+    "playImplementation"(libs.play.services.ads)
+    "playImplementation"(libs.user.messaging.platform)
     constraints {
         // play-services-base asks for androidx.fragment 1.1.0, which Play Console flags as an outdated SDK.
         "playImplementation"(libs.androidx.fragment)

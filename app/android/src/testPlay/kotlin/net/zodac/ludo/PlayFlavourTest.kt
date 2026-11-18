@@ -1,14 +1,17 @@
 package net.zodac.ludo
 
 import android.content.Context
+import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import net.zodac.ludo.ads.AdMobAds
 import net.zodac.ludo.data.PreferencesFile
 import net.zodac.ludo.data.records.AppDatabase
 import net.zodac.ludo.online.PlayGamesServices
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -21,6 +24,20 @@ class PlayFlavourTest {
     @Test
     fun `it is the Play app`() {
         assertEquals("net.zodac.ludo", ApplicationProvider.getApplicationContext<Context>().packageName)
+    }
+
+    @Test
+    fun `it carries AdMob's app id - Google's test one in a local build - and may use the network for ads`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val metaData = context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA).metaData
+        assertTrue(metaData.getString("com.google.android.gms.ads.APPLICATION_ID").orEmpty().matches(Regex("ca-app-pub-[0-9]+~[0-9]+")))
+        val permissions = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS).requestedPermissions.orEmpty()
+        assertTrue("android.permission.INTERNET" in permissions)
+    }
+
+    @Test
+    fun `a debug build only ever asks for Google's test banner`() {
+        if (BuildConfig.DEBUG) assertEquals("ca-app-pub-3940256099942544/9214589741", AdMobAds.bannerId)
     }
 
     @Test

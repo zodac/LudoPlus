@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.flowOf
+import net.zodac.ludo.ads.LocalAds
 import net.zodac.ludo.app.LocalAppContainer
 import net.zodac.ludo.online.GameServicesState
 import net.zodac.ludo.online.LocalGameServices
@@ -50,6 +51,8 @@ import net.zodac.ludo.resources.common_cancel
 import net.zodac.ludo.resources.licences_title
 import net.zodac.ludo.resources.purchase_also_unlock_styles
 import net.zodac.ludo.resources.purchase_payment_pending
+import net.zodac.ludo.resources.settings_ad_privacy
+import net.zodac.ludo.resources.settings_ad_privacy_action
 import net.zodac.ludo.resources.settings_ads_removed
 import net.zodac.ludo.resources.settings_already_developer
 import net.zodac.ludo.resources.settings_confirm_leaving
@@ -259,10 +262,27 @@ fun SettingsScreen(
                 )
             }
         }
-        // The "Remove ads" purchase, where the store sells it and the account hasn't bought it.
+        // The "Remove ads" purchase, where the store sells it and the account hasn't bought it, and the way back to the ad
+        // network's consent choices, where the law asks for one.
+        val ads = LocalAds.current
+        val adPrivacy by ads.privacyOptionsRequired.collectAsStateWithLifecycle()
         val removeAdsCard = @Composable {
-            if (storeState.offers(Entitlement.NO_ADS)) {
-                CompactSettingsCard { RemoveAdsSetting(storeState) }
+            val removeAds = storeState.offers(Entitlement.NO_ADS)
+            if (removeAds || adPrivacy) {
+                CompactSettingsCard {
+                    if (removeAds) RemoveAdsSetting(storeState)
+                    if (adPrivacy) {
+                        SettingRow(
+                            icon = Symbols.Lock,
+                            headline = { SettingLabel(stringResource(Res.string.settings_ad_privacy)) },
+                            modifier = Modifier.clickable(
+                                role = Role.Button,
+                                onClickLabel = stringResource(Res.string.settings_ad_privacy_action),
+                                onClick = ads::showPrivacyOptions,
+                            ),
+                        )
+                    }
+                }
             }
         }
         // The Orientation, the Animations level and its Advanced settings, on a page of their own.

@@ -1,8 +1,12 @@
 package net.zodac.ludo.ui
 
-import net.zodac.ludo.navigation.StyleScrollRequests
-import net.zodac.ludo.navigation.StyleScrollRequest
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -10,14 +14,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -29,7 +34,21 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
+import net.zodac.ludo.ads.AchievementBannersShowing
+import net.zodac.ludo.ads.Ads
+import net.zodac.ludo.ads.LocalAds
+import net.zodac.ludo.ads.NoAds
+import net.zodac.ludo.app.AppContainer
+import net.zodac.ludo.app.Breadcrumbs
+import net.zodac.ludo.app.LocalAppContainer
 import net.zodac.ludo.data.orNullOnFailure
+import net.zodac.ludo.data.settings.AnimationLevel
+import net.zodac.ludo.navigation.AchievementScrollRequest
+import net.zodac.ludo.navigation.AchievementScrollRequests
+import net.zodac.ludo.navigation.LudoPlusNavHost
+import net.zodac.ludo.navigation.Screen
+import net.zodac.ludo.navigation.StyleScrollRequest
+import net.zodac.ludo.navigation.StyleScrollRequests
 import net.zodac.ludo.online.GameServices
 import net.zodac.ludo.online.GameServicesState
 import net.zodac.ludo.online.LocalGameServices
@@ -37,16 +56,13 @@ import net.zodac.ludo.online.LocalOnlineSyncStatus
 import net.zodac.ludo.online.NoGameServices
 import net.zodac.ludo.online.OnlineSync
 import net.zodac.ludo.online.OnlineSyncRequests
+import net.zodac.ludo.platform.LocalPlatformServices
+import net.zodac.ludo.platform.PlatformServices
+import net.zodac.ludo.purchases.Entitlement
 import net.zodac.ludo.purchases.LocalStore
 import net.zodac.ludo.purchases.NoStore
 import net.zodac.ludo.purchases.Store
-import net.zodac.ludo.app.AppContainer
-import net.zodac.ludo.app.Breadcrumbs
-import net.zodac.ludo.app.LocalAppContainer
-import net.zodac.ludo.data.settings.AnimationLevel
-import net.zodac.ludo.navigation.LudoPlusNavHost
-import net.zodac.ludo.platform.LocalPlatformServices
-import net.zodac.ludo.platform.PlatformServices
+import net.zodac.ludo.ui.achievements.AchievementBannerHost
 import net.zodac.ludo.ui.common.DatabaseFailurePage
 import net.zodac.ludo.ui.common.DriftState
 import net.zodac.ludo.ui.common.FramePaces
@@ -59,19 +75,15 @@ import net.zodac.ludo.ui.common.LocalReduceMotion
 import net.zodac.ludo.ui.common.LocalScreenIdle
 import net.zodac.ludo.ui.common.ScreenIdle
 import net.zodac.ludo.ui.common.delayWhileResumed
+import net.zodac.ludo.ui.common.rememberPageCover
+import net.zodac.ludo.ui.common.wakesScreen
 import net.zodac.ludo.ui.game.LeaveGameConfirmation
 import net.zodac.ludo.ui.game.LeaveGameConfirmationDialog
 import net.zodac.ludo.ui.game.LocalGameHaptics
-import net.zodac.ludo.navigation.AchievementScrollRequest
-import net.zodac.ludo.navigation.AchievementScrollRequests
-import net.zodac.ludo.navigation.Screen
-import net.zodac.ludo.ui.achievements.AchievementBannerHost
 import net.zodac.ludo.ui.game.LocalLeaveGameConfirmation
 import net.zodac.ludo.ui.game.LocalSoundEffects
 import net.zodac.ludo.ui.game.rememberAppHaptics
 import net.zodac.ludo.ui.game.rememberAppSoundEffects
-import net.zodac.ludo.ui.common.rememberPageCover
-import net.zodac.ludo.ui.common.wakesScreen
 import net.zodac.ludo.ui.theme.LudoPlusTheme
 
 /**
@@ -90,6 +102,8 @@ fun LudoPlusApp(
     gameServices: GameServices = NoGameServices,
     /** The platform's app store, where it has one: what the player can buy, and has. */
     store: Store = NoStore,
+    /** The platform's ad network, where it has one: the banner at the foot of the screen. */
+    ads: Ads = NoAds,
     /** What freezes the window's infinite animations, where it's the policy its recomposer runs under. */
     screenIdle: ScreenIdle = remember { ScreenIdle() },
 ) {
@@ -176,6 +190,7 @@ fun LudoPlusApp(
         LocalPlatformServices provides platform,
         LocalGameServices provides gameServices,
         LocalStore provides store,
+        LocalAds provides ads,
         LocalOnlineSyncStatus provides onlineSync.status,
         LocalDriftState provides driftState,
         LocalScreenIdle provides screenIdle,
@@ -215,35 +230,52 @@ fun LudoPlusApp(
                         navController.currentBackStackEntryFlow.map { it.destination.route }.leaving(Screen.PLAY_GAME)
                             .collect { OnlineSyncRequests.request() }
                     }
-                    // Above the NavHost, not inside it: the burst of banners at the end of a game has to survive the move
-                    // from the board to Game Over and on to the menu, which a per-page overlay wouldn't.
-                    AchievementBannerHost(
-                        modifier = Modifier.fillMaxSize(),
-                        isOnGameScreen = { navController.currentDestination?.route == Screen.PLAY_GAME },
-                        onAchievementSelected = { achievement ->
-                            val alreadyOnAchievements = navController.currentDestination?.route == Screen.ACHIEVEMENTS
-                            // Requested before navigating: an Achievements page not yet open starts its collector only
-                            // once it composes, and the request's replay is what lets it still catch this.
-                            AchievementScrollRequests.request(AchievementScrollRequest(achievement.id, animate = alreadyOnAchievements))
-                            if (!alreadyOnAchievements) {
-                                pageCover.change(reduceMotion) { navController.navigate(Screen.ACHIEVEMENTS) }
-                            }
-                        },
-                        onStylesSelected = { styles ->
-                            val target = Screen.stylesBannerTarget(styles)
-                            val alreadyThere = navController.currentDestination?.route == target
-                            // Before navigating, for the same reason as the achievement request above.
-                            StyleScrollRequests.request(StyleScrollRequest(styles, animate = alreadyThere))
-                            if (!alreadyThere) {
-                                pageCover.change(reduceMotion) {
-                                    // Back to the Styles page if it's open under this page; otherwise a fresh one.
-                                    if (!navController.popBackStack(Screen.STYLES, inclusive = false)) navController.navigate(Screen.STYLES)
-                                    if (target != Screen.STYLES) navController.navigate(target)
+                    // The ad banner, at the foot of every page but the game's and the tutorial's, under the page rather than
+                    // over it, while the network is ready and ads aren't removed (unknown counts as removed, so none flashes
+                    // up for a buyer). The page then leaves the navigation bar's inset to the banner, which sits above it.
+                    val route = navController.currentBackStackEntryAsState().value?.destination?.route
+                    val adsReady by ads.ready.collectAsStateWithLifecycle()
+                    val noAds by remember(container) { container.purchasesRepository.has(Entitlement.NO_ADS) }.collectAsStateWithLifecycle(initialValue = true)
+                    val showAd = adsReady && !noAds && route != null && route != Screen.PLAY_GAME && route != Screen.TUTORIAL
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // Above the NavHost, not inside it: the burst of banners at the end of a game has to survive the move
+                        // from the board to Game Over and on to the menu, which a per-page overlay wouldn't.
+                        AchievementBannerHost(
+                            modifier = Modifier.weight(1f).fillMaxWidth()
+                                .then(if (showAd) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier),
+                            isOnGameScreen = { navController.currentDestination?.route == Screen.PLAY_GAME },
+                            onAchievementSelected = { achievement ->
+                                val alreadyOnAchievements = navController.currentDestination?.route == Screen.ACHIEVEMENTS
+                                // Requested before navigating: an Achievements page not yet open starts its collector only
+                                // once it composes, and the request's replay is what lets it still catch this.
+                                AchievementScrollRequests.request(AchievementScrollRequest(achievement.id, animate = alreadyOnAchievements))
+                                if (!alreadyOnAchievements) {
+                                    pageCover.change(reduceMotion) { navController.navigate(Screen.ACHIEVEMENTS) }
                                 }
-                            }
-                        },
-                    ) {
-                        LudoPlusNavHost(navController = navController, cover = pageCover)
+                            },
+                            onStylesSelected = { styles ->
+                                val target = Screen.stylesBannerTarget(styles)
+                                val alreadyThere = navController.currentDestination?.route == target
+                                // Before navigating, for the same reason as the achievement request above.
+                                StyleScrollRequests.request(StyleScrollRequest(styles, animate = alreadyThere))
+                                if (!alreadyThere) {
+                                    pageCover.change(reduceMotion) {
+                                        // Back to the Styles page if it's open under this page; otherwise a fresh one.
+                                        if (!navController.popBackStack(Screen.STYLES, inclusive = false)) navController.navigate(Screen.STYLES)
+                                        if (target != Screen.STYLES) navController.navigate(target)
+                                    }
+                                }
+                            },
+                        ) {
+                            LudoPlusNavHost(navController = navController, cover = pageCover)
+                        }
+                        if (showAd) {
+                            // Takes no touch while an achievement banner is over it.
+                            ads.Banner(
+                                clickable = !AchievementBannersShowing.state.value,
+                                modifier = Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars),
+                            )
+                        }
                     }
                     LeaveGameConfirmationDialog(leaveConfirmation)
                 }

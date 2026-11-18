@@ -32,6 +32,8 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.SideEffect
+import net.zodac.ludo.ads.AchievementBannersShowing
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -200,6 +202,8 @@ fun AchievementBannerHost(
     content: @Composable () -> Unit,
 ) {
     val banners = remember { mutableStateListOf<BannerItem>() }
+    // The ad banner under these takes no touch while any is up (net.zodac.ludo.ads.Ads.Banner).
+    SideEffect { AchievementBannersShowing.state.value = banners.isNotEmpty() }
 
     val container = LocalAppContainer.current
     val hasInProgressGame by container.inProgressGameRepository.hasInProgressGame.collectAsStateWithLifecycle(initialValue = false)

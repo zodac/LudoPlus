@@ -35,7 +35,8 @@ reorders them.
     stays the brand font.
 - **Leaderboard.** It ranks **fastest wins**: the fewest turns to bring all four pawns home, per mode, with more
     captures winning a tie. Statistics keeps games, wins, win rate, streaks, captures made, and pawns sent home.
-- **Never ads** (inherited from DiceFive).
+- **Ads**: one banner in the play app, removable by purchase (the maintainer, 2026-11-18, reversing DiceFive's "Never
+    ads"; `ADS.md`).
 
 ## The classic rules (what Phase 1 implements)
 
@@ -419,6 +420,10 @@ count but 4 has a board of its own; one player on two colours was dropped.
 - [x] Any further purchases: none beyond those three (the maintainer, 2026-11-18). Styles stay earnable through play.
 - [ ] An ad banner in the play app, at the bottom of every page but the game, under the achievement banners and not
     clickable while one shows; gone with "Remove ads" (the maintainer, 2026-11-18, reversing "Never ads"; `ADS.md`).
+    - [x] Built 2026-11-18: AdMob behind Google's consent form, Settings' Ad privacy choices, the privacy policy and
+        data-safety drafts rewritten, and the release workflow refusing test ids.
+    - [ ] The maintainer's AdMob account, ad unit, consent message, and ids (`ADS.md`, "The maintainer's steps"), and a
+        check on a phone.
 
 ## Phase 12: Netplay
 

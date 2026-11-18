@@ -40,6 +40,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.zodac.ludo.ads.LocalAds
+import net.zodac.ludo.ads.NoAds
 import net.zodac.ludo.online.GameServicesState
 import net.zodac.ludo.online.LocalGameServices
 import net.zodac.ludo.platform.LocalPlatformServices
@@ -51,6 +53,7 @@ import net.zodac.ludo.resources.about_game_body
 import net.zodac.ludo.resources.about_game_heading
 import net.zodac.ludo.resources.about_game_link
 import net.zodac.ludo.resources.about_privacy_body
+import net.zodac.ludo.resources.about_privacy_body_ads
 import net.zodac.ludo.resources.about_privacy_body_online
 import net.zodac.ludo.resources.about_privacy_heading
 import net.zodac.ludo.resources.about_privacy_link
@@ -84,6 +87,8 @@ private data class AboutSection(
     val link: AboutLink? = null,
     /** [body] where there's an online service to sign in to, given its name too. */
     val onlineBody: StringResource? = null,
+    /** [body] where the app shows ads (the play app), whatever else it has. */
+    val adsBody: StringResource? = null,
 )
 
 private val ABOUT_SECTIONS = listOf(
@@ -102,6 +107,7 @@ private val ABOUT_SECTIONS = listOf(
         body = Res.string.about_privacy_body,
         link = AboutLink(Res.string.about_privacy_link, PRIVACY_POLICY_URL),
         onlineBody = Res.string.about_privacy_body_online,
+        adsBody = Res.string.about_privacy_body_ads,
     ),
 )
 
@@ -158,6 +164,7 @@ fun AboutDialog(onDismissRequest: () -> Unit, modifier: Modifier = Modifier, deb
                         AboutSectionCard(
                             section = section,
                             serviceName = serviceName,
+                            showsAds = LocalAds.current !== NoAds,
                             nameStyle = nameStyle,
                             onOpenLink = if (crashMode) { _ -> crash(DebugCrashes.Kind.entries[index]) } else uriHandler::openUri,
                             onNameTapped = onNameTapped.takeIf { section.heading == Res.string.about_author_heading },
@@ -179,6 +186,7 @@ fun AboutDialog(onDismissRequest: () -> Unit, modifier: Modifier = Modifier, deb
 private fun AboutSectionCard(
     section: AboutSection,
     serviceName: String?,
+    showsAds: Boolean,
     nameStyle: SpanStyle,
     onOpenLink: (String) -> Unit,
     onNameTapped: (() -> Unit)? = null,
@@ -198,10 +206,10 @@ private fun AboutSectionCard(
                 modifier = Modifier.semantics { heading() },
             )
             val appName = stringResource(Res.string.app_name)
-            val body = if (section.onlineBody != null && serviceName != null) {
-                stringResource(section.onlineBody, appName, serviceName)
-            } else {
-                stringResource(section.body, appName)
+            val body = when {
+                section.adsBody != null && showsAds -> stringResource(section.adsBody, appName)
+                section.onlineBody != null && serviceName != null -> stringResource(section.onlineBody, appName, serviceName)
+                else -> stringResource(section.body, appName)
             }
             val text = parseInlineMarkup(body, nameStyle)
             var layout by remember { mutableStateOf<TextLayoutResult?>(null) }

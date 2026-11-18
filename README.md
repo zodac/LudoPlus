@@ -15,7 +15,8 @@ and be the first to get all four home. Land on a rival to send them back to the 
 - **A Leaderboard** of the fastest wins, and **Statistics** for every player: wins, streaks, and captures
 - **Achievements** to chase: 110 of them, for captures, comebacks, close finishes, and a few hidden surprises
 - **Styles** they unlock: 8 boards, 7 sets of pawns, 35 dice, and 20 backgrounds for the table
-- Built for **TalkBack** and large fonts, with no ads and no accounts: your games stay on your phone
+- Built for **TalkBack** and large fonts, with no accounts: your games stay on your phone
+- The Google Play version shows a small ad banner, which an optional purchase removes; this GitHub version has no ads
 
 <table>
 <tr>

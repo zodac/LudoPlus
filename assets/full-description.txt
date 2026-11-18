@@ -21,4 +21,5 @@ TRACK YOUR GAMES
 MADE FOR EVERYONE
 • Built for TalkBack and large fonts, with every square and move described
 • Animation levels, and every animation can be switched off
-• No ads, no accounts, and no internet permission: your games stay on your phone
+• No account needed: your games stay on your phone
+• A small ad banner, never over a game in play, which an optional purchase removes

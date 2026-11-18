@@ -19,7 +19,9 @@ them all home first. In development, pre-1.0.0.
 - **Planned content.** Custom game modes, house-rule modifiers, netplay, achievements, styles for the board, pawns
     and die, and in-app purchases (`IMPLEMENTATION.md`).
 - **Aims.**
-    - A polished, offline-first game for the Play Store: no account, no network, data stays on the device.
+    - A polished, offline-first game for the Play Store: no account needed, and play never waits on the network; data
+        stays on the device. The play app's only network use is its ad banner and the optional Play Games, Billing, and
+        cloud save; the github app has none (decided 2026-11-18).
     - Accessible: TalkBack and large fonts are first-class.
     - Smooth: 60fps minimum unless the player picks a lower Animations level.
     - Small APK.
@@ -27,8 +29,12 @@ them all home first. In development, pre-1.0.0.
         be added back: shared code in `app/shared` (Android its one target), Android's platform code apart from it
         (`MULTIPLATFORM.md`).
 - **Google Play Games Services** (`PLAY_GAMES.md`) and the "Unlock all styles" purchase (`PURCHASES.md`) came over from
-    DiceFive. There is no Play Console project yet (2026-11-16), so neither is wired to one. **Never ads** (inherited
-    from DiceFive's decision of 2026-10-23).
+    DiceFive; "Remove ads" and a combined purchase joined it. There is no Play Console project yet (2026-11-16), so none
+    is wired to one.
+- **Ads: one banner, in the play app only** (`ADS.md`; the maintainer, 2026-11-18, reversing DiceFive's "Never ads"):
+    AdMob at the foot of every page but the game, under the achievement banners and untouchable while one shows, gone
+    with "Remove ads". Personalised, behind Google's consent form; the listing's audience is 13 and over. The github app
+    never has ads.
 - **Audience.** `README.md` is the public, player-facing description; keep it true to the app.
 
 ## Repo metadata
@@ -163,5 +169,6 @@ and limit; read a whole doc only when the change spans it.
 | `.claude/STORE_ASSETS.md` | Changing store screenshots, scenes, captions or the video, and the generator traps |
 | `.claude/PUBLISHING.md` | Play Store submission checklist, the app's licence and third-party licence scope |
 | `.claude/PLAY_GAMES.md` | Anything touching Google Play Games Services: sign-in, achievement mirror, leaderboards, cloud save, Sidekick |
-| `.claude/PURCHASES.md` | The "Unlock all styles" purchase: Play Billing, the entitlement, the Styles button, the maintainer's Play Console steps, in phases |
+| `.claude/PURCHASES.md` | The purchases (Unlock all styles, Remove ads, both): Play Billing, the entitlements, the offers, the maintainer's Play Console steps |
+| `.claude/ADS.md` | The play app's ad banner: AdMob, consent, where it shows and when it doesn't, the ids, the maintainer's steps |
 | `.claude/MULTIPLATFORM.md` | Module layout and platform seams, KMP gotchas |

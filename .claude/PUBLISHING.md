@@ -22,7 +22,8 @@ In order:
      "GitHub Actions") at <https://zodac.github.io/LudoPlus/privacy-policy>.
    - The contact is <zodacapps@gmail.com>.
    - **Update it** when billing changes, a new SDK or `INTERNET` use ships, or when `android:allowBackup` changes (it
-     mentions backup). It describes the purchase (section 6) and says there are no ads (section 5).
+     mentions backup). It describes both apps: ads and consent (section 3), Play Games (section 4), and the purchases
+     (section 5); rewritten for them 2026-11-18, for the maintainer's review.
    - **Never edit its "Last updated" line.** `pages.yml` sets it as it publishes (`.github/scripts/stamp_privacy_date.sh`,
      tested by `scripts/tests/stamp-privacy-date-test.sh`): the publish date when the policy changed in that push, and
      otherwise the date already live, so another page's change or a manual re-publish doesn't move it.
@@ -46,8 +47,9 @@ Play Games (`PLAY_GAMES.md`) and Google's list for the SDK
 ([Play Games data disclosure](https://developer.android.com/games/pgs/data-collection)). Nothing leaves the device
 until the player signs in.
 
-- **Does the app collect or share user data?** Yes: Play Games and cloud save send data off the device.
-- **Encrypted in transit?** Yes (Play Games Services uses HTTPS).
+- **Does the app collect or share user data?** Yes: the ad banner (AdMob) shares data with Google for ads, and Play
+    Games and cloud save send data off the device.
+- **Encrypted in transit?** Yes (AdMob and Play Games Services use HTTPS).
 - **Account creation**: "My app does not allow users to create an account". Ludo Plus has no account or identity of
     its own; sign-in uses the player's existing Google Play Games profile, which Google owns. So no account-deletion URL
     is required. Then:
@@ -67,6 +69,13 @@ until the player signs in.
     - Financial info > **Purchase history**: the play app reads whether the player's Google Play account owns "Unlock all
         styles", and keeps one flag on the device. Purpose App functionality. Not linked to any server of ours, as there
         is none. Check Google's current guidance on whether a read through Play Billing counts as collecting.
+- **Ads (AdMob)**, from 2026-11-18 (check against Google's own AdMob disclosure guide when filling the form):
+    - Device or other IDs > **Device or other IDs** (the advertising ID): collected and **shared**, purpose
+        **Advertising or marketing** (and Analytics, Fraud prevention, as Google lists for AdMob). Not optional in the form's
+        sense: the banner is shown to everyone who hasn't bought "Remove ads".
+    - Location > **Approximate location** (from the IP address): collected by the SDK for ads, as Google lists it.
+    - App activity > **App interactions** (ad impressions and taps), and App info and performance > **Crash logs**,
+        **Diagnostics**: collected by the SDK.
 - **The crash page's GitHub report isn't collection by the app.** The player posts it from their own browser and account,
     the app sends nothing, and the play app has no `INTERNET` permission. The privacy policy still describes it.
 - **Progress files aren't in the form.** They're only in the GitHub APK, which isn't on Play.
@@ -159,10 +168,12 @@ The sole holder can relicense later.
     because AGP leaves a kept library out of the extracted tables. Graphics-path ships pre-stripped, so its frames stay
     as addresses.
 
-## The purchase, and no ads
+## The purchases, and the ad banner
 
 - **The "Unlock all styles" purchase**, the app's only one: `PURCHASES.md` has the plan, the payments profile, the
     product, license testers and the declarations it changes. GitHub release APKs continue, with no purchase shown.
-- **No ads, ever** (decided 2026-10-23): no ad SDK, no `AD_ID`, and "Contains ads: No" in Play Console.
+- **The ad banner** (`ADS.md`; the maintainer, 2026-11-18, reversing DiceFive's "No ads, ever"): AdMob in the play app.
+    Play Console: "Contains ads: Yes"; Advertising ID declaration: yes, for advertising (the play manifest has `AD_ID`);
+    target audience 13 and over. The github APK has no ad SDK, no `AD_ID`, and no `INTERNET` (`GithubFlavourTest`).
 
 Release notes for each submission are written at release time, not stored here.
