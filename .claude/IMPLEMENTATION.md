@@ -280,7 +280,8 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 - [x] Store-assets generator scenes for Ludo, README gallery, and `assets/full-description.txt`: six screenshots (phone
     and 10-inch tablet) from staged games and a seeded history, in the README from the `readme-assets` release
     (approved 2026-11-17). The icon, feature graphic, and promo video move to Phase 10 with the Play listing (the
-    maintainer, 2026-11-17).
+    maintainer, 2026-11-17); the feature graphic's GIF is back at the top of the README since 2026-11-19 (the
+    maintainer).
 - [x] Privacy policy re-read against the app, and rewritten for 1.0.0 (approved 2026-11-17): no sign-in, cloud save,
     purchase, or progress files yet, and nothing leaves the device but a crash report the player posts. It must be
     updated again before Phase 10 or 11 ships.
@@ -391,7 +392,8 @@ count but 4 has a board of its own; one player on two colours was dropped.
 - [x] The store listing's hi-res icon, feature graphic (and the README's GIF), and promo video: DiceFive's generators
     are in `5423b6c`; the script keeps their steps, refusing those parts until then (`STORE_ASSETS.md`).
     - [x] The icon and feature graphic (`StoreArtGeneratorTest`), approved 2026-11-18. The icon follows the launcher
-        icon, still the placeholder pawn (kept for now, the maintainer, 2026-11-18).
+        icon, still the placeholder pawn (kept for now, the maintainer, 2026-11-18). The feature graphic's GIF heads the
+        README from 2026-11-19 (`readme-assets.yml`).
     - [x] The promo video: a turn, a capture, the Rules' diagram, a pawn home and the win, Game Over, the Leaderboard,
         and an achievement unlocking, then the end card; no tutorial (the maintainer, 2026-11-18). Approved 2026-11-18
         (`STORE_ASSETS.md`).

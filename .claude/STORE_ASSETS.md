@@ -3,8 +3,8 @@
 How the listing's graphics are made, what to change, and the traps. **Running the script** is the `store-assets` skill.
 The rest of the Play submission is in `PUBLISHING.md`.
 
-The generator makes the **screenshots**, which the README shows, the **hi-res icon**, the **feature graphic** (and its
-README GIF), and the **promo video**, back for the Play listing in Phase 10 (`StoreArtGeneratorTest`, approved
+The generator makes the **screenshots** and the **feature graphic**'s GIF, which the README shows, the **hi-res icon**,
+the feature graphic's PNG, and the **promo video**, back for the Play listing in Phase 10 (`StoreArtGeneratorTest`, approved
 2026-11-18; the video's scenes in `StoreScreensGeneratorTest`). `scripts/generate-store-assets.sh` makes the screenshots
 alone by default; `--parts icon,feature,video` the rest.
 
@@ -77,11 +77,11 @@ The generators are unit tests in `app/android/src/test/.../store/`, skipped with
 
 ## The README's images
 
-`.github/workflows/readme-assets.yml` renders `phone,tablet` from the pushed commit, shrinks them to PNGs (phone 540px
-wide, tablet 1280px), and uploads them, replacing the old files, to the `readme-assets` GitHub release: an asset host,
-not a software release (no version, never Latest). `README.md` embeds them as `releases/download/readme-assets/<name>`:
-the phone shots under the introduction, the tablet ones in a collapsed section. A failed run leaves the previous images
-up.
+`.github/workflows/readme-assets.yml` renders `feature,phone,tablet` from the pushed commit, shrinks the screenshots to
+PNGs (phone 540px wide, tablet 1280px), and uploads them with the feature graphic's GIF, replacing the old files, to the
+`readme-assets` GitHub release: an asset host, not a software release (no version, never Latest). `README.md` embeds
+them as `releases/download/readme-assets/<name>`: the GIF under the title, the phone shots under the introduction, the
+tablet ones in a collapsed section. A failed run leaves the previous images up.
 
 - **It runs on a push** that touches `android-release.yml`'s paths or the generator's own, and on demand
     (`gh workflow run readme-assets.yml`, or the Actions tab).

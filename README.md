@@ -1,11 +1,15 @@
 # LudoPlus
 
+<img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/feature-graphic.gif"
+    alt="The LudoPlus logo beside a board mid-game, with pawns drifting behind" width="512">
+
 **The classic race to home, with a few twists of its own.**
 
 LudoPlus is a Ludo game for Android. Roll the die, bring your pawns out of base, race them a full lap of the board,
 and be the first to get all four home. Land on a rival to send them back to the start.
 
-> **In development.** LudoPlus isn't released yet: there are no builds on Google Play or this repo's Releases page.
+> **Get it here.** The APK is on this repo's [Releases page](https://github.com/zodac/LudoPlus/releases/latest); the
+> Google Play version is coming.
 
 ## What's in it
 
