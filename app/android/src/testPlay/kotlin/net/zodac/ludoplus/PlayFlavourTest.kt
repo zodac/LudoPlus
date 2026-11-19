@@ -36,6 +36,22 @@ class PlayFlavourTest {
     }
 
     @Test
+    fun `Wi-Fi, Bluetooth, and location are optional - netplay's permissions don't keep the app from devices without them`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val features = mutableMapOf<String, String?>()
+        val parser = context.assets.openXmlResourceParser("AndroidManifest.xml")
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType == XmlPullParser.START_TAG && parser.name == "uses-feature") {
+                features[parser.getAttributeValue(ANDROID_NS, "name")] = parser.getAttributeValue(ANDROID_NS, "required")
+            }
+        }
+        assertEquals(
+            mapOf("android.hardware.wifi" to "false", "android.hardware.bluetooth" to "false", "android.hardware.location" to "false"),
+            features,
+        )
+    }
+
+    @Test
     fun `a debug build only ever asks for Google's test banner`() {
         if (BuildConfig.DEBUG) assertEquals("ca-app-pub-3940256099942544/9214589741", AdMobAds.bannerId)
     }
@@ -69,6 +85,10 @@ class PlayFlavourTest {
             (listOf("sharedpref:${PlayGamesServices.PREFERENCES_FILE}.xml") + database + preferences).map { "full-backup-content/exclude $it" },
             rules(context, R.xml.backup_rules),
         )
+    }
+
+    private companion object {
+        const val ANDROID_NS = "http://schemas.android.com/apk/res/android"
     }
 
     /** Each include or exclude in the rules file [id], as "parent/tag domain:path". */
