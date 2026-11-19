@@ -19,6 +19,7 @@ build/
 *.jks
 *.keystore
 keystore.properties
+*.aab
 
 # ...except the debug key, which IS committed on purpose: it holds no real signing authority (Play
 # Store rejects a debug-signed upload outright), and committing it is what lets every debug build -
