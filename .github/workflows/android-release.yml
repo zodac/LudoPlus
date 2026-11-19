@@ -441,8 +441,9 @@ jobs:
   # again (three attempts in all). What the upgrade itself did (the script's exit status 2) is never retried: a game lost
   # now and then is still a game lost.
   #
-  # Every release has one before it to upgrade from (1.0.0 was the first); none found fails the job. Its script's labels
-  # follow the app from Phase 4 (saved games).
+  # Every release has one before it to upgrade from (1.0.0 was the first); none found fails the job. A last release under
+  # a retired applicationId (1.0.0's net.zodac.ludo.github) can't be upgraded at all, so the script passes it with a
+  # notice: 1.0.1's run checks nothing, and 1.0.2's is the first to upgrade.
   upgrade-check:
     needs: version
     if: needs.version.outputs.release == 'true'

@@ -6,18 +6,20 @@ android-release.yml's upgrade-check job runs it on an emulator; .claude/EMULATOR
 It drives the app with adb and UiAutomator's dump rather than the Baseline Profile journey (Journeys.kt): the journey
 runs the play app built from this commit, while this has to drive a release already out, whose labels can differ from
 this commit's. Every label it needs is in the constants below, and a game saved by the old app is compared to the new
-app's board by what's saved (names, totals, rolls left, and dice), not by how they're worded. UiAutomator can't see
-which dice are held, so a roll shows it: on the old app to prove the holds took, and on the new one that they came back.
+app's board by what the board says of each place on it (the yards, squares, home columns, and home, which name every
+pawn) and the names shown, keeping only the numbers of each place so a rewording in a release isn't taken for a lost
+game. It's left only while it waits for the player's roll, so nothing moves between its snapshot and the upgrade.
 
 Usage:        .github/scripts/ci_upgrade_check.py <old.apk> <new.apk> <directory for a failure's files>
               Both APKs must be the github app, signed with one key, with the new one's versionCode the higher.
 
-Exit status:  0   the game resumed and could be played on
+Exit status:  0   the game resumed and could be played on, or the last release is a retired app no upgrade reaches
               1   the old app couldn't be driven: it says nothing about the upgrade, so the job tries once more
               2   the upgrade lost or changed the game, or the new app couldn't play it: never retried
 
-Requirements: adb, with one device connected
+Requirements: adb, with one device connected; aapt2, under $ANDROID_HOME/build-tools
 """
+import os
 import re
 import subprocess
 import sys
@@ -27,6 +29,10 @@ from pathlib import Path
 
 PACKAGE = "net.zodac.ludoplus.github"
 ACTIVITY = f"{PACKAGE}/net.zodac.ludoplus.MainActivity"
+# Releases under another applicationId, which no later release can upgrade: Android takes the new one for another app.
+# 1.0.0 went out as net.zodac.ludo.github before the package became net.zodac.ludoplus (the maintainer, 2026-11-19, chose
+# to let it go rather than keep the old id). Any other package is a failure.
+RETIRED_PACKAGES = ("net.zodac.ludo.github",)
 
 # What the app shows. A release that relabels one of these needs the old label kept here beside the new one until a
 # release with the new one is the last release.
@@ -34,16 +40,28 @@ PLAY_LABELS = ("Play",)
 START_GAME_LABELS = ("Start Game",)
 CONTINUE_LABELS = ("Continue",)
 CRASH_TITLE_LABELS = ("Something went wrong",)
-CUP_DESCRIPTION = "Dice cup"
-DIE_DESCRIPTION = re.compile(r"Die (\d+)\b")
-FIRST_SCORE_BOX = "Chance"
-SECOND_SCORE_BOX = "Ones"
+# The die (GameDie), whatever it shows; a button only while the player can roll it.
+DIE_DESCRIPTION = re.compile(r"Die( showing \d+)?$")
+# The board's places for a screen reader (BoardSemantics): each yard, track square, and home-column square, and home.
+# A place is a button only while it holds a pawn the player can move.
+PLACE_DESCRIPTION = re.compile(r"(\w+ yard|Square \d+|\w+ home column, square \d+|Home)(,|$)")
+# A pawn named at a place on the track or in a home column: the board's pawns aren't all in their yards.
+PAWN_OUT = re.compile(r"^(Square \d+|\w+ home column, square \d+),.* pawn \d")
 BANNER_DESCRIPTION = re.compile(r"(Achievement earned|Styles? unlocked): ")
-DICE_COUNT = 5
-HELD_DICE = 4
+# The board's prompt ("Player 1, tap the die to roll."), told from a name by its full stop.
+SENTENCE = re.compile(r"[.!?]$")
 
-# Generous: on a hosted runner's emulator a single dump can take several seconds.
+# The player's own rolls and moves before the game is left, at the least; more, up to MAX_PLAYER_ACTIONS, until a pawn
+# is out of its yard, so the saved game holds more than a new one.
+PLAYER_ACTIONS = 4
+MAX_PLAYER_ACTIONS = 40
+# The player's rolls and moves on the new app, to show the game plays on.
+RESUMED_ACTIONS = 2
+
+# Generous: on a hosted runner's emulator a single dump can take several seconds, and three CPUs play between the
+# player's turns.
 STEP_TIMEOUT_SECONDS = 90
+TURN_TIMEOUT_SECONDS = 180
 TAP_RETRY_SECONDS = 20
 POLL_SECONDS = 1
 SAVE_SETTLE_SECONDS = 5
@@ -85,28 +103,48 @@ def find_text(nodes, labels):
     return next((node for node in nodes if node.get("text") in labels), None)
 
 
-def find_description(nodes, start):
-    """The node whose description is start, or begins with it and a comma ("Die 1, 6"; never "Die 10")."""
-    for node in nodes:
-        description = node.get("content-desc", "")
-        if description == start or description.startswith(f"{start},"):
-            return node
-    return None
+def places(nodes):
+    """The board's places, in the order a screen reader takes them, as (description, node)."""
+    return [(node.get("content-desc"), node) for node in nodes if PLACE_DESCRIPTION.match(node.get("content-desc", ""))]
 
 
-def find_cup(nodes):
-    """The dice cup, however a release words the rolls left after its name."""
-    return next((node for node in nodes if node.get("content-desc", "").startswith(CUP_DESCRIPTION)), None)
+def find_die(nodes):
+    return next((node for node in nodes if DIE_DESCRIPTION.match(node.get("content-desc", ""))), None)
 
 
-def dice(nodes):
-    """The dice on screen, in order of their numbers, as (number, description, node)."""
-    found = []
-    for node in nodes:
-        match = DIE_DESCRIPTION.match(node.get("content-desc", ""))
-        if match:
-            found.append((int(match.group(1)), node.get("content-desc"), node))
-    return sorted(found, key=lambda die: die[0])
+def has_board(nodes):
+    return find_die(nodes) is not None and bool(places(nodes))
+
+
+def has_banner(nodes):
+    return any(BANNER_DESCRIPTION.match(node.get("content-desc", "")) for node in nodes)
+
+
+def player_action(nodes):
+    """
+    The player's next roll or move, if there is one now: the die while it can be rolled, else the first place with a pawn
+    to move. None while a CPU plays, a move is still being played out, or a banner is over the board.
+    """
+    if has_banner(nodes):
+        return None
+    die = find_die(nodes)
+    if die is not None and die.get("clickable") == "true":
+        return die
+    return next((node for _, node in places(nodes) if node.get("clickable") == "true"), None)
+
+
+def awaiting_roll(nodes):
+    """The game waits on the player's roll, with no banner over it: nothing on the board moves until it's taken."""
+    die = find_die(nodes)
+    return die is not None and die.get("clickable") == "true" and bool(places(nodes)) and not has_banner(nodes)
+
+
+def pawn_out(nodes):
+    return any(PAWN_OUT.match(description) for description, _ in places(nodes))
+
+
+def action_key(node):
+    return node.get("content-desc"), node.get("bounds")
 
 
 def numbers_in(text):
@@ -115,26 +153,31 @@ def numbers_in(text):
 
 def snapshot(nodes):
     """
-    What a saved game has to bring back: each visible name and total (the board's only plain text), the rolls left, and
-    each die's value. Only the numbers of a description are kept, so rewording one in a release isn't taken for a lost
-    game.
+    What a saved game has to bring back: the names the board shows, and each place's numbers in order (a square's
+    number, and each pawn's number and squares from home there; a yard's pawns). Only the numbers of a description are
+    kept, so rewording one in a release isn't taken for a lost game. Neither the board's prompt (a sentence: worded, not
+    saved) nor the die (it shows the last roll until the next) is kept.
     """
-    cup = find_cup(nodes)
-    board_text = sorted(node.get("text") for node in nodes if node.get("text"))
     return {
-        "names and totals": board_text,
-        "rolls left": numbers_in(cup.get("content-desc", "")) if cup is not None else None,
-        "dice": dice_values(nodes),
+        "names": sorted(node.get("text") for node in nodes if node.get("text") and not SENTENCE.search(node.get("text"))),
+        "places": [numbers_in(description) for description, _ in places(nodes)],
     }
-
-
-def dice_values(nodes):
-    return [numbers_in(description) for _, description, _ in dice(nodes)]
 
 
 def differences(before, after):
     """Each part of a snapshot that isn't what it was, in words. Empty if the game is the same."""
-    return [f"{part}: was {before[part]}, now {after[part]}" for part in before if before[part] != after[part]]
+    changed = []
+    if before["names"] != after["names"]:
+        changed.append(f"names: was {before['names']}, now {after['names']}")
+    if len(before["places"]) != len(after["places"]):
+        changed.append(f"places: was {len(before['places'])}, now {len(after['places'])}")
+    else:
+        changed += [
+            f"place {index + 1}: was {was}, now {now}"
+            for index, (was, now) in enumerate(zip(before["places"], after["places"]))
+            if was != now
+        ]
+    return changed
 
 
 def centre(node):
@@ -192,49 +235,41 @@ def tap_until(what, find, done):
     raise DriveFailure(f"tapping {what} never took")
 
 
-def has_cup(nodes):
-    return find_cup(nodes) is not None
+def take_action():
+    """The player's next roll or move, waited for through the CPUs' turns, and tapped until the board takes it."""
+    before = action_key(wait_for("the player's turn", player_action, timeout=TURN_TIMEOUT_SECONDS))
+
+    def taken(nodes):
+        action = player_action(nodes)
+        return action is None or action_key(action) != before
+
+    tap_until("the player's roll or move", player_action, taken)
 
 
-def cup_description(nodes):
-    """What the cup says, which counts the rolls left. Compared whole: with none left it may hold no number."""
-    cup = find_cup(nodes)
-    return cup.get("content-desc") if cup is not None else None
+def apk_package(apk):
+    """The applicationId an APK installs as, read by the newest aapt2 under $ANDROID_HOME."""
+    sdk = Path(os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT") or "")
+    tools = sorted(sdk.glob("build-tools/*/aapt2"), key=lambda path: [int(part) for part in re.findall(r"\d+", path.parent.name)])
+    if not tools:
+        raise DriveFailure(f"no aapt2 under {sdk}/build-tools")
+    result = subprocess.run([str(tools[-1]), "dump", "packagename", str(apk)], capture_output=True, text=True, timeout=120, check=False)
+    if result.returncode != 0:
+        raise DriveFailure(f"aapt2 couldn't read {apk}: {result.stderr.strip()}")
+    return result.stdout.strip()
 
 
-def rolls_left(nodes):
-    return numbers_in(cup_description(nodes) or "")
-
-
-def settled_after_roll(nodes):
-    """All the dice are down, the boxes take a score, and no banner is over the dice."""
-    box = find_description(nodes, SECOND_SCORE_BOX)
-    no_banner = not any(BANNER_DESCRIPTION.match(node.get("content-desc", "")) for node in nodes)
-    return len(dice(nodes)) == DICE_COUNT and box is not None and box.get("clickable") == "true" and no_banner
-
-
-def tap_changing_cup(what, find):
-    """Taps what find(nodes) returns until the cup's description changes: a roll uses a roll, and a score starts a turn."""
-    before = wait_for("the dice cup", cup_description)
-    tap_until(what, find, lambda nodes: cup_description(nodes) not in (None, before))
-
-
-def roll():
-    """Rolls, and returns the dice once they've landed."""
-    tap_changing_cup("the dice cup", lambda nodes: find_cup(nodes))
-    wait_for("the dice to land", settled_after_roll)
-    return dice_values(read_screen())
-
-
-def score(box):
-    tap_changing_cup(f"the {box} box", lambda nodes: find_description(nodes, box))
-
-
-def hold_dice():
-    """Taps the first HELD_DICE dice, once each: a second tap would release one. The next roll shows whether they took."""
-    for number in range(1, HELD_DICE + 1):
-        tap(wait_for(f"die {number}", lambda nodes, wanted=f"Die {number}": find_description(nodes, wanted)))
-        time.sleep(POLL_SECONDS)
+def upgrade_reaches(old_package, new_package):
+    """
+    True if the new app can upgrade the old one; False if the old one is a retired app (RETIRED_PACKAGES) no upgrade
+    reaches. Any other mismatch is a verdict: an upgrade that would leave every player's game behind.
+    """
+    if new_package != PACKAGE:
+        raise Verdict(f"the new APK is {new_package}, not {PACKAGE}")
+    if old_package == PACKAGE:
+        return True
+    if old_package in RETIRED_PACKAGES:
+        return False
+    raise Verdict(f"the last release is {old_package}, which {new_package} can't upgrade")
 
 
 def installed_times():
@@ -250,25 +285,23 @@ def launch():
 
 
 def play_on_old_app(old_apk):
-    """A fresh install of the old app with a game left mid-turn. Returns the board as it was left."""
+    """A fresh install of the old app with a game left waiting on the player's roll. Returns the board as it was left."""
     adb("uninstall", PACKAGE, check=False)
     adb("install", "--no-incremental", str(old_apk))
     print(f"Installed the old app, version {installed_times()[2]}", flush=True)
     launch()
     tap_until("Play", lambda nodes: find_text(nodes, PLAY_LABELS), lambda nodes: find_text(nodes, START_GAME_LABELS) is not None)
-    tap_until("Start Game", lambda nodes: find_text(nodes, START_GAME_LABELS), has_cup)
-    roll()
-    score(FIRST_SCORE_BOX)
-    landed = roll()
-    hold_dice()
-    rolled = roll()
-    if rolled[:HELD_DICE] != landed[:HELD_DICE]:
-        raise DriveFailure(f"the holds didn't take: {landed}, then {rolled}")
-    wait_for("the dice to settle", settled_after_roll)
-    left = snapshot(read_screen())
-    print(f"The game as it was left: {left}", flush=True)
-    if len(left["dice"]) != DICE_COUNT or not left["rolls left"]:
-        raise DriveFailure(f"the board couldn't be read: {left}")
+    tap_until("Start Game", lambda nodes: find_text(nodes, START_GAME_LABELS), has_board)
+    actions = 0
+    while actions < PLAYER_ACTIONS or not pawn_out(read_screen()):
+        if actions == MAX_PLAYER_ACTIONS:
+            raise DriveFailure(f"no pawn out of its yard after {actions} of the player's rolls and moves")
+        take_action()
+        actions += 1
+    wait_for("the player's roll", awaiting_roll, timeout=TURN_TIMEOUT_SECONDS)
+    time.sleep(SAVE_SETTLE_SECONDS)
+    left = snapshot(wait_for("the player's roll", lambda nodes: nodes if awaiting_roll(nodes) else None))
+    print(f"The game as it was left, after {actions} of the player's rolls and moves: {left}", flush=True)
     return left
 
 
@@ -287,18 +320,17 @@ def upgrade(new_apk):
 def resume_on_new_app(left):
     """Continues the game on the new app: the same board, and one that still plays."""
     launch()
-    tap_until("Continue", lambda nodes: find_text(nodes, CONTINUE_LABELS), has_cup)
-    wait_for("the dice to come back", lambda nodes: len(dice(nodes)) == DICE_COUNT)
-    resumed = snapshot(read_screen())
+    tap_until("Continue", lambda nodes: find_text(nodes, CONTINUE_LABELS), has_board)
+    resumed = snapshot(wait_for("the player's roll", lambda nodes: nodes if awaiting_roll(nodes) else None))
     print(f"The game as it resumed: {resumed}", flush=True)
     changed = differences(left, resumed)
     if changed:
         raise Verdict("the game changed in the upgrade: " + "; ".join(changed))
-    rolled = roll()
-    if rolled[:HELD_DICE] != left["dice"][:HELD_DICE]:
-        raise Verdict(f"the held dice didn't come back held: {left['dice']}, then {rolled}")
-    score(SECOND_SCORE_BOX)
-    roll()
+    try:
+        for _ in range(RESUMED_ACTIONS):
+            take_action()
+    except DriveFailure as error:
+        raise Verdict(f"the resumed game didn't play on: {error}") from error
     print("The game resumed as it was left, and plays on", flush=True)
 
 
@@ -316,6 +348,14 @@ def save_failure_files(directory):
 
 def run(old_apk, new_apk, failure_directory):
     """The whole check, returning the exit status in this file's header."""
+    try:
+        old_package = apk_package(old_apk)
+        if not upgrade_reaches(old_package, apk_package(new_apk)):
+            print(f"::notice::The last release is a retired app ({old_package}) that no upgrade reaches: nothing to check", flush=True)
+            return 0
+    except (DriveFailure, Verdict) as error:
+        print(f"::error::The upgrade check failed: {error}", flush=True)
+        return 2
     try:
         left = play_on_old_app(old_apk)
     except (DriveFailure, subprocess.SubprocessError) as error:

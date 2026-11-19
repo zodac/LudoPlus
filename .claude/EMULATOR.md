@@ -100,9 +100,14 @@ and an empty `ANDROID_AVD_HOME` and `RUNNER_TEMP`.
 `.github/scripts/ci_upgrade_check.py` (its pure parts tested by `scripts/tests/ci-upgrade-check-test.py`) takes about two
 minutes in the sandbox.
 
-- **It plays** a fresh install of the last release's github APK: a score, a roll, four dice held, and a roll to prove the
-    holds took. **It upgrades** from the background with `adb install -r`. **It resumes** with Continue, compares the names,
-    totals, rolls left, and dice, then rolls to prove the holds came back and plays on.
+- **It plays** a fresh install of the last release's github APK: Play, Start Game (a fresh install's default setup), then
+    the player's rolls and moves, at least four and until a pawn is out of its yard, and leaves the game waiting on the
+    player's roll. **It upgrades** from the background with `adb install -r`. **It resumes** with Continue, compares the
+    names and every board place's numbers (BoardSemantics: squares, pawns, and squares from home), then takes two more
+    rolls or moves to prove it plays on.
+- **A retired package.** 1.0.0 went out as `net.zodac.ludo.github`, before the package became `net.zodac.ludoplus`, so
+    no later release can upgrade it (the maintainer, 2026-11-19, let it go). The script reads both APKs' packages with
+    `aapt2` and passes a last release in `RETIRED_PACKAGES` with a notice; any other mismatch fails.
 - **The github APK, not the play app:** only the APK is a release asset that installs directly. Both APKs are real R8
     builds, re-signed with the debug key, so the job holds no signing secrets.
 - **Labels.** It drives a release already out, so its labels are the constants at the top of the script, not `Journeys.kt`.
