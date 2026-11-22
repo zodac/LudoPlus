@@ -1,14 +1,19 @@
 package net.zodac.ludoplus.ui.common
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -17,11 +22,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlin.math.sqrt
 import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.app_name
 import net.zodac.ludoplus.resources.sora
+import net.zodac.ludoplus.ui.game.BoardLayout
+import net.zodac.ludoplus.ui.style.BoardStyle
+import net.zodac.ludoplus.ui.style.GameVisualTheme
+import net.zodac.ludoplus.ui.style.PawnStyle
 import net.zodac.ludoplus.ui.theme.color
 import org.jetbrains.compose.resources.Font
 
@@ -78,27 +88,35 @@ internal val categoryHeaderStyle: TextStyle
 /** Whether `sora.ttf` has a glyph for this character - printable ASCII or Latin-1, as cut (see [SoraFontFamily]). */
 internal fun Char.isInSoraFont(): Boolean = this in ' '..'~' || this in '\u00A0'..'\u00FF'
 
+/** The logo's art, wide by tall: the tilted board's diamond, with the pawn standing up out of it. */
+private val LOGO_ART_WIDTH = 200.dp
+private val LOGO_ART_HEIGHT = 112.dp
+
+/** The pawn's size (its grid's 1) as a share of the board's diagonal: about a third of the pawn's height. */
+private const val PAWN_RADIUS = 0.155f
+
+/** How much the board is flattened into perspective once turned (the launcher icon's 0.56). */
+private const val BOARD_TILT = 0.56f
+
+/** The board's turn, so that red's yard is nearest (the launcher icon's). */
+private const val BOARD_TURN = 225f
+
 /**
- * The app's mark on the main menu: a pawn disc in each of the classic board's four colours, in its seat order, over the
- * wordmark.
- * A placeholder until the brand art is made (the launcher icon's pawn, Phase 0 of `.claude/IMPLEMENTATION.md`). The
- * discs are decoration, so a screen reader hears only the name, as a heading.
+ * The app's mark on the main menu: the launcher icon's art, drawn live in Compose in [theme]'s board and pawns (the
+ * player's Styles picks). The classic board, turned so red's yard is nearest and flattened into perspective; a red pawn
+ * standing in red's yard; and the wordmark under them.
+ *
+ * With no [theme] (the picks not loaded yet), the art is held invisible, still taking its space, so it never flashes the
+ * defaults. The art is decoration, so a screen reader hears only the name, as a heading.
  */
 @Composable
-fun AppLogo(modifier: Modifier = Modifier) {
+fun AppLogo(theme: GameVisualTheme?, modifier: Modifier = Modifier) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clearAndSetSemantics {},
-        ) {
-            for (colour in PlayerColour.entries.take(BoardGeometry.CLASSIC.seats)) {
-                ColourDisc(colour = colour.color, size = 36.dp, ring = MaterialTheme.colorScheme.surface)
-            }
-        }
+        val art = Modifier.size(LOGO_ART_WIDTH, LOGO_ART_HEIGHT).clearAndSetSemantics {}
+        if (theme == null) Spacer(art) else LogoArt(theme.board, theme.pawns, art)
         Text(
             text = stringResource(Res.string.app_name),
-            modifier = Modifier.padding(top = 16.dp).semantics { heading() },
+            modifier = Modifier.padding(top = 4.dp).semantics { heading() },
             style = MaterialTheme.typography.displayMedium,
             fontFamily = SoraFontFamily,
             fontWeight = FontWeight.Bold,
@@ -107,3 +125,32 @@ fun AppLogo(modifier: Modifier = Modifier) {
         )
     }
 }
+
+/** The board in [board]'s style and the pawn in [pawns]', drawn again only when a style changes: nothing in them moves. */
+@Composable
+private fun LogoArt(board: BoardStyle, pawns: PawnStyle, modifier: Modifier = Modifier) {
+    val layout = remember { BoardLayout.of(BoardGeometry.CLASSIC) }
+    val colours = remember { PlayerColour.entries.take(BoardGeometry.CLASSIC.seats).map { it.color } }
+    Canvas(modifier = modifier) {
+        // The board's diagonal spans the art's width, its nearest corner at the art's foot.
+        val side = size.width / sqrt(2f)
+        val unit = side / layout.size
+        val boardCentre = boardCentre()
+        withTransform({
+            scale(1f, BOARD_TILT, pivot = boardCentre)
+            rotate(BOARD_TURN, pivot = boardCentre)
+            translate(boardCentre.x - side / 2, boardCentre.y - side / 2)
+        }) {
+            with(board) { drawBoard(layout, unit, colours) }
+        }
+        val radius = size.width * PAWN_RADIUS
+        // Its feet (the grid's y 0.9) in the middle of red's yard, the nearest: 4.5 of the board's 15 squares from its
+        // middle along the diagonal, which the turn makes straight down, flattened with the board.
+        val yard = 4.5f / layout.size * size.width * BOARD_TILT
+        val centre = boardCentre + Offset(0f, yard - 0.9f * radius)
+        with(pawns) { drawPawn(centre, radius, PlayerColour.RED.color, ringed = false) }
+    }
+}
+
+/** The middle of the board: its flattened diagonal, half the art's width, reaching down to the art's foot. */
+private fun DrawScope.boardCentre() = Offset(size.width / 2, size.height - size.width / 2 * BOARD_TILT)

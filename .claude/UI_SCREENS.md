@@ -350,18 +350,13 @@ none.
     the refresh it would skip doesn't wake the app (`DriftFrameRateTest`).
 - It holds where it is on an idle screen, as all ambient decoration does (`ScreenIdle`; `UI.md`, "Reduced motion").
 
-**`AppLogo` is live Compose art**, drawn in the player's own dice and cup picks (`MenuViewModel.logoStyles`). It's not
-a copy of the launcher icon.
+**`AppLogo` is live Compose art**, the launcher icon's art drawn in Compose (from 2026-11-23): the classic board
+turned so red's yard is nearest and flattened into perspective (0.56), narrower than the wordmark, whole and unfaded
+(the maintainer, 2026-11-23), with a red pawn standing in red's yard, at the front, over the "LudoPlus" wordmark.
 
-- It's held invisible, but still taking its space, until the picks load, so it never flashes the defaults.
-- **The cup takes no layout space** (`noLayoutSpace`), so adding or switching cups never moves the dice or the
-    wordmark.
-    - Only a tall cup's overhang is reserved, as top padding.
-    - Every cup is drawn at the same scale per grid unit, hanging from one top line. Standing on a shared base hid squat
-        cups.
+- Drawn in the player's board and pawn picks (`MenuScreen`'s `logoTheme`, from `AppContainer.savedStyles`), or their
+    defaults while a pick is locked (the maintainer, 2026-11-23). The feature graphic passes the defaults.
+- It's held invisible, still taking its space, until the picks load, so it never flashes the defaults (`AppLogoTest`).
+- The art is decoration (`clearAndSetSemantics`): TalkBack hears only "LudoPlus", as a heading.
 - Keep the "LudoPlus" text: `MainActivitySmokeTest` asserts on it.
-- **Tapping the cup shakes it** (`shakeCupOnTap`, the menu only): the same `CupCanvas` shake, ending upright, with no
-    sound and no reward.
-    - The hit area is the logo's `detectTapGestures` plus `isOnLogoCup`'s rectangle.
-    - A tap on a die is consumed first.
-    - Not exposed to TalkBack, like the dice tap.
+- The feature graphic draws it too (`StoreArtGeneratorTest`), so a change to it is a store-asset change.

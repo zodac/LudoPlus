@@ -31,6 +31,7 @@ import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.ui.common.AppLogo
 import net.zodac.ludoplus.ui.common.BrandBackdrop
 import net.zodac.ludoplus.ui.game.LudoBoard
+import net.zodac.ludoplus.ui.style.GameVisualTheme
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
 import org.junit.Rule
 import org.junit.Test
@@ -142,7 +143,7 @@ private fun BannerScene(game: GameState) {
             val half = maxWidth / 2
             Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                    AppLogo(Modifier.scale(logoScale))
+                    AppLogo(GameVisualTheme(), Modifier.scale(logoScale))
                 }
                 Box(Modifier.width(half).fillMaxHeight(), contentAlignment = Alignment.Center) {
                     LudoBoard(

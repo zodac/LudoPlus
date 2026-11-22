@@ -51,6 +51,7 @@ import net.zodac.ludoplus.ui.settings.GraphicsViewModel
 import net.zodac.ludoplus.ui.settings.SettingsScreen
 import net.zodac.ludoplus.ui.settings.SettingsViewModel
 import net.zodac.ludoplus.ui.setup.GameSetupScreen
+import net.zodac.ludoplus.ui.style.visualTheme
 import net.zodac.ludoplus.ui.styles.StyleCategoryScreen
 import net.zodac.ludoplus.ui.styles.StylesScreen
 import net.zodac.ludoplus.ui.styles.StylesViewModel
@@ -121,6 +122,8 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
                 onStyles = { navigate(Screen.STYLES) },
                 onRules = { navigate(Screen.RULES) },
                 onSettings = { navigate(Screen.SETTINGS) },
+                // The logo's board and pawn in the player's picks; none until they've loaded.
+                logoTheme = remember(savedStyles) { savedStyles?.visualTheme },
             )
         }
     }

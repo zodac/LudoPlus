@@ -45,6 +45,7 @@ import net.zodac.ludoplus.ui.common.PageColumn
 import net.zodac.ludoplus.ui.common.WholeWordsText
 import net.zodac.ludoplus.ui.common.isLargeFont
 import net.zodac.ludoplus.ui.common.stringResource
+import net.zodac.ludoplus.ui.style.GameVisualTheme
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
 
 /**
@@ -75,11 +76,12 @@ fun MenuScreen(
     onRules: () -> Unit,
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    logoTheme: GameVisualTheme? = GameVisualTheme(),
 ) {
     // The menu alone has its backdrop drifting; every other screen keeps it still.
     BrandBackdrop(modifier = modifier, driftingDice = true) {
         PageColumn(horizontalPadding = 28.dp, wide = true) {
-            val logo = @Composable { AppLogo() }
+            val logo = @Composable { AppLogo(logoTheme) }
 
             // Held invisible (still taking its space) until the saved-game check has answered, so the
             // buttons arrive together rather than Play flashing before it splits, or a gap popping in.
