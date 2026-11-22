@@ -529,10 +529,37 @@ class GameViewModel(
         startTutorialPart(target)
     }
 
-    /** While a CPU player has the turn, it rolls, then moves with its strategy, each once the screen has caught up. */
+    private var automaticMove: Job? = null
+
+    /**
+     * While a person played here (or on the host, a Nearby guest) awaits a move with one choice, makes it for them
+     * ([LudoEngine.automaticMove]) once the screen has caught up, unless they make it first. Never in the tutorial, and
+     * never on a guest's phone: the host makes it.
+     */
+    private fun playAutomaticMove(game: StartedGame) {
+        automaticMove?.cancel()
+        automaticMove = null
+        if (tutorial != null || game.guestSeat != null) return
+        val move = LudoEngine.automaticMove(game.state) ?: return
+        automaticMove = viewModelScope.launch {
+            pausableDelay(pacing.waitAfter(game.state.lastEvent))
+            if (_game.value?.state != game.state) return@launch
+            automaticMove = null
+            update(LudoEngine.move(game.state, move))
+        }
+    }
+
+    /**
+     * While a CPU player has the turn, it rolls, then moves with its strategy, each once the screen has caught up. While
+     * anyone else has it, a move with no choice is made for them ([playAutomaticMove]).
+     */
     private fun playCpuTurn() {
         val game = _game.value ?: return
-        if (!computerPlays(game) || game.state.isFinished || cpuTurn?.isActive == true) return
+        if (!computerPlays(game)) {
+            playAutomaticMove(game)
+            return
+        }
+        if (game.state.isFinished || cpuTurn?.isActive == true) return
         cpuTurn = viewModelScope.launch {
             pausableDelay(pacing.waitAfter(game.state.lastEvent))
             val now = _game.value ?: return@launch
@@ -902,6 +929,12 @@ data class StartedGame(
      */
     val currentIsCpu: Boolean
         get() = if (guestSeat != null) state.current != guestSeat else players[state.current].type != PlayerType.HUMAN
+
+    /**
+     * The move made for the player whose turn it is while they have no choice to make ([LudoEngine.automaticMove]), so
+     * the screen asks for no pick: null on a turn not played at this phone. Outside the tutorial, which makes none.
+     */
+    val automaticMove: Move? get() = if (currentIsCpu) null else LudoEngine.automaticMove(state)
 
     /** Whether the player whose turn it is is the computer, which the host plays. */
     val currentIsComputer: Boolean get() = guestSeat == null && players[state.current].type == PlayerType.AI

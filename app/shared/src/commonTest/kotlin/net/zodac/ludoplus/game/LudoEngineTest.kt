@@ -3,6 +3,7 @@ package net.zodac.ludoplus.game
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.GameRules
@@ -281,6 +282,30 @@ class LudoEngineTest {
         assertFailsWith<IllegalArgumentException> { rolled.move(1) }
         assertFailsWith<IllegalArgumentException> { game().roll(7) }
         assertFailsWith<IllegalArgumentException> { game().roll(0) }
+    }
+
+    @Test
+    fun `a move with no choice is made for the player - pawns on one square are one choice - a pawn that can't move is none`() {
+        assertEquals(Move(pawn = 0, from = 10, to = 13), LudoEngine.automaticMove(game(listOf(10, Y, Y, Y)).roll(3)))
+        assertEquals(Move(pawn = 1, from = 10, to = 13), LudoEngine.automaticMove(game(listOf(HOME, 10, 10, Y)).roll(3)))
+        // Too far to move 3 more: only the other pawn can.
+        assertEquals(Move(pawn = 1, from = 10, to = 13), LudoEngine.automaticMove(game(listOf(54, 10, Y, Y)).roll(3)))
+        assertEquals(Move(pawn = 0, from = 50, to = 53), LudoEngine.automaticMove(game(listOf(50, HOME, HOME, Y)).roll(3)))
+
+        assertNull(LudoEngine.automaticMove(game(listOf(10, 3, Y, Y)).roll(3)), "two pawns to pick from")
+        assertNull(LudoEngine.automaticMove(game(listOf(10, Y, Y, Y)).roll(6)), "out of the yard, or on")
+        assertNull(LudoEngine.automaticMove(game(listOf(10, Y, Y, Y))), "waiting for a roll")
+    }
+
+    @Test
+    fun `the player makes a move out of the yard with no pawn on the board - and the one bringing their last pawn home`() {
+        assertNull(LudoEngine.automaticMove(game().roll(6)))
+        assertNull(LudoEngine.automaticMove(game(listOf(HOME, HOME, HOME, Y)).roll(6)))
+        assertNull(LudoEngine.automaticMove(game(listOf(HOME, HOME, HOME, 53)).roll(3)))
+        // Home, but not the last: one is left in the yard.
+        assertEquals(Move(pawn = 2, from = 53, to = HOME), LudoEngine.automaticMove(game(listOf(HOME, HOME, 53, Y)).roll(3)))
+        // Out of the yard, with a pawn on the board.
+        assertEquals(Move(pawn = 3, from = Y, to = 0), LudoEngine.automaticMove(game(listOf(HOME, HOME, 54, Y)).roll(6)))
     }
 
     @Test

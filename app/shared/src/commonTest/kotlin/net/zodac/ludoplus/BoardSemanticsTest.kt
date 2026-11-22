@@ -135,7 +135,8 @@ class BoardSemanticsTest : UiTest() {
 
         state = LudoEngine.move(rolled, picks.single())
         show(state)
-        compose.onNodeWithContentDescription("Alex has 3 left. Pick a pawn to move.").assertExists()
+        // One pawn and one die left: the move makes itself, so none is asked for.
+        compose.onNodeWithContentDescription("Alex has 3 left.").assertExists()
         compose.onNodeWithContentDescription("Second die showing 5, moved").assertExists()
         compose.onNodeWithContentDescription("First die showing 3").assertExists()
 
@@ -145,6 +146,19 @@ class BoardSemanticsTest : UiTest() {
         compose.onNodeWithContentDescription("Alex, tap the dice to roll.").assertExists()
         compose.onNodeWithContentDescription("First die").assert(onClickLabel("Roll"))
         compose.onNodeWithContentDescription("Second die").assert(onClickLabel("Roll"))
+    }
+
+    @Test
+    fun `a move with no choice makes itself - no pick is asked for - and no pawn offers it - but one out of the yard is the player's`() = uiTest(TestScreen(411, 891)) {
+        show(LudoEngine.applyRoll(state(listOf(10, Y, Y, Y)), 3))
+        val prompt = compose.onNodeWithContentDescription("Alex rolled 3.")
+        assertEquals(null, prompt.fetchSemanticsNode().config.getOrNull(SemanticsActions.CustomActions))
+        compose.onNodeWithContentDescription("Square 11, Red pawn 1, 46 squares from home").assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
+
+        // Every pawn in the yard: the 6 that brings one out is still the player's to move.
+        show(LudoEngine.applyRoll(state(), 6))
+        compose.onNodeWithContentDescription("Alex rolled 6. Pick a pawn to move.").assertExists()
+        compose.onNodeWithContentDescription("Red yard, 4 pawns waiting").assert(onClickLabel("Bring Red pawn 1 out of the yard"))
     }
 
     @Test

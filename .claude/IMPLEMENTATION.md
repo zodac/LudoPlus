@@ -79,6 +79,11 @@ Sources: [Wikipedia, "Ludo"](https://en.wikipedia.org/wiki/Ludo),
 - **Three 6s in a row** end the turn: the third 6 isn't moved. This is the commonest house rule, so it's on in
     Classic. Turning it off is a modifier.
 - **No legal move** (say, everything in the yard and no 6): the turn passes.
+- **A move with no choice makes itself** (the maintainer, 2026-11-23): with one choice for the roll (pawns on one
+    square, by one die, are one choice), the game makes it for a person once the die has settled
+    (`LudoEngine.automaticMove`), unless they make it first. Not when it brings a pawn out of the yard with none on
+    the board, nor when it brings that owner's last pawn home: the player makes those. Never in the tutorial. The
+    screen asks for no pick meanwhile ("Alex rolled 3."), and rings no pawn. On a Nearby game the host makes it.
 - **Exact roll home.** A pawn can't overshoot home. A roll too big for it can't move that pawn. If no other pawn can
     move, the turn passes.
 

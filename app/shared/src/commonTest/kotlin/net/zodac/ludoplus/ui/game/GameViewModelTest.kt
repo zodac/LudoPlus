@@ -29,6 +29,8 @@ import net.zodac.ludoplus.data.records.GameRecordRepository
 import net.zodac.ludoplus.data.records.InMemoryGameResultDao
 import net.zodac.ludoplus.data.settings.SettingsRepository
 import net.zodac.ludoplus.game.GameEvent
+import net.zodac.ludoplus.game.LudoEngine
+import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.BoardGeometry
@@ -36,7 +38,11 @@ import net.zodac.ludoplus.model.CustomMode
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PlayerColour
+import net.zodac.ludoplus.model.PawnPosition.Companion.YARD_PROGRESS
 import net.zodac.ludoplus.model.PlayerType
+
+private const val Y = YARD_PROGRESS
+private const val HOME = 56
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GameViewModelTest {
@@ -151,6 +157,62 @@ class GameViewModelTest {
         resumed.move((resumed.state.phase as TurnPhase.AwaitingMove).moves.first().pawn)
         assertIs<GameEvent.Moved>(resumed.state.lastEvent)
         assertEquals(resumed.game.value, saved.load())
+    }
+
+    /**
+     * A game of four people resumed from a save with the current player's pawns at [pawns], every other pawn in its yard,
+     * and [roll] just rolled.
+     */
+    private suspend fun TestScope.resumedAt(pawns: List<Int>, roll: Int): GameViewModel {
+        val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
+        val game = assertNotNull(started(seedWhere { true }, humans = true, saved = saved).game.value)
+        val state = game.state.copy(players = game.state.players.mapIndexed { i, player -> if (i == game.state.current) player.copy(pawns = pawns) else player })
+        saved.save(game.copy(state = LudoEngine.applyRoll(state, roll)))
+        val resumed = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, GameRecordRepository(InMemoryGameResultDao()), Random(0), elapsedMillis = { 0L })
+        resumed.setPacing(GamePacing(thinkMillis = 700, pawnsAnimated = false, dieAnimated = false))
+        runCurrent()
+        assertTrue(resumed.resumeGame())
+        return resumed
+    }
+
+    @Test
+    fun `a person's move with no choice makes itself once the screen has caught up - while it's on screen`() = runTest(dispatcher) {
+        val viewModel = resumedAt(listOf(10, Y, Y, Y), roll = 3)
+        val player = viewModel.state.current
+        assertEquals(Move(pawn = 0, from = 10, to = 13), viewModel.game.value?.automaticMove)
+        viewModel.setForeground(false)
+        advanceTimeBy(5_000)
+        runCurrent()
+        assertIs<TurnPhase.AwaitingMove>(viewModel.state.phase)
+        viewModel.setForeground(true)
+        advanceTimeBy(699)
+        runCurrent()
+        assertIs<TurnPhase.AwaitingMove>(viewModel.state.phase)
+        advanceTimeBy(2)
+        runCurrent()
+        assertEquals(listOf(13, Y, Y, Y), viewModel.state.players[player].pawns)
+        assertEquals(GameEvent.Moved(player, 3, Move(pawn = 0, from = 10, to = 13), finished = false), viewModel.state.lastEvent)
+    }
+
+    @Test
+    fun `a person may make the move with no choice first - it isn't made twice`() = runTest(dispatcher) {
+        val viewModel = resumedAt(listOf(10, Y, Y, Y), roll = 3)
+        val player = viewModel.state.current
+        viewModel.move(pawn = 0)
+        advanceTimeBy(5_000)
+        runCurrent()
+        assertEquals(listOf(13, Y, Y, Y), viewModel.state.players[player].pawns)
+    }
+
+    @Test
+    fun `a person brings a pawn out with every one in the yard - and their last pawn home - themselves`() = runTest(dispatcher) {
+        for ((pawns, roll) in listOf(listOf(Y, Y, Y, Y) to 6, listOf(HOME, HOME, HOME, HOME - 3) to 3, listOf(10, 20, Y, Y) to 3)) {
+            val viewModel = resumedAt(pawns, roll)
+            assertNull(viewModel.game.value?.automaticMove)
+            advanceTimeBy(5_000)
+            runCurrent()
+            assertIs<TurnPhase.AwaitingMove>(viewModel.state.phase, "$pawns with a $roll")
+        }
     }
 
     @Test

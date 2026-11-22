@@ -65,6 +65,14 @@ class TeamEngineTest {
     }
 
     @Test
+    fun `a partner's one move is made for the player rolling for them - but not the one bringing the partner's last pawn home`() {
+        val home = listOf(HOME, HOME, HOME, HOME)
+        val rolled = game(home, listOf(1, Y, Y, Y), listOf(10, Y, Y, Y), listOf(1, Y, Y, Y)).roll(3)
+        assertEquals(Move(pawn = 0, from = 10, to = 13, owner = 2), LudoEngine.automaticMove(rolled))
+        assertNull(LudoEngine.automaticMove(game(home, listOf(1, Y, Y, Y), listOf(HOME, HOME, HOME, HOME - 3), listOf(1, Y, Y, Y)).roll(3)))
+    }
+
+    @Test
     fun `a team is placed when its last pawn is home - its players sharing the place - and a 6 that ends it rolls no more`() {
         val home = listOf(HOME, HOME, HOME, HOME)
         val state = game(home, listOf(1, Y, Y, Y), listOf(HOME, HOME, HOME, HOME - 6), listOf(1, Y, Y, Y))

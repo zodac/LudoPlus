@@ -329,7 +329,9 @@ fun GameContent(
         started.state.players.indexOfFirst { it.seat == seat }.takeIf { it >= 0 }?.let { started.players[it].colour }
     }
     val phase = started.state.phase
-    val humanMoves = if (phase is TurnPhase.AwaitingMove && !started.currentIsCpu) phase.moves else emptyList()
+    // A move with no choice makes itself: nothing to pick, so nothing is ringed (the tutorial makes none).
+    val picks = tutorial != null || started.automaticMove == null
+    val humanMoves = if (phase is TurnPhase.AwaitingMove && !started.currentIsCpu && picks) phase.moves else emptyList()
     // In the tutorial, only the step's own move: its pawn alone is ringed, and the only one a tap or TalkBack can move.
     val allMoves = if (tutorial == null) humanMoves else humanMoves.filter { it.pawn == (tutorial.step as? TutorialStep.Move)?.pawn }
     // With two dice, the die a tap on a pawn moves by: the one tapped, or at first the first with a move. The board rings
@@ -646,13 +648,15 @@ private fun ColumnScope.StatusLines(
     val phase = state.phase
     val current = name(state.current)
     val twoDice = phase is TurnPhase.AwaitingMove && state.rules.dice > 1
+    // A move that makes itself is told as the computer's is: no pick asked for.
+    val movesItself = game.currentIsCpu || (!tutorial && game.automaticMove != null)
     val prompt = when {
         // Two dice: the roll, or the die left, and the die a pawn moves by.
-        twoDice && phase.dice.size > 1 && game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_move_dice, current, phase.rolled[0], phase.rolled[1])
-        twoDice && game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_move_die_left, current, phase.roll)
+        twoDice && phase.dice.size > 1 && movesItself -> stringResource(Res.string.game_prompt_cpu_move_dice, current, phase.rolled[0], phase.rolled[1])
+        twoDice && movesItself -> stringResource(Res.string.game_prompt_cpu_move_die_left, current, phase.roll)
         twoDice && phase.dice.size > 1 -> stringResource(Res.string.game_prompt_move_dice, current, phase.rolled[0], phase.rolled[1], selectedDie ?: phase.roll)
         twoDice -> stringResource(Res.string.game_prompt_move_die_left, current, phase.roll)
-        phase is TurnPhase.AwaitingMove && game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_move, current, phase.roll)
+        phase is TurnPhase.AwaitingMove && movesItself -> stringResource(Res.string.game_prompt_cpu_move, current, phase.roll)
         phase is TurnPhase.AwaitingMove && phase.moves.all { it.owner != null } -> stringResource(Res.string.game_prompt_move_partner, current, phase.roll)
         phase is TurnPhase.AwaitingMove -> stringResource(Res.string.game_prompt_move, current, phase.roll)
         game.currentIsCpu && state.rollingAgain -> stringResource(Res.string.game_prompt_cpu_roll_again, current)

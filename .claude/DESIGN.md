@@ -180,8 +180,9 @@ moved is lost; a double's moves are offered once. The game screen draws the two 
 either rolls both, then a tap on a die picks the one the board's pawns move by (ringed; the other die's moves stay in
 TalkBack's actions), and a moved die fades. TalkBack: "First die showing 3, selected", "Second die showing 5, moved",
 action "Use this die"; the prompt "Alex rolled 3 and 5. Pick a pawn to move 3." then "Alex has 5 left. Pick a pawn to
-move." The CPU picks one move at a time, die by die. House rules apply die by die (Out on a 1, Free Start), and to the
-roll (Three Tries, Must Capture across both dice; Endless 6s makes doubles endless).
+move." (or "Alex has 5 left." when that move makes itself; `IMPLEMENTATION.md`, "Turns"). The CPU picks one move
+at a time, die by die. House rules apply die by die (Out on a 1, Free Start), and to the roll (Three Tries, Must
+Capture across both dice; Endless 6s makes doubles endless).
 
 **Custom modes** (`model/CustomMode.kt`, the maintainer, 2026-11-18). A name (unique among the player's and the
 built-in modes', whatever its case; at most 24 characters), a base mode, and at least one house rule (without one it

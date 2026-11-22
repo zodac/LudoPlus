@@ -94,6 +94,21 @@ object LudoEngine {
         return moves
     }
 
+    /**
+     * The move made for the current player while they await a move with only one choice: the first of its moves. Moves of
+     * one owner's pawns from one square by one die are one choice. Null with more than one choice, and when the one
+     * brings a pawn out of the yard with none of its owner's on the board, or brings its owner's last pawn home: the
+     * player makes those.
+     */
+    fun automaticMove(state: GameState): Move? {
+        val phase = state.phase as? TurnPhase.AwaitingMove ?: return null
+        val move = phase.moves.distinctBy { Triple(it.ownerIn(state), it.from, it.roll) }.singleOrNull() ?: return null
+        val pawns = state.players[move.ownerIn(state)].pawns
+        if (move.from == PawnPosition.YARD_PROGRESS && pawns.none { it.isOnBoard(state) }) return null
+        if (move.to == state.board.homeProgress && pawns.count { it != state.board.homeProgress } == 1) return null
+        return move
+    }
+
     /** Every move for [roll], captures compulsory or not ([legalMoves]). */
     private fun movesFor(state: GameState, roll: Int): List<Move> {
         val me = state.current

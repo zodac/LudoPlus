@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PawnPosition.Companion.YARD_PROGRESS
@@ -101,6 +102,14 @@ class TwoDiceEngineTest {
         assertEquals(RED, after.current)
         assertTrue(after.rollingAgain)
         assertFalse(game(listOf(10, 30, Y, Y)).roll(4, 2).move(0, die = 4).move(1, die = 2).rollingAgain)
+    }
+
+    @Test
+    fun `with two dice each die is a choice - one pawn's move by one die left is made for the player - and a double's moves once`() {
+        val rolled = game(listOf(10, Y, Y, Y)).roll(3, 5)
+        assertNull(LudoEngine.automaticMove(rolled), "the 3 or the 5 first")
+        assertEquals(Move(0, 13, 18, roll = 5), LudoEngine.automaticMove(rolled.move(0, die = 3)))
+        assertEquals(Move(0, 10, 13, roll = 3), LudoEngine.automaticMove(game(listOf(10, Y, Y, Y)).roll(3, 3)))
     }
 
     @Test
