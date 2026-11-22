@@ -29,8 +29,10 @@ import net.zodac.ludoplus.data.records.InMemoryGameResultDao
 import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PlayerType
 import net.zodac.ludoplus.model.TeamMode
+import net.zodac.ludoplus.netplay.LocalNearby
 import net.zodac.ludoplus.platform.LocalPlatformServices
 import net.zodac.ludoplus.platform.SilentPlatformServices
+import net.zodac.ludoplus.ui.game.FakeNearby
 import net.zodac.ludoplus.ui.game.GameViewModel
 import net.zodac.ludoplus.ui.setup.GameSetupScreen
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
@@ -77,6 +79,16 @@ class SetupTextTest : UiTest() {
         // The seat chips and a computer player's difficulties are named: seats 2 to 4 are computer players by default.
         show(gameViewModel())
         compose.onAllNodesWithText("CPU").assertCountEquals(3)
+        listOf("Easy", "Medium", "Hard").forEach { compose.onAllNodesWithText(it).assertCountEquals(3) }
+    }
+
+    @Test
+    fun `a narrower phone with Nearby - the difficulties still in full beside the wider Nearby chip`() = uiTest(TestScreen(380, 891)) {
+        showcase.show {
+            CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices, LocalNearby provides FakeNearby()) {
+                LudoPlusTheme { GameSetupScreen(viewModel = gameViewModel(), onStartGame = {}, onBack = {}) }
+            }
+        }
         listOf("Easy", "Medium", "Hard").forEach { compose.onAllNodesWithText(it).assertCountEquals(3) }
     }
 

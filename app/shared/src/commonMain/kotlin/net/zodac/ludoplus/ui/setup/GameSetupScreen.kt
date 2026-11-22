@@ -452,7 +452,8 @@ private fun PlayerRow(
     val nearbyLabel = stringResource(Res.string.setup_type_nearby)
     val nearby = LocalNearby.current.available
     val labelWidth = with(density) {
-        listOf(userLabel, cpuLabel, nearbyLabel).maxOf { measurer.measure(it, labelStyle).size.width }.toDp()
+        // "Nearby" only where the chip can show it.
+        listOfNotNull(userLabel, cpuLabel, nearbyLabel.takeIf { nearby }).maxOf { measurer.measure(it, labelStyle).size.width }.toDp()
     }
     val typeControlWidth = maxOf(TYPE_CONTROL_WIDTH * fontScale.coerceAtLeast(1f), labelWidth + TYPE_CHIP_PADDING)
     val typeControl: @Composable () -> Unit = {
@@ -592,7 +593,7 @@ fun DifficultySelector(selected: Difficulty, onSelect: (Difficulty) -> Unit, mod
     )
 }
 
-private val DIFFICULTY_LABEL_PADDING = 4.dp
+private val DIFFICULTY_LABEL_PADDING = 2.dp
 private val DIFFICULTY_LABEL_MAX_SIZE = 14.sp
 
 @Composable
