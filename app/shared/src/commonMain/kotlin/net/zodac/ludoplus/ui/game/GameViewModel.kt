@@ -470,9 +470,9 @@ class GameViewModel(
     private fun advanceTutorial() {
         val progress = tutorialProgress ?: return
         progress.next()
-        val event = _game.value?.state?.lastEvent
+        val state = _game.value?.state
         // Only the action's own animation: the coach doesn't think.
-        val playOut = pacing.waitAfter(event) - pacing.thinkMillis
+        val playOut = pacing.waitAfter(state?.lastEvent, state?.board?.homeProgress ?: 0) - pacing.thinkMillis
         tutorialShow?.cancel()
         tutorialShow = viewModelScope.launch {
             pausableDelay(playOut)
@@ -542,7 +542,7 @@ class GameViewModel(
         if (tutorial != null || game.guestSeat != null) return
         val move = LudoEngine.automaticMove(game.state) ?: return
         automaticMove = viewModelScope.launch {
-            pausableDelay(pacing.waitAfter(game.state.lastEvent))
+            pausableDelay(pacing.waitAfter(game.state.lastEvent, game.state.board.homeProgress))
             if (_game.value?.state != game.state) return@launch
             automaticMove = null
             update(LudoEngine.move(game.state, move))
@@ -561,7 +561,7 @@ class GameViewModel(
         }
         if (game.state.isFinished || cpuTurn?.isActive == true) return
         cpuTurn = viewModelScope.launch {
-            pausableDelay(pacing.waitAfter(game.state.lastEvent))
+            pausableDelay(pacing.waitAfter(game.state.lastEvent, game.state.board.homeProgress))
             val now = _game.value ?: return@launch
             // A guest back in its seat plays it again.
             if (!computerPlays(now)) {

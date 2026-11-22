@@ -1,11 +1,11 @@
 {
   "_comment": "Where every bundled asset file came from - see README.md. Each key is a path relative to the repository root. Every entry needs a description, a source (where it came from: a URL, or the session/commit that created it) and a license. The app's own work (LicenseRef-LudoPlus-AllRightsReserved - see /LICENSE) also needs its copyright line. A third-party asset instead lists, in \"libraries\", the libraries/ entry for each source it was made from - those carry the license, copyright/credit and source URL, and are what the Licences dialog shows; \"license\" is the license of that source material. The build fails on any asset missing from here, any incomplete entry, and any entry whose file no longer exists.",
   "app/audio/capture.ogg": {
-    "description": "A capture: a chess piece bouncing, its silence trimmed",
-    "source": "https://freesound.org/s/646781/",
+    "description": "A capture: a cartoon punch, its silence trimmed and mixed to mono",
+    "source": "https://freesound.org/s/563356/",
     "license": "CC0-1.0",
     "libraries": [
-      "freesound-646781"
+      "freesound-563356"
     ]
   },
   "app/audio/celebration.ogg": {
@@ -26,11 +26,11 @@
     ]
   },
   "app/audio/pawn_home.ogg": {
-    "description": "A pawn reaching home: a victory chime, its silence trimmed",
-    "source": "https://freesound.org/s/717771/",
+    "description": "A pawn reaching home: an achievement sparkle, its silence trimmed and mixed to mono",
+    "source": "https://freesound.org/s/715067/",
     "license": "CC0-1.0",
     "libraries": [
-      "freesound-717771"
+      "freesound-715067"
     ]
   },
   "app/audio/pawn_step.ogg": {

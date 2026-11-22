@@ -195,13 +195,15 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     the player's colour. One colour's pawns on a square drawn as one with a count, colours sharing a safe square a
     quarter each, each pawn home seen on its own spot in a line along its triangle's base (the maintainer,
     2026-11-17), the movable ones ringed in violet, a tap within 1.6 squares picking the nearest, and a
-    square-by-square move (110ms a square) under the Pawn moves motion group.
+    square-by-square move (a hop of 140ms a square, a glide out of the yard) under the Pawn moves motion group.
 - [x] The die (`GameDie.kt`): DiceFive's ivory bevelled die, tapped to roll, tumbling through faces as it turns
-    under the Die roll motion group. Shake to roll waits for its setting (Phase 5).
+    under the Die roll motion group, ringed in the turn's colour (and the turn's yard ringed, 2026-11-23). Shake to
+    roll waits for its setting (Phase 5).
 - [x] Player cards: name, CPU icon, a dot per pawn home, the current player outlined in their colour, and their place
     once finished. Lines under the die say what just happened and what to do now; the end shows the winner.
-- [x] Capture feedback: the captured pawn slides back to its yard, with a buzz (`Haptics.kt`); a tick for a move,
-    the die's landing sound, a move click, and the fanfare (`SoundEffects.kt`, restored from `5423b6c`).
+- [x] Capture feedback: a burst on the square, and the captured pawn thrown back to its yard (2026-11-23), with a
+    buzz (`Haptics.kt`); a tick for a move, the die's landing sound, a move click, and the fanfare (`SoundEffects.kt`,
+    restored from `5423b6c`).
 - [x] Accessibility (`BoardSemantics.kt`, `BoardSemanticsTest`): every yard, track square (numbered 1-52 from red's
     start), home-column square, and home is a node saying what is on it; a square with a movable pawn is a button
     whose action names the move ("Move Red pawn 3 6 squares, capturing Green pawn 1"); the prompt line offers every
@@ -220,8 +222,8 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
         opponent's next roll, plus the expected capture on its own. Weights tuned 2026-11-17 over 1,000 two-player
         games a setting against Medium.
 - [x] Pacing (`GamePacing`, `GamePacingTest`): a CPU thinks 500ms before each roll and move, and first waits out the
-    die's tumble or the pawn's move and capture slide, unless those motion groups are off. DiceFive's `CpuTurns` was
-    about its dice cup, so only its pacing idea came back.
+    die's tumble or the pawn's move and its capture's flight or home flourish, unless those motion groups are off.
+    DiceFive's `CpuTurns` was about its dice cup, so only its pacing idea came back.
 - [x] A tournament test (`CpuTournamentTest`, 1,000 two-player games a pairing, seeded apart from the tuning): Medium
     beats Easy 89%, Hard beats Medium 57%, Hard beats Easy 93%; each must beat the one below at least 55%. With rolls
     again for captures and pawns home (2026-11-17): 90%, 57%, and 94%.
@@ -273,7 +275,8 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     2026-11-17.
 - [x] Sounds (licensed, recorded in `app/licensing`, normalised): roll (DiceFive's die landing), a step for each square
     a pawn moves, capture, home, and win (DiceFive's fanfare). The three new clips are CC0 from Freesound, picked by the
-    maintainer 2026-11-17; the hold and unhold clicks (CC-BY) went.
+    maintainer 2026-11-17 (capture and home replaced with new picks 2026-11-23); the hold and unhold clicks (CC-BY)
+    went.
 - [ ] Baseline Profile journeys and benchmarks, restored from `5423b6c` (`app/baselineprofile`, the `baseline-profile`
     job in `android-release.yml`) and written for Ludo's screens (`BENCHMARKS.md`): 60fps while pawns move.
     - [x] The module, the startup and pawn-move benchmarks, Ludo's journey, and the CI job (from 1.0.0) are back

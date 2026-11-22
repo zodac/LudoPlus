@@ -611,8 +611,11 @@ achievements.
 
 **The die** is DiceFive's 35 families, D20 included (drawn showing 1-6). `GameDie` draws the style's face, turning
 through random faces as it tumbles; a style that tumbles itself (the D20, the Egg, the Bestagon) is handed the tumble's
-clock (`LocalDieTumbleMillis`) instead. Before the first roll it's the style's body colour with no face. The violet ring
-while it can be rolled is drawn round the style, not by it.
+clock (`LocalDieTumbleMillis`) instead. Before the first roll it's the style's body colour with no face. Its ring is
+drawn round the style, not by it: in the colour of the player whose turn it is, in full while it can be rolled (or, of
+two dice, once picked) and faint the rest of the turn, a CPU's included (2026-11-23). On the board, that player's yard
+has a white ring, edged in ink, round its inside edge (`LudoBoard`), until the game is over. Both are visual only: the
+status lines name whose turn it is (`TurnHighlightTest`).
 
 **Backgrounds** are DiceFive's 20 families. One that moves (the Ocean's Waves, Floating Dice)
 runs on the Background decoration group; a die's own sparkle or glow on the Die group (`MotionGroup.DICE`).
@@ -655,9 +658,10 @@ Each category is two lists in the same order:
 ## Sound, haptics and motion
 
 - **Clips** (LudoPlus): `mat_landing` (the die landing), `pawn_step` (at 0.5 volume, once for each square a pawn moves,
-    in time with it), `capture` and `pawn_home` (in place of the landing's step), and `celebration` (a person's win, with
-    gold fireworks). All CC0 from Freesound, chosen by the maintainer 2026-11-17. The cues are `moveSoundCues`
-    (`ui/game/GamePacing.kt`): with Pawn moves motion off, only the landing's sound.
+    in time with it), `capture` and `pawn_home` (in place of the landing's step), a step again as a captured pawn lands
+    back in its yard, and `celebration` (a person's win, with gold fireworks). All CC0 from Freesound, chosen by the
+    maintainer 2026-11-17 (`capture`, a cartoon punch, and `pawn_home`, a sparkle, 2026-11-23). The cues are
+    `moveSoundCues` (`ui/game/GamePacing.kt`): with Pawn moves motion off, only the landing's sound.
     - The sources are `app/audio/*.ogg`.
     - They're peak-normalised to -0.8 dBFS by ffmpeg at build time (`scripts/normalize-audio.sh`): never `res/raw/`,
         never hand-adjusted. Android packages Ogg copies (`NormalizeOggAudioTask`). `scripts/tests/normalize-audio-test.sh`
@@ -666,6 +670,12 @@ Each category is two lists in the same order:
         on it loads its clips off the main thread a second after launch; otherwise on its first sound. It's held in the
         background and released with the app, so a sound started on one screen carries on to the next.
     - The app follows the Settings switch itself; no screen passes the setting in.
+- **A move on the board** (`LudoBoard`, 2026-11-23): the pawn hops square by square (`PAWN_STEP_MILLIS`), rising and
+    falling over a shadow left on the board; out of the yard it glides to its start square. A capture bursts on the
+    square (a ring of the captured pawn's colour and ivory streaks) as the captured pawn is thrown in an arc back to its
+    yard (`CAPTURE_FLIGHT_MILLIS`). A pawn reaching home pops, in a gold ring and one of its colour, with sparks
+    (`HOME_FLOURISH_MILLIS`). All of it is the Pawn moves motion group's: with it off, the pawns snap. A CPU, the
+    tutorial, and the results page wait it out (`GamePacing.waitAfter`).
 - **Haptics.** A tick on hold or unhold, and a buzz for the shake. Settings switches sound and vibration off
     separately. Vibration is wired like sound: one `DiceHaptics` (`rememberAppHaptics`, `LocalDiceHaptics`) that follows
     the switch. Only the player's own rolls and holds vibrate: a CPU's roll still plays its sounds but never buzzes.

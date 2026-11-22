@@ -26,6 +26,7 @@ import net.zodac.ludoplus.ui.common.groupReduceMotion
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -40,8 +41,11 @@ import net.zodac.ludoplus.resources.game_roll_action
 import net.zodac.ludoplus.ui.common.stringResource
 import net.zodac.ludoplus.ui.theme.Primary
 
-/** The violet ring round the die while it can be rolled, and the room kept for it round the die either way. */
+/** The ring round the die while it can be rolled, and the room kept for it round the die either way. */
 private val ROLLABLE_RING_WIDTH = 3.dp
+
+/** How faint the ring is in the turn's colour while the die can't be tapped: the turn shown, but no "press this". */
+private const val TURN_RING_ALPHA = 0.4f
 private val RING_ROOM = 5.dp
 
 /** The tumble ([DIE_TUMBLE_MILLIS] long): how many faces flick past, and how far the die turns as it settles. */
@@ -56,15 +60,16 @@ val LocalDieLongPress = compositionLocalOf<(() -> Unit)?> { null }
 
 /**
  * The die, in the player's die style ([LocalGameVisualTheme]), showing [value] (blank before the first roll: the style's
- * body colour, no face). While [canRoll] it is ringed in violet and a tap rolls it ([onRoll]); TalkBack hears "Die
- * showing 4", a button with the action "Roll".
+ * body colour, no face). While [canRoll] it is ringed in [ringColour] (the player whose turn it is) and a tap rolls it
+ * ([onRoll]); TalkBack hears "Die showing 4", a button with the action "Roll". With [turnRing], the ring stays the rest
+ * of the turn, faint while there's nothing to tap, so whose turn it is shows on a CPU's turn too.
  *
  * Each new [roll] (any value that changes with every roll) tumbles it through random faces, turning, onto [value],
  * unless the Die roll motion is off ([MotionGroup.DIE_ROLL]). A style that tumbles itself (the D20, the Egg) turns
  * through its own solid instead, from the tumble's clock ([LocalDieTumbleMillis]). TalkBack hears only the result.
  *
  * One of two dice ([TwoDice]) says which it is in its [description], and is faded once [used]. While [onSelect] is set
- * it is a button choosing the die the next move uses, ringed in violet once [selected].
+ * it is a button choosing the die the next move uses, ringed in full once [selected].
  */
 @Composable
 fun GameDie(
@@ -77,6 +82,8 @@ fun GameDie(
     used: Boolean = false,
     selected: Boolean = false,
     onSelect: (() -> Unit)? = null,
+    ringColour: Color = Primary,
+    turnRing: Boolean = false,
 ) {
     val style = LocalGameVisualTheme.current.diceStyle
     val firstRoll = remember { roll }
@@ -109,7 +116,13 @@ fun GameDie(
                     onClick(label = tapLabel) { tap(); true }
                 }
             }
-            .then(if (canRoll || selected) Modifier.border(ROLLABLE_RING_WIDTH, Primary, ringShape) else Modifier)
+            .then(
+                when {
+                    canRoll || selected -> Modifier.border(ROLLABLE_RING_WIDTH, ringColour, ringShape)
+                    turnRing -> Modifier.border(ROLLABLE_RING_WIDTH, ringColour.copy(alpha = TURN_RING_ALPHA), ringShape)
+                    else -> Modifier
+                },
+            )
             .clip(ringShape)
             .then(
                 when {
@@ -139,5 +152,5 @@ fun GameDie(
 /** How faint a die already moved is, of two. */
 private const val USED_DIE_ALPHA = 0.35f
 
-/** How much rounder the violet ring's corners are than the die's, as it sits a little way out from them. */
+/** How much rounder the ring's corners are than the die's, as it sits a little way out from them. */
 private const val RING_CORNER_EXTRA_PERCENT = 4

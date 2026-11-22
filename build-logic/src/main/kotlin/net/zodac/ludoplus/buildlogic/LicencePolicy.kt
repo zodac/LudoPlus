@@ -22,7 +22,7 @@ object LicencePolicy {
         // places no condition on the app itself. (CC-BY would need a credit, a link, and a note of changes in its
         // libraries/ entry, and its licence text back in licenses/. Never CC-BY-SA - adaptations must stay under it - nor
         // anything NC; neither is allowed here.)
-        "CC0-1.0" to listOf("freesound-588198", "freesound-695731", "freesound-596051", "freesound-351518", "freesound-646781", "freesound-717771"),
+        "CC0-1.0" to listOf("freesound-588198", "freesound-695731", "freesound-596051", "freesound-351518", "freesound-563356", "freesound-715067"),
         // Google's branding guidelines for Play Games, for its controller badge: no pre-approval needed, and no condition on the
         // app's own licence, provided those guidelines are followed.
         "LicenseRef-Google-Play-Games-Branding" to listOf("google-play-games-branding-icons"),

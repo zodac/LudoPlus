@@ -176,7 +176,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
     LaunchedEffect(gameKey, started.state.isFinished) {
         if (!started.state.isFinished || finishedView != FinishedView.BOARD) return@LaunchedEffect
         // The last move plays out first, and a beat after it.
-        if (celebrate) lifecycle.delayWhileResumed(pacing.waitAfter(started.state.lastEvent))
+        if (celebrate) lifecycle.delayWhileResumed(pacing.waitAfter(started.state.lastEvent, started.state.board.homeProgress))
         finishedView = FinishedView.RESULTS
     }
     if (started.state.isFinished && finishedView == FinishedView.RESULTS) {
@@ -279,7 +279,8 @@ class TutorialView(val step: TutorialStep?, val part: Int, val parts: Int, val s
 
 /**
  * The sounds and vibrations for each thing that happens: the die landing; a pawn's steps square by square, in time with
- * its move ([moveSoundCues]), then a capture's sound or a pawn home's chime as it lands; and a tick, or a capture's buzz.
+ * its move ([moveSoundCues]), then a capture's sound (and a step as the captured pawn lands in its yard) or a pawn home's
+ * chime as it lands; and a tick, or a capture's buzz.
  * The win's are the results page's.
  */
 @Composable
@@ -588,19 +589,23 @@ private fun TurnPanel(
     val phase = state.phase
     val roll = (phase as? TurnPhase.AwaitingMove)?.roll ?: lastRoll(state.lastEvent)
     val canRoll = phase == TurnPhase.AwaitingRoll && !game.currentIsCpu && (tutorial == null || rollStep)
+    val seat = state.currentPlayer.seat
+    val turnColour = (seatColours.getOrNull(seat) ?: PlayerColour.defaultFor(seat)).color
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (state.rules.dice > 1) {
-            TwoDice(state, canRoll, onRoll, dice, dieSize)
+            TwoDice(state, canRoll, onRoll, dice, dieSize, turnColour)
         } else {
             GameDie(
                 value = roll,
                 roll = state.lastEvent.takeIf { it !is GameEvent.Moved },
                 canRoll = canRoll,
                 onRoll = onRoll,
+                ringColour = turnColour,
+                turnRing = true,
                 modifier = Modifier
                     .then(if (rollStep) Modifier.tutorialOutline(rememberTutorialPulse()) else Modifier)
                     .size(dieSize),
@@ -696,11 +701,12 @@ class DiceChoice(val selected: Int? = null, val onSelect: ((Int) -> Unit)? = nul
 /**
  * Two dice side by side, each a little smaller than one die, showing the roll: the one awaiting its moves
  * ([TurnPhase.AwaitingMove.rolled]), or the last one rolled, kept until the next. A die already moved is faded; while
- * both are still to move, a tap on one picks it for the next move (ringed), and TalkBack hears "First die showing 3,
+ * both are still to move, a tap on one picks it for the next move (ringed in full in [turnColour], the turn's ring
+ * faint round the other), and TalkBack hears "First die showing 3,
  * selected". Before a roll, a tap on either rolls both.
  */
 @Composable
-private fun TwoDice(state: GameState, canRoll: Boolean, onRoll: () -> Unit, choice: DiceChoice, dieSize: Dp) {
+private fun TwoDice(state: GameState, canRoll: Boolean, onRoll: () -> Unit, choice: DiceChoice, dieSize: Dp, turnColour: Color) {
     val phase = state.phase as? TurnPhase.AwaitingMove
     val current = phase?.rolled ?: lastDice(state.lastEvent)
     var kept by remember { mutableStateOf(current) }
@@ -732,6 +738,8 @@ private fun TwoDice(state: GameState, canRoll: Boolean, onRoll: () -> Unit, choi
                 used = used[index],
                 selected = index == selectedIndex && choice.onSelect != null,
                 onSelect = choice.onSelect?.takeIf { !used[index] && value != null && index != selectedIndex }?.let { pick -> { pick(value!!) } },
+                ringColour = turnColour,
+                turnRing = true,
             )
         }
     }

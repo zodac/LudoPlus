@@ -3,14 +3,30 @@ package net.zodac.ludoplus.ui.game
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.Move
 
-/** How long a moving pawn takes over each square, and a captured pawn to slide back to its yard. */
-const val PAWN_STEP_MILLIS = 110
+/** How long a moving pawn takes to hop from one square to the next. */
+const val PAWN_STEP_MILLIS = 140
 
-/** How long a captured pawn takes to slide back to its yard, once the pawn that took it has landed. */
-const val CAPTURE_SLIDE_MILLIS = 280
+/** How long a captured pawn takes to fly back to its yard, once the pawn that took it has landed. */
+const val CAPTURE_FLIGHT_MILLIS = 480
+
+/** How long the flourish round a pawn that reaches home lasts, once it has landed. */
+const val HOME_FLOURISH_MILLIS = 720
 
 /** How long the die tumbles before it settles on a roll. */
 const val DIE_TUMBLE_MILLIS = 420
+
+/** How long [move]'s pawn travels: [PAWN_STEP_MILLIS] a square, and one out of the yard. */
+fun travelMillis(move: Move): Int = (if (move.from < 0) 1 else move.to - move.from) * PAWN_STEP_MILLIS
+
+/**
+ * What follows [move]'s landing, on a board whose home is [homeProgress]: a capture's flight back to its yard, or a
+ * pawn home's flourish.
+ */
+fun afterLandingMillis(move: Move, homeProgress: Int): Int = when {
+    move.captures.isNotEmpty() -> CAPTURE_FLIGHT_MILLIS
+    move.to == homeProgress -> HOME_FLOURISH_MILLIS
+    else -> 0
+}
 
 /**
  * What a CPU's turn waits on so the player can follow it: [thinkMillis] before each roll and move, on top of whatever
@@ -22,18 +38,14 @@ data class GamePacing(
     val pawnsAnimated: Boolean = true,
     val dieAnimated: Boolean = true,
 ) {
-    /** How long to wait after [event] before the next action: the pause, plus its animation's length. */
-    fun waitAfter(event: GameEvent?): Long = thinkMillis + when (event) {
+    /**
+     * How long to wait after [event], on a board whose home is [homeProgress], before the next action: the pause, plus
+     * its animation's length (a move's travel, then its capture's flight or its home flourish).
+     */
+    fun waitAfter(event: GameEvent?, homeProgress: Int): Long = thinkMillis + when (event) {
         null -> 0L
-        is GameEvent.Moved -> if (pawnsAnimated) moveMillis(event) else 0L
+        is GameEvent.Moved -> if (pawnsAnimated) (travelMillis(event.move) + afterLandingMillis(event.move, homeProgress)).toLong() else 0L
         is GameEvent.Rolled, is GameEvent.NoMove, is GameEvent.RollAgainLimit -> if (dieAnimated) DIE_TUMBLE_MILLIS.toLong() else 0L
-    }
-
-    private fun moveMillis(event: GameEvent.Moved): Long {
-        val move = event.move
-        // Out of the yard is one hop onto the start square.
-        val squares = if (move.from < 0) 1 else move.to - move.from
-        return squares * PAWN_STEP_MILLIS.toLong() + if (move.captures.isEmpty()) 0L else CAPTURE_SLIDE_MILLIS.toLong()
     }
 
     companion object {
@@ -47,8 +59,9 @@ enum class MoveSound { STEP, CAPTURE, HOME }
 
 /**
  * When [move]'s sounds play, in milliseconds from its start, for a board whose home is [homeProgress]: a step as the pawn
- * reaches each square (one hop out of the yard), in time with its move (all at once with [animated] off), the landing's
- * step taken by a capture's sound or a pawn home's chime when it does either.
+ * lands on each square (one hop out of the yard), in time with its move (all at once with [animated] off), the landing's
+ * step taken by a capture's sound or a pawn home's chime when it does either; and, [animated], a step as each captured
+ * pawn lands back in its yard.
  */
 fun moveSoundCues(move: Move, homeProgress: Int, animated: Boolean): List<Pair<Long, MoveSound>> {
     val hops = if (move.from < 0) 1 else move.to - move.from
@@ -58,5 +71,6 @@ fun moveSoundCues(move: Move, homeProgress: Int, animated: Boolean): List<Pair<L
         move.to == homeProgress -> MoveSound.HOME
         else -> MoveSound.STEP
     }
-    return steps.dropLast(1).map { it to MoveSound.STEP } + (steps.last() to landing)
+    val backInYard = if (animated && move.captures.isNotEmpty()) listOf(steps.last() + CAPTURE_FLIGHT_MILLIS to MoveSound.STEP) else emptyList()
+    return steps.dropLast(1).map { it to MoveSound.STEP } + (steps.last() to landing) + backInYard
 }

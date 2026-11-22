@@ -111,6 +111,9 @@ val BoardInk = Color(0xFF1E2A4A)
 /** A yard, home column, or start square with nobody sitting there (fewer than four players). */
 val BoardEmptySeat = Color(0xFFB9B2A0)
 
+/** The sparks of the flourish round a pawn that reaches home. */
+val BoardSparkGold = Color(0xFFFFD45C)
+
 /** The ivory die, light at its top-left to shaded at its bottom-right (DiceFive's classic die). */
 val IvoryDiceTop = Color(0xFFFFFCF3)
 val IvoryDiceBottom = Color(0xFFD9C9A3)
