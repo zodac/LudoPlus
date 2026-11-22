@@ -617,10 +617,18 @@ Leaderboard's Combined board.
     - Keep the art inside the 72 units a launcher shows, with a margin (`LauncherIconTest`), and get an on-device look
         for icon work.
     - `ic_launcher_monochrome.xml` (the themed icon) is a flat silhouette whose geometry is copied from the foreground.
-        Change the two together.
+        Change the two together. Each pawn there is one path with every part wound clockwise, or the overlaps cancel
+        into seams; the three behind are half-tone.
     - `ic_launcher.xml` is the only wrapper (`roundIcon` too).
-    - Today's icon is a placeholder: an ivory pawn (`ic_launcher_foreground.xml`) on the flat brand navy
-        (`ic_launcher_background.xml`). The brand art replaces it (`IMPLEMENTATION.md`, Phase 0).
+    - The icon (chosen 2026-11-23): the classic board tilted with red's yard nearest, in deeper, traditional colours
+        than the players' (theirs looked dull there), clear in the middle and fading towards the brand navy at the
+        edges (`ic_launcher_background.xml`), and four Classic pawns in the players' colours
+        (`ic_launcher_foreground.xml`): red in focus at the front, edged in ivory so it doesn't sink into the board's
+        red, and green, yellow, and blue smaller behind, dimmed towards navy. The board is drawn in its own 15 squares in
+        nested groups (turned, then flattened), big enough that even a near-square mask shows board to its corners
+        (`LauncherIconTest`).
+    - **A path never has both a gradient fill and a stroke**: some Androids draw the stroke in the gradient. Fill and
+        ink are two paths.
 
 ## Verifying UI work
 

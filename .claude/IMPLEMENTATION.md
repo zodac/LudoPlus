@@ -150,7 +150,8 @@ removed feature is restored from it in its phase (`git show 5423b6c:<path>`), no
 - [x] Strings: every unused one deleted; the es/ar folders removed. `StringChecks` guards the Ludo trademarks.
 - [x] Theme re-seeded (violet `#9C6BFF`, navy `#1E2A4A`, ivory `#F1E4C3`, generated with material-color-utilities).
     Player colours red, green, yellow, and blue.
-- [x] Placeholder launcher icon: an ivory pawn on the brand navy.
+- [x] Placeholder launcher icon: an ivory pawn on the brand navy. Replaced 2026-11-23 by the brand icon (`UI.md`,
+    "Gotchas").
 - [x] Baseline Profile journey (`app/baselineprofile`) and its CI job removed: premature with no app to profile. The
     upgrade check runs only from the second release on.
 - [x] Docs that still describe DiceFive say so at their top; `UI.md`'s colour, player-colour, mode-colour, and icon
@@ -397,8 +398,8 @@ count but 4 has a board of its own; one player on two colours was dropped.
 - [x] The store listing's hi-res icon, feature graphic (and the README's GIF), and promo video: DiceFive's generators
     are in `5423b6c`; the script keeps their steps, refusing those parts until then (`STORE_ASSETS.md`).
     - [x] The icon and feature graphic (`StoreArtGeneratorTest`), approved 2026-11-18. The icon follows the launcher
-        icon, still the placeholder pawn (kept for now, the maintainer, 2026-11-18). The feature graphic's GIF heads the
-        README from 2026-11-19 (`readme-assets.yml`).
+        icon: the placeholder pawn until 2026-11-23, then the tilted board with the red pawn in focus. The feature
+        graphic's GIF heads the README from 2026-11-19 (`readme-assets.yml`).
     - [x] The promo video: a turn, a capture, the Rules' diagram, a pawn home and the win, Game Over, the Leaderboard,
         and an achievement unlocking, then the end card; no tutorial (the maintainer, 2026-11-18). Approved 2026-11-18
         (`STORE_ASSETS.md`).

@@ -7,6 +7,7 @@ import android.graphics.drawable.AdaptiveIconDrawable
 import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.math.abs
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -45,14 +46,29 @@ class LauncherIconTest {
     }
 
     @Test
-    fun `the background is the brand navy, the secondary seed`() {
+    fun `the background's corners are the brand navy, the secondary seed`() {
         val background = render(R.drawable.ic_launcher_background)
-        val pixel = background.getPixel(0, 0)
-        assertEquals(BRAND_NAVY, pixel)
+        // The fade blends towards navy over navy there, which rounds a step or so off.
+        assertTrue(fromNavy(background.getPixel(0, 0)) <= ROUNDING)
     }
 
     @Test
-    fun `the pawn keeps its margin inside the 72 units a launcher shows`() {
+    fun `the board reaches every corner of the 72 units a launcher shows, so no mask shows bare navy`() {
+        val background = render(R.drawable.ic_launcher_background)
+        val near = (VISIBLE_START * PIXELS_PER_UNIT) + 1
+        val far = ((CANVAS_UNITS - VISIBLE_START) * PIXELS_PER_UNIT) - 2
+        listOf(near to near, far to near, near to far, far to far).forEach { (x, y) ->
+            assertTrue("($x, $y) is bare navy", fromNavy(background.getPixel(x, y)) > BOARD_DISTANCE)
+        }
+    }
+
+    /** How far [pixel] is from the brand navy, summed over red, green, and blue. */
+    private fun fromNavy(pixel: Int): Int =
+        abs(Color.red(pixel) - Color.red(BRAND_NAVY)) + abs(Color.green(pixel) - Color.green(BRAND_NAVY)) +
+            abs(Color.blue(pixel) - Color.blue(BRAND_NAVY))
+
+    @Test
+    fun `the pawns keep their margin inside the 72 units a launcher shows`() {
         val foreground = render(R.drawable.ic_launcher_foreground)
         val low = ((VISIBLE_START + MIN_MARGIN) * PIXELS_PER_UNIT).toInt()
         val high = ((CANVAS_UNITS - VISIBLE_START - MIN_MARGIN) * PIXELS_PER_UNIT).toInt()
@@ -88,6 +104,12 @@ class LauncherIconTest {
         const val CANVAS_UNITS = 108
         const val PIXELS_PER_UNIT = 10
         const val OPAQUE = 255
+
+        /** How far from the navy ([fromNavy]) a pixel must be to be the board's. */
+        const val BOARD_DISTANCE = 40
+
+        /** How far from the navy a navy pixel may round. */
+        const val ROUNDING = 3
 
         /** The secondary seed in the shared module's ui/theme/Color.kt. */
         const val BRAND_NAVY = 0xFF1E2A4A.toInt()

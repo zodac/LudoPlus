@@ -9,7 +9,7 @@ the feature graphic's PNG, and the **promo video**, back for the Play listing in
 alone by default; `--parts icon,feature,video` the rest.
 
 - **Icon** (`icon` part): the launcher icon's two layers, the middle 76dp of their 108dp canvas, so it follows the
-    launcher icon. That is still the placeholder pawn (kept for now, the maintainer, 2026-11-18).
+    launcher icon: the tilted board with the red pawn in focus (`UI.md`, "Gotchas").
 - **Feature graphic** (`feature` part): the menu's backdrop with its pawns drifting, the menu's logo centred in the left
     half, and the board mid-game (`Scenes.midGame`) in the right, nothing that matters in the middle (Play's play button)
     or at an edge (its crops). The GIF is 6 seconds of the drift. The video's end card is the same scene at 16:9.
