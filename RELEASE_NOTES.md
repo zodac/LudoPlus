@@ -1,0 +1,6 @@
+- Pawns now hop from square to square, rather than sliding
+- A pawn reaching home now shows a flourish
+- The current player's dice has a ring with their colour, and their yard is highlighted
+- A player with only one move has that move made automatically
+- New app icon and menu logo
+- New Game shows each CPU's difficulty in full again.
