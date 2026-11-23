@@ -145,6 +145,10 @@ android {
             ndk {
                 debugSymbolLevel = "SYMBOL_TABLE"
             }
+            // No META-INF/version-control-info.textproto (the commit the build came from): the release's tag records it.
+            vcsInfo {
+                include = false
+            }
         }
     }
 
@@ -224,6 +228,12 @@ androidComponents {
     // from 22MB to 70MB for every build handed to a tester.
     onVariants(selector().withBuildType("release")) { variant ->
         variant.packaging.dex.useLegacyPackaging.set(false)
+        // Build stamps no code reads: AndroidX's and kotlinx's per-artifact version files, Google Play services' and
+        // Billing's per-artifact version files at the APK's root, and the publish-time verification files of
+        // AboutLibraries and kotlinx-serialization. Each is a few bytes of text plus a zip entry of its own.
+        // META-INF/services stays: ServiceLoader reads it. Release only: in android.packaging they also leave the unit
+        // tests' Java resources, and Robolectric's native graphics then can't make a Bitmap.
+        variant.packaging.resources.excludes.addAll("META-INF/*.version", "/*.properties", "META-INF/**/verification.properties")
     }
     onVariants(selector().withBuildType("debug")) { variant ->
         variant.outputs.forEach { output ->
