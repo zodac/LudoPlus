@@ -18,7 +18,7 @@ import net.zodac.ludoplus.model.storedIdOf
  * could read all of the other's messages. Bumped by any change an older app couldn't read. A new message an older app can
  * do without ([NetMessage.TurnEnding]) needs none: [NetCodec] reads one it doesn't know as nothing.
  */
-const val PROTOCOL_VERSION = 1
+const val PROTOCOL_VERSION = 2
 
 /** One message between a host and a guest, as [NetCodec] sends it. See `.claude/NETPLAY.md`, "Design". */
 sealed interface NetMessage {

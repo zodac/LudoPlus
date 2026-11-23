@@ -25,12 +25,14 @@ import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
+import net.zodac.ludoplus.game.PowerUpEffect
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
+import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.model.TeamMode
 import net.zodac.ludoplus.model.withHouseRules
 import net.zodac.ludoplus.platform.LocalPlatformServices
@@ -172,6 +174,48 @@ class BoardSemanticsTest : UiTest() {
     }
 
     private fun stateSays(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)
+
+    @Test
+    fun `Chaos - a square says its power-up - a pawn its shield - a move what it takes or bounces off - and a card its doubled rolls`() = uiTest(TestScreen(411, 891)) {
+        val new = GameState.new(GameMode.CHAOS, 4)
+        val pawns = listOf(listOf(1, 20, 49, Y), listOf(9, Y, Y, Y))
+        val state = new.copy(
+            players = new.players.mapIndexed { i, p ->
+                p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }, shielded = if (i == 1) setOf(0) else emptySet(), doubledRolls = if (i == 2) 1 else 0)
+            },
+            powerUps = mapOf(3 to PowerUp.TELEPORT, 40 to PowerUp.SHIELD),
+        )
+        show(LudoEngine.applyRoll(state, 2))
+        listOf(
+            "Square 4, Teleport power-up, empty",
+            "Square 41, Shield power-up, empty",
+            "Square 23, Green pawn 1, 47 squares from home, shielded",
+        ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
+        compose.onNodeWithContentDescription("Square 2, Red pawn 1, 55 squares from home").assert(onClickLabel("Move Red pawn 1 2 squares, taking Teleport"))
+        compose.onNodeWithContentDescription("Square 21, Red pawn 2, 36 squares from home").assert(onClickLabel("Move Red pawn 2 2 squares, bouncing off Green pawn 1's shield"))
+        compose.onNode(hasText("Sam") and stateSays("0 pawns home, 1 doubled roll left")).assertExists()
+    }
+
+    @Test
+    fun `the log says what a power-up did - after the move that took it`() = uiTest(TestScreen(411, 891)) {
+        fun moved(effect: PowerUpEffect?, move: Move = Move(0, 1, 3)) = LogEntry(GameEvent.Moved(0, 2, move, finished = false, effect = effect))
+        val state = GameState.new(GameMode.CHAOS, 4)
+        for ((entry, line) in listOf(
+            moved(PowerUpEffect(PowerUp.DOUBLE)) to "Alex moved a pawn 2 squares. Alex's next 3 rolls count double.",
+            moved(PowerUpEffect(PowerUp.SHIELD)) to "Alex moved a pawn 2 squares. Alex took Shield.",
+            moved(PowerUpEffect(PowerUp.TELEPORT, movedTo = 4)) to "Alex moved a pawn 2 squares. Alex teleported 1 square.",
+            moved(PowerUpEffect(PowerUp.TELEPORT, movedTo = 7, captures = listOf(PawnRef(1, 0)))) to
+                "Alex moved a pawn 2 squares. Alex teleported 4 squares. Alex captured 1 of Gambit's pawns.",
+            moved(PowerUpEffect(PowerUp.CALL_UP, calledUp = 2)) to "Alex moved a pawn 2 squares. Alex called up a pawn.",
+            moved(PowerUpEffect(PowerUp.CALL_UP)) to "Alex moved a pawn 2 squares. Alex took Call Up.",
+            moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0))) to "Alex moved a pawn 2 squares. Alex swapped places with Sam.",
+            moved(PowerUpEffect(PowerUp.ROLL_AGAIN), Move(0, 1, 3, listOf(PawnRef(1, 0)))) to "Alex captured 1 of Gambit's pawns. Alex took Roll Again.",
+            moved(null, Move(0, 1, 2, bouncedFrom = 3, brokenShields = listOf(PawnRef(1, 0)))) to "Alex moved a pawn 2 squares and bounced off Gambit's shield.",
+        )) {
+            show(state, log = listOf(entry))
+            compose.onNodeWithContentDescription(line).assertExists()
+        }
+    }
 
     @Test
     fun `the log says who was knocked out`() = uiTest(TestScreen(411, 891)) {

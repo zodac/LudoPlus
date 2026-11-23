@@ -1,7 +1,9 @@
 package net.zodac.ludoplus.ui.rules
 
 import net.zodac.ludoplus.model.HouseRule
+import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.resources.Res
+import net.zodac.ludoplus.resources.mode_chaos
 import net.zodac.ludoplus.resources.mode_portals
 import net.zodac.ludoplus.resources.mode_quick
 import net.zodac.ludoplus.resources.mode_survival
@@ -17,6 +19,9 @@ import net.zodac.ludoplus.resources.rules_capture_3
 import net.zodac.ludoplus.resources.rules_capture_4
 import net.zodac.ludoplus.resources.rules_capture_tab
 import net.zodac.ludoplus.resources.rules_capture_title
+import net.zodac.ludoplus.resources.rules_chaos_1
+import net.zodac.ludoplus.resources.rules_chaos_2
+import net.zodac.ludoplus.resources.rules_chaos_3
 import net.zodac.ludoplus.resources.rules_group_gameplay
 import net.zodac.ludoplus.resources.rules_group_house_rules
 import net.zodac.ludoplus.resources.rules_group_modes
@@ -81,6 +86,9 @@ internal data object RulesTutorialStart : RulesBlock
 
 /** A house rule, as its name in italics and what it changes. */
 internal data class RulesHouseRule(val rule: HouseRule) : RulesBlock
+
+/** A power-up, as its name in italics and what it does. */
+internal data class RulesPowerUp(val powerUp: PowerUp) : RulesBlock
 
 /** A diagram of part of the board ([RulesDiagram]). */
 internal data class RulesDiagramBlock(val kind: RulesDiagramKind) : RulesBlock
@@ -162,6 +170,11 @@ private val GAME_MODES = RulesGroup(
             Res.string.mode_survival,
             Res.string.mode_survival,
             texts(Res.string.rules_survival_1, Res.string.rules_survival_2, Res.string.rules_survival_3, Res.string.rules_survival_4, Res.string.rules_survival_records),
+        ),
+        RulesPage(
+            Res.string.mode_chaos,
+            Res.string.mode_chaos,
+            texts(Res.string.rules_chaos_1) + PowerUp.entries.map(::RulesPowerUp) + texts(Res.string.rules_chaos_2, Res.string.rules_chaos_3, Res.string.rules_modes_records),
         ),
     ),
 )

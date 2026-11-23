@@ -2,6 +2,7 @@ package net.zodac.ludoplus.ui.game
 
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.Move
+import net.zodac.ludoplus.game.PowerUpEffect
 
 /** How long a moving pawn takes to hop from one square to the next. */
 const val PAWN_STEP_MILLIS = 140
@@ -21,16 +22,24 @@ const val DIE_TUMBLE_MILLIS = 420
 /** How many hops [move]'s pawn makes: one a square, and one out of the yard. */
 private fun hops(move: Move): Int = if (move.from < 0) 1 else move.rolledTo - move.from
 
-/** How long [move]'s pawn travels: [PAWN_STEP_MILLIS] a hop, and [PORTAL_WARP_MILLIS] through a portal. */
-fun travelMillis(move: Move): Int = hops(move) * PAWN_STEP_MILLIS + if (move.via != null) PORTAL_WARP_MILLIS else 0
+/** How many hops back [move]'s pawn makes, off a shield. */
+private fun hopsBack(move: Move): Int = move.bouncedFrom?.let { it - move.to } ?: 0
 
 /**
- * What follows [move]'s landing, on a board whose home is [homeProgress]: a capture's flight back to its yard, or a
- * pawn home's flourish.
+ * How long [move]'s pawn travels: [PAWN_STEP_MILLIS] a hop, on and back off a shield, and [PORTAL_WARP_MILLIS] through a
+ * portal, or where a power-up it ends on takes it, as [effect] says.
  */
-fun afterLandingMillis(move: Move, homeProgress: Int): Int = when {
-    move.captures.isNotEmpty() -> CAPTURE_FLIGHT_MILLIS
-    move.to == homeProgress -> HOME_FLOURISH_MILLIS
+fun travelMillis(move: Move, effect: PowerUpEffect? = null): Int =
+    (hops(move) + hopsBack(move)) * PAWN_STEP_MILLIS + if (move.via != null || effect?.movedTo != null) PORTAL_WARP_MILLIS else 0
+
+/**
+ * What follows [move]'s landing, on a board whose home is [homeProgress]: a capture's flight back to its yard (or another
+ * pawn's, where a power-up moves it, as [effect] says), or a pawn home's flourish.
+ */
+fun afterLandingMillis(move: Move, homeProgress: Int, effect: PowerUpEffect? = null): Int = when {
+    (effect?.movedTo ?: move.to) == homeProgress -> HOME_FLOURISH_MILLIS
+    move.captures.isNotEmpty() || effect?.captures.orEmpty().isNotEmpty() -> CAPTURE_FLIGHT_MILLIS
+    effect?.swapped != null || effect?.calledUp != null -> CAPTURE_FLIGHT_MILLIS
     else -> 0
 }
 
@@ -50,7 +59,7 @@ data class GamePacing(
      */
     fun waitAfter(event: GameEvent?, homeProgress: Int): Long = thinkMillis + when (event) {
         null -> 0L
-        is GameEvent.Moved -> if (pawnsAnimated) (travelMillis(event.move) + afterLandingMillis(event.move, homeProgress)).toLong() else 0L
+        is GameEvent.Moved -> if (pawnsAnimated) (travelMillis(event.move, event.effect) + afterLandingMillis(event.move, homeProgress, event.effect)).toLong() else 0L
         is GameEvent.Rolled, is GameEvent.NoMove, is GameEvent.RollAgainLimit -> if (dieAnimated) DIE_TUMBLE_MILLIS.toLong() else 0L
     }
 
@@ -67,17 +76,19 @@ enum class MoveSound { STEP, CAPTURE, HOME }
  * When [move]'s sounds play, in milliseconds from its start, for a board whose home is [homeProgress]: a step as the pawn
  * lands on each square (one hop out of the yard), in time with its move (all at once with [animated] off), the landing's
  * step taken by a capture's sound or a pawn home's chime when it does either; and, [animated], a step as each captured
- * pawn lands back in its yard.
+ * pawn lands back in its yard. [effect] is what a power-up it ended on did.
  */
-fun moveSoundCues(move: Move, homeProgress: Int, animated: Boolean): List<Pair<Long, MoveSound>> {
+fun moveSoundCues(move: Move, homeProgress: Int, animated: Boolean, effect: PowerUpEffect? = null): List<Pair<Long, MoveSound>> {
     // Coming out of a portal is a landing of its own, after its hops.
-    val hopped = (1..hops(move)).map { it * PAWN_STEP_MILLIS.toLong() }
-    val steps = if (!animated) listOf(0L) else if (move.via == null) hopped else hopped + travelMillis(move).toLong()
+    val hopped = (1..hops(move) + hopsBack(move)).map { it * PAWN_STEP_MILLIS.toLong() }
+    val warps = move.via != null || effect?.movedTo != null
+    val captures = move.captures + effect?.captures.orEmpty()
+    val steps = if (!animated) listOf(0L) else if (!warps) hopped else hopped + travelMillis(move, effect).toLong()
     val landing = when {
-        move.captures.isNotEmpty() -> MoveSound.CAPTURE
-        move.to == homeProgress -> MoveSound.HOME
+        captures.isNotEmpty() -> MoveSound.CAPTURE
+        (effect?.movedTo ?: move.to) == homeProgress -> MoveSound.HOME
         else -> MoveSound.STEP
     }
-    val backInYard = if (animated && move.captures.isNotEmpty()) listOf(steps.last() + CAPTURE_FLIGHT_MILLIS to MoveSound.STEP) else emptyList()
+    val backInYard = if (animated && captures.isNotEmpty()) listOf(steps.last() + CAPTURE_FLIGHT_MILLIS to MoveSound.STEP) else emptyList()
     return steps.dropLast(1).map { it to MoveSound.STEP } + (steps.last() to landing) + backInYard
 }

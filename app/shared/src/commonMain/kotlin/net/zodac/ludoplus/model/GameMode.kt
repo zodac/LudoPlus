@@ -1,6 +1,8 @@
 package net.zodac.ludoplus.model
 
 import net.zodac.ludoplus.resources.Res
+import net.zodac.ludoplus.resources.mode_chaos
+import net.zodac.ludoplus.resources.mode_chaos_description
 import net.zodac.ludoplus.resources.mode_classic
 import net.zodac.ludoplus.resources.mode_classic_description
 import net.zodac.ludoplus.resources.mode_portals
@@ -94,6 +96,15 @@ enum class GameMode(
         onlineLeaderboardKey = null,
         ranking = LeaderboardRanking.MOST_PAWNS_LEFT,
     ),
+
+    /** The classic rules, with power-ups on the track ([PowerUp]). */
+    CHAOS(
+        id = "chaos",
+        displayName = Res.string.mode_chaos,
+        description = Res.string.mode_chaos_description,
+        rules = GameRules(powerUps = true),
+        onlineLeaderboardKey = "chaos",
+    ),
     ;
 
     /** Its online leaderboard for games of [playerCount], if it has any: a bigger board's lap is longer, so each count has its own. */
@@ -175,6 +186,8 @@ data class GameRules(
     val guardedStarts: Boolean = false,
     /** Whether the board's portals ([BoardGeometry.portals]) are open: a move that ends on one comes out at its pair. */
     val portals: Boolean = false,
+    /** Whether there are power-ups on the track ([PowerUp]), one for each seat's stretch of it. */
+    val powerUps: Boolean = false,
     /** Whether every pawn starts the game on its start square, rather than in its yard. */
     val startsOut: Boolean = false,
     /**

@@ -4,6 +4,7 @@ import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.GameRules
 import net.zodac.ludoplus.model.PawnPosition
+import net.zodac.ludoplus.model.PowerUp
 
 /**
  * A whole game at one moment: immutable, and changed only by [LudoEngine]. Players are in turn order, which is the
@@ -28,6 +29,12 @@ data class GameState(
     val roundsPlayed: Int = 0,
     /** Where the last standing wins ([GameRules.lastStanding]), the players who have lost every pawn, by index, the first to first. */
     val knockedOut: List<Int> = emptyList(),
+    /** Where the rules have power-ups, each one on the board, by its absolute track square. */
+    val powerUps: Map<Int, PowerUp> = emptyMap(),
+    /** The rolls left before each power-up taken comes back, as another somewhere else. */
+    val powerUpsDue: List<Int> = emptyList(),
+    /** What the power-ups' chances are drawn from next ([PowerUps]), so that a game plays on the same wherever it's kept. */
+    val seed: Long = 0,
     /** What the last action did, for the screen to show and say. Null before the first roll. */
     val lastEvent: GameEvent? = null,
 ) {
@@ -44,6 +51,9 @@ data class GameState(
     /** How many rounds are left before sudden death's next stage, or null with none to come. */
     val roundsToSuddenDeath: Int?
         get() = (suddenDeathStage + 1).takeIf { rules.suddenDeath && it <= SUDDEN_DEATH_STAGES }?.let { rules.suddenDeathRound(it, players.size) - roundsPlayed }
+
+    /** Whether [player]'s pawn [pawn] has a shield. */
+    fun isShielded(player: Int, pawn: Int): Boolean = pawn in players[player].shielded
 
     /** Whether the round being played is a stage of sudden death's first. */
     val suddenDeathJustCame: Boolean get() = suddenDeathStage > 0 && roundsPlayed == rules.suddenDeathRound(suddenDeathStage, players.size)
@@ -89,7 +99,7 @@ data class GameState(
         /**
          * A new game of [mode] for [playerCount] players under [rules] (the mode's own by default), every pawn in its
          * yard (or where the rules start them out, on its start square), [first] to roll. The players sit at [seats], in clockwise order: spread round the board by default
-         * ([BoardGeometry.seatsFor]).
+         * ([BoardGeometry.seatsFor]). Where the rules have power-ups, [seed] is what their chances are drawn from.
          */
         fun new(
             mode: GameMode,
@@ -97,6 +107,7 @@ data class GameState(
             first: Int = 0,
             rules: GameRules = mode.rules,
             seats: List<Int> = rules.board.seatsFor(playerCount),
+            seed: Long = 0,
         ): GameState {
             val board = rules.board
             require(playerCount in 2..board.seats) { "A ${board.seats}-seat board takes 2 to ${board.seats} players" }
@@ -112,7 +123,8 @@ data class GameState(
                 },
                 current = first,
                 phase = TurnPhase.AwaitingRoll,
-            )
+                seed = seed,
+            ).let { if (rules.powerUps) PowerUps.start(it) else it }
         }
     }
 }
@@ -129,6 +141,10 @@ data class PlayerState(
     val captures: Int = 0,
     /** How many of their own pawns have been sent back to their yard. */
     val timesCaptured: Int = 0,
+    /** How many more of their rolls count double ([PowerUp.DOUBLE]). */
+    val doubledRolls: Int = 0,
+    /** Their pawns with a shield ([PowerUp.SHIELD]), by index. */
+    val shielded: Set<Int> = emptySet(),
 ) {
     /** How many of their pawns are home on [board]. */
     fun pawnsHome(board: BoardGeometry): Int = pawns.count { it == board.homeProgress }
@@ -178,14 +194,32 @@ data class Move(
     val roll: Int? = null,
     /** The progress of the portal it goes in at, coming out at [to]; null for a move through none. */
     val via: Int? = null,
+    /** The progress of the shielded pawn it lands on and bounces off, settling at [to]; null for a move that meets none. */
+    val bouncedFrom: Int? = null,
+    /** The pawns whose shields it breaks, bouncing off each. */
+    val brokenShields: List<PawnRef> = emptyList(),
 ) {
-    /** The progress the roll brings the pawn to, before any portal. */
-    val rolledTo: Int get() = via ?: to
+    /** The progress the roll brings the pawn to, before any portal or shield. */
+    val rolledTo: Int get() = bouncedFrom ?: via ?: to
 
 
     /** Whose pawn moves in [state]: [owner], or the player whose turn it is. */
     fun ownerIn(state: GameState): Int = owner ?: state.current
 }
+
+/**
+ * What a [powerUp] did for the pawn that ended its move on it: [movedTo] is where it took the pawn (Teleport, Swap), as
+ * progress; [captures] and [brokenShields] what that landing did; [swapped] the opponent's pawn swapped with; and [calledUp]
+ * the pawn brought out of the yard. Each null or empty where it did none.
+ */
+data class PowerUpEffect(
+    val powerUp: PowerUp,
+    val movedTo: Int? = null,
+    val captures: List<PawnRef> = emptyList(),
+    val brokenShields: List<PawnRef> = emptyList(),
+    val swapped: PawnRef? = null,
+    val calledUp: Int? = null,
+)
 
 /** One pawn in a game: [player]'s pawn [pawn], both indices. */
 data class PawnRef(val player: Int, val pawn: Int)
@@ -214,7 +248,7 @@ sealed interface GameEvent {
      * [player] moved with [roll] (with two dice, the die moved). [finished] is true if that brought the moved pawn's
      * owner's last pawn home (theirs, or a partner's they rolled for); [rollsAgain] if the roll, its dice all moved, earned
      * them another (a roll-again roll, a capture, or a pawn home, as the rules give). [knockedOut] are the players whose
-     * last pawn it captured, where that puts them out of the game.
+     * last pawn it captured, where that puts them out of the game. [effect] is what a power-up it ended on did.
      */
     data class Moved(
         override val player: Int,
@@ -223,5 +257,12 @@ sealed interface GameEvent {
         val finished: Boolean,
         val rollsAgain: Boolean = false,
         val knockedOut: List<Int> = emptyList(),
-    ) : GameEvent
+        val effect: PowerUpEffect? = null,
+    ) : GameEvent {
+        /** Where the pawn ended up, by its progress: where the move took it, or a power-up from there. */
+        val endedAt: Int get() = effect?.movedTo ?: move.to
+
+        /** Every pawn captured, by the move and by a power-up it ended on. */
+        val allCaptures: List<PawnRef> get() = move.captures + effect?.captures.orEmpty()
+    }
 }

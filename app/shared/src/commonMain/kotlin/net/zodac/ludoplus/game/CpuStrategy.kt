@@ -40,6 +40,7 @@ object HeuristicStrategy : CpuStrategy {
     private const val IN_REACH = 30.0
     private const val ADVANCE = 0.3
     private const val PORTAL = 1.0
+    private const val POWER_UP = 25.0
 
     override fun choose(state: GameState, moves: List<Move>, random: Random): Move =
         moves.shuffled(random).maxBy { score(state, it) }
@@ -59,7 +60,8 @@ object HeuristicStrategy : CpuStrategy {
         // With no home to race to, how far round a pawn has come is worth nothing.
         if (!state.rules.lastStanding) score += ADVANCE * maxOf(move.from, 0)
         // What a portal gains or costs, on top of the roll, which every move has.
-        score += PORTAL * (move.to - move.rolledTo)
+        if (move.via != null) score += PORTAL * (move.to - move.via)
+        if (takesPowerUp(state, owner, move)) score += POWER_UP
         return score
     }
 }
@@ -75,7 +77,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
      * The tuned weights: a pawn's worth is its progress, plus [outOfYard] once out, [homeBonus] once home, and
      * [safeBonus] on a safe square; an opponent's worth counts [opponent] times against this player's own, an expected
      * loss [risk] times, and an expected capture on the next roll [chance] times. Where the last standing wins, a pawn
-     * still in is worth [lastStanding], wherever it is, in place of its progress and [outOfYard]. Tuned (2026-11-17) over 1,000
+     * still in is worth [lastStanding], wherever it is, in place of its progress and [outOfYard]. Taking a power-up is worth [powerUp]. Tuned (2026-11-17) over 1,000
      * two-player games a setting against Medium; `CpuTournamentTest` checks them on other seeds.
      */
     data class Weights(
@@ -86,15 +88,17 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
         val risk: Double = 0.9,
         val chance: Double = 0.8,
         val lastStanding: Double = 40.0,
+        val powerUp: Double = 12.0,
     )
 
     override fun choose(state: GameState, moves: List<Move>, random: Random): Move =
         moves.shuffled(random).maxBy { value(state, it) }
 
     internal fun value(state: GameState, move: Move): Double {
-        val after = LudoEngine.move(state, move.pawn, move.owner)
+        // Nobody knows what a power-up's chances will be, so it's worth the same whatever it is.
+        val after = LudoEngine.moveWithoutPowerUp(state, move)
         val me = state.current
-        var value = 0.0
+        var value = if (takesPowerUp(state, move.ownerIn(state), move)) weights.powerUp else 0.0
         after.players.forEachIndexed { index, player ->
             val worth = player.pawns.sumOf { pawnWorth(after, player.seat, it) }
             // A partner's pawns are as good as this player's own.
@@ -165,17 +169,22 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
 
 /**
  * Whether a pawn of [seat] at [progress] is safe: in its yard, its home column, home, on a track square safe for it, or
- * where blockades are played, in one: two or more of its seat's pawns on that square in [state].
+ * where blockades are played, in one: two or more of its seat's pawns on that square in [state]. So is one by a shield.
  */
 private fun isSafe(state: GameState, seat: Int, progress: Int): Boolean {
     val board = state.board
     if (progress !in 0..<board.trackSteps) return true
     val square = board.trackSquare(seat, progress)
     if (state.isSafeFor(seat, square)) return true
-    if (!state.rules.blockades) return false
     val player = state.players.first { it.seat == seat }
+    if (player.shielded.any { player.pawns[it] == progress }) return true
+    if (!state.rules.blockades) return false
     return player.pawns.count { it in 0..<board.trackSteps && board.trackSquare(seat, it) == square } >= 2
 }
+
+/** Whether [owner]'s [move] ends on a power-up. */
+private fun takesPowerUp(state: GameState, owner: Int, move: Move): Boolean =
+    state.powerUps.isNotEmpty() && move.to in 0..<state.board.trackSteps && state.board.trackSquare(state.players[owner].seat, move.to) in state.powerUps
 
 /** Whether [other]'s pawns can't capture [me]'s: [me] themselves, or a partner where partners don't capture. */
 private fun isFriendly(state: GameState, me: Int, other: Int): Boolean =

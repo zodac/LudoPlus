@@ -168,6 +168,9 @@
     <!-- The Portals mode: a square with a portal, and the square it leads to; then, on a portal one colour's pawns can't use, %1$s that colour (player_colour_*). -->
     <string name="game_square_portal_spoken">portal to square %1$d</string>
     <string name="game_square_portal_shut_spoken">shut to %1$s</string>
+    <!-- Chaos: a power-up on a square. %1$s is its name (power_up_*). Then, after a pawn with a shield round it. -->
+    <string name="game_square_power_up_spoken">%1$s power-up</string>
+    <string name="game_pawn_shielded_spoken">shielded</string>
     <string name="game_square_column_spoken">%1$s home column, square %2$d</string>
     <string name="game_square_yard_spoken">%1$s yard</string>
     <string name="game_square_home_spoken">Home</string>
@@ -190,6 +193,9 @@
     <string name="game_move_capture_clause">capturing %1$s pawn %2$d</string>
     <!-- The Portals mode: the move ends on a portal, so the pawn comes out on another square, %1$d. -->
     <string name="game_move_portal_clause">through a portal to square %1$d</string>
+    <!-- Chaos: the move ends on a power-up, %1$s (power_up_*); or lands on a shielded pawn (its colour and number) and settles on the square before it. -->
+    <string name="game_move_power_up_clause">taking %1$s</string>
+    <string name="game_move_bounce_clause">bouncing off %1$s pawn %2$d's shield</string>
     <string name="game_move_home_clause">reaching home</string>
     <!-- The die under the board: TalkBack's name for it before anyone has rolled, then with the roll it shows, and its action. -->
     <string name="game_die_cd">Die</string>
@@ -223,6 +229,12 @@
         <item quantity="other">Only stars are safe, for %1$d more rounds.</item>
     </plurals>
     <string name="game_sudden_death_nowhere">Sudden death! Nowhere is safe.</string>
+    <!-- Chaos: how many more of a player's rolls count double (Double, a power-up): on their card, and as TalkBack says it. -->
+    <string name="game_player_doubled">×2 · %1$d</string>
+    <plurals name="game_player_doubled_spoken">
+        <item quantity="one">%1$d doubled roll left</item>
+        <item quantity="other">%1$d doubled rolls left</item>
+    </plurals>
     <string name="game_player_turn_spoken">playing now</string>
     <string name="game_player_place">%1$s place</string>
     <!-- The line under the die saying what to do now. %1$s is the player's name, %2$d the roll. -->
@@ -287,6 +299,24 @@
         <item quantity="one">%1$s moved a pawn %2$d square, then through a portal.</item>
         <item quantity="other">%1$s moved a pawn %2$d squares, then through a portal.</item>
     </plurals>
+    <!-- Chaos: the pawn landed on a shielded one, so it settled on the square before it. %3$s is the shielded pawn's player. -->
+    <plurals name="game_event_bounce">
+        <item quantity="one">%1$s moved a pawn %2$d square and bounced off %3$s's shield.</item>
+        <item quantity="other">%1$s moved a pawn %2$d squares and bounced off %3$s's shield.</item>
+    </plurals>
+    <!-- Chaos: a line of the log, then what the power-up the move ended on did (the lines after this one), each a sentence. -->
+    <string name="game_event_and">%1$s %2$s</string>
+    <string name="game_event_power_up">%1$s took %2$s.</string>
+    <plurals name="game_event_double">
+        <item quantity="one">%1$s's next %2$d roll counts double.</item>
+        <item quantity="other">%1$s's next %2$d rolls count double.</item>
+    </plurals>
+    <plurals name="game_event_teleport">
+        <item quantity="one">%1$s teleported %2$d square.</item>
+        <item quantity="other">%1$s teleported %2$d squares.</item>
+    </plurals>
+    <string name="game_event_call_up">%1$s called up a pawn.</string>
+    <string name="game_event_swap">%1$s swapped places with %2$s.</string>
     <!-- The move log's title. -->
     <string name="game_log_title">Moves</string>
     <!-- A line of the move log: %1$s is when it happened (in game_log_time_pattern), %2$s what happened. -->
@@ -1037,6 +1067,21 @@
     <string name="mode_portals_description">The classic rules with portals on the track: land on one and come out at its pair, further on or further back</string>
     <string name="mode_survival">Survival</string>
     <string name="mode_survival_description">Six pawns each, no home, and no way back for a captured pawn: the last player with a pawn wins</string>
+    <string name="mode_chaos">Chaos</string>
+    <string name="mode_chaos_description">The classic rules with power-ups on the track: land on one to shield a pawn, double your rolls, teleport, and more</string>
+    <!-- Chaos's power-ups: each one's name, and what it does, as a sentence. -->
+    <string name="power_up_double">Double</string>
+    <string name="power_up_double_description">Your next 3 rolls move a pawn twice as far. A roll that would take it past home counts once.</string>
+    <string name="power_up_shield">Shield</string>
+    <string name="power_up_shield_description">The next pawn to land on yours bounces off to the square before it, and the shield breaks.</string>
+    <string name="power_up_teleport">Teleport</string>
+    <string name="power_up_teleport_description">Your pawn jumps 1 to 6 squares further on, capturing where it lands.</string>
+    <string name="power_up_roll_again">Roll Again</string>
+    <string name="power_up_roll_again_description">You get another roll.</string>
+    <string name="power_up_call_up">Call Up</string>
+    <string name="power_up_call_up_description">One of your pawns comes out of the yard.</string>
+    <string name="power_up_swap">Swap</string>
+    <string name="power_up_swap_description">Your pawn swaps places with the nearest rival ahead that's alone on a square, unless it's safe or shielded, or either pawn would pass its own start.</string>
     <string name="player_colour_yellow">Yellow</string>
     <string name="settings_motion_die_roll">Die roll</string>
     <string name="settings_motion_pawn_move">Pawn moves</string>
@@ -1076,6 +1121,9 @@
     <string name="rules_survival_3">Start squares and star squares are safe at first, until sudden death. Start squares stop being safe first, then star squares too. The line above the board counts the rounds, and with more players it takes longer.</string>
     <string name="rules_survival_4">On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when sudden death comes.</string>
     <string name="rules_survival_records">The Leaderboard ranks Survival wins by the most pawns left. Survival games don't earn achievements.</string>
+    <string name="rules_chaos_1">In Chaos there are power-ups on the track, one on each player's stretch of it. End a move on one to use it at once:</string>
+    <string name="rules_chaos_2">Only one power-up works in a move: a pawn moved onto another leaves it there. A power-up that's taken comes back somewhere else a few rolls later.</string>
+    <string name="rules_chaos_3">Bouncing off a shield earns no roll unless your pawn captures where it settles. A pawn brought out of the yard can't bounce, so a shield doesn't stop it.</string>
     <string name="rules_modes_records">Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.</string>
     <!-- The House Rules pages: an introduction, then each house rule (house_rule_*) as a line of its own (rules_house_rule_line), grouped by what they change. -->
     <string name="rules_house_rules_title">House Rules</string>

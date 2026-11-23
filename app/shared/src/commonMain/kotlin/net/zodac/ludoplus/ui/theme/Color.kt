@@ -3,6 +3,7 @@ package net.zodac.ludoplus.ui.theme
 import androidx.compose.ui.graphics.Color
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PlayerColour
+import net.zodac.ludoplus.model.PowerUp
 
 // ---------------------------------------------------------------------------------------------
 // Material 3 colour roles.
@@ -97,6 +98,7 @@ val GameMode.color: Color
         GameMode.TWO_DICE -> Color(0xFFFFC27A)
         GameMode.PORTALS -> Color(0xFF7FD8F0)
         GameMode.SURVIVAL -> Color(0xFFF0A0C8)
+        GameMode.CHAOS -> Color(0xFFE6E07A)
     }
 
 // ---------------------------------------------------------------------------------------------
@@ -112,6 +114,18 @@ val BoardInk = Color(0xFF1E2A4A)
 
 /** A yard, home column, or start square with nobody sitting there (fewer than four players). */
 val BoardEmptySeat = Color(0xFFB9B2A0)
+
+/** A shield round a pawn, and each power-up's colour under its symbol. */
+val ShieldBlue = Color(0xFF74C0FC)
+val PowerUp.color: Color
+    get() = when (this) {
+        PowerUp.DOUBLE -> Color(0xFFC2490A)
+        PowerUp.SHIELD -> Color(0xFF1864AB)
+        PowerUp.TELEPORT -> Color(0xFF862E9C)
+        PowerUp.ROLL_AGAIN -> Color(0xFF2B7A3A)
+        PowerUp.CALL_UP -> Color(0xFFA61E4D)
+        PowerUp.SWAP -> Color(0xFF0B7285)
+    }
 
 /** The portals' pairs, by symbol (`ui/game/PortalArt.kt`): clear of the players' colours, and never told apart by colour alone. */
 val PortalColours = listOf(

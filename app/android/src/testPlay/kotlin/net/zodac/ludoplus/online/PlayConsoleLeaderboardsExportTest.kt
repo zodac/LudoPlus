@@ -54,6 +54,7 @@ private val GameMode.leaderboardSymbol: ImageVector
         GameMode.TWO_DICE -> Symbols.Casino
         GameMode.PORTALS -> Symbols.Sync
         GameMode.SURVIVAL -> Symbols.Swords
+        GameMode.CHAOS -> Symbols.AutoAwesome
     }
 
 /**

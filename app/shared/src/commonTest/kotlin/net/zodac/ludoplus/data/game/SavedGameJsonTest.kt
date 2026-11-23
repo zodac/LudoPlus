@@ -19,6 +19,7 @@ import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
+import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.model.TeamMode
 import net.zodac.ludoplus.model.withHouseRules
 import net.zodac.ludoplus.ui.game.StartedGame
@@ -211,6 +212,28 @@ class SavedGameJsonTest {
             assertEquals(ended, SavedGameJson.decode(SavedGameJson.encode(ended)))
         }
         assert(knockedOut > 0 && suddenDeath > 0) { "No player knocked out, or no sudden death, was saved" }
+    }
+
+    @Test
+    fun `every state of random Chaos games comes back as it was saved - power-ups - shields - and doubled rolls - and plays on the same`() {
+        val random = Random(29)
+        val effects = mutableSetOf<PowerUp>()
+        repeat(6) { index ->
+            var state = GameState.new(GameMode.CHAOS, 4, seed = index - 3L)
+            while (!state.isFinished) {
+                val saved = game(state).copy(mode = GameMode.CHAOS)
+                val back = SavedGameJson.decode(SavedGameJson.encode(saved))
+                assertEquals(saved, back)
+                (state.lastEvent as? GameEvent.Moved)?.effect?.let { effects += it.powerUp }
+                state = when (val phase = state.phase) {
+                    is TurnPhase.AwaitingMove -> phase.moves.random(random).let { move ->
+                        LudoEngine.move(state, move).also { assertEquals(it, LudoEngine.move(back.state, move)) }
+                    }
+                    else -> LudoEngine.roll(state, random)
+                }
+            }
+        }
+        assertEquals(PowerUp.entries.toSet(), effects)
     }
 
     @Test

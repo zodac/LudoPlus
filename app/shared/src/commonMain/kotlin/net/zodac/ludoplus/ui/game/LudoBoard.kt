@@ -46,6 +46,7 @@ import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.PlayerColour
+import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.ui.common.BoundedArt
 import net.zodac.ludoplus.ui.common.groupReduceMotion
 import net.zodac.ludoplus.ui.theme.BoardEmptySeat
@@ -144,6 +145,8 @@ fun LudoBoard(
         if (lastStanding) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawArena(layout, size.minDimension / layout.size, stage) }
         // The portals, under the pawns: drawn once.
         if (state.rules.portals) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPortals(layout, size.minDimension / layout.size, colours) }
+        // The power-ups, under the pawns: drawn again as one comes or goes.
+        if (state.rules.powerUps) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPowerUps(layout, size.minDimension / layout.size, state.powerUps) }
         // On a layer of its own too, drawn again only as the turn passes.
         val turnSeat = if (state.isFinished) null else state.currentPlayer.seat
         if (turnSeat != null) {
@@ -171,6 +174,7 @@ fun LudoBoard(
                 if (pawns.isEmpty()) continue
                 val colour = pawnColours[mark.player]
                 val ringed = animating == null && pawns.any { PawnRef(mark.player, it) in movable }
+                if (pawns.any { state.isShielded(mark.player, it) || (animating != null && PawnRef(mark.player, it) in animating.brokenShields) }) drawShieldBubble(mark.centre * unit, mark.radius * unit)
                 if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
                 with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, colour, ringed) }
                 if (pawns.size > 1) drawCount(textMeasurer, pawns.size, mark, unit)
@@ -190,7 +194,7 @@ fun LudoBoard(
 /**
  * A move being shown: [player]'s pawn (its owner's, a partner's if one was rolled for) on [path] (board-unit centres,
  * square by square), hopping along it unless it's leaving its yard, and [landingRadius] across where it lands (home's
- * smaller spot when it reaches [home]), capturing [captured]. Through a portal, [path] ends where it goes in, and it
+ * smaller spot when it reaches [home]), sending [sent]. Through a portal, [path] ends where it goes in, and it
  * comes out at [warpTo].
  */
 private class MovingPawn(
@@ -200,9 +204,13 @@ private class MovingPawn(
     val hops: Boolean,
     val landingRadius: Float,
     val home: Boolean,
-    val captured: List<CapturedPawn>,
+    val sent: List<SentPawn>,
     val totalMillis: Int,
     val warpTo: Offset? = null,
+    /** The power-up it takes, there till it lands. */
+    val powerUp: PowerUp? = null,
+    /** The pawns whose shields it breaks, each there till the move has played out. */
+    val brokenShields: List<PawnRef> = emptyList(),
 ) {
     val landing: Offset get() = warpTo ?: path.last()
 
@@ -211,8 +219,11 @@ private class MovingPawn(
     val travelMillis: Int get() = hopMillis + if (warpTo != null) PORTAL_WARP_MILLIS else 0
 }
 
-/** A pawn [ref] taken by a move, on its way back to its [yard] spot, where it is [yardRadius] across. */
-private class CapturedPawn(val ref: PawnRef, val yard: Offset, val yardRadius: Float)
+/**
+ * Another pawn, [ref], that a move sends from [from] to [to], where it is [toRadius] across: one taken, on its way back to
+ * its yard spot, or one a power-up moves ([taken] false).
+ */
+private class SentPawn(val ref: PawnRef, val from: Offset, val to: Offset, val fromRadius: Float, val toRadius: Float, val taken: Boolean)
 
 /**
  * The pawn move under way on the board, if any, and its [clock] (milliseconds from its start), read only while drawing,
@@ -222,7 +233,7 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
     private val millis: Float get() = clock.value
 
     fun isAnimated(player: Int, pawn: Int): Boolean =
-        moving != null && ((moving.player == player && moving.pawn == pawn) || moving.captured.any { it.ref == PawnRef(player, pawn) })
+        moving != null && ((moving.player == player && moving.pawn == pawn) || moving.sent.any { it.ref == PawnRef(player, pawn) })
 
     /**
      * The move at this moment, on a board of [unit] per square, in [pawns]' style and each player's colour ([colourOf]):
@@ -236,25 +247,27 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
         val after = ((millis - moving.travelMillis) / (moving.totalMillis - moving.travelMillis).coerceAtLeast(1)).coerceIn(0f, 1f)
         val landed = millis >= moving.travelMillis
         val mover = colourOf(moving.player)
-        if (landed && moving.captured.isNotEmpty()) {
-            drawCaptureBurst(moving.landing * unit, unit, (after / CAPTURE_BURST_SHARE).coerceAtMost(1f), colourOf(moving.captured.first().ref.player))
+        if (landed) {
+            for (taken in moving.sent.filter { it.taken }.distinctBy { it.from }) {
+                drawCaptureBurst(taken.from * unit, unit, (after / CAPTURE_BURST_SHARE).coerceAtMost(1f), colourOf(taken.ref.player))
+            }
         }
         if (landed && moving.home) drawHomeRings(moving.landing * unit, unit, after, mover)
+        if (moving.powerUp != null && millis < moving.hopMillis) drawPowerUp(moving.powerUp, moving.path.last() * unit, unit * POWER_UP_RADIUS)
         val warp = ((millis - moving.hopMillis) / PORTAL_WARP_MILLIS).coerceIn(0f, 1f)
         if (moving.warpTo != null && warp > 0f && warp < 1f) drawWarpTrail(moving.path.last() * unit, moving.warpTo * unit, unit, warp, mover)
         val (centre, lift, radius) = moverPose(moving, if (landed && moving.home) after else 0f)
         if (lift > 0f) drawGroundShadow(centre * unit, radius * unit, lift / HOP_HEIGHT)
         with(pawns) { drawPawn((centre - Offset(0f, lift)) * unit, radius * unit, mover, ringed = false) }
         if (landed && moving.home) drawHomeSparks(moving.landing * unit, unit, after, mover)
-        for (captured in moving.captured) {
-            val from = moving.landing
-            val height = CAPTURE_ARC + CAPTURE_ARC_PER_SQUARE * (captured.yard - from).getDistance()
+        for (sent in moving.sent) {
+            val height = CAPTURE_ARC + CAPTURE_ARC_PER_SQUARE * (sent.to - sent.from).getDistance()
             val flight = if (landed) after else 0f
-            val ground = lerp(from, captured.yard, flight)
+            val ground = lerp(sent.from, sent.to, flight)
             val up = height * 4f * flight * (1f - flight)
-            val size = PAWN_RADIUS + (captured.yardRadius - PAWN_RADIUS) * flight
+            val size = sent.fromRadius + (sent.toRadius - sent.fromRadius) * flight
             if (up > 0f) drawGroundShadow(ground * unit, size * unit, up / height)
-            with(pawns) { drawPawn((ground - Offset(0f, up)) * unit, size * unit, colourOf(captured.ref.player), ringed = false) }
+            with(pawns) { drawPawn((ground - Offset(0f, up)) * unit, size * unit, colourOf(sent.ref.player), ringed = false) }
         }
     }
 
@@ -396,12 +409,25 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
     val path = if (fromYard) {
         listOf(layout.yardSpotOf(seat, move.pawn, state.rules.pawnsPerPlayer), layout.centreOf(seat, PawnPosition.of(0, state.board), 0))
     } else {
-        (move.from..move.rolledTo).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn) }
+        // On to where the roll takes it, and where that's onto a shield, back to where it settles.
+        ((move.from..move.rolledTo) + (move.bouncedFrom?.let { it - 1 downTo move.to } ?: IntRange.EMPTY)).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn) }
     }
-    val home = move.to == state.board.homeProgress
-    val captured = move.captures.map {
-        CapturedPawn(it, layout.yardSpotOf(state.players[it.player].seat, it.pawn, state.rules.pawnsPerPlayer), layout.yardPawnRadiusOf(state.rules.pawnsPerPlayer))
-    }
+    val effect = event.effect
+    fun centre(player: Int, pawn: Int, progress: Int) = layout.centreOf(state.players[player].seat, PawnPosition.of(progress, state.board), pawn)
+    val endedAt = centre(owner, move.pawn, event.endedAt)
+    val moveEnd = centre(owner, move.pawn, move.to)
+    val home = event.endedAt == state.board.homeProgress
+    val yardPawn = layout.yardPawnRadiusOf(state.rules.pawnsPerPlayer)
+    fun yard(ref: PawnRef) = layout.yardSpotOf(state.players[ref.player].seat, ref.pawn, state.rules.pawnsPerPlayer)
+    val called = effect?.calledUp?.let { PawnRef(owner, it) }
+    val start = centre(owner, 0, 0)
+    val sent = move.captures.map { SentPawn(it, moveEnd, yard(it), PAWN_RADIUS, yardPawn, taken = true) } +
+        // Taken where a power-up landed the pawn, or the one it called up.
+        effect?.captures.orEmpty().map { SentPawn(it, if (called != null) start else endedAt, yard(it), PAWN_RADIUS, yardPawn, taken = true) } +
+        listOfNotNull(
+            effect?.swapped?.let { SentPawn(it, endedAt, moveEnd, PAWN_RADIUS, PAWN_RADIUS, taken = false) },
+            called?.let { SentPawn(it, yard(it), start, yardPawn, PAWN_RADIUS, taken = false) },
+        )
     return MovingPawn(
         player = owner,
         pawn = move.pawn,
@@ -409,9 +435,11 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
         hops = !fromYard,
         landingRadius = if (home) HOME_PAWN_RADIUS else PAWN_RADIUS,
         home = home,
-        captured = captured,
-        totalMillis = travelMillis(move) + afterLandingMillis(move, state.board.homeProgress),
-        warpTo = if (move.via == null) null else layout.centreOf(seat, PawnPosition.of(move.to, state.board), move.pawn),
+        sent = sent,
+        totalMillis = travelMillis(move, effect) + afterLandingMillis(move, state.board.homeProgress, effect),
+        powerUp = effect?.powerUp,
+        brokenShields = move.brokenShields + effect?.brokenShields.orEmpty(),
+        warpTo = if (move.via != null || effect?.movedTo != null) endedAt else null,
     )
 }
 

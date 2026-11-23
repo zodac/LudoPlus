@@ -97,6 +97,12 @@ Six pawns, no home, and captured pawns out (2026-11-24). **Earns no achievement*
 it ever earns them, nearly every family needs the audit: nothing comes home or out of a yard, "every pawn" is six, and a
 game's end is the last one standing.
 
+## Chaos (a mode)
+
+Power-ups on the track (2026-11-24). **Earns no achievement** (`GameMode.earnsAchievements` false). If it ever earns them,
+the Rolls, Captures, and Track length families need the audit first: doubled rolls, pawns moved without one, shields, and
+a pawn out of the yard without a 6. `AchievementTracker` reads the move alone, not its power-up's effect.
+
 ## Custom modes (New Game)
 
 A base mode with house rules: their games, as any with house rules, earn nothing, so nothing needs a guard.

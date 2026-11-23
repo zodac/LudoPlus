@@ -281,6 +281,8 @@ class GameViewModel(
                     partnerCaptures = setup.partnerCaptures,
                     rollForPartners = setup.rollForPartners,
                 ).withHouseRules(setup.playedHouseRules),
+                // Drawn only where the rules need it.
+                seed = if (mode.rules.powerUps) random.nextLong() else 0,
             ),
             startedAtEpochMillis = startedAt,
             customName = setup.customMode?.name,

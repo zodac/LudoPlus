@@ -30,6 +30,7 @@ import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.game.PlayerState
+import net.zodac.ludoplus.game.PowerUpEffect
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
@@ -39,6 +40,7 @@ import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
+import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.model.StoredId
 import net.zodac.ludoplus.model.storedIdOf
 import net.zodac.ludoplus.model.withHouseRules
@@ -157,6 +159,9 @@ object SavedGameJson {
                         put("turns", player.turns)
                         put("captures", player.captures)
                         put("timesCaptured", player.timesCaptured)
+                        // A power-up's, while they last.
+                        if (player.doubledRolls > 0) put("doubledRolls", player.doubledRolls)
+                        if (player.shielded.isNotEmpty()) put("shielded", jsonInts(player.shielded.sorted()))
                     }
                 },
             ),
@@ -180,6 +185,12 @@ object SavedGameJson {
         if (state.knockedOut.isNotEmpty()) put("knockedOut", jsonInts(state.knockedOut))
         // Over: never saved, but a Nearby host sends its guests the game's end (`.claude/NETPLAY.md`).
         if (state.isFinished) put("finished", true)
+        // The power-ups on the board, those to come, and what their chances are drawn from; absent where the rules have none.
+        if (state.rules.powerUps) {
+            put("powerUps", JsonArray(state.powerUps.map { (square, powerUp) -> buildJsonObject { put("square", square); put("kind", powerUp.id) } }))
+            put("powerUpsDue", jsonInts(state.powerUpsDue))
+            put("seed", state.seed.toString())
+        }
         state.lastEvent?.let { put("lastEvent", encodeEvent(it)) }
     }
 
@@ -192,6 +203,8 @@ object SavedGameJson {
                 turns = player.int("turns"),
                 captures = player.int("captures"),
                 timesCaptured = player.int("timesCaptured"),
+                doubledRolls = player.intOrNull("doubledRolls") ?: 0,
+                shielded = if ("shielded" in player) player.array("shielded").ints().toSet() else emptySet(),
             )
         }
         require(players.size == playerCount) { "${players.size} players' states for $playerCount players" }
@@ -203,6 +216,8 @@ object SavedGameJson {
             require(player.pawns.all { if (rules.lastStanding) it == PawnPosition.OUT_PROGRESS || it in 0..<board.trackSteps else it in PawnPosition.YARD_PROGRESS..board.homeProgress }) {
                 "A pawn is off the board"
             }
+            require(rules.powerUps || (player.doubledRolls == 0 && player.shielded.isEmpty())) { "A power-up's effect without power-ups" }
+            require(player.doubledRolls in 0..PowerUp.DOUBLED_ROLLS && player.shielded.all { it in player.pawns.indices }) { "A power-up's effect doesn't fit" }
             require(player.turns >= 0 && player.captures >= 0 && player.timesCaptured >= 0) { "A negative count" }
         }
         val current = obj.int("current")
@@ -214,6 +229,15 @@ object SavedGameJson {
         require(knockedOut.distinct() == knockedOut && knockedOut.toSet() == players.indices.filter { players[it].pawnsLeft == 0 }.toSet()) {
             "The players knocked out aren't those with no pawn left"
         }
+        val powerUps = if (rules.powerUps) {
+            obj.objectList("powerUps").associate { it.int("square") to storedId<PowerUp>(it.string("kind")) }
+        } else {
+            emptyMap()
+        }
+        require(powerUps.keys.all { it in 0..<board.trackLength && !board.isSafe(it) }) { "A power-up is off the track or on a safe square" }
+        val powerUpsDue = if (rules.powerUps) obj.array("powerUpsDue").ints() else emptyList()
+        require(powerUpsDue.all { it in 1..PowerUp.RETURN_ROLLS }) { "A power-up is due at a time that doesn't fit" }
+        val seed = if (rules.powerUps) obj.string("seed").toLongOrNull() ?: throw JsonParseException("The seed isn't a number") else 0
         // An ended game: every player placed (the last ones as they stood, where it stopped at its first winner).
         if (obj.flag("finished")) {
             require(finishingOrder.sorted() == players.indices.toList()) { "An ended game hasn't placed every player" }
@@ -226,6 +250,9 @@ object SavedGameJson {
                 finishingOrder = finishingOrder,
                 roundsPlayed = roundsPlayed,
                 knockedOut = knockedOut,
+                powerUps = powerUps,
+                powerUpsDue = powerUpsDue,
+                seed = seed,
                 lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
             )
         }
@@ -253,6 +280,9 @@ object SavedGameJson {
             finishingOrder = finishingOrder,
             roundsPlayed = roundsPlayed,
             knockedOut = knockedOut,
+            powerUps = powerUps,
+            powerUpsDue = powerUpsDue,
+            seed = seed,
             lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
         )
         require(waiting.rollAgainRun >= 0 && rules.rollAgainLimit?.let { waiting.rollAgainRun < it } != false) { "Rolled again too often" }
@@ -303,10 +333,22 @@ object SavedGameJson {
             put("pawn", event.move.pawn)
             put("from", event.move.from)
             put("to", event.move.to)
-            put("captures", JsonArray(event.move.captures.map { jsonInts(listOf(it.player, it.pawn)) }))
+            put("captures", encodePawns(event.move.captures))
             event.move.owner?.let { put("owner", it) }
             event.move.roll?.let { put("die", it) }
             event.move.via?.let { put("via", it) }
+            event.move.bouncedFrom?.let { put("bouncedFrom", it) }
+            if (event.move.brokenShields.isNotEmpty()) put("brokenShields", encodePawns(event.move.brokenShields))
+            event.effect?.let { effect ->
+                put("effect", buildJsonObject {
+                    put("kind", effect.powerUp.id)
+                    effect.movedTo?.let { put("movedTo", it) }
+                    if (effect.captures.isNotEmpty()) put("captures", encodePawns(effect.captures))
+                    if (effect.brokenShields.isNotEmpty()) put("brokenShields", encodePawns(effect.brokenShields))
+                    effect.swapped?.let { put("swapped", encodePawns(listOf(it))) }
+                    effect.calledUp?.let { put("calledUp", it) }
+                })
+            }
             put("finished", event.finished)
             if (event.rollsAgain) put("rollsAgain", true)
             if (event.knockedOut.isNotEmpty()) put("knockedOut", jsonInts(event.knockedOut))
@@ -328,21 +370,41 @@ object SavedGameJson {
                     pawn = obj.int("pawn"),
                     from = obj.int("from"),
                     to = obj.int("to"),
-                    captures = obj.array("captures").items.map { item ->
-                        val pair = (item as? JsonArray)?.ints()?.takeIf { it.size == 2 } ?: throw JsonParseException("A capture isn't a pair")
-                        PawnRef(pair[0], pair[1])
-                    },
+                    captures = decodePawns(obj.array("captures")),
                     owner = obj.intOrNull("owner")?.also { require(it in 0..<playerCount) { "No player $it owns the pawn" } },
                     roll = obj.intOrNull("die"),
                     via = obj.intOrNull("via"),
+                    bouncedFrom = obj.intOrNull("bouncedFrom"),
+                    brokenShields = decodePawnsIn(obj, "brokenShields"),
                 ),
                 finished = obj.boolean("finished"),
                 rollsAgain = obj.flag("rollsAgain"),
                 knockedOut = if ("knockedOut" in obj) obj.array("knockedOut").ints().also { out -> require(out.all { it in 0..<playerCount }) { "No player in $out" } } else emptyList(),
+                effect = obj.objOrNull("effect")?.let(::decodeEffect),
             )
             else -> throw JsonParseException("Unknown event \"$kind\"")
         }
     }
+
+    private fun decodeEffect(obj: JsonObject): PowerUpEffect = PowerUpEffect(
+        powerUp = storedId(obj.string("kind")),
+        movedTo = obj.intOrNull("movedTo"),
+        captures = decodePawnsIn(obj, "captures"),
+        brokenShields = decodePawnsIn(obj, "brokenShields"),
+        swapped = decodePawnsIn(obj, "swapped").firstOrNull(),
+        calledUp = obj.intOrNull("calledUp"),
+    )
+
+    /** Pawns as (player, pawn) pairs. */
+    private fun encodePawns(pawns: List<PawnRef>): JsonArray = JsonArray(pawns.map { jsonInts(listOf(it.player, it.pawn)) })
+
+    private fun decodePawns(array: JsonArray): List<PawnRef> = array.items.map { item ->
+        val pair = (item as? JsonArray)?.ints()?.takeIf { it.size == 2 } ?: throw JsonParseException("A pawn isn't a pair")
+        PawnRef(pair[0], pair[1])
+    }
+
+    /** [decodePawns] of [obj]'s [key]: none where it's absent. */
+    private fun decodePawnsIn(obj: JsonObject, key: String): List<PawnRef> = if (key in obj) decodePawns(obj.array(key)) else emptyList()
 
     private inline fun <reified E> storedId(id: String): E where E : Enum<E>, E : StoredId =
         storedIdOf<E>(id) ?: throw JsonParseException("Unknown ${E::class.simpleName} \"$id\"")

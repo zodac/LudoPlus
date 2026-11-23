@@ -31,12 +31,19 @@ import androidx.compose.ui.unit.dp
 import net.zodac.ludoplus.data.settings.MotionGroup
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.LogEntry
+import net.zodac.ludoplus.game.PawnRef
+import net.zodac.ludoplus.game.PowerUpEffect
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.PlayerColour
+import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.common_locale
 import net.zodac.ludoplus.resources.game_event_all_home
+import net.zodac.ludoplus.resources.game_event_and
+import net.zodac.ludoplus.resources.game_event_bounce
+import net.zodac.ludoplus.resources.game_event_call_up
 import net.zodac.ludoplus.resources.game_event_capture
+import net.zodac.ludoplus.resources.game_event_double
 import net.zodac.ludoplus.resources.game_event_finished
 import net.zodac.ludoplus.resources.game_event_first
 import net.zodac.ludoplus.resources.game_event_home
@@ -48,7 +55,10 @@ import net.zodac.ludoplus.resources.game_event_no_move_dice_tries
 import net.zodac.ludoplus.resources.game_event_no_move_tries
 import net.zodac.ludoplus.resources.game_event_out
 import net.zodac.ludoplus.resources.game_event_portal
+import net.zodac.ludoplus.resources.game_event_power_up
+import net.zodac.ludoplus.resources.game_event_swap
 import net.zodac.ludoplus.resources.game_event_team_finished
+import net.zodac.ludoplus.resources.game_event_teleport
 import net.zodac.ludoplus.resources.game_event_three_doubles
 import net.zodac.ludoplus.resources.game_event_three_sixes
 import net.zodac.ludoplus.resources.game_log_line
@@ -183,22 +193,52 @@ internal fun logLine(game: StartedGame, entry: LogEntry): String {
             stringResource(Res.string.game_event_three_sixes, name(event.player))
         }
         is GameEvent.Moved -> {
-            val move = event.move
-            when {
-                event.finished -> finishedLine(game, move.owner ?: event.player, entry.place)
-                event.knockedOut.isNotEmpty() -> stringResource(Res.string.game_event_knocked_out, name(event.player), spokenList(event.knockedOut.map(name)))
-                move.captures.isNotEmpty() -> move.captures.size.let { count ->
-                    pluralStringResource(Res.plurals.game_event_capture, count, name(event.player), name(move.captures.first().player), count)
-                }
-                move.to == game.state.board.homeProgress -> stringResource(Res.string.game_event_home, name(event.player))
-                move.from == PawnPosition.YARD_PROGRESS -> stringResource(Res.string.game_event_out, name(event.player))
-                move.via != null -> (move.rolledTo - move.from).let { squares -> pluralStringResource(Res.plurals.game_event_portal, squares, name(event.player), squares) }
-                else -> (move.to - move.from).let { squares -> pluralStringResource(Res.plurals.game_event_move, squares, name(event.player), squares) }
-            }
+            val effect = event.effect
+            val line = movedLine(game, entry, event)
+            if (effect == null || event.finished) line else stringResource(Res.string.game_event_and, line, effectLine(game, event, effect))
         }
         // A roll waiting for its move isn't logged (MoveLog.next): the move is.
         is GameEvent.Rolled -> ""
     }
+}
+
+/** What [event]'s move did, before any power-up it ended on. */
+@Composable
+private fun movedLine(game: StartedGame, entry: LogEntry, event: GameEvent.Moved): String {
+    val name = { index: Int -> game.players[index].name }
+    val move = event.move
+    val squares = move.rolledTo - move.from
+    return when {
+        event.finished -> finishedLine(game, move.owner ?: event.player, entry.place)
+        event.knockedOut.isNotEmpty() -> stringResource(Res.string.game_event_knocked_out, name(event.player), spokenList(event.knockedOut.map(name)))
+        move.captures.isNotEmpty() -> captureLine(game, event.player, move.captures)
+        move.to == game.state.board.homeProgress -> stringResource(Res.string.game_event_home, name(event.player))
+        move.from == PawnPosition.YARD_PROGRESS -> stringResource(Res.string.game_event_out, name(event.player))
+        move.via != null -> pluralStringResource(Res.plurals.game_event_portal, squares, name(event.player), squares)
+        move.brokenShields.isNotEmpty() ->
+            pluralStringResource(Res.plurals.game_event_bounce, squares, name(event.player), squares, name(move.brokenShields.first().player))
+        else -> pluralStringResource(Res.plurals.game_event_move, squares, name(event.player), squares)
+    }
+}
+
+@Composable
+private fun captureLine(game: StartedGame, player: Int, captures: List<PawnRef>): String =
+    pluralStringResource(Res.plurals.game_event_capture, captures.size, game.players[player].name, game.players[captures.first().player].name, captures.size)
+
+/** What the power-up [event]'s move ended on did, as [effect] says: "Alex teleported 4 squares.", and a capture it made. */
+@Composable
+private fun effectLine(game: StartedGame, event: GameEvent.Moved, effect: PowerUpEffect): String {
+    val name = game.players[event.player].name
+    val movedTo = effect.movedTo
+    val swapped = effect.swapped
+    val line = when {
+        effect.powerUp == PowerUp.TELEPORT && movedTo != null -> (movedTo - event.move.to).let { pluralStringResource(Res.plurals.game_event_teleport, it, name, it) }
+        effect.powerUp == PowerUp.DOUBLE -> pluralStringResource(Res.plurals.game_event_double, PowerUp.DOUBLED_ROLLS, name, PowerUp.DOUBLED_ROLLS)
+        effect.powerUp == PowerUp.CALL_UP && effect.calledUp != null -> stringResource(Res.string.game_event_call_up, name)
+        swapped != null -> stringResource(Res.string.game_event_swap, name, game.players[swapped.player].name)
+        else -> stringResource(Res.string.game_event_power_up, name, stringResource(effect.powerUp.title))
+    }
+    return if (effect.captures.isEmpty()) line else stringResource(Res.string.game_event_and, line, captureLine(game, event.player, effect.captures))
 }
 
 /** The players [entry]'s line names, to draw in their colours: the mover and anyone captured, or a placed team. */
@@ -209,7 +249,9 @@ private fun logNames(game: StartedGame, entry: LogEntry): List<Int> {
         event is GameEvent.Moved && event.finished -> (event.move.owner ?: event.player).let { owner ->
             state.players.indices.filter { it == owner || state.rules.arePartners(owner, it) }
         }
-        event is GameEvent.Moved -> listOf(event.player) + event.move.captures.map { it.player }.distinct()
+        event is GameEvent.Moved -> (
+            listOf(event.player) + event.allCaptures.map { it.player } + event.move.brokenShields.map { it.player } + listOfNotNull(event.effect?.swapped?.player)
+        ).distinct()
         else -> listOf(event.player)
     }
 }

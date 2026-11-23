@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -176,6 +177,23 @@ class RulesTextTest : UiTest() {
             ),
             diagram = null,
         ),
+        Page(
+            "Chaos",
+            "Chaos",
+            listOf(
+                "In Chaos there are power-ups on the track, one on each player's stretch of it. End a move on one to use it at once:",
+                "Double: Your next 3 rolls move a pawn twice as far. A roll that would take it past home counts once.",
+                "Shield: The next pawn to land on yours bounces off to the square before it, and the shield breaks.",
+                "Teleport: Your pawn jumps 1 to 6 squares further on, capturing where it lands.",
+                "Roll Again: You get another roll.",
+                "Call Up: One of your pawns comes out of the yard.",
+                "Swap: Your pawn swaps places with the nearest rival ahead that's alone on a square, unless it's safe or shielded, or either pawn would pass its own start.",
+                "Only one power-up works in a move: a pawn moved onto another leaves it there. A power-up that's taken comes back somewhere else a few rolls later.",
+                "Bouncing off a shield earns no roll unless your pawn captures where it settles. A pawn brought out of the yard can't bounce, so a shield doesn't stop it.",
+                "Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.",
+            ),
+            diagram = null,
+        ),
     )
 
     /** Each group's tab, and its pages. */
@@ -214,7 +232,8 @@ class RulesTextTest : UiTest() {
                 // A page's title heads it, in view as it opens. (Scrolling to it never settled on a group's last page, the
                 // pager still: the test's scroll, not the screen.)
                 compose.onNode(isHeading and hasText(page.title)).assertIsDisplayed()
-                page.paragraphs.forEach { compose.onNodeWithText(it).performScrollTo() }
+                // Nor is a paragraph already in view scrolled to, for the same reason.
+                page.paragraphs.forEach { paragraph -> compose.onNodeWithText(paragraph).let { if (!it.isDisplayed()) it.performScrollTo() } }
                 // The diagram is one image, described in words.
                 page.diagram?.let { compose.onNodeWithContentDescription(it).performScrollTo().assert(isImage) }
             }

@@ -5,6 +5,8 @@ import kotlin.test.assertEquals
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
+import net.zodac.ludoplus.game.PowerUpEffect
+import net.zodac.ludoplus.model.PowerUp
 
 class GamePacingTest {
 
@@ -34,6 +36,12 @@ class GamePacingTest {
     fun `a move's timeline is its hops then a capture's flight or a home flourish`() {
         assertEquals(4 * PAWN_STEP_MILLIS, travelMillis(Move(0, 10, 14)))
         assertEquals(PAWN_STEP_MILLIS, travelMillis(Move(0, -1, 0)))
+        // Off a shield: on to it and back, and a power-up's jump after the hops to it.
+        assertEquals(4 * PAWN_STEP_MILLIS, travelMillis(Move(0, 10, 12, bouncedFrom = 13)))
+        assertEquals(2 * PAWN_STEP_MILLIS + PORTAL_WARP_MILLIS, travelMillis(Move(0, 10, 12), PowerUpEffect(PowerUp.TELEPORT, movedTo = 15)))
+        assertEquals(2 * PAWN_STEP_MILLIS, travelMillis(Move(0, 10, 12), PowerUpEffect(PowerUp.SHIELD)))
+        assertEquals(CAPTURE_FLIGHT_MILLIS, afterLandingMillis(Move(0, 10, 12), HOME, PowerUpEffect(PowerUp.CALL_UP, calledUp = 1)))
+        assertEquals(HOME_FLOURISH_MILLIS, afterLandingMillis(Move(0, 49, 50), HOME, PowerUpEffect(PowerUp.TELEPORT, movedTo = HOME)))
         // Through a portal: its hops to it, then in and out.
         assertEquals(2 * PAWN_STEP_MILLIS + PORTAL_WARP_MILLIS, travelMillis(Move(0, 1, 10, via = 3)))
         assertEquals(2 * PAWN_STEP_MILLIS + PORTAL_WARP_MILLIS, travelMillis(Move(0, 8, 3, via = 10)))

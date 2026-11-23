@@ -3,6 +3,7 @@ package net.zodac.ludoplus.ui.rules
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
@@ -112,6 +113,7 @@ import net.zodac.ludoplus.ui.common.ScreenScaffold
 import net.zodac.ludoplus.ui.common.SoraFontFamily
 import net.zodac.ludoplus.ui.common.stringResource
 import net.zodac.ludoplus.ui.common.VerticalScrollbar
+import net.zodac.ludoplus.ui.game.drawPowerUp
 import net.zodac.ludoplus.ui.icons.Symbols
 import org.jetbrains.compose.resources.StringResource
 
@@ -434,6 +436,9 @@ private fun RulesBodyText(resource: StringResource, modifier: Modifier = Modifie
 /** Space under every block, so paragraphs and diagrams are spaced alike. */
 private val BLOCK_GAP = 10.dp
 
+/** How big a power-up is drawn beside its line. */
+private val POWER_UP_ICON_SIZE = 32.dp
+
 /** Draws one [RulesBlock] of a page. */
 @Composable
 private fun RulesBlockView(block: RulesBlock, onStartTutorial: () -> Unit) {
@@ -454,6 +459,22 @@ private fun RulesBlockView(block: RulesBlock, onStartTutorial: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = BLOCK_GAP),
             )
+        }
+        is RulesPowerUp -> {
+            val line = stringResource(Res.string.rules_house_rule_line, "*${stringResource(block.powerUp.title)}*", stringResource(block.powerUp.description))
+            Row(
+                modifier = Modifier.padding(bottom = BLOCK_GAP),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // As it's drawn on the board; the line names it.
+                Canvas(modifier = Modifier.size(POWER_UP_ICON_SIZE)) { drawPowerUp(block.powerUp, center, size.minDimension / 2.4f) }
+                Text(
+                    text = remember(line) { parseInlineMarkup(line) },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         is RulesDiagramBlock -> Box(modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = BLOCK_GAP), contentAlignment = Alignment.Center) {
             RulesDiagram(block.kind)

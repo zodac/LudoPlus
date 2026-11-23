@@ -170,6 +170,7 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 | Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | No |
 | Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | No |
 | Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; sudden death late on | Yes, its own, by most pawns left | No |
+| Chaos | Power-ups on the track, taken by the pawn that ends its move on one | Yes, its own | No |
 
 Every mode has its own Leaderboard (one a player count) and its own Statistics page. Only Classic earns achievements
 (`GameMode.earnsAchievements`) until the maintainer's review of the list adds any for a mode (2026-11-18). The Rules
@@ -212,6 +213,29 @@ with cracks on the squares no longer safe. Yards tally the fallen; cards' dots a
 the most pawns left (`LeaderboardRanking`, from `timesCaptured`), then captures; its wins set no fewest turns, and it has
 no online board. TalkBack: "Red yard, 3 of 6 pawns lost", "3 pawns left, playing now"; the line over the board ("Start
 squares stop being safe in 3 rounds.") is live in the last three rounds before a stage and as it comes.
+
+**Chaos** (`GameRules.powerUps`, `model/PowerUp.kt`, `game/PowerUps.kt`; the maintainer, 2026-11-24, reversing Phase 9's
+"power-up squares weren't picked"). One power-up on each seat's stretch of the track, never on a safe square or a pawn's;
+one taken comes back 8 rolls later, as any kind, on a stretch with none. One works a move, at once: a pawn moved onto
+another leaves it there.
+
+- **Double**: the taker's next 3 rolls (not turns) move twice as far, but for one that would overshoot home, which counts
+    once. A 6 still leaves the yard and rolls again. `PlayerState.doubledRolls`, on their card as "×2 · 3".
+- **Shield** (`PlayerState.shielded`): a rival landing on the pawn's square settles on the one before, as any landing
+    there (a capture, or another shield to bounce off), never further back than where it came from, and the shield breaks
+    (`LudoEngine.land`, `Move.bouncedFrom`). Only a capture where it settles earns a roll. A shield goes as its pawn leaves
+    the track, and doesn't stop a pawn leaving the yard (Guarded Starts), which has nowhere to bounce to.
+- **Teleport**: 1 to 6 squares on, landing as any move does; from the last track square, 6 is exactly home. It won't land
+    on a blockade.
+- **Roll Again**, and **Call Up** (a pawn out of the yard, if one can come).
+- **Swap**: with the nearest rival ahead that is alone on a square that isn't safe, unshielded, where neither pawn would
+    pass its own start; nothing with none.
+
+Every chance is drawn from `GameState.seed`, which each draw moves on, so a saved game and a Nearby one play on the same;
+the CPU weighs a move with its power-up left alone (`LudoEngine.moveWithoutPowerUp`), so it never sees what a chance will
+be. What a power-up did is the move's `GameEvent.Moved.effect`. TalkBack: "Square 4, Teleport power-up, empty", "Green pawn
+1, 47 squares from home, shielded", "Move Red pawn 1 2 squares, taking Teleport", "1 doubled roll left"; the log adds a
+sentence ("Alex teleported 4 squares.").
 
 **Custom modes** (`model/CustomMode.kt`, the maintainer, 2026-11-18). A name (unique among the player's and the
 built-in modes', whatever its case; at most 24 characters), a base mode, and at least one house rule (without one it

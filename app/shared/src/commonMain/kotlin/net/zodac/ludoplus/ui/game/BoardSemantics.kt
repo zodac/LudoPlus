@@ -23,16 +23,20 @@ import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.portalAt
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.game_move_action
+import net.zodac.ludoplus.resources.game_move_bounce_clause
 import net.zodac.ludoplus.resources.game_move_capture_clause
 import net.zodac.ludoplus.resources.game_move_home_clause
 import net.zodac.ludoplus.resources.game_move_out_action
 import net.zodac.ludoplus.resources.game_move_portal_clause
+import net.zodac.ludoplus.resources.game_move_power_up_clause
+import net.zodac.ludoplus.resources.game_pawn_shielded_spoken
 import net.zodac.ludoplus.resources.game_square_blockade_spoken
 import net.zodac.ludoplus.resources.game_square_column_spoken
 import net.zodac.ludoplus.resources.game_square_empty_spoken
 import net.zodac.ludoplus.resources.game_square_home_spoken
 import net.zodac.ludoplus.resources.game_square_portal_shut_spoken
 import net.zodac.ludoplus.resources.game_square_portal_spoken
+import net.zodac.ludoplus.resources.game_square_power_up_spoken
 import net.zodac.ludoplus.resources.game_square_safe_for_spoken
 import net.zodac.ludoplus.resources.game_square_safe_spoken
 import net.zodac.ludoplus.resources.game_square_start_spoken
@@ -84,11 +88,12 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
     val board = state.board
     val layout = BoardLayout.of(board)
     val colourOf = { player: Int -> seatColours[state.players[player].seat] ?: PlayerColour.defaultFor(state.players[player].seat) }
+    val shielded = stringResource(Res.string.game_pawn_shielded_spoken)
     // Every pawn's spoken name and where it is, once.
     val pawns = state.players.indices.flatMap { player ->
         state.players[player].pawns.indices.map { pawn ->
             val position = state.position(player, pawn)
-            Triple(player, pawn, position) to pawnSpoken(colourOf(player), pawn + 1, position, board)
+            Triple(player, pawn, position) to pawnSpoken(colourOf(player), pawn + 1, position, board).let { if (state.isShielded(player, pawn)) joinClauses(listOf(it, shielded)) else it }
         }
     }
     val moveLabels = moves.associateWith { moveLabel(state, it, colourOf) }
@@ -135,7 +140,7 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
             startOf?.let { stringResource(Res.string.game_square_start_spoken, stringResource(colourOf(it).label)) },
             safety,
             blockade,
-        ) + portalClauses(state, square, colourOf) + here.map { it.second }.ifEmpty { listOf(empty) }
+        ) + portalClauses(state, square, colourOf) + powerUpClauses(state, square) + here.map { it.second }.ifEmpty { listOf(empty) }
         val move = state.players.indices.firstNotNullOfOrNull { player -> movableAt(player, here.filter { it.first.first == player }.map { it.first.second }) }
         spots += Spot(layout.trackSquare(square).spotBounds(), joinClauses(clauses), move, move?.let(moveLabels::get))
     }
@@ -168,6 +173,11 @@ private fun portalClauses(state: GameState, square: Int, colourOf: (Int) -> Play
     )
 }
 
+/** What's said of the power-up on track [square], if there's one: "Shield power-up". */
+@Composable
+private fun powerUpClauses(state: GameState, square: Int): List<String> =
+    listOfNotNull(state.powerUps[square]?.let { stringResource(Res.string.game_square_power_up_spoken, stringResource(it.title)) })
+
 /**
  * What TalkBack offers for [move]: "Move Red pawn 2 4 squares, capturing Green pawn 1", or "Bring Red pawn 1 out of the
  * yard". A partner's pawn is named by its own colour.
@@ -187,9 +197,15 @@ fun moveLabel(state: GameState, move: Move, colourOf: (Int) -> PlayerColour): St
     } else {
         listOf(stringResource(Res.string.game_move_portal_clause, state.board.trackSquare(state.players[move.ownerIn(state)].seat, move.to) + 1))
     }
+    val bounces = move.brokenShields.map { stringResource(Res.string.game_move_bounce_clause, stringResource(colourOf(it.player).label), it.pawn + 1) }
+    val powerUp = if (move.to !in 0..<state.board.trackSteps) {
+        emptyList()
+    } else {
+        listOfNotNull(state.powerUps[state.board.trackSquare(state.players[move.ownerIn(state)].seat, move.to)]?.let { stringResource(Res.string.game_move_power_up_clause, stringResource(it.title)) })
+    }
     val captures = move.captures.map {
         stringResource(Res.string.game_move_capture_clause, stringResource(colourOf(it.player).label), it.pawn + 1)
     }
     val home = if (move.to == state.board.homeProgress) listOf(stringResource(Res.string.game_move_home_clause)) else emptyList()
-    return joinClauses(listOf(main) + portal + captures + home)
+    return joinClauses(listOf(main) + portal + bounces + captures + powerUp + home)
 }
