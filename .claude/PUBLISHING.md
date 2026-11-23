@@ -80,9 +80,10 @@ until the player signs in.
         (the saved game: settings, styles, the game in progress).
     - App info and performance > **Crash logs** and **Diagnostics**: collected by the Play Games SDK itself, purpose
         Analytics (Google's list says "to improve the stability of our SDKs").
-    - Financial info > **Purchase history**: the play app reads whether the player's Google Play account owns "Unlock all
-        styles", and keeps one flag on the device. Purpose App functionality. Not linked to any server of ours, as there
-        is none. Check Google's current guidance on whether a read through Play Billing counts as collecting.
+    - Financial info > **Purchase history**: the play app reads which of the three purchases ("Unlock all styles",
+        "Remove ads", and both) the player's Google Play account owns, and keeps a flag for each on the device. Purpose
+        App functionality. Not linked to any server of ours, as there is none. Check Google's current guidance on whether
+        a read through Play Billing counts as collecting.
 - **Ads (AdMob)**, from 2026-11-18 (check against Google's own AdMob disclosure guide when filling the form):
     - Device or other IDs > **Device or other IDs** (the advertising ID): collected and **shared**, purpose
         **Advertising or marketing** (and Analytics, Fraud prevention, as Google lists for AdMob). Not optional in the form's
@@ -94,7 +95,8 @@ until the player signs in.
     server; nothing reaches the developer. Google's guidance treats data sent device to device without passing through
     a server the developer controls as not collected; check the form's current wording when filling it in.
 - **The crash page's GitHub report isn't collection by the app.** The player posts it from their own browser and account,
-    the app sends nothing, and the play app has no `INTERNET` permission. The privacy policy still describes it.
+    the app sends nothing itself (the play app's `INTERNET` is for the ad banner, Play Games, and Billing). The privacy
+    policy still describes it.
 - **Progress files aren't in the form.** They're only in the GitHub APK, which isn't on Play.
 - **Revisit** when billing or analytics ship, or the cloud save gains a new kind of data.
 

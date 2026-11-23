@@ -59,6 +59,14 @@ app/android/src/play/.../ads/AdMobAds   the only com.google.android.gms.ads and 
 1. An AdMob account, an app (linked to the Play listing once it exists), and an anchored adaptive banner ad unit.
 2. Set the `ADMOB_APP_ID` and `ADMOB_BANNER_ID` repository variables.
 3. AdMob > Privacy & messaging: a GDPR message (and any other region's the account needs), published.
+
+   Steps 1-3 done, with a US state regulations message too (the maintainer, 2026-11-23); the app is linked to its Play
+   listing once production is live.
+
+   3a. **app-ads.txt**: AdMob's line (Apps > View all apps > app-ads.txt) served at `https://zodac.github.io/app-ads.txt`,
+   from a `zodac/zodac.github.io` user-site repo: AdMob reads it from the root of the Play listing's developer website's
+   host, which a project page (`/LudoPlus`) can't serve. Live from 2026-11-23; AdMob verifies it once the app is live on Play
+   and linked (App settings > App store details), with the listing's website `https://zodac.github.io/LudoPlus/`.
 4. Play Console: "Contains ads: Yes"; the Advertising ID declaration (used, for advertising); the data-safety answers
     (`PUBLISHING.md`); target audience 13 and over.
 5. Publish the updated privacy policy (`docs/privacy-policy.md`) before the first version with ads.
