@@ -474,7 +474,7 @@ enum class Achievement(
         "lifetime_achievement",
         Res.string.achievement_lifetime_achievement_title,
         Res.string.achievement_lifetime_achievement_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 1_000,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 500,
     ),
     COMPLETIONIST(
         "completionist",
