@@ -2,6 +2,7 @@ package net.zodac.ludoplus.ui.rules
 
 import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.resources.Res
+import net.zodac.ludoplus.resources.mode_portals
 import net.zodac.ludoplus.resources.mode_quick
 import net.zodac.ludoplus.resources.mode_two_dice
 import net.zodac.ludoplus.resources.rules_board_1
@@ -34,6 +35,9 @@ import net.zodac.ludoplus.resources.rules_how_to_play_tab
 import net.zodac.ludoplus.resources.rules_how_to_play_title
 import net.zodac.ludoplus.resources.rules_how_to_play_tutorial
 import net.zodac.ludoplus.resources.rules_modes_records
+import net.zodac.ludoplus.resources.rules_portals_1
+import net.zodac.ludoplus.resources.rules_portals_2
+import net.zodac.ludoplus.resources.rules_portals_3
 import net.zodac.ludoplus.resources.rules_quick_1
 import net.zodac.ludoplus.resources.rules_turn_1
 import net.zodac.ludoplus.resources.rules_turn_2
@@ -142,6 +146,11 @@ private val GAME_MODES = RulesGroup(
             Res.string.mode_two_dice,
             Res.string.mode_two_dice,
             texts(Res.string.rules_two_dice_1, Res.string.rules_two_dice_2, Res.string.rules_two_dice_3, Res.string.rules_modes_records),
+        ),
+        RulesPage(
+            Res.string.mode_portals,
+            Res.string.mode_portals,
+            texts(Res.string.rules_portals_1, Res.string.rules_portals_2, Res.string.rules_portals_3, Res.string.rules_modes_records),
         ),
     ),
 )

@@ -153,6 +153,17 @@ class RulesTextTest : UiTest() {
             ),
             diagram = null,
         ),
+        Page(
+            "Portals",
+            "Portals",
+            listOf(
+                "Portals come in pairs, told by their colour and symbol. If your move ends on one, your pawn comes out at the other, whether that's further on or further back. Passing over a portal does nothing.",
+                "Your pawn only captures where it comes out. While it waits on a portal, rivals who land there go through without capturing it, but one coming out there captures it.",
+                "Short portals are open to everyone. Long portals, with a split ring, are shut to the colour on their lock, whose start square they would take a pawn past.",
+                "Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.",
+            ),
+            diagram = null,
+        ),
     )
 
     /** Each group's tab, and its pages. */

@@ -52,6 +52,7 @@ private val GameMode.leaderboardSymbol: ImageVector
         GameMode.CLASSIC -> Symbols.Flag
         GameMode.QUICK -> Symbols.Bolt
         GameMode.TWO_DICE -> Symbols.Casino
+        GameMode.PORTALS -> Symbols.Sync
     }
 
 /**

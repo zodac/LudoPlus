@@ -1,6 +1,7 @@
 package net.zodac.ludoplus.ui.common
 
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -127,6 +128,42 @@ private fun PaddingValues.withCapInset(startCap: Boolean, endCap: Boolean, direc
     end = calculateEndPadding(direction) + if (endCap) SEGMENT_CAP_INSET else 0.dp,
     bottom = calculateBottomPadding(),
 )
+
+/** The most segments a row of words has before [WrappedSegmentedChoiceRow] starts another. */
+private const val MAX_WRAPPED_SEGMENTS = 4
+
+/** How many letters of a label [WrappedSegmentedChoiceRow]'s compact form keeps: enough that no two modes' are the same. */
+private const val COMPACT_LETTERS = 3
+
+/**
+ * [FittedSegmentedChoiceRow]s for more options than one row has room for: as few rows as hold them at
+ * [MAX_WRAPPED_SEGMENTS] each, as even as they go, one choice between them.
+ */
+@Composable
+fun <T> WrappedSegmentedChoiceRow(
+    options: List<T>,
+    selected: T,
+    onSelect: (T) -> Unit,
+    label: @Composable (T) -> String,
+    modifier: Modifier = Modifier,
+    spokenLabel: @Composable (T) -> String = label,
+) {
+    val rows = (options.size + MAX_WRAPPED_SEGMENTS - 1) / MAX_WRAPPED_SEGMENTS
+    val perRow = (options.size + rows - 1) / rows
+    Column(modifier = modifier.fillMaxWidth()) {
+        options.chunked(perRow).forEach { row ->
+            FittedSegmentedChoiceRow(
+                options = row,
+                selected = selected,
+                onSelect = onSelect,
+                label = label,
+                compactLabel = { label(it).take(COMPACT_LETTERS) },
+                spokenLabel = spokenLabel,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
 
 /**
  * A [SegmentedChoiceRow] across its whole width whose text labels are sized together so they always match:

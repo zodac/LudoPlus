@@ -2,6 +2,7 @@ package net.zodac.ludoplus.game
 
 import kotlin.random.Random
 import net.zodac.ludoplus.model.PawnPosition
+import net.zodac.ludoplus.model.throughPortal
 
 /**
  * The rules of play (`.claude/IMPLEMENTATION.md`, "The classic rules"), as pure functions from one [GameState] to the
@@ -109,15 +110,19 @@ object LudoEngine {
         return move
     }
 
-    /** Every move for [roll], captures compulsory or not ([legalMoves]). */
+    /** Every move for [roll], captures compulsory or not ([legalMoves]): a capture is only where the pawn ends up. */
     private fun movesFor(state: GameState, roll: Int): List<Move> {
         val me = state.current
         val blockades = blockades(state)
         return movers(state).flatMap { owner ->
             state.players[owner].pawns.mapIndexedNotNull { pawn, from ->
-                val to = destination(state, owner, from, roll) ?: return@mapIndexedNotNull null
-                if (isBlocked(state, blockades, owner, from, to)) return@mapIndexedNotNull null
-                Move(pawn = pawn, from = from, to = to, captures = capturesAt(state, owner, to), owner = owner.takeIf { it != me })
+                val rolledTo = destination(state, owner, from, roll) ?: return@mapIndexedNotNull null
+                if (isBlocked(state, blockades, owner, from, rolledTo)) return@mapIndexedNotNull null
+                val to = throughPortals(state, owner, rolledTo)
+                // A blockade at a portal's other end stops the move too.
+                if (to != rolledTo && isBlocked(state, blockades, owner, to - 1, to)) return@mapIndexedNotNull null
+                val via = rolledTo.takeIf { it != to }
+                Move(pawn = pawn, from = from, to = to, captures = capturesAt(state, owner, to), owner = owner.takeIf { it != me }, via = via)
             }
         }
     }
@@ -136,6 +141,14 @@ object LudoEngine {
             else -> from + roll
         }
     }
+
+    /** Where a pawn of [owner] ends up after a move that brings it to [progress]: through a portal, where they're open. */
+    private fun throughPortals(state: GameState, owner: Int, progress: Int): Int =
+        if (state.rules.portals) state.board.throughPortal(state.players[owner].seat, progress) else progress
+
+    /** Where a pawn of [owner] at progress [from] ends up with [roll], blockades aside: [destination], through any portal. */
+    fun reach(state: GameState, owner: Int, from: Int, roll: Int): Int? =
+        destination(state, owner, from, roll)?.let { throughPortals(state, owner, it) }
 
     /** Whether [roll] brings a pawn of [owner] out of the yard: one of the rules' exit rolls, or any with a free start. */
     private fun leavesYard(state: GameState, owner: Int, roll: Int): Boolean =

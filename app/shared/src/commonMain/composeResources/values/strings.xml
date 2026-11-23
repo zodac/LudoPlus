@@ -162,6 +162,9 @@
     <string name="game_square_safe_for_spoken">safe for %1$s</string>
     <!-- With the Blockades house rule, two or more of one player's pawns on a square. %1$s is their colour. -->
     <string name="game_square_blockade_spoken">%1$s blockade</string>
+    <!-- The Portals mode: a square with a portal, and the square it leads to; then, on a portal one colour's pawns can't use, %1$s that colour (player_colour_*). -->
+    <string name="game_square_portal_spoken">portal to square %1$d</string>
+    <string name="game_square_portal_shut_spoken">shut to %1$s</string>
     <string name="game_square_column_spoken">%1$s home column, square %2$d</string>
     <string name="game_square_yard_spoken">%1$s yard</string>
     <string name="game_square_home_spoken">Home</string>
@@ -177,6 +180,8 @@
     </plurals>
     <string name="game_move_out_action">Bring %1$s pawn %2$d out of the yard</string>
     <string name="game_move_capture_clause">capturing %1$s pawn %2$d</string>
+    <!-- The Portals mode: the move ends on a portal, so the pawn comes out on another square, %1$d. -->
+    <string name="game_move_portal_clause">through a portal to square %1$d</string>
     <string name="game_move_home_clause">reaching home</string>
     <!-- The die under the board: TalkBack's name for it before anyone has rolled, then with the roll it shows, and its action. -->
     <string name="game_die_cd">Die</string>
@@ -251,6 +256,11 @@
     <plurals name="game_event_move">
         <item quantity="one">%1$s moved a pawn %2$d square.</item>
         <item quantity="other">%1$s moved a pawn %2$d squares.</item>
+    </plurals>
+    <!-- The Portals mode: the pawn's move ended on a portal, so it came out at that portal's pair. %2$d is how many squares it moved first. -->
+    <plurals name="game_event_portal">
+        <item quantity="one">%1$s moved a pawn %2$d square, then through a portal.</item>
+        <item quantity="other">%1$s moved a pawn %2$d squares, then through a portal.</item>
     </plurals>
     <!-- The move log's title. -->
     <string name="game_log_title">Moves</string>
@@ -988,6 +998,8 @@
     <string name="mode_quick_description">The classic rules with two pawns each, for a shorter race</string>
     <string name="mode_two_dice">Two Dice</string>
     <string name="mode_two_dice_description">Roll two dice and move by each in turn. A 6 on either brings a pawn out, and doubles roll again</string>
+    <string name="mode_portals">Portals</string>
+    <string name="mode_portals_description">The classic rules with portals on the track: land on one and come out at its pair, further on or further back</string>
     <string name="player_colour_yellow">Yellow</string>
     <string name="settings_motion_die_roll">Die roll</string>
     <string name="settings_motion_pawn_move">Pawn moves</string>
@@ -1019,6 +1031,9 @@
     <string name="rules_two_dice_1">Two Dice rolls two dice at once. Move a pawn by each die, one after the other, in either order: the same pawn twice, or two pawns. Tap a die to pick the one your next move uses.</string>
     <string name="rules_two_dice_2">A 6 on either die brings a pawn out of the yard, and the other die can move it on. If a die has no move, it's lost.</string>
     <string name="rules_two_dice_3">Roll a double and you roll again once both dice are moved, but three doubles in a row end your turn. A capture, or a pawn brought home, still earns another roll.</string>
+    <string name="rules_portals_1">Portals come in pairs, told by their colour and symbol. If your move ends on one, your pawn comes out at the other, whether that's further on or further back. Passing over a portal does nothing.</string>
+    <string name="rules_portals_2">Your pawn only captures where it comes out. While it waits on a portal, rivals who land there go through without capturing it, but one coming out there captures it.</string>
+    <string name="rules_portals_3">Short portals are open to everyone. Long portals, with a split ring, are shut to the colour on their lock, whose start square they would take a pawn past.</string>
     <string name="rules_modes_records">Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.</string>
     <!-- The House Rules pages: an introduction, then each house rule (house_rule_*) as a line of its own (rules_house_rule_line), grouped by what they change. -->
     <string name="rules_house_rules_title">House Rules</string>

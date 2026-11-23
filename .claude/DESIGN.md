@@ -168,6 +168,7 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 | Classic | The classic rules | Yes | Yes |
 | Quick | Two pawns each; each yard draws two spots, on opposite corners (the maintainer, 2026-11-18) | Yes, its own | No |
 | Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | No |
+| Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | No |
 
 Every mode has its own Leaderboard (one a player count) and its own Statistics page. Only Classic earns achievements
 (`GameMode.earnsAchievements`) until the maintainer's review of the list adds any for a mode (2026-11-18). The Rules
@@ -183,6 +184,18 @@ action "Use this die"; the prompt "Alex rolled 3 and 5. Pick a pawn to move 3." 
 move." (or "Alex has 5 left." when that move makes itself; `IMPLEMENTATION.md`, "Turns"). The CPU picks one move
 at a time, die by die. House rules apply die by die (Out on a 1, Free Start), and to the roll (Three Tries, Must
 Capture across both dice; Endless 6s makes doubles endless).
+
+**Portals** (`GameRules.portals`, `model/Portal.kt`; the maintainer, 2026-11-24, in place of snakes and ladders). Every
+seat has a short pair on its own stretch of the track (7 apart) and a long one into the next seat's (16 apart, or 19
+with three players), the same for each so none is favoured: long pairs at some seats only won those they're shut to
+about 20% of four-player games. None is on a safe square. A move that ends on a portal comes out at its pair (`Move.via` is where
+it went in) and captures only there, so a pawn on a portal is only captured by one coming out, or by one the portal is
+shut to. Going through never takes a pawn past its own start square, into its home column early or round again: a long
+pair is shut both ways to the one seat whose start lies between its ends, for which each is an ordinary square, and has
+a lock in its colour. With Blockades, one at either end stops the move. A pair is told by its symbol and colour, and a
+long pair by a split ring (past four seats, a long pair shares a short one's symbol). TalkBack: "Square 7, portal to
+square 23, shut to Green, empty", "Move Red pawn 1 2 squares, through a portal to square 11". Where a mode is picked by
+segments (Leaderboard, Statistics, Based On), they wrap over two rows (`WrappedSegmentedChoiceRow`).
 
 **Custom modes** (`model/CustomMode.kt`, the maintainer, 2026-11-18). A name (unique among the player's and the
 built-in modes', whatever its case; at most 24 characters), a base mode, and at least one house rule (without one it

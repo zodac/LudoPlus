@@ -3,6 +3,8 @@ package net.zodac.ludoplus.model
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.mode_classic
 import net.zodac.ludoplus.resources.mode_classic_description
+import net.zodac.ludoplus.resources.mode_portals
+import net.zodac.ludoplus.resources.mode_portals_description
 import net.zodac.ludoplus.resources.mode_quick
 import net.zodac.ludoplus.resources.mode_quick_description
 import net.zodac.ludoplus.resources.mode_two_dice
@@ -64,6 +66,15 @@ enum class GameMode(
         description = Res.string.mode_two_dice_description,
         rules = GameRules(dice = 2, rollAgainRolls = emptySet(), rollAgainOnDoubles = true),
         onlineLeaderboardKey = "two_dice",
+    ),
+
+    /** The classic rules, with pairs of portals on the track ([BoardGeometry.portals]). */
+    PORTALS(
+        id = "portals",
+        displayName = Res.string.mode_portals,
+        description = Res.string.mode_portals_description,
+        rules = GameRules(portals = true),
+        onlineLeaderboardKey = "portals",
     ),
     ;
 
@@ -141,6 +152,8 @@ data class GameRules(
      * pawn, its own seat's leaving the yard included. Otherwise it's safe for every pawn.
      */
     val guardedStarts: Boolean = false,
+    /** Whether the board's portals ([BoardGeometry.portals]) are open: a move that ends on one comes out at its pair. */
+    val portals: Boolean = false,
     /** The house rules these rules were made with ([withHouseRules]): empty for a mode's own rules. */
     val houseRules: Set<HouseRule> = emptySet(),
 ) {

@@ -46,6 +46,7 @@ import net.zodac.ludoplus.resources.game_event_no_move_dice
 import net.zodac.ludoplus.resources.game_event_no_move_dice_tries
 import net.zodac.ludoplus.resources.game_event_no_move_tries
 import net.zodac.ludoplus.resources.game_event_out
+import net.zodac.ludoplus.resources.game_event_portal
 import net.zodac.ludoplus.resources.game_event_team_finished
 import net.zodac.ludoplus.resources.game_event_three_doubles
 import net.zodac.ludoplus.resources.game_event_three_sixes
@@ -189,6 +190,7 @@ internal fun logLine(game: StartedGame, entry: LogEntry): String {
                 }
                 move.to == game.state.board.homeProgress -> stringResource(Res.string.game_event_home, name(event.player))
                 move.from == PawnPosition.YARD_PROGRESS -> stringResource(Res.string.game_event_out, name(event.player))
+                move.via != null -> (move.rolledTo - move.from).let { squares -> pluralStringResource(Res.plurals.game_event_portal, squares, name(event.player), squares) }
                 else -> (move.to - move.from).let { squares -> pluralStringResource(Res.plurals.game_event_move, squares, name(event.player), squares) }
             }
         }

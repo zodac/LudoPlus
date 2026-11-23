@@ -7,6 +7,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import net.zodac.ludoplus.data.JsonParseException
+import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
@@ -168,6 +169,25 @@ class SavedGameJsonTest {
             }
         }
         assert(dieLeft > 0) { "No die left to move was saved" }
+    }
+
+    @Test
+    fun `every state of random Portals games comes back as it was saved - moves through portals too`() {
+        val random = Random(19)
+        var portals = 0
+        repeat(10) {
+            var state = GameState.new(GameMode.PORTALS, 4)
+            while (!state.isFinished) {
+                val saved = game(state).copy(mode = GameMode.PORTALS)
+                assertEquals(saved, SavedGameJson.decode(SavedGameJson.encode(saved)))
+                if ((state.lastEvent as? GameEvent.Moved)?.move?.via != null) portals++
+                state = when (val phase = state.phase) {
+                    is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random))
+                    else -> LudoEngine.roll(state, random)
+                }
+            }
+        }
+        assert(portals > 0) { "No move through a portal was saved" }
     }
 
     @Test

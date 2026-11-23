@@ -12,11 +12,17 @@ const val CAPTURE_FLIGHT_MILLIS = 480
 /** How long the flourish round a pawn that reaches home lasts, once it has landed. */
 const val HOME_FLOURISH_MILLIS = 720
 
+/** How long a pawn takes to go in at a portal and come out at its pair, once it has landed on it. */
+const val PORTAL_WARP_MILLIS = 520
+
 /** How long the die tumbles before it settles on a roll. */
 const val DIE_TUMBLE_MILLIS = 420
 
-/** How long [move]'s pawn travels: [PAWN_STEP_MILLIS] a square, and one out of the yard. */
-fun travelMillis(move: Move): Int = (if (move.from < 0) 1 else move.to - move.from) * PAWN_STEP_MILLIS
+/** How many hops [move]'s pawn makes: one a square, and one out of the yard. */
+private fun hops(move: Move): Int = if (move.from < 0) 1 else move.rolledTo - move.from
+
+/** How long [move]'s pawn travels: [PAWN_STEP_MILLIS] a hop, and [PORTAL_WARP_MILLIS] through a portal. */
+fun travelMillis(move: Move): Int = hops(move) * PAWN_STEP_MILLIS + if (move.via != null) PORTAL_WARP_MILLIS else 0
 
 /**
  * What follows [move]'s landing, on a board whose home is [homeProgress]: a capture's flight back to its yard, or a
@@ -64,8 +70,9 @@ enum class MoveSound { STEP, CAPTURE, HOME }
  * pawn lands back in its yard.
  */
 fun moveSoundCues(move: Move, homeProgress: Int, animated: Boolean): List<Pair<Long, MoveSound>> {
-    val hops = if (move.from < 0) 1 else move.to - move.from
-    val steps = if (animated) (1..hops).map { it * PAWN_STEP_MILLIS.toLong() } else listOf(0L)
+    // Coming out of a portal is a landing of its own, after its hops.
+    val hopped = (1..hops(move)).map { it * PAWN_STEP_MILLIS.toLong() }
+    val steps = if (!animated) listOf(0L) else if (move.via == null) hopped else hopped + travelMillis(move).toLong()
     val landing = when {
         move.captures.isNotEmpty() -> MoveSound.CAPTURE
         move.to == homeProgress -> MoveSound.HOME

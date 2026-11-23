@@ -11,6 +11,7 @@ import net.zodac.ludoplus.resources.stats_count_all
 import net.zodac.ludoplus.resources.stats_count_all_spoken
 import net.zodac.ludoplus.resources.stats_mode_all_spoken
 import net.zodac.ludoplus.ui.common.FittedSegmentedChoiceRow
+import net.zodac.ludoplus.ui.common.WrappedSegmentedChoiceRow
 import net.zodac.ludoplus.ui.common.pluralStringResource
 import net.zodac.ludoplus.ui.common.stringResource
 
@@ -40,12 +41,11 @@ internal fun PlayerCountRow(options: List<Int?>, selected: Int?, onSelect: (Int?
  */
 @Composable
 internal fun ModeRow(options: List<GameMode?>, selected: GameMode?, onSelect: (GameMode?) -> Unit) {
-    FittedSegmentedChoiceRow(
+    WrappedSegmentedChoiceRow(
         options = options,
         selected = selected,
         onSelect = onSelect,
         label = { mode -> mode?.let { stringResource(it.displayName) } ?: stringResource(Res.string.stats_count_all) },
         spokenLabel = { mode -> mode?.let { stringResource(it.displayName) } ?: stringResource(Res.string.stats_mode_all_spoken) },
-        modifier = Modifier.fillMaxWidth(),
     )
 }

@@ -95,6 +95,7 @@ val GameMode.color: Color
         GameMode.CLASSIC -> Primary
         GameMode.QUICK -> Color(0xFF8FE3B0)
         GameMode.TWO_DICE -> Color(0xFFFFC27A)
+        GameMode.PORTALS -> Color(0xFF7FD8F0)
     }
 
 // ---------------------------------------------------------------------------------------------
@@ -110,6 +111,18 @@ val BoardInk = Color(0xFF1E2A4A)
 
 /** A yard, home column, or start square with nobody sitting there (fewer than four players). */
 val BoardEmptySeat = Color(0xFFB9B2A0)
+
+/** The portals' pairs, by symbol (`ui/game/PortalArt.kt`): clear of the players' colours, and never told apart by colour alone. */
+val PortalColours = listOf(
+    Color(0xFFB197FC),
+    Color(0xFF3BC9DB),
+    Color(0xFFC0A080),
+    Color(0xFFA9C34B),
+    Color(0xFF8CA0B8),
+    Color(0xFFE599F7),
+    Color(0xFF5FB89A),
+    Color(0xFFD8D8E0),
+)
 
 /** The sparks of the flourish round a pawn that reaches home. */
 val BoardSparkGold = Color(0xFFFFD45C)

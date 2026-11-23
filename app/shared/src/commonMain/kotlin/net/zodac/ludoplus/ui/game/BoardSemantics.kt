@@ -20,15 +20,19 @@ import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.PlayerColour
+import net.zodac.ludoplus.model.portalAt
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.game_move_action
 import net.zodac.ludoplus.resources.game_move_capture_clause
 import net.zodac.ludoplus.resources.game_move_home_clause
 import net.zodac.ludoplus.resources.game_move_out_action
+import net.zodac.ludoplus.resources.game_move_portal_clause
 import net.zodac.ludoplus.resources.game_square_blockade_spoken
 import net.zodac.ludoplus.resources.game_square_column_spoken
 import net.zodac.ludoplus.resources.game_square_empty_spoken
 import net.zodac.ludoplus.resources.game_square_home_spoken
+import net.zodac.ludoplus.resources.game_square_portal_shut_spoken
+import net.zodac.ludoplus.resources.game_square_portal_spoken
 import net.zodac.ludoplus.resources.game_square_safe_for_spoken
 import net.zodac.ludoplus.resources.game_square_safe_spoken
 import net.zodac.ludoplus.resources.game_square_start_spoken
@@ -127,7 +131,7 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
             startOf?.let { stringResource(Res.string.game_square_start_spoken, stringResource(colourOf(it).label)) },
             safety,
             blockade,
-        ) + here.map { it.second }.ifEmpty { listOf(empty) }
+        ) + portalClauses(state, square, colourOf) + here.map { it.second }.ifEmpty { listOf(empty) }
         val move = state.players.indices.firstNotNullOfOrNull { player -> movableAt(player, here.filter { it.first.first == player }.map { it.first.second }) }
         spots += Spot(layout.trackSquare(square).spotBounds(), joinClauses(clauses), move, move?.let(moveLabels::get))
     }
@@ -147,6 +151,18 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
     return spots
 }
 
+/** What's said of the portal on track [square], where it's one of an open pair: the square it leads to, and whose colour it's shut to. */
+@Composable
+private fun portalClauses(state: GameState, square: Int, colourOf: (Int) -> PlayerColour): List<String> {
+    val portal = state.board.portalAt(square)?.takeIf { state.rules.portals } ?: return emptyList()
+    val other = if (square == portal.first) portal.second else portal.first
+    val shutTo = portalShutTo(state.board, portal)?.let { seat -> state.players.indexOfFirst { it.seat == seat } }?.takeIf { it >= 0 }
+    return listOfNotNull(
+        stringResource(Res.string.game_square_portal_spoken, other + 1),
+        shutTo?.let { stringResource(Res.string.game_square_portal_shut_spoken, stringResource(colourOf(it).label)) },
+    )
+}
+
 /**
  * What TalkBack offers for [move]: "Move Red pawn 2 4 squares, capturing Green pawn 1", or "Bring Red pawn 1 out of the
  * yard". A partner's pawn is named by its own colour.
@@ -155,15 +171,20 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
 fun moveLabel(state: GameState, move: Move, colourOf: (Int) -> PlayerColour): String {
     val colour = stringResource(colourOf(move.ownerIn(state)).label)
     val number = move.pawn + 1
-    val roll = move.to - move.from
+    val roll = move.rolledTo - move.from
     val main = if (move.from == PawnPosition.YARD_PROGRESS) {
         stringResource(Res.string.game_move_out_action, colour, number)
     } else {
         pluralStringResource(Res.plurals.game_move_action, roll, colour, number, roll)
     }
+    val portal = if (move.via == null) {
+        emptyList()
+    } else {
+        listOf(stringResource(Res.string.game_move_portal_clause, state.board.trackSquare(state.players[move.ownerIn(state)].seat, move.to) + 1))
+    }
     val captures = move.captures.map {
         stringResource(Res.string.game_move_capture_clause, stringResource(colourOf(it.player).label), it.pawn + 1)
     }
     val home = if (move.to == state.board.homeProgress) listOf(stringResource(Res.string.game_move_home_clause)) else emptyList()
-    return joinClauses(listOf(main) + captures + home)
+    return joinClauses(listOf(main) + portal + captures + home)
 }

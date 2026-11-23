@@ -289,6 +289,7 @@ object SavedGameJson {
             put("captures", JsonArray(event.move.captures.map { jsonInts(listOf(it.player, it.pawn)) }))
             event.move.owner?.let { put("owner", it) }
             event.move.roll?.let { put("die", it) }
+            event.move.via?.let { put("via", it) }
             put("finished", event.finished)
             if (event.rollsAgain) put("rollsAgain", true)
         }
@@ -315,6 +316,7 @@ object SavedGameJson {
                     },
                     owner = obj.intOrNull("owner")?.also { require(it in 0..<playerCount) { "No player $it owns the pawn" } },
                     roll = obj.intOrNull("die"),
+                    via = obj.intOrNull("via"),
                 ),
                 finished = obj.boolean("finished"),
                 rollsAgain = obj.flag("rollsAgain"),

@@ -140,7 +140,13 @@ data class Move(
     val owner: Int? = null,
     /** With two dice, the die it moves by; null with one, which is the roll's. */
     val roll: Int? = null,
+    /** The progress of the portal it goes in at, coming out at [to]; null for a move through none. */
+    val via: Int? = null,
 ) {
+    /** The progress the roll brings the pawn to, before any portal. */
+    val rolledTo: Int get() = via ?: to
+
+
     /** Whose pawn moves in [state]: [owner], or the player whose turn it is. */
     fun ownerIn(state: GameState): Int = owner ?: state.current
 }

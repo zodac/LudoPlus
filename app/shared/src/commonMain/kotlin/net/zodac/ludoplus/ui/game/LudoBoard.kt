@@ -36,6 +36,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import net.zodac.ludoplus.data.settings.MotionGroup
@@ -67,6 +68,9 @@ internal const val HOP_HEIGHT = 0.42f
 
 /** How much a hopping pawn swells at the top of its hop, as if nearer. */
 internal const val HOP_SWELL = 0.08f
+
+/** How small a pawn going through a portal gets, of its size. */
+private const val MIN_WARP_SIZE = 0.08f
 
 /** How high a captured pawn is thrown on its way back to its yard: this, in squares, and [CAPTURE_ARC_PER_SQUARE] of the way. */
 private const val CAPTURE_ARC = 0.8f
@@ -130,6 +134,8 @@ fun LudoBoard(
                 with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours, pawns) }
             }
         }
+        // The portals, under the pawns: drawn once.
+        if (state.rules.portals) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPortals(layout, size.minDimension / layout.size, colours) }
         // On a layer of its own too, drawn again only as the turn passes.
         val turnSeat = if (state.isFinished) null else state.currentPlayer.seat
         if (turnSeat != null) {
@@ -175,7 +181,8 @@ fun LudoBoard(
 /**
  * A move being shown: [player]'s pawn (its owner's, a partner's if one was rolled for) on [path] (board-unit centres,
  * square by square), hopping along it unless it's leaving its yard, and [landingRadius] across where it lands (home's
- * smaller spot when it reaches [home]), capturing [captured].
+ * smaller spot when it reaches [home]), capturing [captured]. Through a portal, [path] ends where it goes in, and it
+ * comes out at [warpTo].
  */
 private class MovingPawn(
     val player: Int,
@@ -186,9 +193,13 @@ private class MovingPawn(
     val home: Boolean,
     val captured: List<CapturedPawn>,
     val totalMillis: Int,
+    val warpTo: Offset? = null,
 ) {
-    val landing: Offset get() = path.last()
-    val travelMillis: Int get() = (path.size - 1) * PAWN_STEP_MILLIS
+    val landing: Offset get() = warpTo ?: path.last()
+
+    /** How long it hops for, before any portal. */
+    val hopMillis: Int get() = (path.size - 1) * PAWN_STEP_MILLIS
+    val travelMillis: Int get() = hopMillis + if (warpTo != null) PORTAL_WARP_MILLIS else 0
 }
 
 /** A pawn [ref] taken by a move, on its way back to its [yard] spot, where it is [yardRadius] across. */
@@ -220,6 +231,8 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
             drawCaptureBurst(moving.landing * unit, unit, (after / CAPTURE_BURST_SHARE).coerceAtMost(1f), colourOf(moving.captured.first().ref.player))
         }
         if (landed && moving.home) drawHomeRings(moving.landing * unit, unit, after, mover)
+        val warp = ((millis - moving.hopMillis) / PORTAL_WARP_MILLIS).coerceIn(0f, 1f)
+        if (moving.warpTo != null && warp > 0f && warp < 1f) drawWarpTrail(moving.path.last() * unit, moving.warpTo * unit, unit, warp, mover)
         val (centre, lift, radius) = moverPose(moving, if (landed && moving.home) after else 0f)
         if (lift > 0f) drawGroundShadow(centre * unit, radius * unit, lift / HOP_HEIGHT)
         with(pawns) { drawPawn((centre - Offset(0f, lift)) * unit, radius * unit, mover, ringed = false) }
@@ -240,6 +253,11 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
     private fun moverPose(moving: MovingPawn, home: Float): Triple<Offset, Float, Float> {
         val millis = millis
         val path = moving.path
+        if (moving.warpTo != null && millis >= moving.hopMillis) {
+            // In at one portal, shrinking away, and out at the other, growing back.
+            val warp = ((millis - moving.hopMillis) / PORTAL_WARP_MILLIS).coerceIn(0f, 1f)
+            return Triple(if (warp < 0.5f) path.last() else moving.warpTo, 0f, PAWN_RADIUS * abs(1f - 2f * warp).coerceAtLeast(MIN_WARP_SIZE))
+        }
         val step = (millis / PAWN_STEP_MILLIS).coerceIn(0f, (path.size - 1).toFloat())
         val index = step.toInt().coerceAtMost(path.size - 2)
         val fraction = step - index
@@ -369,7 +387,7 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
     val path = if (fromYard) {
         listOf(layout.yardSpotOf(seat, move.pawn, state.rules.pawnsPerPlayer), layout.centreOf(seat, PawnPosition.of(0, state.board), 0))
     } else {
-        (move.from..move.to).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn) }
+        (move.from..move.rolledTo).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn) }
     }
     val home = move.to == state.board.homeProgress
     val captured = move.captures.map {
@@ -384,6 +402,7 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
         home = home,
         captured = captured,
         totalMillis = travelMillis(move) + afterLandingMillis(move, state.board.homeProgress),
+        warpTo = if (move.via == null) null else layout.centreOf(seat, PawnPosition.of(move.to, state.board), move.pawn),
     )
 }
 

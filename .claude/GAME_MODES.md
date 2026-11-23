@@ -9,6 +9,7 @@ achievement audit (what each mode or house rule blocks or guards) is in `GAME_MO
 | `CLASSIC` | `classic` | The classic rules (`IMPLEMENTATION.md`, "The classic rules"). The default | Yes |
 | `QUICK` | `quick` | Two pawns each (`pawnsPerPlayer = 2`) | No |
 | `TWO_DICE` | `two_dice` | Two dice, each moved on its own (`dice = 2`); doubles roll again, not 6s (`rollAgainOnDoubles`, `rollAgainRolls` empty) | No |
+| `PORTALS` | `portals` | Portals on the track (`portals = true`): a move ending on one comes out at its pair | No |
 
 **Custom modes** (`model/CustomMode.kt`) are the player's own: a built-in base and house rules, saved under a name
 (`DESIGN.md`, "Game modes"). They are data in the settings, not `GameMode` entries: a game of one is its base mode's,

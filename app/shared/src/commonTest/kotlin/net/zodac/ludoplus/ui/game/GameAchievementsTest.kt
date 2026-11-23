@@ -145,8 +145,8 @@ class GameAchievementsTest {
     }
 
     @Test
-    fun `a Quick or Two Dice game earns nothing - started or played out - two dice's moves made die by die`() = runTest(dispatcher) {
-        for (mode in listOf(GameMode.QUICK, GameMode.TWO_DICE)) {
+    fun `a game of any mode but Classic earns nothing - started or played out - two dice's moves made die by die`() = runTest(dispatcher) {
+        for (mode in GameMode.entries - GameMode.CLASSIC) {
             val store = InMemoryAchievementStore()
             val viewModel = viewModel(store, hour = 2)
             viewModel.setupForm.setGameMode(mode)

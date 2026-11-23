@@ -85,6 +85,12 @@ maintainer, 2026-11-18): `GameAchievementsTest` plays one out and checks nothing
 the Rolls family needs the audit first (every 6 and roll-again achievement: a run is of doubles, and each roll is two
 values), and the Track length family's turn thresholds (a turn moves about twice as far).
 
+## Portals (a mode)
+
+Portals on the track (2026-11-24). **Earns no achievement** (`GameMode.earnsAchievements` false). If it ever earns them,
+the Track length family needs the audit first (a portal moves a pawn up to 16 squares without a roll, and
+`SQUARES_MOVED` counts them), and Locked Out, Scenic Route, and the square-by-square ones.
+
 ## Custom modes (New Game)
 
 A base mode with house rules: their games, as any with house rules, earn nothing, so nothing needs a guard.

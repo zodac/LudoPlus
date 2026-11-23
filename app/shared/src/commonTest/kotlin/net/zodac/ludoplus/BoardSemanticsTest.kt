@@ -116,6 +116,28 @@ class BoardSemanticsTest : UiTest() {
     }
 
     @Test
+    fun `portals - each says where it leads and whose colour it's shut to - and a move through one says so`() = uiTest(TestScreen(411, 891)) {
+        val new = GameState.new(GameMode.PORTALS, 4)
+        val pawns = listOf(listOf(1, 12, Y, Y), listOf(49, Y, Y, Y))
+        show(LudoEngine.applyRoll(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }) }), 2))
+        listOf(
+            "Square 4, portal to square 11, empty",
+            "Square 11, portal to square 4, Green pawn 1, 7 squares from home",
+            "Square 7, portal to square 23, shut to Green, empty",
+            "Square 23, portal to square 7, shut to Green, empty",
+        ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
+        compose.onNodeWithContentDescription("Square 2, Red pawn 1, 55 squares from home")
+            .assert(onClickLabel("Move Red pawn 1 2 squares, through a portal to square 11, capturing Green pawn 1"))
+    }
+
+    @Test
+    fun `the log says a move went through a portal`() = uiTest(TestScreen(411, 891)) {
+        val state = GameState.new(GameMode.PORTALS, 4)
+        show(state, log = listOf(LogEntry(GameEvent.Moved(0, 2, Move(0, 8, 3, via = 10), finished = false))))
+        compose.onNodeWithContentDescription("Alex moved a pawn 2 squares, then through a portal.").assertExists()
+    }
+
+    @Test
     fun `two dice - each named with its face - one picked for the next move - the prompt naming it - and the die left after a move`() = uiTest(TestScreen(411, 891)) {
         val new = GameState.new(GameMode.TWO_DICE, 4)
         val rolled = LudoEngine.applyDice(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = if (i == 0) listOf(10, Y, Y, Y) else listOf(Y, Y, Y, Y)) }), listOf(3, 5))

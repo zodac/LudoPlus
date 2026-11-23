@@ -403,6 +403,8 @@ count but 4 has a board of its own; one player on two colours was dropped.
     - [x] Two Dice: each die moved on its own, one after the other, on any pawns (the same pawn twice allowed); a 6 on
         either die brings a pawn out with that die; doubles roll again, three in a row end the turn; a capture or a pawn
         home still earns a roll (the maintainer, 2026-11-18).
+- [x] Portals, a mode (the maintainer, 2026-11-24): short and long pairs of two-way portals, from a design that began as
+    snakes and ladders (`DESIGN.md`, "Game modes").
 - [x] Custom game modes (the maintainer, 2026-11-18): a base mode and at least one house rule, named and saved, listed
     in New Game's mode picker after the built-in modes, with New, Edit, and Delete on the card. As any game with house
     rules, their games count towards nothing (`DESIGN.md`, "Custom modes").

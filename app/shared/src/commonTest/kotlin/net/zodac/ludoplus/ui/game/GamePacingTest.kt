@@ -34,6 +34,9 @@ class GamePacingTest {
     fun `a move's timeline is its hops then a capture's flight or a home flourish`() {
         assertEquals(4 * PAWN_STEP_MILLIS, travelMillis(Move(0, 10, 14)))
         assertEquals(PAWN_STEP_MILLIS, travelMillis(Move(0, -1, 0)))
+        // Through a portal: its hops to it, then in and out.
+        assertEquals(2 * PAWN_STEP_MILLIS + PORTAL_WARP_MILLIS, travelMillis(Move(0, 1, 10, via = 3)))
+        assertEquals(2 * PAWN_STEP_MILLIS + PORTAL_WARP_MILLIS, travelMillis(Move(0, 8, 3, via = 10)))
         assertEquals(0, afterLandingMillis(Move(0, 10, 14), HOME))
         assertEquals(CAPTURE_FLIGHT_MILLIS, afterLandingMillis(Move(0, 10, 14, listOf(PawnRef(1, 2))), HOME))
         assertEquals(HOME_FLOURISH_MILLIS, afterLandingMillis(Move(0, HOME - 3, HOME), HOME))

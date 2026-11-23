@@ -39,6 +39,7 @@ object HeuristicStrategy : CpuStrategy {
     private const val ESCAPE = 25.0
     private const val IN_REACH = 30.0
     private const val ADVANCE = 0.3
+    private const val PORTAL = 1.0
 
     override fun choose(state: GameState, moves: List<Move>, random: Random): Move =
         moves.shuffled(random).maxBy { score(state, it) }
@@ -56,6 +57,8 @@ object HeuristicStrategy : CpuStrategy {
         if (threats(state, owner, move.from) > 0) score += ESCAPE
         score -= IN_REACH * threats(state, owner, move.to, ignoring = move.captures)
         score += ADVANCE * maxOf(move.from, 0)
+        // What a portal gains or costs, on top of the roll, which every move has.
+        score += PORTAL * (move.to - move.rolledTo)
         return score
     }
 }
@@ -123,7 +126,9 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
         var gain = 0.0
         for (roll in 1..state.rules.dieFaces) {
             val reachable = mine.pawns.mapNotNull { progress ->
-                if (progress !in 0..<board.trackSteps || progress + roll >= board.trackSteps) null else targets[board.trackSquare(mine.seat, progress + roll)]
+                if (progress !in 0..<board.trackSteps) return@mapNotNull null
+                val to = LudoEngine.reach(state, me, progress, roll)?.takeIf { it < board.trackSteps }
+                to?.let { targets[board.trackSquare(mine.seat, it)] }
             }
             gain += (reachable.maxOrNull() ?: 0.0) / state.rules.dieFaces
         }
@@ -144,7 +149,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
             if (index == me || index in state.finishingOrder || isFriendly(state, me, index)) return@forEachIndexed
             for (roll in 1..state.rules.dieFaces) {
                 val reachable = opponent.pawns.mapNotNull { progress ->
-                    val to = LudoEngine.destination(state, index, progress, roll)?.takeIf { it < board.trackSteps }
+                    val to = LudoEngine.reach(state, index, progress, roll)?.takeIf { it < board.trackSteps }
                     to?.let { exposed[board.trackSquare(opponent.seat, it)] }
                 }
                 loss += (reachable.maxOrNull() ?: 0.0) / state.rules.dieFaces
@@ -186,7 +191,9 @@ private fun threats(state: GameState, owner: Int, progress: Int, ignoring: List<
         if (index == state.current || isFriendly(state, owner, index)) return@forEachIndexed
         opponent.pawns.forEachIndexed { pawn, at ->
             if (PawnRef(index, pawn) in ignoring || at !in 0..<board.trackSteps) return@forEachIndexed
-            val reach = (1..state.rules.dieFaces).any { roll -> at + roll < board.trackSteps && board.trackSquare(opponent.seat, at + roll) == square }
+            val reach = (1..state.rules.dieFaces).any { roll ->
+                LudoEngine.reach(state, index, at, roll)?.let { it < board.trackSteps && board.trackSquare(opponent.seat, it) == square } == true
+            }
             if (reach) count++
         }
     }
