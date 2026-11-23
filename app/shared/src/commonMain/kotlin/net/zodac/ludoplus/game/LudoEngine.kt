@@ -34,7 +34,7 @@ object LudoEngine {
         val second = dice.getOrNull(1)
         val player = state.current
         // The first roll of a turn starts it; a roll again continues it.
-        val started = PowerUps.tick(state).let { ticked ->
+        val started = PowerUps.tick(state.copy(ghostMove = null)).let { ticked ->
             if (state.rollingAgain) ticked else ticked.copy(players = ticked.players.replace(player) { it.copy(turns = it.turns + 1) })
         }
         val rollsAgain = if (dice.size == 1) roll in rules.rollAgainRolls else rules.rollAgainOnDoubles && dice.distinct().size == 1
@@ -252,12 +252,12 @@ object LudoEngine {
      * A player with every pawn home is placed then, or in a team game with their team once every partner's are too. Where
      * the last standing wins, the game ends with one team left. A power-up the pawn ends on is taken ([PowerUps.take]).
      */
-    fun move(state: GameState, pawn: Int, owner: Int? = null, die: Int? = null): GameState = move(state, pawn, owner, die, takePowerUp = true)
+    fun move(state: GameState, pawn: Int, owner: Int? = null, die: Int? = null): GameState = move(state, pawn, owner, die, chances = true)
 
-    /** [move], with a power-up it ends on left alone: for weighing a move by, whose chances nobody knows. */
-    internal fun moveWithoutPowerUp(state: GameState, move: Move): GameState = move(state, move.pawn, move.owner, move.roll, takePowerUp = false)
+    /** [move], with a power-up it ends on left alone, and no ghost moving after it: for weighing a move by, whose chances nobody knows. */
+    internal fun moveWithoutChances(state: GameState, move: Move): GameState = move(state, move.pawn, move.owner, move.roll, chances = false)
 
-    private fun move(state: GameState, pawn: Int, owner: Int?, die: Int?, takePowerUp: Boolean): GameState {
+    private fun move(state: GameState, pawn: Int, owner: Int?, die: Int?, chances: Boolean): GameState {
         val phase = state.phase
         check(phase is TurnPhase.AwaitingMove) { "Not waiting for a move: $phase" }
         val move = requireNotNull(phase.moves.firstOrNull { it.pawn == pawn && it.owner == owner && (die == null || it.roll == die) }) {
@@ -268,8 +268,8 @@ object LudoEngine {
         val whose = move.ownerIn(state)
         val rules = state.rules
         val board = state.board
-        val moved = place(PowerUps.spendDouble(state), whose, pawn, Landing(move.to, move.captures, move.brokenShields))
-        val (taken, effect) = if (takePowerUp) PowerUps.take(moved, whose, pawn) else moved to null
+        val moved = place(PowerUps.spendDouble(state.copy(ghostMove = null)), whose, pawn, Landing(move.to, move.captures, move.brokenShields))
+        val (taken, effect) = if (chances) PowerUps.take(moved, whose, pawn) else moved to null
         val players = taken.players
         val captures = move.captures + effect?.captures.orEmpty()
         val endedAt = players[whose].pawns[pawn]
@@ -323,7 +323,7 @@ object LudoEngine {
             }
         }
         val rollsAgain = playsOn && earned
-        next = if (rollsAgain) next.copy(rollingAgain = true) else nextPlayer(next)
+        next = if (rollsAgain) next.copy(rollingAgain = true) else nextPlayer(next, chances)
         return next.copy(lastEvent = GameEvent.Moved(player, used, move, finished, rollsAgain, knockedOut, effect))
     }
 
@@ -391,9 +391,10 @@ object LudoEngine {
 
     /**
      * Play passes to the next player still racing, who awaits a roll: not one placed or knocked out, nor one home in a
-     * team game that doesn't roll for partners. Coming back round to a player no later than this one, a round is played.
+     * team game that doesn't roll for partners. Coming back round to a player no later than this one, a round is played. With [chances], a ghost
+     * moves as the turn ends, if it's time.
      */
-    private fun nextPlayer(state: GameState): GameState {
+    private fun nextPlayer(state: GameState, chances: Boolean = true): GameState {
         val skipsHome = !(state.rules.teams != null && state.rules.rollForPartners)
         var next = state.current
         do {
@@ -406,7 +407,7 @@ object LudoEngine {
             rollingAgain = false,
             yardTriesUsed = 0,
             roundsPlayed = if (state.rules.suddenDeath && next <= state.current) state.roundsPlayed + 1 else state.roundsPlayed,
-        )
+        ).let { if (chances) Ghosts.afterTurn(it) else it }
     }
 
     internal inline fun <T> List<T>.replace(index: Int, change: (T) -> T): List<T> =

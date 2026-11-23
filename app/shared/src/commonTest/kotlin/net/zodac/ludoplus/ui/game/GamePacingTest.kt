@@ -3,6 +3,7 @@ package net.zodac.ludoplus.ui.game
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import net.zodac.ludoplus.game.GameEvent
+import net.zodac.ludoplus.game.GhostMove
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.game.PowerUpEffect
@@ -48,6 +49,14 @@ class GamePacingTest {
         assertEquals(0, afterLandingMillis(Move(0, 10, 14), HOME))
         assertEquals(CAPTURE_FLIGHT_MILLIS, afterLandingMillis(Move(0, 10, 14, listOf(PawnRef(1, 2))), HOME))
         assertEquals(HOME_FLOURISH_MILLIS, afterLandingMillis(Move(0, HOME - 3, HOME), HOME))
+    }
+
+    @Test
+    fun `a ghost drifts at half a pawn's speed - after the turn before it - and a catch's flight follows`() {
+        assertEquals(2 * PAWN_STEP_MILLIS, GHOST_STEP_MILLIS)
+        assertEquals(3 * GHOST_STEP_MILLIS, ghostMillis(GhostMove(0, 20, -3)))
+        assertEquals(3 * GHOST_STEP_MILLIS + CAPTURE_FLIGHT_MILLIS, ghostMillis(GhostMove(0, 20, 3, listOf(PawnRef(1, 0)))))
+        assertEquals(500L + DIE_TUMBLE_MILLIS + 3 * GHOST_STEP_MILLIS, pacing.waitAfter(GameEvent.NoMove(1, 4), HOME, GhostMove(0, 20, -3)))
     }
 
     @Test

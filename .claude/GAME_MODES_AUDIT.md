@@ -103,6 +103,10 @@ Power-ups on the track (2026-11-24). **Earns no achievement** (`GameMode.earnsAc
 the Rolls, Captures, and Track length families need the audit first: doubled rolls, pawns moved without one, shields, and
 a pawn out of the yard without a 6. `AchievementTracker` reads the move alone, not its power-up's effect.
 
+## Haunted House (a mode)
+
+Ghosts that send pawns back (2026-11-24). **Earns no achievement** (`GameMode.earnsAchievements` false).
+
 ## Custom modes (New Game)
 
 A base mode with house rules: their games, as any with house rules, earn nothing, so nothing needs a guard.

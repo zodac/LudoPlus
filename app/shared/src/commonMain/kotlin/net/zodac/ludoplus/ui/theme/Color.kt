@@ -99,6 +99,7 @@ val GameMode.color: Color
         GameMode.PORTALS -> Color(0xFF7FD8F0)
         GameMode.SURVIVAL -> Color(0xFFF0A0C8)
         GameMode.CHAOS -> Color(0xFFE6E07A)
+        GameMode.HAUNTED_HOUSE -> Color(0xFFC9CEDC)
     }
 
 // ---------------------------------------------------------------------------------------------
@@ -114,6 +115,10 @@ val BoardInk = Color(0xFF1E2A4A)
 
 /** A yard, home column, or start square with nobody sitting there (fewer than four players). */
 val BoardEmptySeat = Color(0xFFB9B2A0)
+
+/** A ghost, and the glow round it. */
+val GhostWhite = Color(0xFFF4F1FF)
+val GhostGlow = Color(0xFFB39DFF)
 
 /** A shield round a pawn, and each power-up's colour under its symbol. */
 val ShieldBlue = Color(0xFF74C0FC)

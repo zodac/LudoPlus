@@ -1,5 +1,10 @@
 package net.zodac.ludoplus
 
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -34,6 +39,16 @@ class RecordsScreensTest : UiTest() {
         captures = captures, timesCaptured = 2, pawnsHome = if (place == 4) 1 else 4,
     )
 
+    private val modePicker = hasContentDescription("Game Mode") and hasClickAction()
+
+    /** Opens the mode picker and picks [name]. */
+    private fun pickMode(name: String) {
+        compose.onNode(modePicker).performClick()
+        compose.waitForIdle()
+        compose.onNode(hasText(name) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)).performClick()
+        compose.waitForIdle()
+    }
+
     @Test
     fun `the Leaderboard reads each win as one row - rank, name, turns, and captures`() = uiTest(TestScreen(411, 891)) {
         val repository = records(row("Alex", 1, 38, 4, 1), row("Sam", 1, 41, 1, 2), row("Sam", 2, 30, 9, 3))
@@ -67,14 +82,14 @@ class RecordsScreensTest : UiTest() {
     }
 
     @Test
-    fun `the Leaderboard starts at New Game's mode - each mode its own board - a segment a mode by its name`() = uiTest(TestScreen(411, 891)) {
+    fun `the Leaderboard starts at New Game's mode - each mode its own board - a picker of them by name`() = uiTest(TestScreen(411, 891)) {
         val repository = records(row("Alex", 1, 38, 4, 1), row("Sam", 1, 22, 1, 2, mode = GameMode.QUICK))
         val viewModel = LeaderboardViewModel(repository) { GameMode.QUICK to 4 }
         showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
         compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Sam, 22 turns, 1 capture")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Quick: fastest wins").assertExists()
-        compose.onNode(hasContentDescription("Quick")).assertIsSelected()
-        compose.onNode(hasContentDescription("Classic")).performClick()
+        compose.onNode(modePicker).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Quick. The classic rules with two pawns each, for a shorter race"))
+        pickMode("Classic")
         compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Alex, 38 turns, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasContentDescription("1st, Sam", substring = true)).assertDoesNotExist()
     }
@@ -100,13 +115,13 @@ class RecordsScreensTest : UiTest() {
     }
 
     @Test
-    fun `Statistics adds up every mode at first - or one mode's - All said as all modes - an empty mode said by name`() = uiTest(TestScreen(411, 891)) {
+    fun `Statistics adds up every mode at first - or one mode's - an empty mode said by name`() = uiTest(TestScreen(411, 891)) {
         val repository = records(row("Alex", 1, 38, 4, 1), row("Alex", 2, 30, 1, 2, mode = GameMode.QUICK))
         val viewModel = StatisticsViewModel(repository)
         showcase.show { LudoPlusTheme { StatisticsScreen(viewModel, onBack = {}) } }
         compose.waitUntil { compose.onAllNodes(hasText("Games played") and hasText("2")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNode(hasContentDescription("All modes")).assertIsSelected()
-        compose.onNode(hasContentDescription("Quick")).performClick()
+        compose.onNode(modePicker).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "All Modes. Every mode's games, added together"))
+        pickMode("Quick")
         compose.waitUntil { compose.onAllNodes(hasText("Games played") and hasText("1")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasText("Wins") and hasText("0")).assertExists()
         compose.onNode(hasContentDescription("6 players")).performClick()

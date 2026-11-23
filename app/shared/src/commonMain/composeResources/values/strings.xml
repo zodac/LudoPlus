@@ -171,6 +171,8 @@
     <!-- Chaos: a power-up on a square. %1$s is its name (power_up_*). Then, after a pawn with a shield round it. -->
     <string name="game_square_power_up_spoken">%1$s power-up</string>
     <string name="game_pawn_shielded_spoken">shielded</string>
+    <!-- Haunted House: a ghost on a square. -->
+    <string name="game_square_ghost_spoken">ghost</string>
     <string name="game_square_column_spoken">%1$s home column, square %2$d</string>
     <string name="game_square_yard_spoken">%1$s yard</string>
     <string name="game_square_home_spoken">Home</string>
@@ -317,6 +319,8 @@
     </plurals>
     <string name="game_event_call_up">%1$s called up a pawn.</string>
     <string name="game_event_swap">%1$s swapped places with %2$s.</string>
+    <!-- Haunted House: as the turn ended, a ghost landed on pawns of %1$s, a player's name or a list of them, so they went back to their yards. -->
+    <string name="game_event_haunted">A ghost caught %1$s!</string>
     <!-- The move log's title. -->
     <string name="game_log_title">Moves</string>
     <!-- A line of the move log: %1$s is when it happened (in game_log_time_pattern), %2$s what happened. -->
@@ -451,7 +455,8 @@
     <!-- What a screen reader says for it. -->
     <string name="stats_count_all_spoken">All games</string>
     <!-- The first of Statistics' modes (shown as stats_count_all), as a screen reader says it: every mode's games. -->
-    <string name="stats_mode_all_spoken">All modes</string>
+    <string name="stats_mode_all">All Modes</string>
+    <string name="stats_mode_all_description">Every mode's games, added together</string>
     <!-- Statistics with no games of the mode picked. %1$s is the mode's name (mode_*). -->
     <string name="stats_empty_mode">No %1$s games yet.</string>
     <!-- Statistics with no games of the mode and count picked. %1$s is the mode's name, %2$d the count (2 to 8). -->
@@ -1082,6 +1087,8 @@
     <string name="power_up_call_up_description">One of your pawns comes out of the yard.</string>
     <string name="power_up_swap">Swap</string>
     <string name="power_up_swap_description">Your pawn swaps places with the nearest rival ahead that's alone on a square, unless it's safe or shielded, or either pawn would pass its own start.</string>
+    <string name="mode_haunted_house">Haunted House</string>
+    <string name="mode_haunted_house_description">The classic rules with ghosts on the track, which send any pawn they land on back to its yard</string>
     <string name="player_colour_yellow">Yellow</string>
     <string name="settings_motion_die_roll">Die roll</string>
     <string name="settings_motion_pawn_move">Pawn moves</string>
@@ -1124,6 +1131,8 @@
     <string name="rules_chaos_1">In Chaos there are power-ups on the track, one on each player's stretch of it. End a move on one to use it at once:</string>
     <string name="rules_chaos_2">Only one power-up works in a move: a pawn moved onto another leaves it there. A power-up that's taken comes back somewhere else a few rolls later.</string>
     <string name="rules_chaos_3">Bouncing off a shield earns no roll unless your pawn captures where it settles. A pawn brought out of the yard can't bounce, so a shield doesn't stop it.</string>
+    <string name="rules_haunted_house_1">In Haunted House, ghosts haunt the track, one for every two players. After every second turn one of them drifts up to 6 squares, forwards or back, and you won't know which one or how far until it does.</string>
+    <string name="rules_haunted_house_2">A ghost sends every pawn on the square it lands on back to its yard, whoever's they are, unless the square is safe. Landing on a ghost yourself does no harm: it only catches pawns when it moves.</string>
     <string name="rules_modes_records">Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.</string>
     <!-- The House Rules pages: an introduction, then each house rule (house_rule_*) as a line of its own (rules_house_rule_line), grouped by what they change. -->
     <string name="rules_house_rules_title">House Rules</string>

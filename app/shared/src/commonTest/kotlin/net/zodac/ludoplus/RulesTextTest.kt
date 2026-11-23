@@ -194,6 +194,16 @@ class RulesTextTest : UiTest() {
             ),
             diagram = null,
         ),
+        Page(
+            "Haunted House",
+            "Haunted House",
+            listOf(
+                "In Haunted House, ghosts haunt the track, one for every two players. After every second turn one of them drifts up to 6 squares, forwards or back, and you won't know which one or how far until it does.",
+                "A ghost sends every pawn on the square it lands on back to its yard, whoever's they are, unless the square is safe. Landing on a ghost yourself does no harm: it only catches pawns when it moves.",
+                "Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.",
+            ),
+            diagram = null,
+        ),
     )
 
     /** Each group's tab, and its pages. */

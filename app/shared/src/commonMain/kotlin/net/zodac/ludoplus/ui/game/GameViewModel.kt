@@ -282,7 +282,7 @@ class GameViewModel(
                     rollForPartners = setup.rollForPartners,
                 ).withHouseRules(setup.playedHouseRules),
                 // Drawn only where the rules need it.
-                seed = if (mode.rules.powerUps) random.nextLong() else 0,
+                seed = if (mode.rules.hasChances) random.nextLong() else 0,
             ),
             startedAtEpochMillis = startedAt,
             customName = setup.customMode?.name,
@@ -559,7 +559,7 @@ class GameViewModel(
         if (tutorial != null || game.guestSeat != null) return
         val move = LudoEngine.automaticMove(game.state) ?: return
         automaticMove = viewModelScope.launch {
-            pausableDelay(pacing.waitAfter(game.state.lastEvent, game.state.board.homeProgress))
+            pausableDelay(pacing.waitAfter(game.state.lastEvent, game.state.board.homeProgress, game.state.ghostMove))
             if (_game.value?.state != game.state) return@launch
             automaticMove = null
             update(LudoEngine.move(game.state, move))
@@ -578,7 +578,7 @@ class GameViewModel(
         }
         if (game.state.isFinished || cpuTurn?.isActive == true) return
         cpuTurn = viewModelScope.launch {
-            pausableDelay(pacing.waitAfter(game.state.lastEvent, game.state.board.homeProgress))
+            pausableDelay(pacing.waitAfter(game.state.lastEvent, game.state.board.homeProgress, game.state.ghostMove))
             val now = _game.value ?: return@launch
             // A guest back in its seat plays it again.
             if (!computerPlays(now)) {

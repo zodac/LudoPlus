@@ -122,6 +122,7 @@ fun LudoBoard(
     val currentState by rememberUpdatedState(state)
     val currentOnMove by rememberUpdatedState(onMove)
     val motion = rememberMoveMotion(state)
+    val ghostMotion = rememberGhostMotion(state)
     val theme = LocalGameVisualTheme.current
     val layout = BoardLayout.of(state.board)
     // Read here, so the board's layer below holds a number rather than the state, which changes every move.
@@ -170,7 +171,7 @@ fun LudoBoard(
             if (lastStanding) drawFallen(state, layout, unit, { pawnColours[it] }, theme.pawns) { player, pawn -> animating != null && motion.isAnimated(player, pawn) }
             for (mark in marks) {
                 // The moving pawn and any it captured are drawn on their way, below; the rest of their mark stays.
-                val pawns = if (animating == null) mark.pawns else mark.pawns.filterNot { motion.isAnimated(mark.player, it) }
+                val pawns = mark.pawns.filterNot { motion.isAnimated(mark.player, it) || ghostMotion.isCaught(PawnRef(mark.player, it)) }
                 if (pawns.isEmpty()) continue
                 val colour = pawnColours[mark.player]
                 val ringed = animating == null && pawns.any { PawnRef(mark.player, it) in movable }
@@ -178,6 +179,15 @@ fun LudoBoard(
                 if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
                 with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, colour, ringed) }
                 if (pawns.size > 1) drawCount(textMeasurer, pawns.size, mark, unit)
+            }
+        }
+        // The ghosts over the pawns, the drifting one and any it's catching on a layer of their own.
+        if (state.rules.ghosts) {
+            Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { with(ghostMotion) { drawStill(state, layout, size.minDimension / layout.size) } }
+            if (ghostMotion.drifting != null) {
+                BoundedArt(modifier = Modifier.fillMaxSize()) {
+                    with(ghostMotion) { drawDrift(size.minDimension / layout.size, theme.pawns, { pawnColours[it] }, moving = animating?.let { PawnRef(it.player, it.pawn) }) }
+                }
             }
         }
         // The move under way: only this is drawn again on its frames, reading the move's clock as it draws, and only

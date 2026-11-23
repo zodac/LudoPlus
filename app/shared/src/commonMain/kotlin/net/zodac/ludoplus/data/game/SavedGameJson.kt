@@ -25,6 +25,8 @@ import net.zodac.ludoplus.data.stringList
 import net.zodac.ludoplus.data.toJson
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.GameState
+import net.zodac.ludoplus.game.GhostMove
+import net.zodac.ludoplus.game.Ghosts
 import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
@@ -161,6 +163,7 @@ object SavedGameJson {
                         put("timesCaptured", player.timesCaptured)
                         // A power-up's, while they last.
                         if (player.doubledRolls > 0) put("doubledRolls", player.doubledRolls)
+                        if (player.timesHaunted > 0) put("timesHaunted", player.timesHaunted)
                         if (player.shielded.isNotEmpty()) put("shielded", jsonInts(player.shielded.sorted()))
                     }
                 },
@@ -189,8 +192,21 @@ object SavedGameJson {
         if (state.rules.powerUps) {
             put("powerUps", JsonArray(state.powerUps.map { (square, powerUp) -> buildJsonObject { put("square", square); put("kind", powerUp.id) } }))
             put("powerUpsDue", jsonInts(state.powerUpsDue))
-            put("seed", state.seed.toString())
         }
+        // The ghosts, and the move one has just made, for a Nearby guest to see it made.
+        if (state.rules.ghosts) {
+            put("ghosts", jsonInts(state.ghosts))
+            put("turnsSinceGhost", state.turnsSinceGhost)
+            state.ghostMove?.let { move ->
+                put("ghostMove", buildJsonObject {
+                    put("ghost", move.ghost)
+                    put("from", move.from)
+                    put("steps", move.steps)
+                    put("caught", encodePawns(move.caught))
+                })
+            }
+        }
+        if (state.rules.hasChances) put("seed", state.seed.toString())
         state.lastEvent?.let { put("lastEvent", encodeEvent(it)) }
     }
 
@@ -204,6 +220,7 @@ object SavedGameJson {
                 captures = player.int("captures"),
                 timesCaptured = player.int("timesCaptured"),
                 doubledRolls = player.intOrNull("doubledRolls") ?: 0,
+                timesHaunted = player.intOrNull("timesHaunted") ?: 0,
                 shielded = if ("shielded" in player) player.array("shielded").ints().toSet() else emptySet(),
             )
         }
@@ -237,7 +254,16 @@ object SavedGameJson {
         require(powerUps.keys.all { it in 0..<board.trackLength && !board.isSafe(it) }) { "A power-up is off the track or on a safe square" }
         val powerUpsDue = if (rules.powerUps) obj.array("powerUpsDue").ints() else emptyList()
         require(powerUpsDue.all { it in 1..PowerUp.RETURN_ROLLS }) { "A power-up is due at a time that doesn't fit" }
-        val seed = if (rules.powerUps) obj.string("seed").toLongOrNull() ?: throw JsonParseException("The seed isn't a number") else 0
+        val ghosts = if (rules.ghosts) obj.array("ghosts").ints() else emptyList()
+        require(ghosts.size == (if (rules.ghosts) Ghosts.count(playerCount) else 0) && ghosts.all { it in 0..<board.trackLength }) { "The ghosts aren't on the track" }
+        val turnsSinceGhost = if (rules.ghosts) obj.int("turnsSinceGhost") else 0
+        require(turnsSinceGhost >= 0) { "Negative turns" }
+        val ghostMove = obj.objOrNull("ghostMove")?.takeIf { rules.ghosts }?.let { move ->
+            GhostMove(move.int("ghost"), move.int("from"), move.int("steps"), decodePawns(move.array("caught"))).also {
+                require(it.ghost in ghosts.indices && it.steps != 0) { "A ghost's move doesn't fit" }
+            }
+        }
+        val seed = if (rules.hasChances) obj.string("seed").toLongOrNull() ?: throw JsonParseException("The seed isn't a number") else 0
         // An ended game: every player placed (the last ones as they stood, where it stopped at its first winner).
         if (obj.flag("finished")) {
             require(finishingOrder.sorted() == players.indices.toList()) { "An ended game hasn't placed every player" }
@@ -252,6 +278,9 @@ object SavedGameJson {
                 knockedOut = knockedOut,
                 powerUps = powerUps,
                 powerUpsDue = powerUpsDue,
+                ghosts = ghosts,
+                turnsSinceGhost = turnsSinceGhost,
+                ghostMove = ghostMove,
                 seed = seed,
                 lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
             )
@@ -282,6 +311,9 @@ object SavedGameJson {
             knockedOut = knockedOut,
             powerUps = powerUps,
             powerUpsDue = powerUpsDue,
+            ghosts = ghosts,
+            turnsSinceGhost = turnsSinceGhost,
+            ghostMove = ghostMove,
             seed = seed,
             lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
         )
@@ -303,12 +335,14 @@ object SavedGameJson {
         put("event", encodeEvent(entry.event))
         put("at", entry.atEpochMillis)
         entry.place?.let { put("place", it) }
+        if (entry.haunted.isNotEmpty()) put("haunted", encodePawns(entry.haunted))
     }
 
     private fun decodeLogEntry(obj: JsonObject, playerCount: Int): LogEntry = LogEntry(
         event = decodeEvent(obj.obj("event"), playerCount),
         atEpochMillis = obj.long("at"),
         place = obj.intOrNull("place")?.also { require(it in 1..playerCount) { "No place $it" } },
+        haunted = decodePawnsIn(obj, "haunted").also { pawns -> require(pawns.all { it.player in 0..<playerCount }) { "No player in $pawns" } },
     )
 
     private fun encodeEvent(event: GameEvent): JsonObject = buildJsonObject {

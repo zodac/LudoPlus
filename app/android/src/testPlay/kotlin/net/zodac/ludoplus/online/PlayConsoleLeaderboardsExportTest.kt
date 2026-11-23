@@ -55,6 +55,7 @@ private val GameMode.leaderboardSymbol: ImageVector
         GameMode.PORTALS -> Symbols.Sync
         GameMode.SURVIVAL -> Symbols.Swords
         GameMode.CHAOS -> Symbols.AutoAwesome
+        GameMode.HAUNTED_HOUSE -> Symbols.Castle
     }
 
 /**

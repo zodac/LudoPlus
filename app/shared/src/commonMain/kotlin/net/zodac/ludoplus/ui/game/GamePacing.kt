@@ -1,6 +1,8 @@
 package net.zodac.ludoplus.ui.game
 
+import kotlin.math.abs
 import net.zodac.ludoplus.game.GameEvent
+import net.zodac.ludoplus.game.GhostMove
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PowerUpEffect
 
@@ -15,6 +17,9 @@ const val HOME_FLOURISH_MILLIS = 720
 
 /** How long a pawn takes to go in at a portal and come out at its pair, once it has landed on it. */
 const val PORTAL_WARP_MILLIS = 520
+
+/** How long a ghost takes to drift from one square to the next: half a pawn's speed. */
+const val GHOST_STEP_MILLIS = PAWN_STEP_MILLIS * 2
 
 /** How long the die tumbles before it settles on a roll. */
 const val DIE_TUMBLE_MILLIS = 420
@@ -31,6 +36,9 @@ private fun hopsBack(move: Move): Int = move.bouncedFrom?.let { it - move.to } ?
  */
 fun travelMillis(move: Move, effect: PowerUpEffect? = null): Int =
     (hops(move) + hopsBack(move)) * PAWN_STEP_MILLIS + if (move.via != null || effect?.movedTo != null) PORTAL_WARP_MILLIS else 0
+
+/** How long [move] plays for: the ghost's drift, then the flight of any pawn it caught. */
+fun ghostMillis(move: GhostMove): Int = abs(move.steps) * GHOST_STEP_MILLIS + if (move.caught.isEmpty()) 0 else CAPTURE_FLIGHT_MILLIS
 
 /**
  * What follows [move]'s landing, on a board whose home is [homeProgress]: a capture's flight back to its yard (or another
@@ -55,9 +63,10 @@ data class GamePacing(
 ) {
     /**
      * How long to wait after [event], on a board whose home is [homeProgress], before the next action: the pause, plus
-     * its animation's length (a move's travel, then its capture's flight or its home flourish).
+     * its animation's length (a move's travel, then its capture's flight or its home flourish), and the [ghostMove]'s that
+     * came after it.
      */
-    fun waitAfter(event: GameEvent?, homeProgress: Int): Long = thinkMillis + when (event) {
+    fun waitAfter(event: GameEvent?, homeProgress: Int, ghostMove: GhostMove? = null): Long = thinkMillis + (if (ghostMove != null && pawnsAnimated) ghostMillis(ghostMove) else 0) + when (event) {
         null -> 0L
         is GameEvent.Moved -> if (pawnsAnimated) (travelMillis(event.move, event.effect) + afterLandingMillis(event.move, homeProgress, event.effect)).toLong() else 0L
         is GameEvent.Rolled, is GameEvent.NoMove, is GameEvent.RollAgainLimit -> if (dieAnimated) DIE_TUMBLE_MILLIS.toLong() else 0L

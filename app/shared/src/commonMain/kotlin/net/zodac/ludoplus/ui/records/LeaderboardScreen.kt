@@ -95,7 +95,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit) {
         val count = playerCount ?: return@ScreenScaffold HoldPageCover()
         val shownMode = mode ?: return@ScreenScaffold HoldPageCover()
         val modeName = stringResource(shownMode.displayName)
-        ModeRow(options = GameMode.entries, selected = shownMode, onSelect = { viewModel.selectMode(it!!) })
+        ModePicker(options = GameMode.entries, selected = shownMode, onSelect = { viewModel.selectMode(it!!) })
         Text(
             text = stringResource(if (shownMode.ranking == LeaderboardRanking.MOST_PAWNS_LEFT) Res.string.leaderboard_heading_pawns else Res.string.leaderboard_heading, modeName),
             style = MaterialTheme.typography.titleMedium,

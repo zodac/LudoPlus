@@ -33,6 +33,7 @@ import net.zodac.ludoplus.resources.game_pawn_shielded_spoken
 import net.zodac.ludoplus.resources.game_square_blockade_spoken
 import net.zodac.ludoplus.resources.game_square_column_spoken
 import net.zodac.ludoplus.resources.game_square_empty_spoken
+import net.zodac.ludoplus.resources.game_square_ghost_spoken
 import net.zodac.ludoplus.resources.game_square_home_spoken
 import net.zodac.ludoplus.resources.game_square_portal_shut_spoken
 import net.zodac.ludoplus.resources.game_square_portal_spoken
@@ -140,7 +141,7 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
             startOf?.let { stringResource(Res.string.game_square_start_spoken, stringResource(colourOf(it).label)) },
             safety,
             blockade,
-        ) + portalClauses(state, square, colourOf) + powerUpClauses(state, square) + here.map { it.second }.ifEmpty { listOf(empty) }
+        ) + portalClauses(state, square, colourOf) + powerUpClauses(state, square) + ghostClauses(state, square) + here.map { it.second }.ifEmpty { listOf(empty) }
         val move = state.players.indices.firstNotNullOfOrNull { player -> movableAt(player, here.filter { it.first.first == player }.map { it.first.second }) }
         spots += Spot(layout.trackSquare(square).spotBounds(), joinClauses(clauses), move, move?.let(moveLabels::get))
     }
@@ -177,6 +178,11 @@ private fun portalClauses(state: GameState, square: Int, colourOf: (Int) -> Play
 @Composable
 private fun powerUpClauses(state: GameState, square: Int): List<String> =
     listOfNotNull(state.powerUps[square]?.let { stringResource(Res.string.game_square_power_up_spoken, stringResource(it.title)) })
+
+/** What's said of a ghost on track [square]. */
+@Composable
+private fun ghostClauses(state: GameState, square: Int): List<String> =
+    if (square in state.ghosts) listOf(stringResource(Res.string.game_square_ghost_spoken)) else emptyList()
 
 /**
  * What TalkBack offers for [move]: "Move Red pawn 2 4 squares, capturing Green pawn 1", or "Bring Red pawn 1 out of the

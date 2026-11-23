@@ -4,6 +4,7 @@ import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.mode_chaos
+import net.zodac.ludoplus.resources.mode_haunted_house
 import net.zodac.ludoplus.resources.mode_portals
 import net.zodac.ludoplus.resources.mode_quick
 import net.zodac.ludoplus.resources.mode_survival
@@ -25,6 +26,8 @@ import net.zodac.ludoplus.resources.rules_chaos_3
 import net.zodac.ludoplus.resources.rules_group_gameplay
 import net.zodac.ludoplus.resources.rules_group_house_rules
 import net.zodac.ludoplus.resources.rules_group_modes
+import net.zodac.ludoplus.resources.rules_haunted_house_1
+import net.zodac.ludoplus.resources.rules_haunted_house_2
 import net.zodac.ludoplus.resources.rules_house_captures_tab
 import net.zodac.ludoplus.resources.rules_house_captures_title
 import net.zodac.ludoplus.resources.rules_house_rolling_tab
@@ -175,6 +178,11 @@ private val GAME_MODES = RulesGroup(
             Res.string.mode_chaos,
             Res.string.mode_chaos,
             texts(Res.string.rules_chaos_1) + PowerUp.entries.map(::RulesPowerUp) + texts(Res.string.rules_chaos_2, Res.string.rules_chaos_3, Res.string.rules_modes_records),
+        ),
+        RulesPage(
+            Res.string.mode_haunted_house,
+            Res.string.mode_haunted_house,
+            texts(Res.string.rules_haunted_house_1, Res.string.rules_haunted_house_2, Res.string.rules_modes_records),
         ),
     ),
 )

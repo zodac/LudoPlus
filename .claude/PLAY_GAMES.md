@@ -108,11 +108,11 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
 
 ## Leaderboards
 
-**LudoPlus (decided 2026-11-18):** a board for each mode ranked by turns and player count, 2-8 (5 modes × 7 = 35 of the 70),
+**LudoPlus (decided 2026-11-18):** a board for each mode ranked by turns and player count, 2-8 (6 modes × 7 = 42 of the 70),
 each the turns in seat 1's win under the mode's own rules, smaller better. Play ranks one number, ties by submission time,
 so the local Leaderboard's captures tie-break doesn't carry.
 
-- **35 boards**, one per mode and player count (`playLeaderboardKeys`: `<GameMode.onlineLeaderboardKey>_<n>p`, as
+- **42 boards**, one per mode and player count (`playLeaderboardKeys`: `<GameMode.onlineLeaderboardKey>_<n>p`, as
     `classic_4p`): numeric, smaller is better, from 1, tamper protection on. Ids in `playLeaderboardIds`, empty until the
     Console has them.
 - **Submitted**: the turns of seat 1's win, only under the mode's own rules (`isPrimaryPlayer` and `playedUnmodified`:

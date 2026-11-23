@@ -46,6 +46,7 @@ import net.zodac.ludoplus.resources.game_event_capture
 import net.zodac.ludoplus.resources.game_event_double
 import net.zodac.ludoplus.resources.game_event_finished
 import net.zodac.ludoplus.resources.game_event_first
+import net.zodac.ludoplus.resources.game_event_haunted
 import net.zodac.ludoplus.resources.game_event_home
 import net.zodac.ludoplus.resources.game_event_knocked_out
 import net.zodac.ludoplus.resources.game_event_move
@@ -178,6 +179,15 @@ private fun colourOf(game: StartedGame, seatColours: List<PlayerColour?>, player
 /** What [entry] says in the log: "Alex rolled 3 and had no move.", "Alex moved a pawn 4 squares.", "Alex captured 1 of Sam's pawns." */
 @Composable
 internal fun logLine(game: StartedGame, entry: LogEntry): String {
+    val line = eventLine(game, entry)
+    if (entry.haunted.isEmpty()) return line
+    val names = entry.haunted.map { it.player }.distinct().map { game.players[it].name }
+    return stringResource(Res.string.game_event_and, line, stringResource(Res.string.game_event_haunted, spokenList(names)))
+}
+
+/** What [entry]'s event did, before any ghost came. */
+@Composable
+private fun eventLine(game: StartedGame, entry: LogEntry): String {
     val name = { index: Int -> game.players[index].name }
     return when (val event = entry.event) {
         is GameEvent.NoMove -> when {
@@ -245,7 +255,8 @@ private fun effectLine(game: StartedGame, event: GameEvent.Moved, effect: PowerU
 private fun logNames(game: StartedGame, entry: LogEntry): List<Int> {
     val state = game.state
     val event = entry.event
-    return when {
+    val haunted = entry.haunted.map { it.player }
+    val named = when {
         event is GameEvent.Moved && event.finished -> (event.move.owner ?: event.player).let { owner ->
             state.players.indices.filter { it == owner || state.rules.arePartners(owner, it) }
         }
@@ -254,6 +265,7 @@ private fun logNames(game: StartedGame, entry: LogEntry): List<Int> {
         ).distinct()
         else -> listOf(event.player)
     }
+    return (named + haunted).distinct()
 }
 
 /**

@@ -42,7 +42,7 @@ import net.zodac.ludoplus.resources.setup_custom_need_name
 import net.zodac.ludoplus.resources.setup_custom_need_rule
 import net.zodac.ludoplus.resources.setup_custom_save
 import net.zodac.ludoplus.resources.setup_house_rules
-import net.zodac.ludoplus.ui.common.WrappedSegmentedChoiceRow
+import net.zodac.ludoplus.ui.common.ChoicePicker
 import net.zodac.ludoplus.ui.common.MAIN_ACTION_HEIGHT
 import net.zodac.ludoplus.ui.common.ScreenScaffold
 import net.zodac.ludoplus.ui.common.ScrollingColumn
@@ -89,11 +89,13 @@ internal fun CustomModeEditor(editing: CustomMode?, existing: List<CustomMode>, 
                     modifier = Modifier.fillMaxWidth().semantics { if (nameProblem != null) error(nameProblem) },
                 )
                 EditorCard(stringResource(Res.string.setup_custom_base)) {
-                    WrappedSegmentedChoiceRow(
+                    ChoicePicker(
+                        title = stringResource(Res.string.setup_custom_base),
                         options = GameMode.entries,
                         selected = base,
                         onSelect = { base = it },
                         label = { stringResource(it.displayName) },
+                        description = { stringResource(it.description) },
                     )
                 }
                 EditorCard(stringResource(Res.string.setup_house_rules)) {

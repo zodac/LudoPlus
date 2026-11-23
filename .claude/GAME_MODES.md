@@ -12,6 +12,7 @@ achievement audit (what each mode or house rule blocks or guards) is in `GAME_MO
 | `PORTALS` | `portals` | Portals on the track (`portals = true`): a move ending on one comes out at its pair | No |
 | `SURVIVAL` | `survival` | Six pawns, starting out (`startsOut`), on an endless board: a captured pawn is out, and the last player with one wins (`lastStanding`), with sudden death (`suddenDeath`) | No |
 | `CHAOS` | `chaos` | Power-ups on the track (`powerUps = true`, `model/PowerUp.kt`) | No |
+| `HAUNTED_HOUSE` | `haunted_house` | Ghosts on the track (`ghosts = true`, `game/Ghosts.kt`) | No |
 
 **Custom modes** (`model/CustomMode.kt`) are the player's own: a built-in base and house rules, saved under a name
 (`DESIGN.md`, "Game modes"). They are data in the settings, not `GameMode` entries: a game of one is its base mode's,

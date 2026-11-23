@@ -310,6 +310,15 @@ private fun GameFeedback(state: GameState) {
     val firstSeen = remember { event }
     val animated = !groupReduceMotion(MotionGroup.PAWN_MOVE)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val ghostMove = state.ghostMove
+    val firstGhostMove = remember { ghostMove }
+    LaunchedEffect(ghostMove) {
+        if (ghostMove == null || ghostMove === firstGhostMove || ghostMove.caught.isEmpty()) return@LaunchedEffect
+        // As the ghost reaches them, once the turn before it has played out.
+        if (animated) lifecycle.delayWhileResumed(turnMillis(state) + ghostMillis(ghostMove) - CAPTURE_FLIGHT_MILLIS.toLong())
+        haptics.playCaptureBuzz()
+        sounds.playCapture()
+    }
     LaunchedEffect(event) {
         if (event == null || event === firstSeen) return@LaunchedEffect
         when (event) {

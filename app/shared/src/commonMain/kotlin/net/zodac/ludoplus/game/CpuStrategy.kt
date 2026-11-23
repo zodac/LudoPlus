@@ -96,7 +96,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
 
     internal fun value(state: GameState, move: Move): Double {
         // Nobody knows what a power-up's chances will be, so it's worth the same whatever it is.
-        val after = LudoEngine.moveWithoutPowerUp(state, move)
+        val after = LudoEngine.moveWithoutChances(state, move)
         val me = state.current
         var value = if (takesPowerUp(state, move.ownerIn(state), move)) weights.powerUp else 0.0
         after.players.forEachIndexed { index, player ->

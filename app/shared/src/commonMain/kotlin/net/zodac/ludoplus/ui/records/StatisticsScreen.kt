@@ -59,7 +59,7 @@ fun StatisticsScreen(viewModel: StatisticsViewModel, onBack: () -> Unit) {
         LivePlayTimeLine(viewModel.readPlaySeconds)
         // Nothing until the figures are read, so the empty card never flashes up before players who have some.
         val all = players ?: return@ScreenScaffold HoldPageCover()
-        ModeRow(options = listOf(null) + GameMode.entries, selected = mode, onSelect = viewModel::selectMode)
+        ModePicker(options = listOf(null) + GameMode.entries, selected = mode, onSelect = viewModel::selectMode)
         PlayerCountRow(options = listOf(null) + PLAYER_COUNTS, selected = playerCount, onSelect = viewModel::selectPlayerCount)
         if (all.isEmpty()) {
             val count = playerCount

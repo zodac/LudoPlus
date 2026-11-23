@@ -171,6 +171,7 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 | Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | No |
 | Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; sudden death late on | Yes, its own, by most pawns left | No |
 | Chaos | Power-ups on the track, taken by the pawn that ends its move on one | Yes, its own | No |
+| Haunted House | Ghosts on the track, which send the pawns they land on back to their yards | Yes, its own | No |
 
 Every mode has its own Leaderboard (one a player count) and its own Statistics page. Only Classic earns achievements
 (`GameMode.earnsAchievements`) until the maintainer's review of the list adds any for a mode (2026-11-18). The Rules
@@ -196,8 +197,7 @@ shut to. Going through never takes a pawn past its own start square, into its ho
 pair is shut both ways to the one seat whose start lies between its ends, for which each is an ordinary square, and has
 a lock in its colour. With Blockades, one at either end stops the move. A pair is told by its symbol and colour, and a
 long pair by a split ring (past four seats, a long pair shares a short one's symbol). TalkBack: "Square 7, portal to
-square 23, shut to Green, empty", "Move Red pawn 1 2 squares, through a portal to square 11". Where a mode is picked by
-segments (Leaderboard, Statistics, Based On), they wrap over two rows (`WrappedSegmentedChoiceRow`).
+square 23, shut to Green, empty", "Move Red pawn 1 2 squares, through a portal to square 11".
 
 **Survival** (`GameRules.startsOut`, `lastStanding`, `suddenDeath`; the maintainer, 2026-11-24). Every pawn starts on
 its start square, and the board is endless (`BoardGeometry.endless`): no home column, every square of the track walked,
@@ -237,12 +237,21 @@ be. What a power-up did is the move's `GameEvent.Moved.effect`. TalkBack: "Squar
 1, 47 squares from home, shielded", "Move Red pawn 1 2 squares, taking Teleport", "1 doubled roll left"; the log adds a
 sentence ("Alex teleported 4 squares.").
 
+**Haunted House** (`GameRules.ghosts`, `game/Ghosts.kt`; the maintainer, 2026-11-24). A ghost for every two players,
+nobody's. After every second turn a random one moves a die's roll of squares, either way, never onto another, and what it
+will do isn't shown. It sends every pawn on the square it lands on back to its yard, but for one safe there or in a
+blockade; it passes over the rest, and a pawn landing on it comes to no harm. A catch is nobody's capture: it counts in
+`PlayerState.timesHaunted`, not `timesCaptured`. Its chances are drawn from the seed, as Chaos's are. The move is
+`GameState.ghostMove`, shown after the turn it came after, at half a pawn's speed (`GHOST_STEP_MILLIS`, `GhostArt.kt`). Games
+run about 10% longer than Classic with two players, 25% with four, 50% with six, and 70% with eight (a simulation).
+TalkBack: "Square 2, ghost, empty"; the log adds "A ghost caught Sam!" to the turn's line.
+
 **Custom modes** (`model/CustomMode.kt`, the maintainer, 2026-11-18). A name (unique among the player's and the
 built-in modes', whatever its case; at most 24 characters), a base mode, and at least one house rule (without one it
 would be its base). Kept as JSON in the `custom_modes` setting (`CustomModesJson`; one that can't be read is dropped),
 the one picked as `custom_mode`. New Game's mode picker lists them after the built-in modes, each with its base and
 house rules as its line; under it, New Custom Mode, and while one is picked, Edit and Delete (Delete asks first). The
-editor is a page of its own: the name, Based On (a segment a mode), and a switch a house rule, with Save offered once it
+editor is a page of its own: the name, Based On (the same picker as New Game's), and a switch a house rule, with Save offered once it
 can be. While one is picked, the House Rules card says "Set by Cut-Throat: Blockades and Must Capture." in place of the
 switches, which keep their own picks for the built-in modes. A game plays its base with its house rules, titled by its
 name (`StartedGame.customName`, saved with the game), and counts towards nothing, as any game with house rules. They're

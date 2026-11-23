@@ -33,7 +33,13 @@ data class GameState(
     val powerUps: Map<Int, PowerUp> = emptyMap(),
     /** The rolls left before each power-up taken comes back, as another somewhere else. */
     val powerUpsDue: List<Int> = emptyList(),
-    /** What the power-ups' chances are drawn from next ([PowerUps]), so that a game plays on the same wherever it's kept. */
+    /** Where the rules have ghosts, the absolute track square each is on. */
+    val ghosts: List<Int> = emptyList(),
+    /** How many turns have ended since a ghost last moved. */
+    val turnsSinceGhost: Int = 0,
+    /** The ghost's move that came after the last action, or null where it ended no turn or none was due. */
+    val ghostMove: GhostMove? = null,
+    /** What the power-ups' and ghosts' chances are drawn from next, so that a game plays on the same wherever it's kept. */
     val seed: Long = 0,
     /** What the last action did, for the screen to show and say. Null before the first roll. */
     val lastEvent: GameEvent? = null,
@@ -99,7 +105,8 @@ data class GameState(
         /**
          * A new game of [mode] for [playerCount] players under [rules] (the mode's own by default), every pawn in its
          * yard (or where the rules start them out, on its start square), [first] to roll. The players sit at [seats], in clockwise order: spread round the board by default
-         * ([BoardGeometry.seatsFor]). Where the rules have power-ups, [seed] is what their chances are drawn from.
+         * ([BoardGeometry.seatsFor]). Where the rules have power-ups or ghosts, [seed] is what their chances are
+         * drawn from.
          */
         fun new(
             mode: GameMode,
@@ -124,7 +131,7 @@ data class GameState(
                 current = first,
                 phase = TurnPhase.AwaitingRoll,
                 seed = seed,
-            ).let { if (rules.powerUps) PowerUps.start(it) else it }
+            ).let { if (rules.powerUps) PowerUps.start(it) else it }.let { if (rules.ghosts) Ghosts.start(it) else it }
         }
     }
 }
@@ -143,6 +150,8 @@ data class PlayerState(
     val timesCaptured: Int = 0,
     /** How many more of their rolls count double ([PowerUp.DOUBLE]). */
     val doubledRolls: Int = 0,
+    /** How many of their pawns ghosts have sent back to their yard. */
+    val timesHaunted: Int = 0,
     /** Their pawns with a shield ([PowerUp.SHIELD]), by index. */
     val shielded: Set<Int> = emptySet(),
 ) {

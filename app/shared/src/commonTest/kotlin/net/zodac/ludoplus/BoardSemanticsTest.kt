@@ -218,6 +218,23 @@ class BoardSemanticsTest : UiTest() {
     }
 
     @Test
+    fun `Haunted House - a square says its ghost - and the log who one caught as a turn ended`() = uiTest(TestScreen(411, 891)) {
+        val new = GameState.new(GameMode.HAUNTED_HOUSE, 4).copy(ghosts = listOf(1, 40))
+        val state = new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = if (i == 0) listOf(1, Y, Y, Y) else listOf(Y, Y, Y, Y)) })
+        show(
+            state,
+            log = listOf(
+                LogEntry(GameEvent.NoMove(0, 3), haunted = listOf(PawnRef(1, 0), PawnRef(1, 1))),
+                LogEntry(GameEvent.Moved(0, 2, Move(0, 1, 3), finished = false), haunted = listOf(PawnRef(0, 0), PawnRef(2, 1))),
+            ),
+        )
+        compose.onNodeWithContentDescription("Square 2, ghost, Red pawn 1, 55 squares from home").assertExists()
+        compose.onNodeWithContentDescription("Square 41, ghost, empty").assertExists()
+        compose.onNodeWithContentDescription("Alex rolled 3 and had no move. A ghost caught Gambit!").assertExists()
+        compose.onNodeWithContentDescription("Alex moved a pawn 2 squares. A ghost caught Alex and Sam!").assertExists()
+    }
+
+    @Test
     fun `the log says who was knocked out`() = uiTest(TestScreen(411, 891)) {
         val state = GameState.new(GameMode.SURVIVAL, 4)
         val move = Move(0, 1, 3, listOf(PawnRef(1, 0), PawnRef(2, 0)))

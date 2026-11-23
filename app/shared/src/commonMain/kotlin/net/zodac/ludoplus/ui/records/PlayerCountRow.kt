@@ -9,9 +9,11 @@ import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.setup_player_count_spoken
 import net.zodac.ludoplus.resources.stats_count_all
 import net.zodac.ludoplus.resources.stats_count_all_spoken
-import net.zodac.ludoplus.resources.stats_mode_all_spoken
+import net.zodac.ludoplus.resources.setup_game_mode
+import net.zodac.ludoplus.resources.stats_mode_all
+import net.zodac.ludoplus.resources.stats_mode_all_description
+import net.zodac.ludoplus.ui.common.ChoicePicker
 import net.zodac.ludoplus.ui.common.FittedSegmentedChoiceRow
-import net.zodac.ludoplus.ui.common.WrappedSegmentedChoiceRow
 import net.zodac.ludoplus.ui.common.pluralStringResource
 import net.zodac.ludoplus.ui.common.stringResource
 
@@ -36,16 +38,17 @@ internal fun PlayerCountRow(options: List<Int?>, selected: Int?, onSelect: (Int?
 }
 
 /**
- * Which game mode's records a page shows: a segment a mode ([GameMode.entries]), by its name, and null, where offered,
- * as "All" ("All modes").
+ * Which game mode's records a page shows: a picker of every mode of [options], each with its line, and null, where
+ * offered, as all of them.
  */
 @Composable
-internal fun ModeRow(options: List<GameMode?>, selected: GameMode?, onSelect: (GameMode?) -> Unit) {
-    WrappedSegmentedChoiceRow(
+internal fun ModePicker(options: List<GameMode?>, selected: GameMode?, onSelect: (GameMode?) -> Unit) {
+    ChoicePicker(
+        title = stringResource(Res.string.setup_game_mode),
         options = options,
         selected = selected,
         onSelect = onSelect,
-        label = { mode -> mode?.let { stringResource(it.displayName) } ?: stringResource(Res.string.stats_count_all) },
-        spokenLabel = { mode -> mode?.let { stringResource(it.displayName) } ?: stringResource(Res.string.stats_mode_all_spoken) },
+        label = { mode -> stringResource(mode?.displayName ?: Res.string.stats_mode_all) },
+        description = { mode -> stringResource(mode?.description ?: Res.string.stats_mode_all_description) },
     )
 }

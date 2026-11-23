@@ -237,6 +237,28 @@ class SavedGameJsonTest {
     }
 
     @Test
+    fun `every state of random Haunted House games comes back as it was saved - ghosts and the moves they make - and plays on the same`() {
+        val random = Random(31)
+        var caught = 0
+        repeat(4) { index ->
+            var state = GameState.new(GameMode.HAUNTED_HOUSE, 4, seed = index.toLong())
+            while (!state.isFinished) {
+                val saved = game(state).copy(mode = GameMode.HAUNTED_HOUSE)
+                val back = SavedGameJson.decode(SavedGameJson.encode(saved))
+                assertEquals(saved, back)
+                caught += state.ghostMove?.caught?.size ?: 0
+                state = when (val phase = state.phase) {
+                    is TurnPhase.AwaitingMove -> phase.moves.random(random).let { move ->
+                        LudoEngine.move(state, move).also { assertEquals(it, LudoEngine.move(back.state, move)) }
+                    }
+                    else -> LudoEngine.roll(state, random)
+                }
+            }
+        }
+        assert(caught > 0) { "No ghost caught a pawn" }
+    }
+
+    @Test
     fun `a custom mode's game comes back under its name - and a built-in mode's has none written`() {
         val rules = GameMode.CLASSIC.rules.withHouseRules(setOf(HouseRule.BLOCKADES))
         val saved = game(GameState.new(GameMode.CLASSIC, 4, rules = rules)).copy(customName = "Cut-Throat")

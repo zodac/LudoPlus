@@ -5,6 +5,8 @@ import net.zodac.ludoplus.resources.mode_chaos
 import net.zodac.ludoplus.resources.mode_chaos_description
 import net.zodac.ludoplus.resources.mode_classic
 import net.zodac.ludoplus.resources.mode_classic_description
+import net.zodac.ludoplus.resources.mode_haunted_house
+import net.zodac.ludoplus.resources.mode_haunted_house_description
 import net.zodac.ludoplus.resources.mode_portals
 import net.zodac.ludoplus.resources.mode_portals_description
 import net.zodac.ludoplus.resources.mode_quick
@@ -105,6 +107,15 @@ enum class GameMode(
         rules = GameRules(powerUps = true),
         onlineLeaderboardKey = "chaos",
     ),
+
+    /** The classic rules, with ghosts on the track that send home the pawns they land on. */
+    HAUNTED_HOUSE(
+        id = "haunted_house",
+        displayName = Res.string.mode_haunted_house,
+        description = Res.string.mode_haunted_house_description,
+        rules = GameRules(ghosts = true),
+        onlineLeaderboardKey = "haunted_house",
+    ),
     ;
 
     /** Its online leaderboard for games of [playerCount], if it has any: a bigger board's lap is longer, so each count has its own. */
@@ -188,6 +199,8 @@ data class GameRules(
     val portals: Boolean = false,
     /** Whether there are power-ups on the track ([PowerUp]), one for each seat's stretch of it. */
     val powerUps: Boolean = false,
+    /** Whether ghosts haunt the track, one for every two players, sending home the pawns they land on. */
+    val ghosts: Boolean = false,
     /** Whether every pawn starts the game on its start square, rather than in its yard. */
     val startsOut: Boolean = false,
     /**
@@ -200,6 +213,9 @@ data class GameRules(
     /** The house rules these rules were made with ([withHouseRules]): empty for a mode's own rules. */
     val houseRules: Set<HouseRule> = emptySet(),
 ) {
+    /** Whether a game of these rules draws chances of its own, besides the dice: power-ups' or ghosts'. */
+    val hasChances: Boolean get() = powerUps || ghosts
+
     /** Whether any house rule is on: such a game stays off the Leaderboard and out of Statistics, and earns no achievements. */
     val hasHouseRules: Boolean get() = houseRules.isNotEmpty()
 
