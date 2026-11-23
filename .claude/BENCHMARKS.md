@@ -41,6 +41,18 @@ Each of these fixed a reported stutter. New work must keep them.
     art past its box: a clip cuts off anything further. Art that only fades is cheaper as `PulsingArt`, recorded once.
     Used by a board's background, an animated mat, `CupCanvas` and the three cups with a canvas of their own, a die's
     `PipShape.CUSTOM`, and Glitch. `BoundedArtTest` holds it.
+- **The Ludo board draws in four parts** (`LudoBoard`), so a pawn's move redraws only the move:
+    - the board itself, painted once into an image per style, seats' colours, pawn count, size, and density
+        (`drawCachedSurface`), on a layer of its own;
+    - the turn's yard ring, on a layer, drawn again as the turn passes;
+    - the pawns standing still, on a layer, drawn again as a move starts and ends (the moving and captured pawns left out);
+    - the move itself in `BoundedArt`, which alone reads the move's clock. The board doesn't recompose on a move's frames.
+    - A `Canvas` is not a layer: three of them side by side all re-record together when one changes.
+    - `BoardFrameCostTest` holds the board painted once through a move.
+- **The game's background decoration is `BoundedArt`** (`TableBackgroundFill`), as DiceFive's was.
+- **The die's tumble** (`GameDie`) recomposes only as a face flicks past (`derivedStateOf`), its turn is read only by its
+    `graphicsLayer`, and the face flicking past is held still (`LocalArtFrozen`), as `TossedCube`'s faces are. A style
+    that tumbles itself (D20, Egg) still reads the clock every frame. `BoardFrameCostTest` holds it.
 - **Art that fills the screen gets a layer instead** (`Modifier.redrawsAlone`, on a sibling under what it sits behind): the
     menu's drifting dice, where a node would bound nothing. It saves the recording, not the redraw. `Modifier.clip` is a
     layer too. `RedrawsAloneTest` holds the tray and backdrop to it.
@@ -213,6 +225,12 @@ Desktop JVM, warm, in ms. These are relative only: compare within a run.
     - Floating Dice background: 1.43 and ~2.7, now ~0.52 and ~0.8. No stars in it, so this is the layer's saving alone.
     - The menu: 0.95 and ~2.5, now ~0.80 and ~1.4. Its content was already in layers; a backdrop with nothing on it is
         ~0.75, so what's left is the drifting dice drawing themselves.
+- **A pawn move and a die's tumble** (2026-11-23, sandbox emulator, debug build, a scratch Activity's `FrameMetrics`
+    over 40 moves or tumbles, two runs each; p50 then p95, ms). Classic styles, a mid-game 4-player board:
+    - A move's frames: draw 2.2 and ~6.9, now 0.01 and ~3.3 (the frames a move starts and ends on); animation phase
+        (composition and the move's recording) 1.1 and ~3.5, now 0.87 and ~3.0.
+    - A tumble's frames, animation phase: Classic 2.3, now 1.5; RGB Rainbow 2.3, now 1.2. Its p95 (a new face) is
+        unchanged at ~3.6-4.5.
 - **Pages.** Styles opens at ~42-44 the first time after launch, then 16-24. A tile scrolling in costs ~0.6. Settings'
     first frame is ~26-30. A Rules tap frame is ~6-8.
 

@@ -1,6 +1,7 @@
 package net.zodac.ludoplus.ui.game
 
 import net.zodac.ludoplus.ui.style.dieShadow
+import net.zodac.ludoplus.ui.style.LocalArtFrozen
 import net.zodac.ludoplus.ui.style.LocalDieTumbleMillis
 import net.zodac.ludoplus.ui.style.LocalGameVisualTheme
 import androidx.compose.runtime.CompositionLocalProvider
@@ -18,6 +19,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.random.Random
@@ -92,8 +95,10 @@ fun GameDie(
     val faces = remember(roll) { List(TUMBLE_FACES) { Random.nextInt(1, 7) } }
     val tumble = remember(roll) { Animatable(if (roll == null || roll === firstRoll || reduce) 1f else 0f) }
     LaunchedEffect(roll) { tumble.animateTo(1f, tween(DIE_TUMBLE_MILLIS, easing = LinearEasing)) }
-    val tumbling = tumble.value < 1f
-    val tumbleFace = if (tumbling && !style.tumblesItself) faces[(tumble.value * TUMBLE_FACES).toInt().coerceAtMost(TUMBLE_FACES - 1)] else null
+    // Read through derived states, so the tumble recomposes the die only as a face flicks past, not every frame.
+    val tumbling by remember(tumble) { derivedStateOf { tumble.value < 1f } }
+    val faceIndex by remember(tumble) { derivedStateOf { (tumble.value * TUMBLE_FACES).toInt().coerceAtMost(TUMBLE_FACES - 1) } }
+    val tumbleFace = if (tumbling && !style.tumblesItself) faces[faceIndex] else null
     val spoken = description ?: if (value == null) stringResource(Res.string.game_die_cd) else stringResource(Res.string.game_die_showing_cd, value)
     val rollLabel = stringResource(Res.string.game_roll_action)
     val selectLabel = stringResource(Res.string.game_die_select_action)
@@ -136,13 +141,21 @@ fun GameDie(
             .padding(RING_ROOM),
         contentAlignment = Alignment.Center,
     ) {
-        val turn = if (style.tumblesItself) 0f else TUMBLE_TURN_DEGREES * (1f - tumble.value) * (1f - tumble.value)
-        val dieModifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = turn }
+        // The turn is read only by the layer, so it turns the die without redrawing it.
+        val turns = !style.tumblesItself
+        val dieModifier = Modifier.fillMaxSize().graphicsLayer {
+            if (turns) (1f - tumble.value).let { rotationZ = TUMBLE_TURN_DEGREES * it * it }
+        }
         val face = tumbleFace ?: value
         if (face == null) {
             Box(modifier = dieModifier.dieShadow(dieShape).clip(dieShape).background(style.bodyColor))
         } else {
-            CompositionLocalProvider(LocalDieTumbleMillis provides if (tumbling && style.tumblesItself) tumble.value * DIE_TUMBLE_MILLIS else null) {
+            // A face flicking past is held still: nobody sees its own art move, and it isn't redrawn for it. A style that
+            // tumbles itself reads the clock every frame.
+            CompositionLocalProvider(
+                LocalDieTumbleMillis provides if (tumbling && style.tumblesItself) tumble.value * DIE_TUMBLE_MILLIS else null,
+                LocalArtFrozen provides tumbling,
+            ) {
                 style.Die(value = face, held = false, modifier = dieModifier)
             }
         }

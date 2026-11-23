@@ -2,7 +2,6 @@ package net.zodac.ludoplus.ui.game
 
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Canvas
 import net.zodac.ludoplus.ui.style.visualTheme
 import net.zodac.ludoplus.ui.style.TableBackground
 import net.zodac.ludoplus.ui.style.LocalGameVisualTheme
@@ -110,6 +109,7 @@ import net.zodac.ludoplus.resources.game_tutorial_coach_name
 import net.zodac.ludoplus.resources.game_tutorial_part
 import net.zodac.ludoplus.ui.common.BackHandler
 import net.zodac.ludoplus.ui.common.LudoPlusDialog
+import net.zodac.ludoplus.ui.common.BoundedArt
 import net.zodac.ludoplus.ui.common.ScreenScaffold
 import net.zodac.ludoplus.ui.common.delayWhileResumed
 import net.zodac.ludoplus.ui.common.groupReduceMotion
@@ -419,7 +419,8 @@ private fun NetplayNotice(notice: String) {
 private fun BoxScope.TableBackgroundFill(background: TableBackground) {
     Box(modifier = Modifier.matchParentSize().background(background.scoreAreaBrush))
     background.Animate()
-    Canvas(modifier = Modifier.matchParentSize()) { with(background) { drawScoreAreaDecoration() } }
+    // Its own node: a moving decoration's frames redraw only it, not the page round it.
+    BoundedArt(modifier = Modifier.matchParentSize()) { with(background) { drawScoreAreaDecoration() } }
 }
 
 /** The tutorial's coach card, in place of the players: as tall as its longest words need, so it never changes height. */

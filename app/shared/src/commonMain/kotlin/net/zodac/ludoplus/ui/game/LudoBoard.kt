@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextMeasurer
@@ -43,12 +45,15 @@ import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.PlayerColour
+import net.zodac.ludoplus.ui.common.BoundedArt
 import net.zodac.ludoplus.ui.common.groupReduceMotion
 import net.zodac.ludoplus.ui.theme.BoardEmptySeat
 import net.zodac.ludoplus.ui.theme.BoardInk
 import net.zodac.ludoplus.ui.theme.BoardIvory
 import net.zodac.ludoplus.ui.style.LocalGameVisualTheme
+import net.zodac.ludoplus.ui.style.BoardStyle
 import net.zodac.ludoplus.ui.style.PawnStyle
+import net.zodac.ludoplus.ui.style.drawCachedSurface
 import net.zodac.ludoplus.ui.theme.BoardSparkGold
 import net.zodac.ludoplus.ui.theme.color
 
@@ -102,7 +107,7 @@ fun LudoBoard(
     modifier: Modifier = Modifier,
 ) {
     val colours = remember(seatColours) { seatColours.map { it?.color } }
-    val movable = moves.map { PawnRef(it.ownerIn(state), it.pawn) }.toSet()
+    val movable = remember(moves, state) { moves.map { PawnRef(it.ownerIn(state), it.pawn) }.toSet() }
     val marks = remember(state.players) { pawnMarks(state) }
     val textMeasurer = rememberTextMeasurer()
     val currentMarks by rememberUpdatedState(marks)
@@ -115,20 +120,27 @@ fun LudoBoard(
     val layout = BoardLayout.of(state.board)
     // Read here, so the board's layer below holds a number rather than the state, which changes every move.
     val pawns = state.rules.pawnsPerPlayer
+    val pawnColours = remember(state.players, colours) { state.players.map { colours.getOrNull(it.seat) ?: BoardEmptySeat } }
     Box(modifier = modifier.aspectRatio(1f)) {
-        // The board on a layer of its own, which reads only the style, the seats' colours, and the pawn count: it's drawn
-        // again when they change, not on every frame of a move.
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours, pawns) }
+        // The board, painted once into an image for its style, seats' colours, pawn count, and size, on a layer of its own:
+        // a frame of a move or a turn's ring never draws it again.
+        val surface = BoardSurface(theme.board, layout, colours, pawns)
+        Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) {
+            drawCachedSurface(surface.copy(density = density)) {
+                with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours, pawns) }
+            }
         }
         // On a layer of its own too, drawn again only as the turn passes.
         val turnSeat = if (state.isFinished) null else state.currentPlayer.seat
         if (turnSeat != null) {
-            Canvas(modifier = Modifier.fillMaxSize()) { drawTurnYard(layout, size.minDimension / layout.size, turnSeat) }
+            Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawTurnYard(layout, size.minDimension / layout.size, turnSeat) }
         }
+        // The pawns standing still, on a layer of their own: drawn again as a move starts and ends, not on its frames.
+        val animating = motion.moving
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
+                .graphicsLayer { }
                 .pointerInput(layout) {
                     detectTapGestures { tap ->
                         val unit = size.width.toFloat() / layout.size
@@ -138,19 +150,22 @@ fun LudoBoard(
                 },
         ) {
             val unit = size.minDimension / layout.size
-            val animating = motion.moving
             for (mark in marks) {
                 // The moving pawn and any it captured are drawn on their way, below; the rest of their mark stays.
-                val pawns = mark.pawns.filterNot { animating != null && motion.isAnimated(mark.player, it) }
+                val pawns = if (animating == null) mark.pawns else mark.pawns.filterNot { motion.isAnimated(mark.player, it) }
                 if (pawns.isEmpty()) continue
-                val colour = colours.getOrNull(state.players[mark.player].seat) ?: BoardEmptySeat
+                val colour = pawnColours[mark.player]
                 val ringed = animating == null && pawns.any { PawnRef(mark.player, it) in movable }
                 if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
                 with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, colour, ringed) }
                 if (pawns.size > 1) drawCount(textMeasurer, pawns.size, mark, unit)
             }
-            if (animating != null) {
-                with(motion) { drawMotion(unit, theme.pawns) { colours.getOrNull(state.players[it].seat) ?: BoardEmptySeat } }
+        }
+        // The move under way: only this is drawn again on its frames, reading the move's clock as it draws, and only
+        // over the board.
+        if (animating != null) {
+            BoundedArt(modifier = Modifier.fillMaxSize()) {
+                with(motion) { drawMotion(size.minDimension / layout.size, theme.pawns) { pawnColours[it] } }
             }
         }
         BoardSemantics(state, seatColours, moves, onMove, Modifier.fillMaxSize())
@@ -179,8 +194,13 @@ private class MovingPawn(
 /** A pawn [ref] taken by a move, on its way back to its [yard] spot, where it is [yardRadius] across. */
 private class CapturedPawn(val ref: PawnRef, val yard: Offset, val yardRadius: Float)
 
-/** The pawn move under way on the board, if any, and how far along it is ([millis] from its start). */
-private class MoveMotion(val moving: MovingPawn?, private val millis: Float) {
+/**
+ * The pawn move under way on the board, if any, and its [clock] (milliseconds from its start), read only while drawing,
+ * so its frames redraw the move without recomposing the board.
+ */
+private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float>) {
+    private val millis: Float get() = clock.value
+
     fun isAnimated(player: Int, pawn: Int): Boolean =
         moving != null && ((moving.player == player && moving.pawn == pawn) || moving.captured.any { it.ref == PawnRef(player, pawn) })
 
@@ -191,6 +211,7 @@ private class MoveMotion(val moving: MovingPawn?, private val millis: Float) {
      */
     fun DrawScope.drawMotion(unit: Float, pawns: PawnStyle, colourOf: (Int) -> Color) {
         val moving = moving!!
+        val millis = millis
         // How far through what follows the landing, from 0 as it lands.
         val after = ((millis - moving.travelMillis) / (moving.totalMillis - moving.travelMillis).coerceAtLeast(1)).coerceIn(0f, 1f)
         val landed = millis >= moving.travelMillis
@@ -217,6 +238,7 @@ private class MoveMotion(val moving: MovingPawn?, private val millis: Float) {
 
     /** Where the mover stands on the ground, how high it is off it, and how big it is, [home] of the way through its flourish. */
     private fun moverPose(moving: MovingPawn, home: Float): Triple<Offset, Float, Float> {
+        val millis = millis
         val path = moving.path
         val step = (millis / PAWN_STEP_MILLIS).coerceIn(0f, (path.size - 1).toFloat())
         val index = step.toInt().coerceAtMost(path.size - 2)
@@ -334,7 +356,7 @@ private fun rememberMoveMotion(state: GameState): MoveMotion {
         clock.animateTo(moving.totalMillis.toFloat(), tween(moving.totalMillis, easing = LinearEasing))
         done = true
     }
-    return MoveMotion(if (done) null else moving, clock.value)
+    return MoveMotion(if (done) null else moving, clock.asState())
 }
 
 private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
@@ -364,6 +386,15 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
         totalMillis = travelMillis(move) + afterLandingMillis(move, state.board.homeProgress),
     )
 }
+
+/** What the board's image is painted from, besides its size: [density] is the drawing's. */
+private data class BoardSurface(
+    val style: BoardStyle,
+    val layout: BoardLayout,
+    val colours: List<Color?>,
+    val pawns: Int,
+    val density: Float = 0f,
+)
 
 /** A count badge at the top right of [mark], for pawns sharing a square. */
 private fun DrawScope.drawCount(textMeasurer: TextMeasurer, count: Int, mark: PawnMark, unit: Float) {
