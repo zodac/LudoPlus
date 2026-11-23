@@ -14,6 +14,7 @@ import kotlin.math.sqrt
 import kotlin.math.tan
 import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.PawnPosition
+import net.zodac.ludoplus.ui.style.YARD_SPOTS
 
 /**
  * Where everything on a board sits, in board units: the board is [size] units square, one unit a square's side, (0, 0)
@@ -49,9 +50,23 @@ sealed interface BoardLayout {
 
     /**
      * Where [seat]'s pawn [pawn] waits in its yard, of a game of [pawns] each: its own spot, or with two pawns, opposite
-     * corners (the first spot and the last), so the pair sits balanced in the yard's four.
+     * corners (the first spot and the last), so the pair sits balanced in the yard's four. More than four have spots
+     * of their own ([crowdedYardSpot]), smaller.
      */
-    fun yardSpotOf(seat: Int, pawn: Int, pawns: Int): Offset = yardSpot(seat, if (pawns == 2) pawn * 3 else pawn)
+    fun yardSpotOf(seat: Int, pawn: Int, pawns: Int): Offset = when {
+        pawns > YARD_SPOTS -> crowdedYardSpot(seat, pawn)
+        pawns == 2 -> yardSpot(seat, pawn * 3)
+        else -> yardSpot(seat, pawn)
+    }
+
+    /** The centre of spot [slot] (0-5) of [seat]'s yard laid out for six. */
+    fun crowdedYardSpot(seat: Int, slot: Int): Offset
+
+    /** How big a spot is drawn in a yard of [pawns], across from its centre. */
+    fun yardSpotRadiusOf(pawns: Int): Float = if (pawns > YARD_SPOTS) yardSpotRadius * CROWDED_SPOT_SHARE else yardSpotRadius
+
+    /** How big a pawn is drawn in a yard of [pawns]. */
+    fun yardPawnRadiusOf(pawns: Int): Float = if (pawns > YARD_SPOTS) yardSpotRadiusOf(pawns) * CROWDED_PAWN_SHARE else yardPawnRadius
 
     /** How big a yard spot is drawn, across from its centre. */
     val yardSpotRadius: Float
@@ -70,8 +85,8 @@ sealed interface BoardLayout {
 
     /** The centre of where a pawn of [seat] at [position] stands ([slot] places a yard or home pawn). */
     fun centreOf(seat: Int, position: PawnPosition, slot: Int): Offset = when (position) {
-        PawnPosition.Yard -> yardSpot(seat, slot)
-        is PawnPosition.Track -> trackSquare(geometry.trackSquare(seat, position.steps)).centre
+        PawnPosition.Yard, PawnPosition.Out -> yardSpot(seat, slot)
+        is PawnPosition.Track -> trackSquare((geometry.startSquare(seat) + position.steps) % geometry.trackLength).centre
         is PawnPosition.HomeColumn -> homeColumnSquare(seat, position.index).centre
         PawnPosition.Home -> homeSpot(seat, slot)
     }
@@ -79,9 +94,14 @@ sealed interface BoardLayout {
     companion object {
         private val stars = mutableMapOf<BoardGeometry, StarBoardLayout>()
 
-        /** The layout that draws [geometry]. */
-        fun of(geometry: BoardGeometry): BoardLayout =
-            if (geometry == ClassicBoardLayout.geometry) ClassicBoardLayout else stars.getOrPut(geometry) { StarBoardLayout(geometry) }
+        /** How much smaller the spots of a yard of six are than of four, and how much of one its pawn fills. */
+        private const val CROWDED_SPOT_SHARE = 0.86f
+        private const val CROWDED_PAWN_SHARE = 0.72f
+
+        /** The layout that draws [geometry]: an endless board's squares lie where the same board's with a home do. */
+        fun of(geometry: BoardGeometry): BoardLayout = geometry.copy(endless = false).let { board ->
+            if (board == ClassicBoardLayout.geometry) ClassicBoardLayout else stars.getOrPut(board) { StarBoardLayout(board) }
+        }
     }
 }
 
@@ -130,6 +150,10 @@ object ClassicBoardLayout : BoardLayout {
 
     private const val CENTRE = SIZE / 2f
 
+    /** How far apart a yard of six's spots are: across from the middle one, and its rows from the middle. */
+    private const val CROWDED_ACROSS = 1.28f
+    private const val CROWDED_DOWN = 0.95f
+
     /** How many quarters clockwise seat 0's part is turned from the top-left corner it's set out in: to the bottom left. */
     private const val SEAT_0_TURN = 3
 
@@ -168,6 +192,10 @@ object ClassicBoardLayout : BoardLayout {
     override fun yardCourt(seat: Int): List<Offset> = yardOrigin(seat).let { square(it.column + 1f, it.row + 1f, YARD_SIZE - 2f) }
 
     override fun yardSpot(seat: Int, slot: Int): Offset = SEAT_0_YARD_SPOTS[slot].turned(seat)
+
+    /** Two rows of three, upright in every yard. */
+    override fun crowdedYardSpot(seat: Int, slot: Int): Offset =
+        yardOrigin(seat).let { Offset(it.column + YARD_SIZE / 2f, it.row + YARD_SIZE / 2f) } + Offset((slot % 3 - 1) * CROWDED_ACROSS, (slot / 3 * 2 - 1) * CROWDED_DOWN)
 
     /** The three corners of [seat]'s triangle of home, in the centre: its base on the side its home column joins. */
     fun homeTriangle(seat: Int): List<Offset> =
@@ -333,6 +361,19 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
         }
     }
 
+    /** How much room the court has about the middle of the yard's widest circle. */
+    private val courtRadius: Float = yardCircles[0].second.let { it - min(1f, it * COURT_INSET) }
+
+    /** Small enough that six fit in a ring in the court, none on another. */
+    override fun yardSpotRadiusOf(pawns: Int): Float =
+        super.yardSpotRadiusOf(pawns).let { if (pawns > YARD_SPOTS) min(it, courtRadius / CROWDED_RING_RADII) else it }
+
+    /** Six in a ring about the yard's widest circle, as wide as its court takes. */
+    override fun crowdedYardSpot(seat: Int, slot: Int): Offset {
+        val angle = PI / 6 + slot * PI / 3
+        return yardCircles[seat].first + Offset(cos(angle).toFloat(), sin(angle).toFloat()) * (courtRadius - yardSpotRadiusOf(YARD_SPOTS + 1))
+    }
+
     override fun homeArea(seat: Int): List<Offset> = if (hexagon) {
         listOf(
             (innerCorner(seat - 1) + nextInnerCorner(seat - 1)) / 2f,
@@ -374,6 +415,7 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
         const val MIN_SPOT_RADIUS = 0.45f
         const val SPOT_SHARE = 0.21f
         const val SPOT_SPREAD = 0.47f
+        const val CROWDED_RING_RADII = 3.05f
         const val HOME_INSET = 0.4
         const val HOME_SPACING = 0.5
         const val HEXAGON_HOME_DEPTH = 0.6

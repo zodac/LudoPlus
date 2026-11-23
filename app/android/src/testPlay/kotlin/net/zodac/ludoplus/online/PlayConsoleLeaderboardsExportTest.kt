@@ -40,11 +40,11 @@ import org.robolectric.annotation.Config
 
 /** One Play leaderboard: [mode]'s fastest wins with [playerCount] players. */
 private data class Board(val mode: GameMode, val playerCount: Int) {
-    val key: String get() = mode.onlineLeaderboardKey(playerCount)
+    val key: String get() = checkNotNull(mode.onlineLeaderboardKey(playerCount))
 }
 
 /** Every board, in Play's list order: each mode in New Game's order, its player counts in order. */
-private val BOARDS = GameMode.entries.flatMap { mode -> (BoardGeometry.MIN_PLAYERS..BoardGeometry.MAX_PLAYERS).map { Board(mode, it) } }
+private val BOARDS = GameMode.entries.filter { it.onlineLeaderboardKey != null }.flatMap { mode -> (BoardGeometry.MIN_PLAYERS..BoardGeometry.MAX_PLAYERS).map { Board(mode, it) } }
 
 /** The mode's mark on its boards' icons, for Play Console only: the game never shows them. */
 private val GameMode.leaderboardSymbol: ImageVector
@@ -53,6 +53,7 @@ private val GameMode.leaderboardSymbol: ImageVector
         GameMode.QUICK -> Symbols.Bolt
         GameMode.TWO_DICE -> Symbols.Casino
         GameMode.PORTALS -> Symbols.Sync
+        GameMode.SURVIVAL -> Symbols.Swords
     }
 
 /**

@@ -123,6 +123,12 @@ interface TableBackground : TableArt {
 }
 
 /**
+ * Which parts of a board are drawn: whether a start square is in its seat's colour ([starts]) or a plain one, the star
+ * squares have their marks ([stars]), and there's a home, with its columns ([homes]).
+ */
+data class BoardParts(val starts: Boolean = true, val stars: Boolean = true, val homes: Boolean = true)
+
+/**
  * A board: its track, safe squares, yards, home columns, and centre, drawn under the pawns on a square
  * [BoardLayout.size] units across. The seats' colours are the players' own (a seat with no player is null) and must
  * stay readable: a style changes the track, the safe squares' marks, the surround, and the texture, never which colour
@@ -131,9 +137,9 @@ interface TableBackground : TableArt {
 interface BoardStyle : TableArt {
     /**
      * The board of [layout] itself, no pawns, at [unit] pixels a square, in [seatColours] by seat, each yard with a spot
-     * for each of [pawns] pawns ([BoardLayout.yardSpotOf]).
+     * for each of [pawns] pawns ([BoardLayout.yardSpotOf]), and only its [parts].
      */
-    fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>, pawns: Int = YARD_SPOTS)
+    fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>, pawns: Int = YARD_SPOTS, parts: BoardParts = BoardParts())
 
     /** The spot a pawn that is home stands on, under it: it lifts the pawn off its own colour's triangle. */
     fun DrawScope.drawHomeSpot(centre: Offset, radius: Float)

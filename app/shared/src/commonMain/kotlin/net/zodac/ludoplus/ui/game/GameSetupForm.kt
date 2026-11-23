@@ -60,7 +60,8 @@ data class GameSetupState(
     val playedMode: GameMode get() = customMode?.base ?: gameMode
 
     /** The house rules a game started now plays: the custom mode's, or those switched on, and none while they're locked. */
-    val playedHouseRules: Set<HouseRule> get() = customMode?.houseRules ?: if (houseRulesUnlocked) houseRules else emptySet()
+    val playedHouseRules: Set<HouseRule>
+        get() = (customMode?.houseRules ?: if (houseRulesUnlocked) houseRules else emptySet()).filter { it.appliesTo(playedMode.rules) }.toSet()
 
     /** Each player's team for the game this would start, or null for none ([TeamMode.teamsFor]). */
     val teams: List<Int>? get() = teamMode.teamsFor(playerCount)

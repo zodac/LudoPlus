@@ -144,6 +144,9 @@
     <string name="common_cpu_cd">CPU</string>
     <!-- What TalkBack says for a pawn: its colour (player_colour_*), its number (1 to 4), then where it is. -->
     <string name="game_pawn_yard_spoken">%1$s pawn %2$d, in the yard</string>
+    <!-- Survival, which has no home: a pawn on the track, and one captured, so out of the game. -->
+    <string name="game_pawn_spoken">%1$s pawn %2$d</string>
+    <string name="game_pawn_out_spoken">%1$s pawn %2$d, out of the game</string>
     <plurals name="game_pawn_track_spoken">
         <item quantity="one">%1$s pawn %2$d, %3$d square from home</item>
         <item quantity="other">%1$s pawn %2$d, %3$d squares from home</item>
@@ -173,6 +176,11 @@
         <item quantity="one">%1$d pawn waiting</item>
         <item quantity="other">%1$d pawns waiting</item>
     </plurals>
+    <!-- Survival: a yard shows how many of its player's pawns are out of the game. %1$d of %2$d. -->
+    <plurals name="game_square_yard_lost_spoken">
+        <item quantity="one">%1$d of %2$d pawn lost</item>
+        <item quantity="other">%1$d of %2$d pawns lost</item>
+    </plurals>
     <!-- A move as TalkBack offers it, on the square of the pawn and on the line saying to pick one. %1$s is the pawn's colour, %2$d its number, %3$d the roll. The clauses after it are added when they apply: "Move Red pawn 2 4 squares, capturing Green pawn 1". -->
     <plurals name="game_move_action">
         <item quantity="one">Move %1$s pawn %2$d %3$d square</item>
@@ -200,6 +208,21 @@
         <item quantity="one">%1$d pawn home</item>
         <item quantity="other">%1$d pawns home</item>
     </plurals>
+    <!-- Survival: how many of a player's pawns are still in the game, on their card and on the Leaderboard. -->
+    <plurals name="game_player_pawns_left_spoken">
+        <item quantity="one">%1$d pawn left</item>
+        <item quantity="other">%1$d pawns left</item>
+    </plurals>
+    <!-- Survival's line under the players: how sudden death stands. %1$d is how many rounds until it comes on further. -->
+    <plurals name="game_sudden_death_starts">
+        <item quantity="one">Start squares stop being safe in %1$d round.</item>
+        <item quantity="other">Start squares stop being safe in %1$d rounds.</item>
+    </plurals>
+    <plurals name="game_sudden_death_stars">
+        <item quantity="one">Only stars are safe, for %1$d more round.</item>
+        <item quantity="other">Only stars are safe, for %1$d more rounds.</item>
+    </plurals>
+    <string name="game_sudden_death_nowhere">Sudden death! Nowhere is safe.</string>
     <string name="game_player_turn_spoken">playing now</string>
     <string name="game_player_place">%1$s place</string>
     <!-- The line under the die saying what to do now. %1$s is the player's name, %2$d the roll. -->
@@ -243,6 +266,8 @@
         <item quantity="one">%1$s captured %3$d of %2$s's pawns.</item>
         <item quantity="other">%1$s captured %3$d of %2$s's pawns.</item>
     </plurals>
+    <!-- Survival: the capture took the last pawns of %2$s, a player's name or a list of them ("Sam and Jo"). -->
+    <string name="game_event_knocked_out">%1$s knocked %2$s out of the game.</string>
     <string name="game_event_home">%1$s brought a pawn home.</string>
     <!-- %2$s is the place: "1st", "2nd"... -->
     <string name="game_event_finished">%1$s has every pawn home, in %2$s place.</string>
@@ -300,6 +325,8 @@
     </plurals>
     <!-- How far into the game a player was placed (brought their last pawn home, or for the last, when the game ended), under their name. %1$s is a duration below. -->
     <string name="gameover_finished_in">Finished in %1$s</string>
+    <!-- Survival: how long a player lasted, the same way. -->
+    <string name="gameover_survived">Survived %1$s</string>
     <!-- A duration: %1$d minutes and %2$d seconds. -->
     <string name="gameover_duration_minutes">%1$dm %2$ds</string>
     <!-- A duration: %1$d hours and %2$d minutes. -->
@@ -308,6 +335,11 @@
     <plurals name="gameover_pawns_home">
         <item quantity="one">%1$d of %2$d pawn home</item>
         <item quantity="other">%1$d of %2$d pawns home</item>
+    </plurals>
+    <!-- Survival, in place of a player's turns: how many of their pawns were still in the game at its end. -->
+    <plurals name="gameover_pawns_left">
+        <item quantity="one">%1$d of %2$d pawn left</item>
+        <item quantity="other">%1$d of %2$d pawns left</item>
     </plurals>
     <!-- The confirmation before leaving a game that isn't over. It stays saved, for the menu's Continue. -->
     <!-- The guided tutorial (game/Tutorial.kt, ui/game/CoachCard.kt): the coach card's words at each step, in order. You're Red, against Green (a CPU). Markup: **bold** for a number. Keep them short: the card is as tall as the longest. %1$s in the welcome is the app's name. -->
@@ -357,6 +389,8 @@
     <string name="leaderboard_title">Leaderboard</string>
     <!-- Above the table. %1$s is the game mode's name. -->
     <string name="leaderboard_heading">%1$s: fastest wins</string>
+    <!-- The same, for Survival. -->
+    <string name="leaderboard_heading_pawns">%1$s: most pawns left</string>
     <!-- A Leaderboard with no wins for the player count picked. %1$s is the game mode's name, %2$d the count (2 to 8). -->
     <plurals name="leaderboard_empty_players">
         <item quantity="one">No wins in %1$s with %2$d player yet. Win a game to set a time.</item>
@@ -371,6 +405,7 @@
     </plurals>
     <string name="leaderboard_player">Player</string>
     <string name="leaderboard_turns">Turns</string>
+    <string name="leaderboard_pawns">Pawns left</string>
     <string name="leaderboard_captures">Captures</string>
 
     <!-- Statistics (ui/records/StatisticsScreen.kt): each person's games added up. -->
@@ -1000,6 +1035,8 @@
     <string name="mode_two_dice_description">Roll two dice and move by each in turn. A 6 on either brings a pawn out, and doubles roll again</string>
     <string name="mode_portals">Portals</string>
     <string name="mode_portals_description">The classic rules with portals on the track: land on one and come out at its pair, further on or further back</string>
+    <string name="mode_survival">Survival</string>
+    <string name="mode_survival_description">Six pawns each, no home, and no way back for a captured pawn: the last player with a pawn wins</string>
     <string name="player_colour_yellow">Yellow</string>
     <string name="settings_motion_die_roll">Die roll</string>
     <string name="settings_motion_pawn_move">Pawn moves</string>
@@ -1034,6 +1071,11 @@
     <string name="rules_portals_1">Portals come in pairs, told by their colour and symbol. If your move ends on one, your pawn comes out at the other, whether that's further on or further back. Passing over a portal does nothing.</string>
     <string name="rules_portals_2">Your pawn only captures where it comes out. While it waits on a portal, rivals who land there go through without capturing it, but one coming out there captures it.</string>
     <string name="rules_portals_3">Short portals are open to everyone. Long portals, with a split ring, are shut to the colour on their lock, whose start square they would take a pawn past.</string>
+    <string name="rules_survival_1">In Survival there's no home to reach. Each player's six pawns start out on their start square and go round the track until one player is left.</string>
+    <string name="rules_survival_2">A captured pawn is out of the game. Lose all six and you're out: the last player with a pawn left wins, and everyone else is placed by how long they lasted.</string>
+    <string name="rules_survival_3">Start squares and star squares are safe at first, until sudden death. Start squares stop being safe first, then star squares too. The line above the board counts the rounds, and with more players it takes longer.</string>
+    <string name="rules_survival_4">On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when sudden death comes.</string>
+    <string name="rules_survival_records">The Leaderboard ranks Survival wins by the most pawns left. Survival games don't earn achievements.</string>
     <string name="rules_modes_records">Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.</string>
     <!-- The House Rules pages: an introduction, then each house rule (house_rule_*) as a line of its own (rules_house_rule_line), grouped by what they change. -->
     <string name="rules_house_rules_title">House Rules</string>

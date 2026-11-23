@@ -42,12 +42,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.zodac.ludoplus.data.records.GameResult
 import net.zodac.ludoplus.model.GameMode
+import net.zodac.ludoplus.model.LeaderboardRanking
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.gameover_captures
 import net.zodac.ludoplus.resources.gameover_turns
 import net.zodac.ludoplus.resources.leaderboard_captures
 import net.zodac.ludoplus.resources.leaderboard_empty_players
 import net.zodac.ludoplus.resources.leaderboard_heading
+import net.zodac.ludoplus.resources.game_player_pawns_left_spoken
+import net.zodac.ludoplus.resources.leaderboard_heading_pawns
+import net.zodac.ludoplus.resources.leaderboard_pawns
 import net.zodac.ludoplus.resources.leaderboard_player
 import net.zodac.ludoplus.resources.leaderboard_title
 import net.zodac.ludoplus.resources.leaderboard_turns
@@ -77,7 +81,7 @@ private val ROW_CHROME = 56.dp
 
 /**
  * The Leaderboard: the fastest wins for the mode and player count picked (2 to 8; at first, the mode and count New Game
- * last started), fewest turns first and then most captures, the top three ranked in gold, silver, and bronze. Where a name hasn't room beside the number columns (a large font), each row is two lines: the
+ * last started), fewest turns first (or where the last standing wins, most pawns left) and then most captures, the top three ranked in gold, silver, and bronze. Where a name hasn't room beside the number columns (a large font), each row is two lines: the
  * rank and name, then its turns and captures. A screen reader reads each row as one: its rank, name, turns, and captures.
  */
 @Composable
@@ -93,7 +97,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit) {
         val modeName = stringResource(shownMode.displayName)
         ModeRow(options = GameMode.entries, selected = shownMode, onSelect = { viewModel.selectMode(it!!) })
         Text(
-            text = stringResource(Res.string.leaderboard_heading, modeName),
+            text = stringResource(if (shownMode.ranking == LeaderboardRanking.MOST_PAWNS_LEFT) Res.string.leaderboard_heading_pawns else Res.string.leaderboard_heading, modeName),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.semantics { heading() },
@@ -101,7 +105,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit) {
         PlayerCountRow(options = PLAYER_COUNTS, selected = count, onSelect = { viewModel.selectPlayerCount(it!!) })
         // The same board on the online service, while signed in to one: shown with or without rows here.
         val services = LocalGameServices.current
-        if (services.state.collectAsStateWithLifecycle().value is GameServicesState.SignedIn && services.canShowLeaderboardUi) {
+        if (services.state.collectAsStateWithLifecycle().value is GameServicesState.SignedIn && services.canShowLeaderboardUi && shownMode.onlineLeaderboardKey != null) {
             GlobalLeaderboardButton(shownMode, count, services)
         }
         if (board.isEmpty()) {
@@ -113,10 +117,10 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit) {
             val compact = maxWidth < with(LocalDensity.current) { RANK_WIDTH.toDp() + NUMBER_WIDTH.toDp() * 2 + MIN_NAME_WIDTH.toDp() } + ROW_CHROME
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    if (!compact) HeaderRow()
+                    if (!compact) HeaderRow(shownMode)
                     board.forEachIndexed { index, row ->
                         if (index > 0 || !compact) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                        LeaderboardRow(rank = index + 1, row = row, compact = compact)
+                        LeaderboardRow(rank = index + 1, row = row, mode = shownMode, compact = compact)
                     }
                 }
             }
@@ -148,7 +152,7 @@ private fun GlobalLeaderboardButton(mode: GameMode, playerCount: Int, services: 
 }
 
 @Composable
-private fun HeaderRow() {
+private fun HeaderRow(mode: GameMode) {
     val style = MaterialTheme.typography.labelMedium
     val colour = MaterialTheme.colorScheme.onSurfaceVariant
     // The rows say what each number is; the headings are for the eye.
@@ -156,18 +160,25 @@ private fun HeaderRow() {
         modifier = Modifier.clearAndSetSemantics { },
         rank = { },
         name = { Text(stringResource(Res.string.leaderboard_player), style = style, color = colour) },
-        turns = { Text(stringResource(Res.string.leaderboard_turns), style = style, color = colour, textAlign = TextAlign.End) },
+        turns = { Text(stringResource(if (mode.ranking == LeaderboardRanking.MOST_PAWNS_LEFT) Res.string.leaderboard_pawns else Res.string.leaderboard_turns), style = style, color = colour, textAlign = TextAlign.End) },
         captures = { Text(stringResource(Res.string.leaderboard_captures), style = style, color = colour, textAlign = TextAlign.End) },
     )
 }
 
 @Composable
-private fun LeaderboardRow(rank: Int, row: GameResult, compact: Boolean) {
+private fun LeaderboardRow(rank: Int, row: GameResult, mode: GameMode, compact: Boolean) {
+    // What the mode ranks by: the turns, or the pawns the winner had left (every capture of theirs took one for good).
+    val pawnsLeft = (mode.rules.pawnsPerPlayer - row.timesCaptured).takeIf { mode.ranking == LeaderboardRanking.MOST_PAWNS_LEFT }
+    val ranked = if (pawnsLeft != null) {
+        pluralStringResource(Res.plurals.game_player_pawns_left_spoken, pawnsLeft, pawnsLeft)
+    } else {
+        pluralStringResource(Res.plurals.gameover_turns, row.turns, row.turns)
+    }
     val spoken = joinClauses(
         listOf(
             ordinal(rank),
             row.playerName,
-            pluralStringResource(Res.plurals.gameover_turns, row.turns, row.turns),
+            ranked,
             pluralStringResource(Res.plurals.gameover_captures, row.captures, row.captures),
         ),
     )
@@ -184,7 +195,7 @@ private fun LeaderboardRow(rank: Int, row: GameResult, compact: Boolean) {
                 Text(
                     joinClauses(
                         listOf(
-                            pluralStringResource(Res.plurals.gameover_turns, row.turns, row.turns),
+                            ranked,
                             pluralStringResource(Res.plurals.gameover_captures, row.captures, row.captures),
                         ),
                     ),
@@ -199,7 +210,7 @@ private fun LeaderboardRow(rank: Int, row: GameResult, compact: Boolean) {
         modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
         rank = { RankText(rank) },
         name = { Text(row.playerName, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-        turns = { Text(row.turns.toString(), style = numberStyle, fontWeight = FontWeight.Bold, textAlign = TextAlign.End) },
+        turns = { Text((pawnsLeft ?: row.turns).toString(), style = numberStyle, fontWeight = FontWeight.Bold, textAlign = TextAlign.End) },
         captures = { Text(row.captures.toString(), style = numberStyle, textAlign = TextAlign.End) },
     )
 }

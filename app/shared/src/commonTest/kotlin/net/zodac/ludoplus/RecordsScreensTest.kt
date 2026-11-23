@@ -80,6 +80,26 @@ class RecordsScreensTest : UiTest() {
     }
 
     @Test
+    fun `Survival's Leaderboard ranks the most pawns left - then most captures - and its Statistics have no race`() = uiTest(TestScreen(411, 891)) {
+        val survival = { name: String, captures: Int, lost: Int, endedAt: Long -> row(name, 1, 80, captures, endedAt, mode = GameMode.SURVIVAL).copy(timesCaptured = lost) }
+        val repository = records(survival("Alex", 9, 5, 1), survival("Sam", 2, 1, 2), survival("Jo", 4, 1, 3))
+        val viewModel = LeaderboardViewModel(repository) { GameMode.SURVIVAL to 4 }
+        showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
+        compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Jo, 5 pawns left, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("2nd, Sam, 5 pawns left, 2 captures")).assertExists()
+        compose.onNode(hasContentDescription("3rd, Alex, 1 pawn left, 9 captures")).assertExists()
+        compose.onNodeWithText("Survival: most pawns left").assertExists()
+
+        val statistics = StatisticsViewModel(repository)
+        showcase.show { LudoPlusTheme { StatisticsScreen(statistics, onBack = {}) } }
+        // Among all modes, its wins set no fewest turns.
+        compose.waitUntil { compose.onAllNodes(hasText("Fewest turns to win") and hasText("None")).fetchSemanticsNodes().isNotEmpty() }
+        statistics.selectMode(GameMode.SURVIVAL)
+        compose.waitUntil { compose.onAllNodes(hasText("Fewest turns to win")).fetchSemanticsNodes().isEmpty() }
+        compose.onNode(hasText("Pawns home")).assertDoesNotExist()
+    }
+
+    @Test
     fun `Statistics adds up every mode at first - or one mode's - All said as all modes - an empty mode said by name`() = uiTest(TestScreen(411, 891)) {
         val repository = records(row("Alex", 1, 38, 4, 1), row("Alex", 2, 30, 1, 2, mode = GameMode.QUICK))
         val viewModel = StatisticsViewModel(repository)

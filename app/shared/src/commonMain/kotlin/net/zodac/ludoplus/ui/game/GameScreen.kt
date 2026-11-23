@@ -89,6 +89,7 @@ import net.zodac.ludoplus.resources.game_over_results
 import net.zodac.ludoplus.resources.game_over_team_winner
 import net.zodac.ludoplus.resources.game_over_winner
 import net.zodac.ludoplus.resources.game_player_pawns_home_spoken
+import net.zodac.ludoplus.resources.game_player_pawns_left_spoken
 import net.zodac.ludoplus.resources.game_player_place
 import net.zodac.ludoplus.resources.game_player_team_spoken
 import net.zodac.ludoplus.resources.game_player_turn_spoken
@@ -105,6 +106,9 @@ import net.zodac.ludoplus.resources.game_prompt_roll
 import net.zodac.ludoplus.resources.game_prompt_roll_again
 import net.zodac.ludoplus.resources.game_prompt_roll_again_dice
 import net.zodac.ludoplus.resources.game_prompt_roll_dice
+import net.zodac.ludoplus.resources.game_sudden_death_nowhere
+import net.zodac.ludoplus.resources.game_sudden_death_stars
+import net.zodac.ludoplus.resources.game_sudden_death_starts
 import net.zodac.ludoplus.resources.game_tutorial_coach_name
 import net.zodac.ludoplus.resources.game_tutorial_part
 import net.zodac.ludoplus.ui.common.BackHandler
@@ -119,6 +123,7 @@ import net.zodac.ludoplus.ui.common.pluralStringResource
 import net.zodac.ludoplus.ui.common.spokenList
 import net.zodac.ludoplus.ui.common.stringResource
 import net.zodac.ludoplus.ui.icons.Symbols
+import net.zodac.ludoplus.ui.theme.ArenaFloors
 import net.zodac.ludoplus.ui.theme.color
 
 /** The narrowest the side panel beside the board gets in landscape. */
@@ -358,6 +363,7 @@ fun GameContent(
     val players = @Composable {
         if (notice != null) NetplayNotice(notice)
         if (tutorial == null) PlayerCards(started) else TutorialCoachCard(tutorial)
+        if (started.state.rules.suddenDeath && !started.state.isFinished) SuddenDeathNotice(started.state)
     }
     val background = LocalGameVisualTheme.current.background
     ScreenScaffold(
@@ -413,6 +419,36 @@ private fun NetplayNotice(notice: String) {
             .semantics { liveRegion = LiveRegionMode.Polite },
     )
 }
+
+/**
+ * How sudden death stands, under the players: what stops being safe and in how many rounds, or that nothing is safe, warmer
+ * the further it has come. TalkBack hears it as it changes (a polite live region) in the last [SUDDEN_DEATH_WARNING] rounds
+ * before a stage, and as the stage comes.
+ */
+@Composable
+private fun SuddenDeathNotice(state: GameState) {
+    val stage = state.suddenDeathStage
+    val rounds = state.roundsToSuddenDeath
+    val text = when {
+        rounds == null -> stringResource(Res.string.game_sudden_death_nowhere)
+        stage == 0 -> pluralStringResource(Res.plurals.game_sudden_death_starts, rounds, rounds)
+        else -> pluralStringResource(Res.plurals.game_sudden_death_stars, rounds, rounds)
+    }
+    val announced = rounds == null || rounds <= SUDDEN_DEATH_WARNING || state.suddenDeathJustCame
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = Color.White,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth()
+            .background(ArenaFloors[stage], RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .semantics { if (announced) liveRegion = LiveRegionMode.Polite },
+    )
+}
+
+/** How many rounds before a stage of sudden death its countdown is heard. */
+private const val SUDDEN_DEATH_WARNING = 3
 
 /** [background] filling the room it's given: its brush, and over it any decoration it draws, running while it's shown. */
 @Composable
@@ -474,15 +510,17 @@ private fun PlayerCard(game: StartedGame, index: Int, modifier: Modifier) {
     val side = state.players[index]
     val colour = player.colour.color
     val current = state.current == index && !state.isFinished
-    val home = side.pawnsHome(state.board)
+    val lastStanding = state.rules.lastStanding
+    // The card's dots: the pawns home, or where the last standing wins, the pawns still in.
+    val counted = if (lastStanding) side.pawnsLeft else side.pawnsHome(state.board)
     // A player still racing when the game ended has a place but no pawns all home: their card keeps its dots.
-    val place = state.placeOf(index).takeIf { side.isFinished(state.board) }
+    val place = state.placeOf(index).takeIf { if (lastStanding) side.pawnsLeft == 0 else side.isFinished(state.board) }
     val placeText = place?.let { stringResource(Res.string.game_player_place, ordinal(it)) }
     val team = teamNumber(state, index)
     val spoken = joinClauses(
         listOfNotNull(
             team?.let { stringResource(Res.string.game_player_team_spoken, it) },
-            pluralStringResource(Res.plurals.game_player_pawns_home_spoken, home, home),
+            pluralStringResource(if (lastStanding) Res.plurals.game_player_pawns_left_spoken else Res.plurals.game_player_pawns_home_spoken, counted, counted),
             if (current) stringResource(Res.string.game_player_turn_spoken) else null,
             placeText,
         ),
@@ -511,7 +549,7 @@ private fun PlayerCard(game: StartedGame, index: Int, modifier: Modifier) {
             if (placeText != null) {
                 Text(placeText, style = MaterialTheme.typography.labelMedium, color = colour, modifier = Modifier.clearAndSetSemantics { })
             } else {
-                PawnsHomeDots(home, state.rules.pawnsPerPlayer, colour, Modifier.clearAndSetSemantics { })
+                PawnDots(counted, state.rules.pawnsPerPlayer, colour, Modifier.clearAndSetSemantics { })
             }
         }
     }
@@ -551,14 +589,14 @@ private fun winnerLine(game: StartedGame): String {
     }
 }
 
-/** A dot per pawn: filled in [colour] for each of the [home] that are home. Drawn only; the card says the count. */
+/** A dot per pawn: filled in [colour] for each of the [counted] that are home, or still in. Drawn only; the card says the count. */
 @Composable
-private fun PawnsHomeDots(home: Int, total: Int, colour: Color, modifier: Modifier) {
+private fun PawnDots(counted: Int, total: Int, colour: Color, modifier: Modifier) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         repeat(total) { i ->
             Surface(
                 shape = CircleShape,
-                color = if (i < home) colour else Color.Transparent,
+                color = if (i < counted) colour else Color.Transparent,
                 border = BorderStroke(1.dp, colour.copy(alpha = 0.7f)),
                 modifier = Modifier.size(7.dp),
             ) {}

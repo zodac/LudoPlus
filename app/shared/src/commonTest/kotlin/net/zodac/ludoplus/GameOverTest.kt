@@ -65,6 +65,34 @@ class GameOverTest : UiTest() {
         )
     }
 
+    @Test
+    fun `Survival's results say how long each player lasted and the pawns they had left`() = uiTest(TestScreen(411, 891)) {
+        val x = -2
+        val state = GameState.new(GameMode.SURVIVAL, 4)
+        val over = finished.copy(
+            mode = GameMode.SURVIVAL,
+            state = state.copy(
+                players = listOf(
+                    PlayerState(0, listOf(60, 12, x, x, x, x), turns = 90, captures = 9, timesCaptured = 4),
+                    PlayerState(1, List(6) { x }, turns = 80, captures = 3, timesCaptured = 6),
+                    PlayerState(2, List(6) { x }, turns = 70, captures = 1, timesCaptured = 6),
+                    PlayerState(3, List(6) { x }, turns = 60, captures = 0, timesCaptured = 6),
+                ),
+                phase = TurnPhase.Finished,
+                finishingOrder = listOf(0, 1, 2, 3),
+                knockedOut = listOf(3, 2, 1),
+            ),
+            finishMillis = mapOf(0 to 900_000L, 1 to 900_000L, 2 to 600_000L, 3 to 300_000L),
+        )
+        showcase.show {
+            CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
+                LudoPlusTheme { GameOverScreen(over, onBackToMenu = {}, onPlayAgain = {}, onReviewBoard = {}, celebrate = false) }
+            }
+        }
+        compose.onNode(hasText("Winner") and hasText("Alex") and hasText("Survived 15m 0s") and hasText("2 of 6 pawns left, 9 captures, 4 captured")).assertExists()
+        compose.onNode(hasText("4th") and hasText("Sam") and hasText("Survived 5m 0s") and hasText("0 of 6 pawns left, 0 captures, 6 captured")).assertExists()
+    }
+
     private fun showResults(onMenu: () -> Unit = {}, onAgain: () -> Unit = {}, onReview: () -> Unit = {}) {
         showcase.show {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {

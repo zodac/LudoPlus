@@ -74,12 +74,13 @@ fun StatisticsScreen(viewModel: StatisticsViewModel, onBack: () -> Unit) {
             )
             return@ScreenScaffold
         }
-        all.forEach { PlayerCard(it) }
+        // A mode with no home has no race to time and brings no pawns there.
+        all.forEach { PlayerCard(it, race = mode?.rules?.lastStanding != true) }
     }
 }
 
 @Composable
-private fun PlayerCard(player: PlayerStatistics) {
+private fun PlayerCard(player: PlayerStatistics, race: Boolean) {
     val totals: RecordTotals = player.totals
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -95,10 +96,10 @@ private fun PlayerCard(player: PlayerStatistics) {
             Figure(stringResource(Res.string.stats_win_rate), stringResource(Res.string.stats_win_rate_value, (totals.winRate * 100).roundToInt()))
             Figure(stringResource(Res.string.stats_current_streak), totals.currentWinStreak.toString())
             Figure(stringResource(Res.string.stats_best_streak), totals.bestWinStreak.toString())
-            Figure(stringResource(Res.string.stats_fewest_turns), totals.fewestTurnsToWin?.toString() ?: stringResource(Res.string.stats_none))
+            if (race) Figure(stringResource(Res.string.stats_fewest_turns), totals.fewestTurnsToWin?.toString() ?: stringResource(Res.string.stats_none))
             Figure(stringResource(Res.string.stats_captures), totals.captures.toString())
             Figure(stringResource(Res.string.stats_times_captured), totals.timesCaptured.toString())
-            Figure(stringResource(Res.string.stats_pawns_home), totals.pawnsHome.toString())
+            if (race) Figure(stringResource(Res.string.stats_pawns_home), totals.pawnsHome.toString())
         }
     }
 }

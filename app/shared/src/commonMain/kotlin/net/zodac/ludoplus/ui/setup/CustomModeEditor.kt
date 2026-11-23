@@ -61,7 +61,9 @@ import net.zodac.ludoplus.ui.common.stringResource
 internal fun CustomModeEditor(editing: CustomMode?, existing: List<CustomMode>, onSave: (CustomMode) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf(editing?.name.orEmpty()) }
     var base by remember { mutableStateOf(editing?.base ?: GameMode.DEFAULT) }
-    var houseRules by remember { mutableStateOf(editing?.houseRules.orEmpty()) }
+    var pickedRules by remember { mutableStateOf(editing?.houseRules.orEmpty()) }
+    // Only those that change anything in the mode it's based on.
+    val houseRules = pickedRules.filter { it.appliesTo(base.rules) }.toSet()
     val builtInNames = GameMode.entries.map { stringResource(it.displayName) }
     val nameTaken = CustomMode.nameTaken(name, existing, except = editing?.id) || builtInNames.any { it.equals(name.trim(), ignoreCase = true) }
     val problem = when {
@@ -95,13 +97,13 @@ internal fun CustomModeEditor(editing: CustomMode?, existing: List<CustomMode>, 
                     )
                 }
                 EditorCard(stringResource(Res.string.setup_house_rules)) {
-                    HouseRule.entries.forEach { rule ->
+                    HouseRule.entries.filter { it.appliesTo(base.rules) }.forEach { rule ->
                         val on = rule in houseRules
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(min = 48.dp)
-                                .toggleable(value = on, role = Role.Switch) { houseRules = if (it) houseRules + rule else houseRules - rule },
+                                .toggleable(value = on, role = Role.Switch) { pickedRules = if (it) pickedRules + rule else pickedRules - rule },
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {

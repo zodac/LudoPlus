@@ -7,6 +7,8 @@ import net.zodac.ludoplus.resources.mode_portals
 import net.zodac.ludoplus.resources.mode_portals_description
 import net.zodac.ludoplus.resources.mode_quick
 import net.zodac.ludoplus.resources.mode_quick_description
+import net.zodac.ludoplus.resources.mode_survival
+import net.zodac.ludoplus.resources.mode_survival_description
 import net.zodac.ludoplus.resources.mode_two_dice
 import net.zodac.ludoplus.resources.mode_two_dice_description
 import org.jetbrains.compose.resources.StringResource
@@ -34,8 +36,11 @@ enum class GameMode(
     /**
      * Its online leaderboards' key (Play Games), one board for each player count ([onlineLeaderboardKey]). Permanent once
      * released, as the boards are: a rule change that makes old wins unfair needs a new key (`.claude/PLAY_GAMES.md`).
+     * Null for a mode with none: they rank the fewest turns, which isn't how it ranks ([ranking]).
      */
-    val onlineLeaderboardKey: String,
+    val onlineLeaderboardKey: String?,
+    /** What its Leaderboard ranks wins by. */
+    val ranking: LeaderboardRanking = LeaderboardRanking.FEWEST_TURNS,
 ) : StoredId {
     /** The classic rules, for four players (`.claude/IMPLEMENTATION.md`, "The classic rules"). */
     CLASSIC(
@@ -76,16 +81,32 @@ enum class GameMode(
         rules = GameRules(portals = true),
         onlineLeaderboardKey = "portals",
     ),
+
+    /**
+     * No home: pawns lap the track from their start squares, a captured pawn is out of the game, and the last player with
+     * one wins. Late in the game sudden death makes the start squares unsafe, then the stars too.
+     */
+    SURVIVAL(
+        id = "survival",
+        displayName = Res.string.mode_survival,
+        description = Res.string.mode_survival_description,
+        rules = GameRules(board = BoardGeometry.CLASSIC.copy(endless = true), pawnsPerPlayer = 6, startsOut = true, lastStanding = true, suddenDeath = true),
+        onlineLeaderboardKey = null,
+        ranking = LeaderboardRanking.MOST_PAWNS_LEFT,
+    ),
     ;
 
-    /** Its online leaderboard for games of [playerCount]: a bigger board's lap is longer, so each count has its own. */
-    fun onlineLeaderboardKey(playerCount: Int): String = "${onlineLeaderboardKey}_${playerCount}p"
+    /** Its online leaderboard for games of [playerCount], if it has any: a bigger board's lap is longer, so each count has its own. */
+    fun onlineLeaderboardKey(playerCount: Int): String? = onlineLeaderboardKey?.let { "${it}_${playerCount}p" }
 
     companion object {
         /** The mode a new player's first game is set to. */
         val DEFAULT = CLASSIC
     }
 }
+
+/** What a mode's Leaderboard ranks its wins by, most captures settling a tie. */
+enum class LeaderboardRanking { FEWEST_TURNS, MOST_PAWNS_LEFT }
 
 /**
  * The rules of play a game follows: its [GameMode]'s, which house-rule modifiers (Phase 9 of
@@ -154,6 +175,15 @@ data class GameRules(
     val guardedStarts: Boolean = false,
     /** Whether the board's portals ([BoardGeometry.portals]) are open: a move that ends on one comes out at its pair. */
     val portals: Boolean = false,
+    /** Whether every pawn starts the game on its start square, rather than in its yard. */
+    val startsOut: Boolean = false,
+    /**
+     * Whether a captured pawn is out of the game, and the last player (or team) with a pawn left wins: the others are
+     * placed by how late they lost their last. Only on an endless board ([BoardGeometry.endless]), from the start squares.
+     */
+    val lastStanding: Boolean = false,
+    /** Whether sudden death comes, round by round, making the start squares unsafe and then the stars ([suddenDeathRound]). */
+    val suddenDeath: Boolean = false,
     /** The house rules these rules were made with ([withHouseRules]): empty for a mode's own rules. */
     val houseRules: Set<HouseRule> = emptySet(),
 ) {
@@ -177,7 +207,16 @@ data class GameRules(
     fun arePartners(a: Int, b: Int): Boolean = a != b && teams != null && teams[a] == teams[b]
 
     /** These rules on the board for [players] players ([BoardGeometry.forPlayers]). */
-    fun forPlayers(players: Int): GameRules = copy(board = BoardGeometry.forPlayers(players))
+    fun forPlayers(players: Int): GameRules = copy(board = BoardGeometry.forPlayers(players).copy(endless = board.endless))
+
+    /**
+     * How many rounds (a turn for every player still in) are played before sudden death's [stage] comes, in a game of
+     * [players]: 1 makes the start squares unsafe, 2 the star squares too. Later the more players there are.
+     */
+    fun suddenDeathRound(stage: Int, players: Int): Int {
+        val first = SUDDEN_DEATH_ROUNDS + SUDDEN_DEATH_ROUNDS_A_PLAYER * players
+        return if (stage == 1) first else first * 3 / 2
+    }
 
     init {
         require(pawnsPerPlayer > 0) { "A player needs a pawn" }
@@ -186,11 +225,16 @@ data class GameRules(
         require((yardExitRolls + rollAgainRolls).all { it in 1..dieFaces }) { "Every special roll must be on the die" }
         require(rollAgainLimit == null || rollAgainLimit > 0) { "A run of rolls again ends after one roll or more" }
         require(yardTries > 0) { "A player has a roll or more to leave the yard" }
+        require(lastStanding == board.endless && (!lastStanding || startsOut)) { "Only an endless board has a last player standing, and no yard to leave" }
         require(teams == null || teams.all { it >= 0 } && teams.toSet().size >= 2) { "A team game needs two teams or more" }
     }
 
     private companion object {
         /** Where a teamless game's one-player teams are numbered from, clear of any real team's number. */
         const val TEAMLESS = 1_000
+
+        /** When sudden death's first stage comes ([suddenDeathRound]). */
+        const val SUDDEN_DEATH_ROUNDS = 30
+        const val SUDDEN_DEATH_ROUNDS_A_PLAYER = 5
     }
 }

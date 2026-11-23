@@ -59,7 +59,9 @@ import net.zodac.ludoplus.resources.gameover_duration_hours
 import net.zodac.ludoplus.resources.gameover_duration_minutes
 import net.zodac.ludoplus.resources.gameover_finished_in
 import net.zodac.ludoplus.resources.gameover_host_plays_again
+import net.zodac.ludoplus.resources.gameover_pawns_left
 import net.zodac.ludoplus.resources.gameover_play_again
+import net.zodac.ludoplus.resources.gameover_survived
 import net.zodac.ludoplus.resources.gameover_review
 import net.zodac.ludoplus.resources.gameover_title
 import net.zodac.ludoplus.resources.gameover_tutorial_done
@@ -216,13 +218,15 @@ fun GameOverScreen(
     }
 }
 
-/** What [player] did: their turns and captures, or, if they never finished, how many pawns they brought home. */
+/** What [player] did: their turns and captures, or, if they never finished, how many pawns they brought home; where the last standing wins, how many they had left. */
 @Composable
 private fun resultLine(game: StartedGame, player: Int): String {
     val side = game.state.players[player]
     val board = game.state.board
     val total = game.state.rules.pawnsPerPlayer
-    val first = if (side.isFinished(board)) {
+    val first = if (game.state.rules.lastStanding) {
+        pluralStringResource(Res.plurals.gameover_pawns_left, total, side.pawnsLeft, total)
+    } else if (side.isFinished(board)) {
         pluralStringResource(Res.plurals.gameover_turns, side.turns, side.turns)
     } else {
         pluralStringResource(Res.plurals.gameover_pawns_home, total, side.pawnsHome(board), total)
@@ -236,16 +240,16 @@ private fun resultLine(game: StartedGame, player: Int): String {
     )
 }
 
-/** "Finished in 18m 42s" for a player placed [millis] into the game; hours and minutes from an hour. */
+/** "Finished in 18m 42s" for a player placed [millis] into the game ("Survived 18m 42s" where the last standing wins); hours and minutes from an hour. */
 @Composable
-private fun finishedText(millis: Long): String {
+private fun finishedText(millis: Long, survived: Boolean): String {
     val seconds = (millis / 1_000).toInt()
     val duration = if (seconds < 3_600) {
         stringResource(Res.string.gameover_duration_minutes, seconds / 60, seconds % 60)
     } else {
         stringResource(Res.string.gameover_duration_hours, seconds / 3_600, seconds % 3_600 / 60)
     }
-    return stringResource(Res.string.gameover_finished_in, duration)
+    return stringResource(if (survived) Res.string.gameover_survived else Res.string.gameover_finished_in, duration)
 }
 
 
@@ -270,7 +274,7 @@ private fun WinnerCard(game: StartedGame, player: Int, details: Boolean = true) 
                 Text(stringResource(Res.string.gameover_winner), style = MaterialTheme.typography.labelLarge)
                 PlayerName(game, player, MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), dot = 16)
                 if (details) {
-                    game.finishMillis[player]?.let { Text(finishedText(it), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium) }
+                    game.finishMillis[player]?.let { Text(finishedText(it, game.state.rules.lastStanding), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium) }
                     Text(resultLine(game, player), style = MaterialTheme.typography.bodyMedium)
                 }
             }
@@ -295,7 +299,7 @@ private fun PlacingRow(game: StartedGame, player: Int, place: Int) {
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             PlayerName(game, player, MaterialTheme.typography.bodyLarge, dot = 12)
-            game.finishMillis[player]?.let { Text(finishedText(it), style = MaterialTheme.typography.bodyMedium) }
+            game.finishMillis[player]?.let { Text(finishedText(it, game.state.rules.lastStanding), style = MaterialTheme.typography.bodyMedium) }
             Text(resultLine(game, player), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

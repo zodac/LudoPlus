@@ -58,6 +58,14 @@ class GameResultDaoTest {
         assertEquals(listOf(8L), dao.leaderboard("classic", playerCount = 6, limit = 10, offset = 0).map { it.endedAtEpochMillis })
         assertEquals(1, dao.leaderboardCount("classic", playerCount = 6))
 
+        // By pawns left: the fewest captured, then most captures, then the earliest.
+        dao.insertGame(listOf(5 to 9, 1 to 2, 1 to 4, 1 to 4).mapIndexed { i, (lost, captures) ->
+            row("Jo", won = true, turns = 50 - i, captures = captures, endedAt = 20L + i, mode = "survival").copy(timesCaptured = lost)
+        })
+        assertEquals(listOf(22L, 23L, 21L, 20L), dao.leaderboardByPawnsLeft("survival", playerCount = 4, limit = 10, offset = 0).map { it.endedAtEpochMillis })
+        dao.clearAll()
+        dao.insertGame(rows)
+
         // By player (whatever the name's case), then oldest first.
         assertEquals(listOf(2L, 3L, 1L, 4L, 5L, 6L, 7L, 8L), dao.allByPlayer().map { it.endedAtEpochMillis })
         assertEquals(8, dao.count())

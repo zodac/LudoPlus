@@ -111,10 +111,10 @@ object SavedGameJson {
         require(playMillis >= 0) { "Negative play time" }
         val finishMillis = obj.obj("finishMillis").longs().entries.associate { (player, millis) ->
             val index = player.toIntOrNull()?.takeIf { it in players.indices } ?: throw JsonParseException("No player \"$player\"")
-            require((state.isFinished || state.players[index].isFinished(state.board)) && millis in 0..playMillis) { "Player $index's finish time doesn't fit" }
+            require((state.isFinished || index in state.knockedOut || state.players[index].isFinished(state.board)) && millis in 0..playMillis) { "Player $index's finish time doesn't fit" }
             index to millis
         }
-        require(finishMillis.keys == state.finishingOrder.toSet()) { "A finished player has no finish time" }
+        require(finishMillis.keys == state.finishingOrder.toSet() + state.knockedOut) { "A finished player has no finish time" }
         return StartedGame(
             mode,
             players,
@@ -175,6 +175,9 @@ object SavedGameJson {
         if (state.rollingAgain) put("rollingAgain", true)
         if (state.yardTriesUsed > 0) put("yardTriesUsed", state.yardTriesUsed)
         put("finishingOrder", jsonInts(state.finishingOrder))
+        // Sudden death's count of rounds, and the players with no pawn left; absent where the rules have neither.
+        if (state.rules.suddenDeath) put("roundsPlayed", state.roundsPlayed)
+        if (state.knockedOut.isNotEmpty()) put("knockedOut", jsonInts(state.knockedOut))
         // Over: never saved, but a Nearby host sends its guests the game's end (`.claude/NETPLAY.md`).
         if (state.isFinished) put("finished", true)
         state.lastEvent?.let { put("lastEvent", encodeEvent(it)) }
@@ -197,12 +200,20 @@ object SavedGameJson {
         }
         players.forEach { player ->
             require(player.pawns.size == rules.pawnsPerPlayer) { "A player has ${player.pawns.size} pawns" }
-            require(player.pawns.all { it in PawnPosition.YARD_PROGRESS..board.homeProgress }) { "A pawn is off the board" }
+            require(player.pawns.all { if (rules.lastStanding) it == PawnPosition.OUT_PROGRESS || it in 0..<board.trackSteps else it in PawnPosition.YARD_PROGRESS..board.homeProgress }) {
+                "A pawn is off the board"
+            }
             require(player.turns >= 0 && player.captures >= 0 && player.timesCaptured >= 0) { "A negative count" }
         }
         val current = obj.int("current")
         require(current in 0..<playerCount) { "No player $current to play" }
         val finishingOrder = obj.array("finishingOrder").ints()
+        val roundsPlayed = if (rules.suddenDeath) obj.int("roundsPlayed") else 0
+        require(roundsPlayed >= 0) { "Negative rounds" }
+        val knockedOut = if ("knockedOut" in obj) obj.array("knockedOut").ints() else emptyList()
+        require(knockedOut.distinct() == knockedOut && knockedOut.toSet() == players.indices.filter { players[it].pawnsLeft == 0 }.toSet()) {
+            "The players knocked out aren't those with no pawn left"
+        }
         // An ended game: every player placed (the last ones as they stood, where it stopped at its first winner).
         if (obj.flag("finished")) {
             require(finishingOrder.sorted() == players.indices.toList()) { "An ended game hasn't placed every player" }
@@ -213,6 +224,8 @@ object SavedGameJson {
                 current = current,
                 phase = TurnPhase.Finished,
                 finishingOrder = finishingOrder,
+                roundsPlayed = roundsPlayed,
+                knockedOut = knockedOut,
                 lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
             )
         }
@@ -224,6 +237,8 @@ object SavedGameJson {
         val homeTeams = members.filterValues { team -> team.all { players[it].isFinished(board) } }.keys
         require(finishingOrder.toSet() == homeTeams.flatMap { members.getValue(it) }.toSet()) { "The finishing order isn't the players home" }
         require(members.keys.count { it !in homeTeams } > 1) { "A finished game is never saved" }
+        require(members.values.count { team -> !knockedOut.containsAll(team) } > 1) { "A finished game is never saved" }
+        require(current !in knockedOut) { "A player with no pawn left has the turn" }
         require(current !in finishingOrder) { "A finished player has the turn" }
         require(!(players[current].isFinished(board) && (rules.teams == null || !rules.rollForPartners))) { "A player with every pawn home has the turn" }
         val waiting = GameState(
@@ -236,6 +251,8 @@ object SavedGameJson {
             rollingAgain = obj.flag("rollingAgain"),
             yardTriesUsed = obj.intOrNull("yardTriesUsed") ?: 0,
             finishingOrder = finishingOrder,
+            roundsPlayed = roundsPlayed,
+            knockedOut = knockedOut,
             lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
         )
         require(waiting.rollAgainRun >= 0 && rules.rollAgainLimit?.let { waiting.rollAgainRun < it } != false) { "Rolled again too often" }
@@ -292,6 +309,7 @@ object SavedGameJson {
             event.move.via?.let { put("via", it) }
             put("finished", event.finished)
             if (event.rollsAgain) put("rollsAgain", true)
+            if (event.knockedOut.isNotEmpty()) put("knockedOut", jsonInts(event.knockedOut))
         }
     }
 
@@ -320,6 +338,7 @@ object SavedGameJson {
                 ),
                 finished = obj.boolean("finished"),
                 rollsAgain = obj.flag("rollsAgain"),
+                knockedOut = if ("knockedOut" in obj) obj.array("knockedOut").ints().also { out -> require(out.all { it in 0..<playerCount }) { "No player in $out" } } else emptyList(),
             )
             else -> throw JsonParseException("Unknown event \"$kind\"")
         }

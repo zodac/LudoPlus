@@ -10,6 +10,7 @@ achievement audit (what each mode or house rule blocks or guards) is in `GAME_MO
 | `QUICK` | `quick` | Two pawns each (`pawnsPerPlayer = 2`) | No |
 | `TWO_DICE` | `two_dice` | Two dice, each moved on its own (`dice = 2`); doubles roll again, not 6s (`rollAgainOnDoubles`, `rollAgainRolls` empty) | No |
 | `PORTALS` | `portals` | Portals on the track (`portals = true`): a move ending on one comes out at its pair | No |
+| `SURVIVAL` | `survival` | Six pawns, starting out (`startsOut`), on an endless board: a captured pawn is out, and the last player with one wins (`lastStanding`), with sudden death (`suddenDeath`) | No |
 
 **Custom modes** (`model/CustomMode.kt`) are the player's own: a built-in base and house rules, saved under a name
 (`DESIGN.md`, "Game modes"). They are data in the settings, not `GameMode` entries: a game of one is its base mode's,
@@ -22,7 +23,9 @@ with the house rules on.
 `GameState.rules`, never the mode.
 
 - `GameMode` fields: `id` (stored, permanent once released), `displayName`, `description` (New Game's one line: say
-    what's different), `rules`, and `earnsAchievements` (only Classic, until modes get their own achievements).
+    what's different), `rules`, `earnsAchievements` (only Classic, until modes get their own achievements), `ranking` (what
+    its Leaderboard ranks wins by), and `onlineLeaderboardKey` (null for a mode not ranked by turns).
+- A house rule that changes nothing in a mode's rules says so (`HouseRule.appliesTo`), and isn't offered or played there.
 - `GameRules` fields: the board (`forPlayers` swaps it by count), `pawnsPerPlayer`, `dieFaces`, `dice`, the yard-exit and
     roll-again rolls, the roll-again limit, the capture and home rolls, the house rules' fields, the teams' fields, and
     `stopAtFirstWinner`. Each is a doc comment stating its rule.

@@ -64,6 +64,9 @@ enum class HouseRule(
     GUARDED_STARTS("guarded_starts", Res.string.house_rule_guarded_starts, Res.string.house_rule_guarded_starts_description, { it.copy(guardedStarts = true) }),
     ;
 
+    /** Whether it changes anything in a game of [rules]: with nothing to bring out of a yard or home, some change nothing. */
+    fun appliesTo(rules: GameRules): Boolean = !rules.lastStanding || this !in setOf(NO_HOME_ROLL, EXIT_ON_ONE, FREE_START, THREE_TRIES)
+
     /** [rules] with this house rule on. */
     fun applyTo(rules: GameRules): GameRules = change(rules).copy(houseRules = rules.houseRules + this)
 }

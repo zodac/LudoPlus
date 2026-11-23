@@ -21,4 +21,4 @@ internal val playLeaderboardIds: Map<String, String> = emptyMap()
 
 /** Every board Play Games has: each mode's, for each player count. */
 internal val playLeaderboardKeys: List<String> =
-    GameMode.entries.flatMap { mode -> (BoardGeometry.MIN_PLAYERS..BoardGeometry.MAX_PLAYERS).map(mode::onlineLeaderboardKey) }
+    GameMode.entries.flatMap { mode -> (BoardGeometry.MIN_PLAYERS..BoardGeometry.MAX_PLAYERS).mapNotNull(mode::onlineLeaderboardKey) }

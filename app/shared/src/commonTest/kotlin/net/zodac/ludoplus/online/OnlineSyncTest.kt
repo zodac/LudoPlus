@@ -267,6 +267,8 @@ class OnlineSyncTest {
             Win(GameMode.CLASSIC, 4, 41, 30L),
             Win(GameMode.CLASSIC, 2, 30, 25L),
             Win(GameMode.TWO_DICE, 6, 52, 15L),
+            // Ranked by pawns left, so it has no board.
+            Win(GameMode.SURVIVAL, 4, 60, 15L),
         )
         sync(services, InMemoryAchievementStore(state()), OnlineSettingsRepository(InMemoryPreferences()), wins = wins).reconcile()
         assertEquals(listOf("classic_2p" to 30L, "classic_4p" to 38L, "two_dice_6p" to 52L), services.posted)

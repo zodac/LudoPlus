@@ -164,6 +164,18 @@ class RulesTextTest : UiTest() {
             ),
             diagram = null,
         ),
+        Page(
+            "Survival",
+            "Survival",
+            listOf(
+                "In Survival there's no home to reach. Each player's six pawns start out on their start square and go round the track until one player is left.",
+                "A captured pawn is out of the game. Lose all six and you're out: the last player with a pawn left wins, and everyone else is placed by how long they lasted.",
+                "Start squares and star squares are safe at first, until sudden death. Start squares stop being safe first, then star squares too. The line above the board counts the rounds, and with more players it takes longer.",
+                "On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when sudden death comes.",
+                "The Leaderboard ranks Survival wins by the most pawns left. Survival games don't earn achievements.",
+            ),
+            diagram = null,
+        ),
     )
 
     /** Each group's tab, and its pages. */

@@ -37,6 +37,7 @@ import net.zodac.ludoplus.resources.game_square_safe_for_spoken
 import net.zodac.ludoplus.resources.game_square_safe_spoken
 import net.zodac.ludoplus.resources.game_square_start_spoken
 import net.zodac.ludoplus.resources.game_square_track_spoken
+import net.zodac.ludoplus.resources.game_square_yard_lost_spoken
 import net.zodac.ludoplus.resources.game_square_yard_pawns_spoken
 import net.zodac.ludoplus.resources.game_square_yard_spoken
 import net.zodac.ludoplus.ui.common.joinClauses
@@ -53,7 +54,7 @@ private fun List<Offset>.bounds(): Rect = Rect(minOf { it.x }, minOf { it.y }, m
 
 /**
  * The board for a screen reader, laid over the drawn one: a node for each yard, each track square (numbered from red's
- * start), each home-column square, and home, saying what's on it ("Square 14, Red pawn 2, 43 squares from home"). A
+ * start), each home-column square, and home (none on an endless board), saying what's on it ("Square 14, Red pawn 2, 43 squares from home"). A
  * square holding a pawn the current player can move (theirs, or a partner's they roll for) is a button whose action
  * moves it ([moves], [onMove]).
  */
@@ -103,7 +104,10 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
         val description = joinClauses(
             listOf(
                 stringResource(Res.string.game_square_yard_spoken, stringResource(colourOf(player).label)),
-                if (waiting.isEmpty()) empty else pluralStringResource(Res.plurals.game_square_yard_pawns_spoken, waiting.size, waiting.size),
+                if (state.rules.lastStanding) {
+                    val (lost, all) = state.players[player].let { it.pawns.size - it.pawnsLeft to it.pawns.size }
+                    pluralStringResource(Res.plurals.game_square_yard_lost_spoken, all, lost, all)
+                } else if (waiting.isEmpty()) empty else pluralStringResource(Res.plurals.game_square_yard_pawns_spoken, waiting.size, waiting.size),
             ),
         )
         val move = movableAt(player, waiting)
@@ -120,7 +124,7 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
         // A guarded start is safe for its own colour alone; a start square no one sits at, for nobody.
         val guardedStart = state.rules.guardedStarts && square % board.seatSpacing == 0
         val safety = when {
-            !board.isSafe(square) -> null
+            !state.isSafe(square) -> null
             !guardedStart -> stringResource(Res.string.game_square_safe_spoken)
             startOf != null -> stringResource(Res.string.game_square_safe_for_spoken, stringResource(colourOf(startOf).label))
             else -> null
@@ -135,7 +139,8 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
         val move = state.players.indices.firstNotNullOfOrNull { player -> movableAt(player, here.filter { it.first.first == player }.map { it.first.second }) }
         spots += Spot(layout.trackSquare(square).spotBounds(), joinClauses(clauses), move, move?.let(moveLabels::get))
     }
-    // Each home column, then home.
+    // Each home column, then home, where there's one.
+    if (board.endless) return spots
     for (player in state.players.indices) {
         val seat = state.players[player].seat
         for (index in 0..<board.homeColumnLength) {

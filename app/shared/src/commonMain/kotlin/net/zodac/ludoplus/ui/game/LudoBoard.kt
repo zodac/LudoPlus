@@ -52,6 +52,7 @@ import net.zodac.ludoplus.ui.theme.BoardEmptySeat
 import net.zodac.ludoplus.ui.theme.BoardInk
 import net.zodac.ludoplus.ui.theme.BoardIvory
 import net.zodac.ludoplus.ui.style.LocalGameVisualTheme
+import net.zodac.ludoplus.ui.style.BoardParts
 import net.zodac.ludoplus.ui.style.BoardStyle
 import net.zodac.ludoplus.ui.style.PawnStyle
 import net.zodac.ludoplus.ui.style.drawCachedSurface
@@ -128,12 +129,19 @@ fun LudoBoard(
     Box(modifier = modifier.aspectRatio(1f)) {
         // The board, painted once into an image for its style, seats' colours, pawn count, and size, on a layer of its own:
         // a frame of a move or a turn's ring never draws it again.
-        val surface = BoardSurface(theme.board, layout, colours, pawns)
+        val lastStanding = state.rules.lastStanding
+        val stage = state.suddenDeathStage
+        val parts = if (lastStanding) BoardParts(starts = stage < 1, stars = stage < 2, homes = false) else BoardParts()
+        // A last-standing yard's spots are its tally, drawn with the pawns.
+        val spots = if (lastStanding) 0 else pawns
+        val surface = BoardSurface(theme.board, layout, colours, spots, parts)
         Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) {
             drawCachedSurface(surface.copy(density = density)) {
-                with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours, pawns) }
+                with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours, spots, parts) }
             }
         }
+        // The arena, drawn again only as sudden death comes on.
+        if (lastStanding) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawArena(layout, size.minDimension / layout.size, stage) }
         // The portals, under the pawns: drawn once.
         if (state.rules.portals) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPortals(layout, size.minDimension / layout.size, colours) }
         // On a layer of its own too, drawn again only as the turn passes.
@@ -156,6 +164,7 @@ fun LudoBoard(
                 },
         ) {
             val unit = size.minDimension / layout.size
+            if (lastStanding) drawFallen(state, layout, unit, { pawnColours[it] }, theme.pawns) { player, pawn -> animating != null && motion.isAnimated(player, pawn) }
             for (mark in marks) {
                 // The moving pawn and any it captured are drawn on their way, below; the rest of their mark stays.
                 val pawns = if (animating == null) mark.pawns else mark.pawns.filterNot { motion.isAnimated(mark.player, it) }
@@ -391,7 +400,7 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
     }
     val home = move.to == state.board.homeProgress
     val captured = move.captures.map {
-        CapturedPawn(it, layout.yardSpotOf(state.players[it.player].seat, it.pawn, state.rules.pawnsPerPlayer), layout.yardPawnRadius)
+        CapturedPawn(it, layout.yardSpotOf(state.players[it.player].seat, it.pawn, state.rules.pawnsPerPlayer), layout.yardPawnRadiusOf(state.rules.pawnsPerPlayer))
     }
     return MovingPawn(
         player = owner,
@@ -412,6 +421,7 @@ private data class BoardSurface(
     val layout: BoardLayout,
     val colours: List<Color?>,
     val pawns: Int,
+    val parts: BoardParts,
     val density: Float = 0f,
 )
 

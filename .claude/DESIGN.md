@@ -169,6 +169,7 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 | Quick | Two pawns each; each yard draws two spots, on opposite corners (the maintainer, 2026-11-18) | Yes, its own | No |
 | Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | No |
 | Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | No |
+| Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; sudden death late on | Yes, its own, by most pawns left | No |
 
 Every mode has its own Leaderboard (one a player count) and its own Statistics page. Only Classic earns achievements
 (`GameMode.earnsAchievements`) until the maintainer's review of the list adds any for a mode (2026-11-18). The Rules
@@ -196,6 +197,21 @@ a lock in its colour. With Blockades, one at either end stops the move. A pair i
 long pair by a split ring (past four seats, a long pair shares a short one's symbol). TalkBack: "Square 7, portal to
 square 23, shut to Green, empty", "Move Red pawn 1 2 squares, through a portal to square 11". Where a mode is picked by
 segments (Leaderboard, Statistics, Based On), they wrap over two rows (`WrappedSegmentedChoiceRow`).
+
+**Survival** (`GameRules.startsOut`, `lastStanding`, `suddenDeath`; the maintainer, 2026-11-24). Every pawn starts on
+its start square, and the board is endless (`BoardGeometry.endless`): no home column, every square of the track walked,
+progress counting on lap after lap. A captured pawn is `PawnPosition.Out`; a player with none is knocked out
+(`GameState.knockedOut`), placed at once, and passed by; a team lasts while any of its players does. A round is a turn for
+everyone still in (`roundsPlayed`). Sudden death (`suddenDeathStage`) makes the start squares unsafe after 30 + 5 rounds a
+player, and the stars too after half as many again, so safety is asked of the state (`GameState.isSafe`,
+`isSafeFor`), never the board alone. A 6 needn't move a pawn off the start stack (the maintainer's choice): a stack left
+there as sudden death comes can be captured whole. No Home Roll, Out on a 1, Free Start, and Three Tries change nothing
+here, so aren't offered (`HouseRule.appliesTo`). The board is drawn with no home, and as sudden death comes without its
+start colours, then its stars (`BoardParts`), under `SurvivalArt.kt`'s arena: crossed swords, then flames, then a skull,
+with cracks on the squares no longer safe. Yards tally the fallen; cards' dots are the pawns left. The Leaderboard ranks
+the most pawns left (`LeaderboardRanking`, from `timesCaptured`), then captures; its wins set no fewest turns, and it has
+no online board. TalkBack: "Red yard, 3 of 6 pawns lost", "3 pawns left, playing now"; the line over the board ("Start
+squares stop being safe in 3 rounds.") is live in the last three rounds before a stage and as it comes.
 
 **Custom modes** (`model/CustomMode.kt`, the maintainer, 2026-11-18). A name (unique among the player's and the
 built-in modes', whatever its case; at most 24 characters), a base mode, and at least one house rule (without one it

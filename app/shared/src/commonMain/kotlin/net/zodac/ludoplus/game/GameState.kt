@@ -24,6 +24,10 @@ data class GameState(
     val yardTriesUsed: Int = 0,
     /** The players who have brought every pawn home, by index, first place first. Every player once [TurnPhase.Finished]. */
     val finishingOrder: List<Int> = emptyList(),
+    /** How many whole rounds have been played: a turn for every player still in. Counted only where the rules have sudden death. */
+    val roundsPlayed: Int = 0,
+    /** Where the last standing wins ([GameRules.lastStanding]), the players who have lost every pawn, by index, the first to first. */
+    val knockedOut: List<Int> = emptyList(),
     /** What the last action did, for the screen to show and say. Null before the first roll. */
     val lastEvent: GameEvent? = null,
 ) {
@@ -33,18 +37,45 @@ data class GameState(
 
     val isFinished: Boolean get() = phase == TurnPhase.Finished
 
+    /** How far sudden death has come: 0 for not yet, 1 with the start squares unsafe, and 2 with the stars unsafe too. */
+    val suddenDeathStage: Int
+        get() = if (!rules.suddenDeath) 0 else (1..SUDDEN_DEATH_STAGES).count { roundsPlayed >= rules.suddenDeathRound(it, players.size) }
+
+    /** How many rounds are left before sudden death's next stage, or null with none to come. */
+    val roundsToSuddenDeath: Int?
+        get() = (suddenDeathStage + 1).takeIf { rules.suddenDeath && it <= SUDDEN_DEATH_STAGES }?.let { rules.suddenDeathRound(it, players.size) - roundsPlayed }
+
+    /** Whether the round being played is a stage of sudden death's first. */
+    val suddenDeathJustCame: Boolean get() = suddenDeathStage > 0 && roundsPlayed == rules.suddenDeathRound(suddenDeathStage, players.size)
+
+    /** Whether a pawn of [seat] on the absolute track [square] is safe from capture now: by the rules, until sudden death. */
+    fun isSafeFor(seat: Int, square: Int): Boolean = isSafe(square) && rules.isSafeFor(seat, square)
+
+    /** Whether the absolute track [square] is a safe square now: a start or star square, until sudden death. */
+    fun isSafe(square: Int): Boolean = board.isSafe(square) && suddenDeathStage < if (square % board.seatSpacing == 0) 1 else SUDDEN_DEATH_STAGES
+
     /** The player in first place (one of the first team's, in a team game), once someone has brought every pawn home. */
     val winner: Int? get() = finishingOrder.firstOrNull()
 
     /**
      * [player]'s place, 1 for first, once placed: their place in [finishingOrder], or in a team game their team's, its
-     * players sharing it.
+     * players sharing it. A player (or team) knocked out has theirs at once.
      */
     fun placeOf(player: Int): Int? {
-        if (player !in finishingOrder) return null
+        if (player !in finishingOrder) {
+            val out = teamsOut()
+            val index = out.indexOf(rules.teamOf(player))
+            return if (index < 0) null else players.indices.map(rules::teamOf).distinct().size - index
+        }
         val teamsBefore = finishingOrder.takeWhile { rules.teamOf(it) != rules.teamOf(player) }.map(rules::teamOf).distinct()
         return teamsBefore.size + 1
     }
+
+    /** The teams (a player alone is a team of one) whose players have all been knocked out, the first to be first. */
+    fun teamsOut(): List<Int> = players.indices.groupBy(rules::teamOf)
+        .filterValues { team -> team.all { it in knockedOut } }.entries
+        .sortedBy { (_, team) -> team.maxOf(knockedOut::indexOf) }
+        .map { it.key }
 
     /** [player]'s partners, by index: none in a game without teams. */
     fun partnersOf(player: Int): List<Int> = players.indices.filter { rules.arePartners(player, it) }
@@ -53,9 +84,11 @@ data class GameState(
     fun position(player: Int, pawn: Int): PawnPosition = PawnPosition.of(players[player].pawns[pawn], board)
 
     companion object {
+        private const val SUDDEN_DEATH_STAGES = 2
+
         /**
          * A new game of [mode] for [playerCount] players under [rules] (the mode's own by default), every pawn in its
-         * yard, [first] to roll. The players sit at [seats], in clockwise order: spread round the board by default
+         * yard (or where the rules start them out, on its start square), [first] to roll. The players sit at [seats], in clockwise order: spread round the board by default
          * ([BoardGeometry.seatsFor]).
          */
         fun new(
@@ -75,7 +108,7 @@ data class GameState(
                 mode = mode,
                 rules = rules,
                 players = seats.map { seat ->
-                    PlayerState(seat = seat, pawns = List(rules.pawnsPerPlayer) { PawnPosition.YARD_PROGRESS })
+                    PlayerState(seat = seat, pawns = List(rules.pawnsPerPlayer) { if (rules.startsOut) 0 else PawnPosition.YARD_PROGRESS })
                 },
                 current = first,
                 phase = TurnPhase.AwaitingRoll,
@@ -99,6 +132,9 @@ data class PlayerState(
 ) {
     /** How many of their pawns are home on [board]. */
     fun pawnsHome(board: BoardGeometry): Int = pawns.count { it == board.homeProgress }
+
+    /** How many of their pawns are still in the game. */
+    val pawnsLeft: Int get() = pawns.count { it != PawnPosition.OUT_PROGRESS }
 
     /** Whether every one of their pawns is home on [board]. */
     fun isFinished(board: BoardGeometry): Boolean = pawns.all { it == board.homeProgress }
@@ -177,7 +213,15 @@ sealed interface GameEvent {
     /**
      * [player] moved with [roll] (with two dice, the die moved). [finished] is true if that brought the moved pawn's
      * owner's last pawn home (theirs, or a partner's they rolled for); [rollsAgain] if the roll, its dice all moved, earned
-     * them another (a roll-again roll, a capture, or a pawn home, as the rules give).
+     * them another (a roll-again roll, a capture, or a pawn home, as the rules give). [knockedOut] are the players whose
+     * last pawn it captured, where that puts them out of the game.
      */
-    data class Moved(override val player: Int, val roll: Int, val move: Move, val finished: Boolean, val rollsAgain: Boolean = false) : GameEvent
+    data class Moved(
+        override val player: Int,
+        val roll: Int,
+        val move: Move,
+        val finished: Boolean,
+        val rollsAgain: Boolean = false,
+        val knockedOut: List<Int> = emptyList(),
+    ) : GameEvent
 }

@@ -24,7 +24,7 @@ object ClassicBoardStyle : BoardStyle, Swatched {
     override val swatch: Color = BoardIvory
 
     /** The board itself, no pawns: squares, yards, start squares, stars, home columns, and the centre. */
-    override fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>, pawns: Int) {
+    override fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>, pawns: Int, parts: BoardParts) {
         val board = layout.geometry
         val line = BoardInk.copy(alpha = 0.45f)
         val lineWidth = 1.dp.toPx()
@@ -37,13 +37,13 @@ object ClassicBoardStyle : BoardStyle, Swatched {
         }
         for (square in 0..<board.trackLength) {
             val cell = layout.trackSquare(square)
-            val startOf = if (square % board.seatSpacing == 0) square / board.seatSpacing else null
+            val startOf = if (parts.starts && square % board.seatSpacing == 0) square / board.seatSpacing else null
             shape(cell.corners, startOf?.let { seatColours.colourOf(it) } ?: BoardIvory)
-            if (square % board.seatSpacing == board.starOffset) drawStar(cell.centre * unit, unit * 0.36f, BoardInk.copy(alpha = 0.55f))
+            if (parts.stars && square % board.seatSpacing == board.starOffset) drawStar(cell.centre * unit, unit * 0.36f, BoardInk.copy(alpha = 0.55f))
         }
         for (seat in 0..<board.seats) {
             val colour = seatColours.colourOf(seat)
-            for (index in 0..<board.homeColumnLength) shape(layout.homeColumnSquare(seat, index).corners, colour)
+            if (parts.homes) for (index in 0..<board.homeColumnLength) shape(layout.homeColumnSquare(seat, index).corners, colour)
             // The yard: a block of the seat's colour round an ivory court with a spot for each pawn.
             shape(layout.yard(seat), colour)
             if (layout is ClassicBoardLayout) {
@@ -56,7 +56,7 @@ object ClassicBoardStyle : BoardStyle, Swatched {
                 drawCircle(colour.copy(alpha = 0.45f), unit * layout.yardSpotRadius, layout.yardSpotOf(seat, pawn, pawns) * unit)
             }
             // Home: the seat's part of the centre.
-            shape(layout.homeArea(seat), colour)
+            if (parts.homes) shape(layout.homeArea(seat), colour)
         }
         if (layout.round) drawOval(BoardInk.copy(alpha = 0.6f), size = extent, style = Stroke(1.5.dp.toPx()))
     }

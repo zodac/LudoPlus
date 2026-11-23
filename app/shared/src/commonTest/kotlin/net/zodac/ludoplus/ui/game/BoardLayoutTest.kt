@@ -75,4 +75,27 @@ class BoardLayoutTest {
             assertTrue(gaps.min() <= 2 * HOME_PAWN_RADIUS + 0.1f, "$seat: pawns spread apart")
         }
     }
+
+    @Test
+    fun `a yard of six has a spot a pawn - none overlapping - all on its court - on every board`() {
+        for (geometry in (2..8).map(BoardGeometry::forPlayers)) {
+            val layout = BoardLayout.of(geometry)
+            assertEquals(layout, BoardLayout.of(geometry.copy(endless = true)))
+            val radius = layout.yardSpotRadiusOf(6)
+            for (seat in 0..<geometry.seats) {
+                val spots = (0..5).map { layout.yardSpotOf(seat, it, 6) }
+                val court = layout.yardCourt(seat)
+                for ((i, spot) in spots.withIndex()) {
+                    for (other in spots.drop(i + 1)) assertTrue((spot - other).getDistance() >= 2 * radius, "$geometry seat $seat")
+                    // Inside every side of the (convex) court.
+                    for (c in court.indices) {
+                        val from = court[c]
+                        val side = court[(c + 1) % court.size] - from
+                        val distance = kotlin.math.abs(side.x * (spot.y - from.y) - side.y * (spot.x - from.x)) / side.getDistance()
+                        assertTrue(distance >= radius * 0.9f, "$geometry seat $seat spot $i: $distance from its court's edge")
+                    }
+                }
+            }
+        }
+    }
 }

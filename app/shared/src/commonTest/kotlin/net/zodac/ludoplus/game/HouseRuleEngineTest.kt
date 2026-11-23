@@ -163,4 +163,12 @@ class HouseRuleEngineTest {
         assertFalse(star.isSafeFor(seat = 1, square = 0))
         assertTrue(star.isSafeFor(seat = 0, square = 0))
     }
+
+    @Test
+    fun `a house rule about the yard or home changes nothing in Survival - every other applies everywhere`() {
+        val idle = setOf(HouseRule.NO_HOME_ROLL, HouseRule.EXIT_ON_ONE, HouseRule.FREE_START, HouseRule.THREE_TRIES)
+        for (mode in GameMode.entries) {
+            assertEquals(if (mode == GameMode.SURVIVAL) idle else emptySet(), HouseRule.entries.filterNot { it.appliesTo(mode.rules) }.toSet())
+        }
+    }
 }

@@ -88,4 +88,13 @@ class BoardGeometryTest {
         assertEquals((0..7).toList(), BoardGeometry.star(8).seatsFor(8))
         assertFailsWith<IllegalArgumentException> { board.seatsFor(5) }
     }
+
+    @Test
+    fun `an endless board is all track - every square of it - lap after lap`() {
+        val endless = board.copy(endless = true)
+        assertEquals(listOf(50, 51, 0, 1), listOf(50, 51, 52, 53).map { endless.trackSquare(seat = 0, progress = it) })
+        for (progress in listOf(0, 51, 56, 520)) assertEquals(PawnPosition.Track(progress), PawnPosition.of(progress, endless))
+        assertEquals(PawnPosition.Out, PawnPosition.of(PawnPosition.OUT_PROGRESS, endless))
+        assertEquals(PawnPosition.OUT_PROGRESS, PawnPosition.progressOf(PawnPosition.Out, endless))
+    }
 }

@@ -122,7 +122,8 @@ so the local Leaderboard's captures tie-break doesn't carry.
 - **Viewing**: "Global leaderboard" under the Leaderboard's player counts, while signed in, opens Play's board for the
     mode and count on show (spoken "Global leaderboard for Classic, 4 players, on Google Play Games"). The local tables stay.
 - **No reset**: Ludo has no Reset leaderboard, so no reset marker.
-- **A new mode** needs seven console boards, their icons, and an `onlineLeaderboardKey`.
+- **A new mode** needs seven console boards, their icons, and an `onlineLeaderboardKey`; one not ranked by turns
+    (Survival) has a null key and no boards.
 
 ## Cloud save
 

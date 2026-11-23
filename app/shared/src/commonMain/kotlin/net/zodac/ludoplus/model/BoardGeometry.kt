@@ -19,6 +19,11 @@ data class BoardGeometry(
     val starOffset: Int,
     /** How many squares each seat's home column has, before home itself. */
     val homeColumnLength: Int,
+    /**
+     * Whether the track is all there is: a pawn never turns into a home column but goes round again, over every square
+     * of the track, its progress counting on lap after lap.
+     */
+    val endless: Boolean = false,
 ) {
     init {
         require(seats > 0 && seatSpacing * seats == trackLength) { "The seats must space evenly round the track" }
@@ -26,8 +31,8 @@ data class BoardGeometry(
         require(homeColumnLength > 0) { "A home column needs a square" }
     }
 
-    /** How many track squares a pawn visits, its start square included, before it turns into its home column. */
-    val trackSteps: Int get() = trackLength - 1
+    /** How many track squares a pawn visits, its start square included, before it turns into its home column: more than any game reaches, where the board is [endless]. */
+    val trackSteps: Int get() = if (endless) ENDLESS_STEPS else trackLength - 1
 
     /** The progress of a pawn that is home: its start square is 0, the end of the track [trackSteps] - 1. */
     val homeProgress: Int get() = trackSteps + homeColumnLength
@@ -59,6 +64,9 @@ data class BoardGeometry(
          * as on the classic board (11 on).
          */
         val THREE_SEAT = BoardGeometry(seats = 3, trackLength = 48, seatSpacing = 16, starOffset = 11, homeColumnLength = 5)
+
+        /** An endless board's track steps: over any game's, so a pawn there is always on the track. */
+        private const val ENDLESS_STEPS = 1_000_000
 
         /** The fewest and most players a game takes. */
         const val MIN_PLAYERS = 2

@@ -134,6 +134,7 @@ object LudoEngine {
     fun destination(state: GameState, owner: Int, from: Int, roll: Int): Int? {
         val board = state.board
         return when {
+            from == PawnPosition.OUT_PROGRESS -> null
             from == PawnPosition.YARD_PROGRESS -> if (leavesYard(state, owner, roll)) 0 else null
             from == board.homeProgress -> null
             // Exact roll home: a pawn can't overshoot it.
@@ -211,7 +212,8 @@ object LudoEngine {
      * after a roll-again roll, a capture, or a pawn brought home (as the rules give), unless that move ended their part in
      * the game; otherwise play passes on. A run of roll-again rolls carries on through a roll earned another way.
      *
-     * A player with every pawn home is placed then, or in a team game with their team once every partner's are too.
+     * A player with every pawn home is placed then, or in a team game with their team once every partner's are too. Where
+     * the last standing wins, the game ends with one team left.
      */
     fun move(state: GameState, pawn: Int, owner: Int? = null, die: Int? = null): GameState {
         val phase = state.phase
@@ -225,18 +227,33 @@ object LudoEngine {
         var players = state.players
             .replace(whose) { side -> side.copy(pawns = side.pawns.replace(pawn) { move.to }) }
             .replace(player) { mover -> mover.copy(captures = mover.captures + move.captures.size) }
+        val rules = state.rules
         for (captured in move.captures) {
             players = players.replace(captured.player) { victim ->
                 victim.copy(
-                    pawns = victim.pawns.replace(captured.pawn) { PawnPosition.YARD_PROGRESS },
+                    pawns = victim.pawns.replace(captured.pawn) { if (rules.lastStanding) PawnPosition.OUT_PROGRESS else PawnPosition.YARD_PROGRESS },
                     timesCaptured = victim.timesCaptured + 1,
                 )
             }
         }
         val board = state.board
-        val rules = state.rules
         val finished = players[whose].isFinished(board)
-        var next = state.copy(players = players, phase = TurnPhase.AwaitingRoll, yardTriesUsed = 0)
+        val knockedOut = move.captures.map { it.player }.distinct().filter { players[it].pawnsLeft == 0 }
+        var next = state.copy(players = players, phase = TurnPhase.AwaitingRoll, yardTriesUsed = 0, knockedOut = state.knockedOut + knockedOut)
+        if (rules.lastStanding) {
+            val out = next.teamsOut()
+            val standing = players.indices.map(rules::teamOf).distinct() - out.toSet()
+            if (standing.size == 1) {
+                // The last team standing wins, the others placed by how late they went out.
+                return next.copy(
+                    finishingOrder = (standing + out.reversed()).flatMap { team -> players.indices.filter { rules.teamOf(it) == team } },
+                    phase = TurnPhase.Finished,
+                    rollAgainRun = 0,
+                    rollingAgain = false,
+                    lastEvent = GameEvent.Moved(player, used, move, finished = false, knockedOut = knockedOut),
+                )
+            }
+        }
         // A team is placed once all of it is home, its players together; a player alone is a team of one.
         val team = rules.teamOf(whose)
         val teamHome = finished && players.indices.filter { rules.teamOf(it) == team }.all { players[it].isFinished(board) }
@@ -264,13 +281,13 @@ object LudoEngine {
             if (moves.isNotEmpty()) {
                 return next.copy(
                     phase = TurnPhase.AwaitingMove(left.first(), moves, dice = left, earned = earned, rolled = phase.rolled),
-                    lastEvent = GameEvent.Moved(player, used, move, finished),
+                    lastEvent = GameEvent.Moved(player, used, move, finished, knockedOut = knockedOut),
                 )
             }
         }
         val rollsAgain = playsOn && earned
         next = if (rollsAgain) next.copy(rollingAgain = true) else nextPlayer(next)
-        return next.copy(lastEvent = GameEvent.Moved(player, used, move, finished, rollsAgain))
+        return next.copy(lastEvent = GameEvent.Moved(player, used, move, finished, rollsAgain, knockedOut))
     }
 
     /**
@@ -283,7 +300,7 @@ object LudoEngine {
         if (to !in 0..<board.trackSteps) return emptyList()
         val square = board.trackSquare(state.players[owner].seat, to)
         return state.players.flatMapIndexed { index, other ->
-            if (index == owner || (state.rules.arePartners(owner, index) && !state.rules.partnerCaptures) || state.rules.isSafeFor(other.seat, square)) {
+            if (index == owner || (state.rules.arePartners(owner, index) && !state.rules.partnerCaptures) || state.isSafeFor(other.seat, square)) {
                 emptyList()
             } else {
                 other.pawns.indices
@@ -309,16 +326,23 @@ object LudoEngine {
     }
 
     /**
-     * Play passes to the next player still racing, who awaits a roll: not one placed, nor one home in a team game that
-     * doesn't roll for partners.
+     * Play passes to the next player still racing, who awaits a roll: not one placed or knocked out, nor one home in a
+     * team game that doesn't roll for partners. Coming back round to a player no later than this one, a round is played.
      */
     private fun nextPlayer(state: GameState): GameState {
         val skipsHome = !(state.rules.teams != null && state.rules.rollForPartners)
         var next = state.current
         do {
             next = (next + 1) % state.players.size
-        } while (next in state.finishingOrder || (skipsHome && state.players[next].isFinished(state.board)))
-        return state.copy(current = next, phase = TurnPhase.AwaitingRoll, rollAgainRun = 0, rollingAgain = false, yardTriesUsed = 0)
+        } while (next in state.finishingOrder || next in state.knockedOut || (skipsHome && state.players[next].isFinished(state.board)))
+        return state.copy(
+            current = next,
+            phase = TurnPhase.AwaitingRoll,
+            rollAgainRun = 0,
+            rollingAgain = false,
+            yardTriesUsed = 0,
+            roundsPlayed = if (state.rules.suddenDeath && next <= state.current) state.roundsPlayed + 1 else state.roundsPlayed,
+        )
     }
 
     private inline fun <T> List<T>.replace(index: Int, change: (T) -> T): List<T> =

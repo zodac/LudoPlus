@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import net.zodac.ludoplus.game.nowEpochMillis
 import net.zodac.ludoplus.model.GameMode
+import net.zodac.ludoplus.model.LeaderboardRanking
 import net.zodac.ludoplus.model.PlayerType
 import net.zodac.ludoplus.model.playerNameKey
 import net.zodac.ludoplus.ui.game.StartedGame
@@ -74,11 +75,14 @@ class GameRecordRepository(
     }
 
     /**
-     * Page [pageIndex] of [gameMode]'s Leaderboard for games of [playerCount]: its fastest wins (fewest turns, then most
-     * captures). Each player count has its own, as a bigger board's lap is longer.
+     * Page [pageIndex] of [gameMode]'s Leaderboard for games of [playerCount]: its best wins, by its [GameMode.ranking]
+     * (fewest turns, or most pawns left), then most captures. Each player count has its own, as a bigger board's lap is longer.
      */
     suspend fun leaderboard(gameMode: GameMode, playerCount: Int, pageIndex: Int = 0, pageSize: Int = LEADERBOARD_PAGE_SIZE): List<GameResult> =
-        dao.leaderboard(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
+        when (gameMode.ranking) {
+            LeaderboardRanking.FEWEST_TURNS -> dao.leaderboard(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
+            LeaderboardRanking.MOST_PAWNS_LEFT -> dao.leaderboardByPawnsLeft(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
+        }
 
     suspend fun leaderboardCount(gameMode: GameMode, playerCount: Int): Int = dao.leaderboardCount(gameMode.id, playerCount)
 
@@ -172,6 +176,9 @@ private fun statisticsOf(rows: List<GameResult>): PlayerStatistics = PlayerStati
     modes = GameMode.entries.mapNotNull { mode -> rows.filter { it.gameModeId == mode.id }.takeIf { it.isNotEmpty() }?.let { mode to totalsOf(it) } },
 )
 
+/** The ids of the modes whose win isn't a race home. */
+private val LAST_STANDING_IDS = GameMode.entries.filter { it.rules.lastStanding }.map { it.id }.toSet()
+
 /** [rows], oldest first, added up. */
 internal fun totalsOf(rows: List<GameResult>): RecordTotals {
     var run = 0
@@ -188,6 +195,7 @@ internal fun totalsOf(rows: List<GameResult>): RecordTotals {
         captures = rows.sumOf { it.captures },
         timesCaptured = rows.sumOf { it.timesCaptured },
         pawnsHome = rows.sumOf { it.pawnsHome },
-        fewestTurnsToWin = rows.filter { it.won }.minOfOrNull { it.turns },
+        // Only a race's: outlasting everyone takes as long as it takes.
+        fewestTurnsToWin = rows.filter { it.won && it.gameModeId !in LAST_STANDING_IDS }.minOfOrNull { it.turns },
     )
 }

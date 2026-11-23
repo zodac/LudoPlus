@@ -319,7 +319,8 @@ private fun HouseRulesPicker(setup: GameSetupState, form: GameSetupForm) {
         title = stringResource(Res.string.setup_house_rules),
         description = stringResource(Res.string.setup_house_rules_description),
         activeNote = stringResource(Res.string.setup_house_rules_active_note),
-        modifiers = HouseRule.entries.map { rule ->
+        // Only those that change anything in the mode picked.
+        modifiers = HouseRule.entries.filter { it.appliesTo(setup.playedMode.rules) }.map { rule ->
             ModifierSetting(
                 title = stringResource(rule.title),
                 description = stringResource(rule.description),

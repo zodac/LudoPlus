@@ -405,6 +405,8 @@ count but 4 has a board of its own; one player on two colours was dropped.
         home still earns a roll (the maintainer, 2026-11-18).
 - [x] Portals, a mode (the maintainer, 2026-11-24): short and long pairs of two-way portals, from a design that began as
     snakes and ladders (`DESIGN.md`, "Game modes").
+- [x] Survival, a mode (the maintainer, 2026-11-24): six pawns each starting out, no home, captured pawns out of the game,
+    and two stages of sudden death, later the more players there are (`DESIGN.md`, "Game modes").
 - [x] Custom game modes (the maintainer, 2026-11-18): a base mode and at least one house rule, named and saved, listed
     in New Game's mode picker after the built-in modes, with New, Edit, and Delete on the card. As any game with house
     rules, their games count towards nothing (`DESIGN.md`, "Custom modes").

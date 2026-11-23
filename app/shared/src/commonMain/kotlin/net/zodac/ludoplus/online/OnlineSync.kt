@@ -308,7 +308,7 @@ class OnlineSync(
         var allPosted = true
         for (mode in GameMode.entries) {
             for (playerCount in BoardGeometry.MIN_PLAYERS..BoardGeometry.MAX_PLAYERS) {
-                val key = mode.onlineLeaderboardKey(playerCount)
+                val key = mode.onlineLeaderboardKey(playerCount) ?: continue
                 val best = unpostedWin(mode, playerCount, settings.winsPostedThrough(accountKey, key) ?: Long.MIN_VALUE) ?: continue
                 if (services.submitScore(key, best.turns.toLong())) {
                     settings.setWinsPostedThrough(accountKey, key, best.newestEpochMillis)

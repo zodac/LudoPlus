@@ -4,6 +4,7 @@ import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.mode_portals
 import net.zodac.ludoplus.resources.mode_quick
+import net.zodac.ludoplus.resources.mode_survival
 import net.zodac.ludoplus.resources.mode_two_dice
 import net.zodac.ludoplus.resources.rules_board_1
 import net.zodac.ludoplus.resources.rules_board_2
@@ -39,6 +40,11 @@ import net.zodac.ludoplus.resources.rules_portals_1
 import net.zodac.ludoplus.resources.rules_portals_2
 import net.zodac.ludoplus.resources.rules_portals_3
 import net.zodac.ludoplus.resources.rules_quick_1
+import net.zodac.ludoplus.resources.rules_survival_1
+import net.zodac.ludoplus.resources.rules_survival_2
+import net.zodac.ludoplus.resources.rules_survival_3
+import net.zodac.ludoplus.resources.rules_survival_4
+import net.zodac.ludoplus.resources.rules_survival_records
 import net.zodac.ludoplus.resources.rules_turn_1
 import net.zodac.ludoplus.resources.rules_turn_2
 import net.zodac.ludoplus.resources.rules_turn_3
@@ -151,6 +157,11 @@ private val GAME_MODES = RulesGroup(
             Res.string.mode_portals,
             Res.string.mode_portals,
             texts(Res.string.rules_portals_1, Res.string.rules_portals_2, Res.string.rules_portals_3, Res.string.rules_modes_records),
+        ),
+        RulesPage(
+            Res.string.mode_survival,
+            Res.string.mode_survival,
+            texts(Res.string.rules_survival_1, Res.string.rules_survival_2, Res.string.rules_survival_3, Res.string.rules_survival_4, Res.string.rules_survival_records),
         ),
     ),
 )

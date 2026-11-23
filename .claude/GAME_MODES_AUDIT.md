@@ -91,6 +91,12 @@ Portals on the track (2026-11-24). **Earns no achievement** (`GameMode.earnsAchi
 the Track length family needs the audit first (a portal moves a pawn up to 16 squares without a roll, and
 `SQUARES_MOVED` counts them), and Locked Out, Scenic Route, and the square-by-square ones.
 
+## Survival (a mode)
+
+Six pawns, no home, and captured pawns out (2026-11-24). **Earns no achievement** (`GameMode.earnsAchievements` false). If
+it ever earns them, nearly every family needs the audit: nothing comes home or out of a yard, "every pawn" is six, and a
+game's end is the last one standing.
+
 ## Custom modes (New Game)
 
 A base mode with house rules: their games, as any with house rules, earn nothing, so nothing needs a guard.

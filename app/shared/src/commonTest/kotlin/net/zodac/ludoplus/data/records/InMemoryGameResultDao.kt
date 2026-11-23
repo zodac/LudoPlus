@@ -29,6 +29,11 @@ class InMemoryGameResultDao(finishedGame: Boolean = false) : GameResultDao {
     override suspend fun leaderboard(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult> =
         leaderboardRows(gameModeId, playerCount).drop(offset).take(limit)
 
+    override suspend fun leaderboardByPawnsLeft(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult> =
+        leaderboardRows(gameModeId, playerCount)
+            .sortedWith(compareBy<GameResult> { it.timesCaptured }.thenByDescending { it.captures }.thenBy { it.endedAtEpochMillis })
+            .drop(offset).take(limit)
+
     override suspend fun leaderboardCount(gameModeId: String, playerCount: Int): Int = leaderboardRows(gameModeId, playerCount).size
 
     override suspend fun allByPlayer(): List<GameResult> =

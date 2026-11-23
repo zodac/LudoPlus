@@ -15,7 +15,7 @@ and be the first to get all four home. Land on a rival to send them back to the 
 
 - **The classic rules** for 2 to 8 players, on a board made for each size, alone or in teams, against friends passing
     the phone around or computer opponents at three levels
-- **Game modes and house rules**: Quick, Two Dice, and Portals, nine house rules to mix in, and custom modes of your own
+- **Game modes and house rules**: Quick, Two Dice, Portals, and Survival, nine house rules to mix in, and custom modes of your own
 - **Play together on phones in the same room** (the Google Play version): one game across several phones, linked
     directly with no server, and a player whose phone drops out can rejoin
 - **A guided tutorial** that teaches the game in four short parts, and the rules with a diagram for each idea

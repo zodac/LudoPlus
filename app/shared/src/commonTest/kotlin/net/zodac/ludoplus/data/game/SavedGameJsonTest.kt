@@ -39,8 +39,8 @@ class SavedGameJsonTest {
         first = 1,
         startedAtEpochMillis = 1_763_000_000_123,
         playMillis = 98_765,
-        // Every finished player's, as the game keeps them.
-        finishMillis = state.finishingOrder.associateWith { 1_000L * (it + 1) },
+        // Every finished or knocked-out player's, as the game keeps them.
+        finishMillis = (state.finishingOrder + state.knockedOut).distinct().associateWith { 1_000L * (it + 1) },
         id = "0123456789abcdef0123456789abcdef",
         steps = 17,
     )
@@ -188,6 +188,29 @@ class SavedGameJsonTest {
             }
         }
         assert(portals > 0) { "No move through a portal was saved" }
+    }
+
+    @Test
+    fun `every state of random Survival games comes back as it was saved - rounds - and players knocked out - to the end a host sends`() {
+        val random = Random(23)
+        var knockedOut = 0
+        var suddenDeath = 0
+        repeat(6) {
+            var state = GameState.new(GameMode.SURVIVAL, 4)
+            while (!state.isFinished) {
+                val saved = game(state).copy(mode = GameMode.SURVIVAL)
+                assertEquals(saved, SavedGameJson.decode(SavedGameJson.encode(saved)))
+                if (state.knockedOut.isNotEmpty()) knockedOut++
+                if (state.suddenDeathStage == 2) suddenDeath++
+                state = when (val phase = state.phase) {
+                    is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random))
+                    else -> LudoEngine.roll(state, random)
+                }
+            }
+            val ended = game(state).copy(mode = GameMode.SURVIVAL)
+            assertEquals(ended, SavedGameJson.decode(SavedGameJson.encode(ended)))
+        }
+        assert(knockedOut > 0 && suddenDeath > 0) { "No player knocked out, or no sudden death, was saved" }
     }
 
     @Test

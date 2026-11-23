@@ -154,7 +154,7 @@ class GameViewModel(
 
     /**
      * [game] with the time played since [playMark] added, which then counts from now (none once it's over), and that
-     * time noted for any player who has just been placed: the last one too, as the game ends.
+     * time noted for any player who has just been placed or knocked out: the last one too, as the game ends.
      */
     private fun withPlayTime(game: StartedGame): StartedGame {
         val timed = playMark?.let { mark ->
@@ -162,7 +162,7 @@ class GameViewModel(
             playMark = time.takeUnless { game.state.isFinished }
             game.copy(playMillis = game.playMillis + (time - mark))
         } ?: game
-        val finished = timed.state.finishingOrder.filter { it !in timed.finishMillis }
+        val finished = (timed.state.finishingOrder + timed.state.knockedOut).distinct().filter { it !in timed.finishMillis }
         return if (finished.isEmpty()) timed else timed.copy(finishMillis = timed.finishMillis + finished.associateWith { timed.playMillis })
     }
 

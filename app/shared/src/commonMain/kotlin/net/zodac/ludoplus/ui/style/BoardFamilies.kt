@@ -90,18 +90,18 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
     /** Over everything, [extent] wide. */
     protected open fun DrawScope.drawFinish(extent: Size, unit: Float) = Unit
 
-    final override fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>, pawns: Int) {
+    final override fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>, pawns: Int, parts: BoardParts) {
         val board = layout.geometry
         val extent = Size(unit * layout.size, unit * layout.size)
         fun seat(seat: Int) = seatTone(seatColours.getOrNull(seat) ?: BoardEmptySeat)
         val disc = if (layout.round) Path().apply { addOval(Rect(Offset.Zero, extent)) } else null
         if (disc != null) clipPath(disc) { ground(extent) } else ground(extent)
         for (square in 0..<board.trackLength) {
-            val startOf = if (square % board.seatSpacing == 0) square / board.seatSpacing else null
+            val startOf = if (parts.starts && square % board.seatSpacing == 0) square / board.seatSpacing else null
             drawBoardSquare(layout.trackSquare(square), unit) { drawSquare(it, unit, startOf?.let(::seat) ?: plain, seat = startOf != null) }
         }
         for (s in 0..<board.seats) {
-            for (index in 0..<board.homeColumnLength) {
+            if (parts.homes) for (index in 0..<board.homeColumnLength) {
                 drawBoardSquare(layout.homeColumnSquare(s, index), unit) { drawSquare(it, unit, seat(s), seat = true) }
             }
             val spots = (0..<pawns).map { layout.yardSpotOf(s, it, pawns) * unit }
@@ -110,10 +110,10 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
             } else {
                 drawYardShape(layout.yard(s).map { it * unit }, layout.yardCourt(s).map { it * unit }, spots, layout.yardSpotRadius * unit, unit, seat(s))
             }
-            drawHomeTriangle(layout.homeArea(s).map { it * unit }, unit, seat(s))
+            if (parts.homes) drawHomeTriangle(layout.homeArea(s).map { it * unit }, unit, seat(s))
         }
         for (square in 0..<board.trackLength) {
-            if (square % board.seatSpacing == board.starOffset) drawSafeMark(layout.trackSquare(square).centre * unit, unit)
+            if (parts.stars && square % board.seatSpacing == board.starOffset) drawSafeMark(layout.trackSquare(square).centre * unit, unit)
         }
         if (disc != null) {
             clipPath(disc) { drawFinish(extent, unit) }

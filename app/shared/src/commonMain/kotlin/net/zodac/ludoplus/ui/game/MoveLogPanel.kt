@@ -40,6 +40,7 @@ import net.zodac.ludoplus.resources.game_event_capture
 import net.zodac.ludoplus.resources.game_event_finished
 import net.zodac.ludoplus.resources.game_event_first
 import net.zodac.ludoplus.resources.game_event_home
+import net.zodac.ludoplus.resources.game_event_knocked_out
 import net.zodac.ludoplus.resources.game_event_move
 import net.zodac.ludoplus.resources.game_event_no_move
 import net.zodac.ludoplus.resources.game_event_no_move_dice
@@ -185,6 +186,7 @@ internal fun logLine(game: StartedGame, entry: LogEntry): String {
             val move = event.move
             when {
                 event.finished -> finishedLine(game, move.owner ?: event.player, entry.place)
+                event.knockedOut.isNotEmpty() -> stringResource(Res.string.game_event_knocked_out, name(event.player), spokenList(event.knockedOut.map(name)))
                 move.captures.isNotEmpty() -> move.captures.size.let { count ->
                     pluralStringResource(Res.plurals.game_event_capture, count, name(event.player), name(move.captures.first().player), count)
                 }

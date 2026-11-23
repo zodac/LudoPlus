@@ -56,7 +56,8 @@ object HeuristicStrategy : CpuStrategy {
         if (isSafe(state, seat, move.to)) score += REACH_SAFETY
         if (threats(state, owner, move.from) > 0) score += ESCAPE
         score -= IN_REACH * threats(state, owner, move.to, ignoring = move.captures)
-        score += ADVANCE * maxOf(move.from, 0)
+        // With no home to race to, how far round a pawn has come is worth nothing.
+        if (!state.rules.lastStanding) score += ADVANCE * maxOf(move.from, 0)
         // What a portal gains or costs, on top of the roll, which every move has.
         score += PORTAL * (move.to - move.rolledTo)
         return score
@@ -73,7 +74,8 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
     /**
      * The tuned weights: a pawn's worth is its progress, plus [outOfYard] once out, [homeBonus] once home, and
      * [safeBonus] on a safe square; an opponent's worth counts [opponent] times against this player's own, an expected
-     * loss [risk] times, and an expected capture on the next roll [chance] times. Tuned (2026-11-17) over 1,000
+     * loss [risk] times, and an expected capture on the next roll [chance] times. Where the last standing wins, a pawn
+     * still in is worth [lastStanding], wherever it is, in place of its progress and [outOfYard]. Tuned (2026-11-17) over 1,000
      * two-player games a setting against Medium; `CpuTournamentTest` checks them on other seeds.
      */
     data class Weights(
@@ -83,6 +85,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
         val opponent: Double = 1.5,
         val risk: Double = 0.9,
         val chance: Double = 0.8,
+        val lastStanding: Double = 40.0,
     )
 
     override fun choose(state: GameState, moves: List<Move>, random: Random): Move =
@@ -101,7 +104,8 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
     }
 
     private fun pawnWorth(state: GameState, seat: Int, progress: Int): Double = when {
-        progress == PawnPosition.YARD_PROGRESS -> 0.0
+        progress == PawnPosition.YARD_PROGRESS || progress == PawnPosition.OUT_PROGRESS -> 0.0
+        state.rules.lastStanding -> weights.lastStanding + if (isSafe(state, seat, progress)) weights.safeBonus else 0.0
         progress == state.board.homeProgress -> progress + weights.outOfYard + weights.homeBonus
         else -> progress + weights.outOfYard + if (isSafe(state, seat, progress)) weights.safeBonus else 0.0
     }
@@ -167,7 +171,7 @@ private fun isSafe(state: GameState, seat: Int, progress: Int): Boolean {
     val board = state.board
     if (progress !in 0..<board.trackSteps) return true
     val square = board.trackSquare(seat, progress)
-    if (state.rules.isSafeFor(seat, square)) return true
+    if (state.isSafeFor(seat, square)) return true
     if (!state.rules.blockades) return false
     val player = state.players.first { it.seat == seat }
     return player.pawns.count { it in 0..<board.trackSteps && board.trackSquare(seat, it) == square } >= 2

@@ -138,6 +138,57 @@ class BoardSemanticsTest : UiTest() {
     }
 
     @Test
+    fun `Survival - the yards count the pawns lost - the cards those left - there's no home - and safety goes with sudden death`() = uiTest(TestScreen(411, 891)) {
+        val new = GameState.new(GameMode.SURVIVAL, 4)
+        val x = -2
+        val pawns = listOf(listOf(0, 0, 9, x, x, x), listOf(x, x, x, x, x, x))
+        val state = new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns.getOrElse(i) { List(6) { 0 } }) }, knockedOut = listOf(1))
+        show(state)
+        listOf(
+            "Red yard, 3 of 6 pawns lost",
+            "Green yard, 6 of 6 pawns lost",
+            "Yellow yard, 0 of 6 pawns lost",
+            "Square 1, Red start, safe, Red pawn 1, Red pawn 2",
+            "Square 10, Red pawn 3",
+            "Square 9, safe, empty",
+        ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
+        compose.onNode(hasContentDescription("home", substring = true, ignoreCase = true)).assertDoesNotExist()
+        compose.onNode(hasText("Alex") and stateSays("3 pawns left, playing now")).assertExists()
+        compose.onNode(hasText("Gambit") and stateSays("0 pawns left, 4th place")).assertExists()
+        compose.onNodeWithText("Start squares stop being safe in 50 rounds.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+
+        // The last three rounds are counted down aloud, and the stage said as it comes.
+        show(state.copy(roundsPlayed = 49))
+        compose.onNodeWithText("Start squares stop being safe in 1 round.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+        show(state.copy(roundsPlayed = 50))
+        compose.onNodeWithText("Only stars are safe, for 25 more rounds.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+        compose.onNodeWithContentDescription("Square 1, Red start, Red pawn 1, Red pawn 2").assertExists()
+        compose.onNodeWithContentDescription("Square 9, safe, empty").assertExists()
+        show(state.copy(roundsPlayed = 60))
+        compose.onNodeWithText("Only stars are safe, for 15 more rounds.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+        show(state.copy(roundsPlayed = 75))
+        compose.onNodeWithText("Sudden death! Nowhere is safe.").assertExists()
+        compose.onNodeWithContentDescription("Square 9, empty").assertExists()
+    }
+
+    private fun stateSays(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)
+
+    @Test
+    fun `the log says who was knocked out`() = uiTest(TestScreen(411, 891)) {
+        val state = GameState.new(GameMode.SURVIVAL, 4)
+        val move = Move(0, 1, 3, listOf(PawnRef(1, 0), PawnRef(2, 0)))
+        show(
+            state,
+            log = listOf(
+                LogEntry(GameEvent.Moved(0, 2, move.copy(captures = listOf(PawnRef(1, 0))), finished = false, knockedOut = listOf(1))),
+                LogEntry(GameEvent.Moved(0, 2, move, finished = false, knockedOut = listOf(1, 2))),
+            ),
+        )
+        compose.onNodeWithContentDescription("Alex knocked Gambit out of the game.").assertExists()
+        compose.onNodeWithContentDescription("Alex knocked Gambit and Sam out of the game.").assertExists()
+    }
+
+    @Test
     fun `two dice - each named with its face - one picked for the next move - the prompt naming it - and the die left after a move`() = uiTest(TestScreen(411, 891)) {
         val new = GameState.new(GameMode.TWO_DICE, 4)
         val rolled = LudoEngine.applyDice(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = if (i == 0) listOf(10, Y, Y, Y) else listOf(Y, Y, Y, Y)) }), listOf(3, 5))
