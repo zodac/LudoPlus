@@ -180,7 +180,7 @@ internal object Scenes {
 
     /**
      * What the video leaves locked: its own unlock, the longest climbs, so the Achievements page isn't all done, and the
-     * Easter eggs, which would count past the total ("113 of 103") and look like a slip.
+     * Easter eggs, which would count past the total ("110 of 100") and look like a slip.
      */
     val VIDEO_LOCKED: Set<Achievement> = setOf(
         VIDEO_UNLOCK, Achievement.COMPLETIONIST, Achievement.PUBLIC_ENEMY, Achievement.LIFETIME_ACHIEVEMENT, Achievement.ULTRAMARATHON,

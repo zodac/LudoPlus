@@ -407,23 +407,6 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `Hot Hand starts three turns in a row with a 6`() {
-        val play = Play(game(listOf(10, Y, Y, Y)))
-        fun turn(first: Int) = play.play(first, pawn = 0).apply { if (state.rollingAgain) play(2, pawn = 0) }.skipTo(play.state.copy(current = RED, rollingAgain = false))
-        turn(6)
-        turn(6)
-        assertFalse(Achievement.HOT_HAND in play.earned)
-        turn(6)
-        assertTrue(Achievement.HOT_HAND in play.earned)
-
-        val broken = Play(game(listOf(10, Y, Y, Y)))
-        listOf(6, 6, 3, 6).forEach { first ->
-            broken.play(first, pawn = 0).apply { if (state.rollingAgain) play(2, pawn = 0) }.skipTo(broken.state.copy(current = RED, rollingAgain = false))
-        }
-        assertFalse(Achievement.HOT_HAND in broken.earned)
-    }
-
-    @Test
     fun `captures near a start - from one's own start - of a last pawn - with a last pawn - of one opponent 4 times - 10 in a game`() {
         // Green's pawn 3 squares out (square 16); red's on 15.
         assertTrue(Achievement.WELCOME_PARTY in Play(game(listOf(15, Y, Y, Y), listOf(3, Y, Y, Y))).play(1, pawn = 0).earned)

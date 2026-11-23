@@ -835,8 +835,6 @@
     <string name="achievement_pest_description">Capture 10 pawns</string>
     <string name="achievement_champion_title">Champion</string>
     <string name="achievement_champion_description">Win 10 games</string>
-    <string name="achievement_on_a_roll_title">On A Roll</string>
-    <string name="achievement_on_a_roll_description">Win 3 games in a row</string>
     <string name="achievement_hot_streak_title">Hot Streak</string>
     <string name="achievement_hot_streak_description">Win 5 games in a row</string>
     <string name="achievement_regular_title">Regular</string>
@@ -895,14 +893,10 @@
     <string name="achievement_six_shooter_description">Roll 100 6s</string>
     <string name="achievement_full_spread_title">Full Spread</string>
     <string name="achievement_full_spread_description">Roll every number from 1 to 6 in your first six rolls of a game</string>
-    <string name="achievement_hot_hand_title">Hot Hand</string>
-    <string name="achievement_hot_hand_description">Start three of your turns in a row with a 6</string>
     <string name="achievement_six_pack_title">Six Pack</string>
     <string name="achievement_six_pack_description">Roll 30 6s in one game</string>
     <string name="achievement_counting_up_title">Counting Up</string>
     <string name="achievement_counting_up_description">Roll 1, 2, 3, 4, 5, and 6, in that order</string>
-    <string name="achievement_sixth_sense_title">Sixth Sense</string>
-    <string name="achievement_sixth_sense_description">Roll 1,000 6s</string>
     <string name="achievement_gotcha_title">Gotcha!</string>
     <string name="achievement_gotcha_description">Capture an opponent's pawn</string>
     <string name="achievement_two_for_one_title">Two For One</string>

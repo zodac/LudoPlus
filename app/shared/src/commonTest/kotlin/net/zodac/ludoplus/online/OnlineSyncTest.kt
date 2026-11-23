@@ -163,7 +163,7 @@ class OnlineSyncTest {
         sync(services, store, OnlineSettingsRepository(InMemoryPreferences())).reconcile()
         assertEquals(7, services.progress[Achievement.GETTING_COMFORTABLE.id])
         assertEquals(7, services.progress[Achievement.CENTURION.id])
-        assertFalse(Achievement.ON_A_ROLL.id in services.progress)
+        assertFalse(Achievement.HOT_STREAK.id in services.progress)
         assertFalse(Achievement.UNTOUCHABLE.id in services.progress)
         assertFalse(Achievement.WELL_ROLLED.id in services.progress)
     }

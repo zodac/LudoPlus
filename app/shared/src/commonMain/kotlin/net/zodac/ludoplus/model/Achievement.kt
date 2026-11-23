@@ -71,8 +71,6 @@ import net.zodac.ludoplus.resources.achievement_home_sweet_home_description
 import net.zodac.ludoplus.resources.achievement_home_sweet_home_title
 import net.zodac.ludoplus.resources.achievement_homecoming_description
 import net.zodac.ludoplus.resources.achievement_homecoming_title
-import net.zodac.ludoplus.resources.achievement_hot_hand_description
-import net.zodac.ludoplus.resources.achievement_hot_hand_title
 import net.zodac.ludoplus.resources.achievement_hot_streak_description
 import net.zodac.ludoplus.resources.achievement_hot_streak_title
 import net.zodac.ludoplus.resources.achievement_how_do_you_do_fellow_cpus_description
@@ -117,8 +115,6 @@ import net.zodac.ludoplus.resources.achievement_off_the_mark_description
 import net.zodac.ludoplus.resources.achievement_off_the_mark_title
 import net.zodac.ludoplus.resources.achievement_old_hand_description
 import net.zodac.ludoplus.resources.achievement_old_hand_title
-import net.zodac.ludoplus.resources.achievement_on_a_roll_description
-import net.zodac.ludoplus.resources.achievement_on_a_roll_title
 import net.zodac.ludoplus.resources.achievement_on_the_warpath_description
 import net.zodac.ludoplus.resources.achievement_on_the_warpath_title
 import net.zodac.ludoplus.resources.achievement_one_more_time_description
@@ -151,8 +147,6 @@ import net.zodac.ludoplus.resources.achievement_six_pack_description
 import net.zodac.ludoplus.resources.achievement_six_pack_title
 import net.zodac.ludoplus.resources.achievement_six_shooter_description
 import net.zodac.ludoplus.resources.achievement_six_shooter_title
-import net.zodac.ludoplus.resources.achievement_sixth_sense_description
-import net.zodac.ludoplus.resources.achievement_sixth_sense_title
 import net.zodac.ludoplus.resources.achievement_so_near_yet_so_far_description
 import net.zodac.ludoplus.resources.achievement_so_near_yet_so_far_title
 import net.zodac.ludoplus.resources.achievement_speed_demon_description
@@ -318,6 +312,7 @@ val RETIRED_ACHIEVEMENT_IDS: Set<String> = setOf(
     "back_to_school",
     "broken_record",
     "frequent_traveller",
+    "hot_hand",
     "i_am_not_a_robot",
     "immortal",
     "last_human_standing",
@@ -326,10 +321,12 @@ val RETIRED_ACHIEVEMENT_IDS: Set<String> = setOf(
     "marathon",
     "musical_chairs",
     "number_cruncher",
+    "on_a_roll",
     "part_of_the_furniture",
     "read_the_manual",
     "safety_first",
     "scenic_route",
+    "sixth_sense",
     "training_wheels",
     "whats_in_a_name",
 )
@@ -459,12 +456,6 @@ enum class Achievement(
         Res.string.achievement_champion_description,
         AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 10,
     ),
-    ON_A_ROLL(
-        "on_a_roll",
-        Res.string.achievement_on_a_roll_title,
-        Res.string.achievement_on_a_roll_description,
-        AchievementCategory.MILESTONES, AchievementCounter.WIN_STREAK, target = 3,
-    ),
     HOT_STREAK(
         "hot_streak",
         Res.string.achievement_hot_streak_title,
@@ -551,12 +542,6 @@ enum class Achievement(
         Res.string.achievement_full_spread_description,
         AchievementCategory.THE_DIE, notEarnableIn = setOf(GameMode.TWO_DICE),
     ),
-    HOT_HAND(
-        "hot_hand",
-        Res.string.achievement_hot_hand_title,
-        Res.string.achievement_hot_hand_description,
-        AchievementCategory.THE_DIE, notEarnableIn = setOf(GameMode.TWO_DICE),
-    ),
     SIX_PACK(
         "six_pack",
         Res.string.achievement_six_pack_title,
@@ -568,12 +553,6 @@ enum class Achievement(
         Res.string.achievement_counting_up_title,
         Res.string.achievement_counting_up_description,
         AchievementCategory.THE_DIE, notEarnableIn = setOf(GameMode.TWO_DICE),
-    ),
-    SIXTH_SENSE(
-        "sixth_sense",
-        Res.string.achievement_sixth_sense_title,
-        Res.string.achievement_sixth_sense_description,
-        AchievementCategory.THE_DIE, AchievementCounter.SIXES_ROLLED, target = 1_000,
     ),
 
     // ---- Captures: sending opponents' pawns back to their yards, easiest first ------------------------------------

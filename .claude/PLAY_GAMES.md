@@ -100,11 +100,9 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
     published. Check a new incremental achievement's type and steps in Play Console before publishing: a mismatch fails
     every unlock silently.
 - **Points** by tier (`PlayConsoleAchievements.kt`, test sources; proposed 2026-11-18, for the maintainer's review):
-    trivial 5, easy 10, medium 15, hard 25, very hard 55, extreme 85 (2026-11-23), Completionist 100, every Easter egg 5. That spends
-    all 2,000 (`PlayConsoleExportTest`), so a new achievement needs points freed first: Off The Mark went from easy to
-    trivial for Can't Wait To Get Going (2026-11-23).
-- **Icons**: each its own (Play rejects two the same; `PlayConsoleExportTest` checks). On A Roll's flame was Hot
-    Streak's (Phase 6's `ModeHeat` held the same path), so it climbs instead.
+    trivial 5, easy 10, medium 15, hard 25, very hard 45, extreme 80 (2026-11-24), Completionist 100, every Easter egg 5. That spends
+    all 2,000 (`PlayConsoleExportTest`), so a new achievement needs points freed first.
+- **Icons**: each its own (Play rejects two the same; `PlayConsoleExportTest` checks).
 
 ## Leaderboards
 

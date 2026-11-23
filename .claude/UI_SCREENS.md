@@ -26,7 +26,7 @@ Miscellaneous run in alphabetical order instead, and so do the Easter Eggs, whic
     wraps to two lines at 12sp: unlike the banner, which keeps one line down to 11sp. `AchievementsTextTest` pins it. The
     row sits under `IntrinsicSize.Min` (equal cards in landscape), so `ShrinkThenWrapText` answers intrinsic heights.
 - **The count is "earned of total", and the Easter Eggs are in earned but not in total**: a player with everything
-    reads "113 of 103 earned". This is intended, not a bug (`AchievementsTextTest`). It is not about secrecy: every
+    reads "110 of 100 earned". This is intended, not a bug (`AchievementsTextTest`). It is not about secrecy: every
     Easter Egg's row (title shown, description "???") is in the list from the start.
 - The unlocked/total count sits centred above the list. In landscape, where the list has two cards to a row, it moves
     into the app bar after the back arrow, with the Unearned switch at the bar's end (see `UI.md`, "Landscape pages").

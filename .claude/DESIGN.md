@@ -574,23 +574,23 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
 
 ## Achievements
 
-`model/Achievement.kt` (113: 103 counted, 10 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
+`model/Achievement.kt` (110: 100 counted, 10 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
 (pure), `data/achievements/`, `app/AchievementUnlocker.kt`, `ui/achievements/`. Rebuilt for Ludo in Phase 6; DiceFive's
 110 are in `5423b6c`.
 
 - **Ids.**
     - The enum constant is the English title in snake case; the stored `id` is that in lower case
         (`GETTING_COMFORTABLE`/`"getting_comfortable"`). `AchievementEngineTest` enforces it. Permanent once released.
-    - Removed achievements' ids are kept in `RETIRED_ACHIEVEMENT_IDS`, never to be used again (eleven, 2026-11-23, and six, 2026-11-24).
+    - Removed achievements' ids are kept in `RETIRED_ACHIEVEMENT_IDS`, never to be used again (eleven, 2026-11-23, and nine, 2026-11-24).
     - String keys follow the constant: `achievement_<constant>_title`, `_description`.
 - **Player 1 only.** The person in seat 1 earns them; every other seat, person or CPU, is an opponent. The tutorial
     earns nothing.
-- **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (19, Pest and Completionist among
-    them, Completionist last), The Die (7), Captures (15), Racing (10), Winning (15), Game Modes (14), Misfortune (15), Miscellaneous (8,
-    hidden), and Easter Eggs (10, hidden, outside Completionist and the page's total): 103 counted. Each entry's
+- **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (18, Pest and Completionist among
+    them, Completionist last), The Die (5), Captures (15), Racing (10), Winning (15), Game Modes (14), Misfortune (15), Miscellaneous (8,
+    hidden), and Easter Eggs (10, hidden, outside Completionist and the page's total): 100 counted. Each entry's
     description is its rule; the thresholds are the tracker's constants (`AchievementTracker`'s companion). The maintainer asked for 100, plus 10
-    Easter Eggs, on 2026-11-17 ("a variety of them in groups, like DiceFive"), removed eleven on 2026-11-23 and eight
-    on 2026-11-24 (two of them never released), and is
+    Easter Eggs, on 2026-11-17 ("a variety of them in groups, like DiceFive"), removed eleven on 2026-11-23 and
+    eleven on 2026-11-24 (two of them never released), and is
     adding new ones: My Favourite Spot (every pawn on one square, not the start square, home column included) and
     We're All Friends Here (a pawn of every player on one track square, by anyone's move) on 2026-11-23, when Pest and
     Completionist moved to Milestones and the Collection category went.

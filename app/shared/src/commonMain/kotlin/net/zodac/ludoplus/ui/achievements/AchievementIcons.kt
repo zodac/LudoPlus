@@ -45,14 +45,12 @@ val Achievement.icon: ImageVector
         Achievement.GETTING_COMFORTABLE -> Symbols.Numbers
         Achievement.PEST -> Symbols.PestControl
         Achievement.CHAMPION -> Symbols.SocialLeaderboard
-        // Climbing, not a flame: Hot Streak has the flame.
-        Achievement.ON_A_ROLL -> Symbols.KeyboardDoubleArrowUp
         Achievement.HOT_STREAK -> Symbols.LocalFireDepartment
         Achievement.REGULAR -> Symbols.EventRepeat
         Achievement.HALL_OF_FAMER -> Symbols.EmojiEvents
         Achievement.CENTURION -> Symbols.MilitaryTech
         Achievement.WELL_ROLLED -> Symbols.Casino
-        // A crown for ten wins in a row: a flame would be too close to On A Roll's.
+        // A crown for ten wins in a row: a flame would be too close to Hot Streak's.
         Achievement.UNSTOPPABLE -> Symbols.Crown
         Achievement.LIVING_LEGEND -> Symbols.WorkspacePremium
         Achievement.OLD_HAND -> Symbols.Elderly
@@ -65,11 +63,9 @@ val Achievement.icon: ImageVector
         Achievement.OFF_THE_MARK -> Symbols.Start
         Achievement.SIX_SHOOTER -> Symbols.Filter6
         Achievement.FULL_SPREAD -> Symbols.FormatListNumbered
-        Achievement.HOT_HAND -> Symbols.BackHand
         Achievement.SIX_PACK -> Symbols.SportsBar
         // Steps up, one number at a time.
         Achievement.COUNTING_UP -> Symbols.Stairs2
-        Achievement.SIXTH_SENSE -> Symbols.Visibility
 
         // ---- Captures -----------------------------------------------------------------------
         Achievement.GOTCHA -> Symbols.Target

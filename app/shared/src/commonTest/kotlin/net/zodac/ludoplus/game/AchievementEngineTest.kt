@@ -140,7 +140,7 @@ class AchievementEngineTest {
         val two = AchievementsState(counters = mapOf(AchievementCounter.WIN_STREAK to 2))
         val third = AchievementEngine.evaluate(GameFeats(streak = true), two, NOW)
         assertEquals(mapOf(AchievementCounter.WIN_STREAK to 3), third.counters)
-        assertEquals(listOf(Achievement.ON_A_ROLL), third.newlyUnlocked)
+        assertEquals(emptyList(), third.newlyUnlocked)
         assertEquals(listOf(AchievementProgress(Achievement.HOT_STREAK, 2, 3), AchievementProgress(Achievement.UNSTOPPABLE, 2, 3)), third.progressed)
 
         assertEquals(mapOf(AchievementCounter.WIN_STREAK to 0), AchievementEngine.evaluate(GameFeats(streak = false), two, NOW).counters)

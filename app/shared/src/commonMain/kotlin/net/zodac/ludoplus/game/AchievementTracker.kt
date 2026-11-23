@@ -82,9 +82,6 @@ class AchievementTracker(
     /** Whether an opponent has had more pawns home than player 1. */
     private var everBehind = false
 
-    /** Player 1's turns in a row started with a 6. */
-    private var turnsStartedWithSix = 0
-
     /** Whether an opponent has had all but one pawn home while player 1 had none. */
     private var trailedBadly = false
 
@@ -266,10 +263,6 @@ class AchievementTracker(
         if (recentRolls.toList() == COUNTING_UP) feats += Achievement.COUNTING_UP
         onesInARow = if (roll == 1) onesInARow + 1 else 0
         if (onesInARow >= ONES_IN_A_ROW) feats += Achievement.BOTTOM_OF_THE_BARREL
-        if (startsTurn) {
-            turnsStartedWithSix = if (roll == SIX) turnsStartedWithSix + 1 else 0
-            if (turnsStartedWithSix >= HOT_HAND_TURNS) feats += Achievement.HOT_HAND
-        }
     }
 
     private fun playerOneMoved(
@@ -456,7 +449,6 @@ class AchievementTracker(
         const val SIX_PACK_SIXES = 30
         const val DRY_SPELL_ROLLS = 30
         const val ONES_IN_A_ROW = 3
-        const val HOT_HAND_TURNS = 3
         const val EXPRESS_TURNS = 12
         const val ESCAPE_TURNS = 4
         val COUNTING_UP = (1..SIX).toList()
