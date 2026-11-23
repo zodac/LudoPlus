@@ -8,7 +8,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import net.zodac.ludoplus.data.JsonParseException
 import net.zodac.ludoplus.game.GameState
+import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
+import net.zodac.ludoplus.game.MoveLog
 import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.Difficulty
@@ -271,5 +273,42 @@ class SavedGameJsonTest {
     fun `an unreadable player in the roll-off fails the read`() {
         val json = SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4))).replace("{\"0\":2,\"1\":5}", "{\"0\":2,\"9\":5}")
         assertFailsWith<JsonParseException> { SavedGameJson.decode(json) }
+    }
+}
+
+class SavedGameJsonLogTest {
+
+    private val players = listOf(PlayerConfig(1, PlayerType.HUMAN, "Ada"), PlayerConfig(2, PlayerType.AI, "Bot"))
+
+    /** A game a few dozen states in, with its log. */
+    private fun played(): StartedGame {
+        val random = Random(7)
+        var state = GameState.new(GameMode.CLASSIC, 2)
+        var log = emptyList<LogEntry>()
+        repeat(60) { step ->
+            val next = when (val phase = state.phase) {
+                is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random))
+                else -> LudoEngine.roll(state, random)
+            }
+            log = MoveLog.next(log, state, next, 1_763_000_000_000 + step * 1_500L)
+            state = next
+        }
+        return StartedGame(GameMode.CLASSIC, players, state, RollOff(listOf(mapOf(0 to 6, 1 to 2)), 0), id = "a", log = log)
+    }
+
+    @Test
+    fun `a game's move log comes back as it was saved - and a Nearby message leaves it out`() {
+        val game = played()
+        assertTrue(game.log.size > 10)
+        assertEquals(game, SavedGameJson.decode(SavedGameJson.encode(game)))
+        assertEquals(game.copy(log = emptyList()), SavedGameJson.decode(SavedGameJson.encode(game, withLog = false)))
+        assertFalse("\"log\"" in SavedGameJson.encode(game, withLog = false))
+    }
+
+    @Test
+    fun `a log that can't be read is dropped - the game still comes back`() {
+        val game = played()
+        val broken = SavedGameJson.encode(game).replace("\"log\":[", "\"log\":[{\"event\":7},")
+        assertEquals(game.copy(log = emptyList()), SavedGameJson.decode(broken))
     }
 }

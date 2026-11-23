@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -83,18 +84,6 @@ import net.zodac.ludoplus.resources.game_die_second_cd
 import net.zodac.ludoplus.resources.game_die_selected_spoken
 import net.zodac.ludoplus.resources.game_die_showing_named_cd
 import net.zodac.ludoplus.resources.game_die_used_spoken
-import net.zodac.ludoplus.resources.game_event_all_home
-import net.zodac.ludoplus.resources.game_event_capture
-import net.zodac.ludoplus.resources.game_event_finished
-import net.zodac.ludoplus.resources.game_event_first
-import net.zodac.ludoplus.resources.game_event_home
-import net.zodac.ludoplus.resources.game_event_no_move
-import net.zodac.ludoplus.resources.game_event_no_move_dice
-import net.zodac.ludoplus.resources.game_event_no_move_dice_tries
-import net.zodac.ludoplus.resources.game_event_no_move_tries
-import net.zodac.ludoplus.resources.game_event_team_finished
-import net.zodac.ludoplus.resources.game_event_three_doubles
-import net.zodac.ludoplus.resources.game_event_three_sixes
 import net.zodac.ludoplus.resources.game_over_results
 import net.zodac.ludoplus.resources.game_over_team_winner
 import net.zodac.ludoplus.resources.game_over_winner
@@ -137,8 +126,8 @@ private val SIDE_PANEL_WIDTH = 280.dp
 private enum class FinishedView { BOARD, RESULTS, REVIEW }
 
 /**
- * The game screen: the players across the top, the board, and the die with a line saying what just happened and what
- * to do now. In landscape the players, die, and lines sit beside the board. Once the game is over and its last move has
+ * The game screen: the players across the top, the board, the die with a line saying what to do now, and under them
+ * the log of every move so far ([MoveLogPanel]). In landscape the players, die, line, and log sit beside the board. Once the game is over and its last move has
  * played out, the results ([GameOverScreen]).
  */
 @Composable
@@ -390,16 +379,18 @@ fun GameContent(
             if (width > height) {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     board(Modifier.size(minOf(height, width - SIDE_PANEL_WIDTH)))
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         players()
                         TurnPanel(started, allMoves, seatColours, onRoll, onMove, onResults, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
+                        MoveLogPanel(started, seatColours, tutorial = tutorial != null, modifier = Modifier.weight(1f))
                     }
                 }
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     players()
                     board(Modifier.fillMaxWidth())
                     TurnPanel(started, allMoves, seatColours, onRoll, onMove, onResults, dieSize = 72.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
+                    MoveLogPanel(started, seatColours, tutorial = tutorial != null, modifier = Modifier.weight(1f))
                 }
             }
         }
@@ -547,22 +538,6 @@ private fun winnerLine(game: StartedGame): String {
     }
 }
 
-/**
- * What a move that brought [player]'s last pawn home says: their place ("Alex has every pawn home, in 1st place"); in a
- * team game, their team's once it's placed ("Alex and Sam are home, in 1st place"), and before that only that they're home.
- */
-@Composable
-private fun finishedLine(game: StartedGame, player: Int): String {
-    val state = game.state
-    val place = state.placeOf(player) ?: return stringResource(Res.string.game_event_all_home, game.players[player].name)
-    val team = state.players.indices.filter { it == player || state.rules.arePartners(player, it) }
-    return if (team.size == 1) {
-        stringResource(Res.string.game_event_finished, game.players[player].name, ordinal(place))
-    } else {
-        stringResource(Res.string.game_event_team_finished, spokenList(team.map { game.players[it].name }), ordinal(place))
-    }
-}
-
 /** A dot per pawn: filled in [colour] for each of the [home] that are home. Drawn only; the card says the count. */
 @Composable
 private fun PawnsHomeDots(home: Int, total: Int, colour: Color, modifier: Modifier) {
@@ -578,7 +553,7 @@ private fun PawnsHomeDots(home: Int, total: Int, colour: Color, modifier: Modifi
     }
 }
 
-/** The die, and the lines saying what just happened and what to do now; once the game is over, the winner and the way back to the results. */
+/** The die, and the line saying what to do now; once the game is over, the winner and the way back to the results. */
 @Composable
 private fun TurnPanel(
     game: StartedGame,
@@ -648,28 +623,6 @@ private fun ColumnScope.StatusLines(
 ) {
     val state = game.state
     val name = { index: Int -> game.players[index].name }
-    val event = state.lastEvent
-    val happened = when {
-        // The tutorial's parts start with no roll-off: the coach says who's playing.
-        event == null && tutorial -> null
-        event == null -> stringResource(Res.string.game_event_first, name(game.rollOff.first))
-        event is GameEvent.NoMove && event.second != null && event.triesLeft > 0 ->
-            pluralStringResource(Res.plurals.game_event_no_move_dice_tries, event.triesLeft, name(event.player), event.roll, event.second, event.triesLeft)
-        event is GameEvent.NoMove && event.second != null -> stringResource(Res.string.game_event_no_move_dice, name(event.player), event.roll, event.second)
-        event is GameEvent.NoMove && event.triesLeft > 0 ->
-            pluralStringResource(Res.plurals.game_event_no_move_tries, event.triesLeft, name(event.player), event.roll, event.triesLeft)
-        event is GameEvent.NoMove -> stringResource(Res.string.game_event_no_move, name(event.player), event.roll)
-        event is GameEvent.RollAgainLimit && event.second != null -> stringResource(Res.string.game_event_three_doubles, name(event.player))
-        event is GameEvent.RollAgainLimit -> stringResource(Res.string.game_event_three_sixes, name(event.player))
-        event is GameEvent.Moved && event.finished -> finishedLine(game, event.move.owner ?: event.player)
-
-        event is GameEvent.Moved && event.move.captures.isNotEmpty() -> event.move.captures.size.let { count ->
-            pluralStringResource(Res.plurals.game_event_capture, count, name(event.player), name(event.move.captures.first().player), count)
-        }
-
-        event is GameEvent.Moved && event.move.to == state.board.homeProgress -> stringResource(Res.string.game_event_home, name(event.player))
-        else -> null
-    }
     val phase = state.phase
     val current = name(state.current)
     val twoDice = phase is TurnPhase.AwaitingMove && state.rules.dice > 1
@@ -692,28 +645,10 @@ private fun ColumnScope.StatusLines(
         else -> stringResource(Res.string.game_prompt_roll, current)
     }
     val colourOf = { player: Int -> seatColours[state.players[player].seat] ?: PlayerColour.defaultFor(state.players[player].seat) }
-    val named = { players: List<Int> -> players.map { name(it) to colourOf(it).color } }
-    // Who the line names: each in their own colour (bold only in the prompt below).
-    val happenedNames = when {
-        event == null -> listOf(game.rollOff.first)
-        event is GameEvent.Moved && event.finished -> (event.move.owner ?: event.player).let { owner ->
-            state.players.indices.filter { it == owner || state.rules.arePartners(owner, it) }
-        }
-        event is GameEvent.Moved -> listOf(event.player) + event.move.captures.map { it.player }.distinct()
-        else -> listOf(event.player)
-    }
-    Text(
-        text = withNamesInColour(happened.orEmpty(), named(happenedNames)),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        minLines = 2,
-        maxLines = 2,
-        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-    )
     // A screen reader can make any move from here as well as from its pawn's square.
     val actions = moves.map { move -> CustomAccessibilityAction(moveLabel(state, move, colourOf)) { onMove(move); true } }
     Text(
-        text = withNamesInColour(prompt, named(listOf(state.current)), bold = true),
+        text = withNamesInColour(prompt, listOf(name(state.current) to colourOf(state.current).color), bold = true),
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Start,

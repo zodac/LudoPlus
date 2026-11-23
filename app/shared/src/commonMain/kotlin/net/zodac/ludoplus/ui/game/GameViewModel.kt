@@ -34,8 +34,10 @@ import net.zodac.ludoplus.game.AchievementTracker
 import net.zodac.ludoplus.game.CpuStrategy
 import net.zodac.ludoplus.game.GameFeats
 import net.zodac.ludoplus.game.GameState
+import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
+import net.zodac.ludoplus.game.MoveLog
 import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.game.TutorialScript
@@ -170,7 +172,10 @@ class GameViewModel(
     private fun commit(game: StartedGame) {
         val previous = _game.value
         val wasFinished = previous?.state?.isFinished == true
-        val stepped = if (previous != null && previous.id == game.id && previous.state != game.state) game.copy(steps = game.steps + 1) else game
+        val sameGame = previous != null && previous.id == game.id && previous.startedAtEpochMillis == game.startedAtEpochMillis
+        // A game new here (started, brought back, or a guest's first) comes with its own log.
+        val logged = if (sameGame) game.copy(log = MoveLog.next(previous.log, previous.state, game.state, now())) else game
+        val stepped = if (previous != null && previous.id == game.id && previous.state != game.state) logged.copy(steps = game.steps + 1) else logged
         val timed = withPlayTime(stepped)
         _game.value = timed
         // The tutorial keeps nothing.
@@ -968,6 +973,11 @@ data class StartedGame(
      * elsewhere. Null on the host and in a game on one phone. Never saved.
      */
     val guestSeat: Int? = null,
+    /**
+     * Every move in the game so far, first first ([MoveLog]): saved with it, but not sent to a Nearby guest, whose phone
+     * builds its own from the host's states as they come.
+     */
+    val log: List<LogEntry> = emptyList(),
 ) {
     /**
      * Whether the player whose turn it is isn't played at this phone: the computer, a Nearby seat on the host, or, on a

@@ -188,7 +188,7 @@ class HostSession(
 
     /** Sends every guest the game as it now stands. */
     fun gameChanged(game: StartedGame) {
-        val message = NetMessage.Game(++gameNumber, SavedGameJson.encode(game))
+        val message = NetMessage.Game(++gameNumber, SavedGameJson.encode(game, withLog = false))
         lastGame = message
         broadcast(message)
     }

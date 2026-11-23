@@ -25,6 +25,7 @@ import net.zodac.ludoplus.data.stringList
 import net.zodac.ludoplus.data.toJson
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.GameState
+import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
@@ -51,13 +52,14 @@ import net.zodac.ludoplus.ui.game.StartedGame
  * rules on, by id ([GameRules.houseRules], from [VERSION] 2), the teams, and [GameRules.stopAtFirstWinner] when on. A
  * roll waiting for a move is written as the roll alone; its moves are worked out again.
  * Anything that doesn't make a playable game fails [decode] with an [IllegalArgumentException] (a [JsonParseException]
- * for JSON that can't be read).
+ * for JSON that can't be read). Its move log ([StartedGame.log]) isn't needed to play: one that can't be read is dropped.
  */
 object SavedGameJson {
     /** The format written. One from a newer app, with a higher version, isn't read. */
     const val VERSION = 2
 
-    fun encode(game: StartedGame): String = buildJsonObject {
+    /** [game] as JSON, with its move log unless [withLog] is false (a Nearby message, kept small). */
+    fun encode(game: StartedGame, withLog: Boolean = true): String = buildJsonObject {
         put("version", VERSION)
         put("mode", game.mode.id)
         put("startedAt", game.startedAtEpochMillis)
@@ -81,6 +83,8 @@ object SavedGameJson {
             put("rollForPartners", game.state.rules.rollForPartners)
         }
         put("state", encodeState(game.state))
+        // Every move so far, first first; absent for none, and in a Nearby message.
+        if (withLog && game.log.isNotEmpty()) put("log", JsonArray(game.log.map(::encodeLogEntry)))
     }.toJson()
 
     fun decode(json: String): StartedGame {
@@ -118,6 +122,7 @@ object SavedGameJson {
             customName = obj.stringOrNull("customName"),
             id = obj.stringOrNull("id"),
             steps = obj.intOrNull("steps")?.also { require(it >= 0) { "Negative steps" } } ?: 0,
+            log = runCatching { if ("log" in obj) obj.objectList("log").map { decodeLogEntry(it, players.size) } else emptyList() }.getOrDefault(emptyList()),
         )
     }
 
@@ -259,6 +264,18 @@ object SavedGameJson {
         require(rolled.size == rules.dice && dice.all { it in rolled }) { "Dice $dice aren't of the roll $rolled" }
         return waiting.copy(phase = TurnPhase.AwaitingMove(roll, moves, dice = dice, earned = earned, rolled = rolled))
     }
+
+    private fun encodeLogEntry(entry: LogEntry): JsonObject = buildJsonObject {
+        put("event", encodeEvent(entry.event))
+        put("at", entry.atEpochMillis)
+        entry.place?.let { put("place", it) }
+    }
+
+    private fun decodeLogEntry(obj: JsonObject, playerCount: Int): LogEntry = LogEntry(
+        event = decodeEvent(obj.obj("event"), playerCount),
+        atEpochMillis = obj.long("at"),
+        place = obj.intOrNull("place")?.also { require(it in 1..playerCount) { "No place $it" } },
+    )
 
     private fun encodeEvent(event: GameEvent): JsonObject = buildJsonObject {
         val (kind, roll) = when (event) {

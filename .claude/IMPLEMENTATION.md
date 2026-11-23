@@ -200,7 +200,11 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     under the Die roll motion group, ringed in the turn's colour (and the turn's yard ringed, 2026-11-23). Shake to
     roll waits for its setting (Phase 5).
 - [x] Player cards: name, CPU icon, a dot per pawn home, the current player outlined in their colour, and their place
-    once finished. Lines under the die say what just happened and what to do now; the end shows the winner.
+    once finished. A line by the die says what to do now; the end shows the winner. Under them, the move log
+    (`MoveLogPanel.kt`, 2026-11-23): every move, roll with no move, and turn lost to a run of roll-again rolls, newest
+    first, back to who went first, each after its time ("[14:05:09]", the phone's clock), in a card that scrolls back to
+    its top as each comes. It's saved with the game, and left out of Nearby messages (a guest's phone builds its own
+    from the host's states, timed as they arrive). Where there's no room for the card, only its newest line shows.
 - [x] Capture feedback: a burst on the square, and the captured pawn thrown back to its yard (2026-11-23), with a
     buzz (`Haptics.kt`); a tick for a move, the die's landing sound, a move click, and the fanfare (`SoundEffects.kt`,
     restored from `5423b6c`).

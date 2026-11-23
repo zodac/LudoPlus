@@ -216,7 +216,7 @@
     <string name="game_prompt_move_die_left">%1$s has %2$d left. Pick a pawn to move.</string>
     <string name="game_prompt_cpu_move_dice">%1$s rolled %2$d and %3$d.</string>
     <string name="game_prompt_cpu_move_die_left">%1$s has %2$d left.</string>
-    <!-- The line above it, saying what just happened when it matters. %1$s is the player who acted, %2$d their roll. -->
+    <!-- The move log under the die and that line, one line for each thing that happened. %1$s is the player who acted, %2$d their roll. -->
     <string name="game_event_first">%1$s rolled highest, so goes first.</string>
     <string name="game_event_no_move">%1$s rolled %2$d and had no move.</string>
     <!-- With the Three Tries house rule, a roll that didn't bring a pawn out: %3$d is how many rolls are left this turn. -->
@@ -245,6 +245,19 @@
     <string name="game_event_all_home">%1$s has every pawn home.</string>
     <!-- A team game: the last of a team's pawns home. %1$s is its players' names as a list ("Alex and Sam"), %2$s the place ("1st"). -->
     <string name="game_event_team_finished">%1$s are home, in %2$s place.</string>
+    <!-- A pawn moved from its yard onto the board. -->
+    <string name="game_event_out">%1$s brought a pawn out.</string>
+    <!-- A pawn moved along the board: %2$d is how many squares. -->
+    <plurals name="game_event_move">
+        <item quantity="one">%1$s moved a pawn %2$d square.</item>
+        <item quantity="other">%1$s moved a pawn %2$d squares.</item>
+    </plurals>
+    <!-- The move log's title. -->
+    <string name="game_log_title">Moves</string>
+    <!-- A line of the move log: %1$s is when it happened (in game_log_time_pattern), %2$s what happened. -->
+    <string name="game_log_line">[%1$s] %2$s</string>
+    <!-- When a line of the move log happened, as a CLDR time pattern: hours (24-hour), minutes, and seconds. -->
+    <string name="game_log_time_pattern">HH:mm:ss</string>
     <!-- The finished board, reviewed from the results page: the winner, and the button back to the results. -->
     <string name="game_over_winner">%1$s wins!</string>
     <!-- A team game's winners, as a list: "Alex and Sam win!" -->

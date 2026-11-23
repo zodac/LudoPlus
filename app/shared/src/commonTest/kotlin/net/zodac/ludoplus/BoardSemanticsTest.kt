@@ -2,6 +2,7 @@ package net.zodac.ludoplus
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -12,12 +13,15 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.font.FontWeight
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.GameState
+import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
@@ -62,8 +66,8 @@ class BoardSemanticsTest : UiTest() {
     private var rolls = 0
     private var backs = 0
 
-    private fun show(state: GameState) {
-        val game = StartedGame(state.mode, players, state, RollOff(listOf(mapOf(0 to 6, 1 to 1, 2 to 1, 3 to 1)), 0))
+    private fun show(state: GameState, log: List<LogEntry> = emptyList()) {
+        val game = StartedGame(state.mode, players, state, RollOff(listOf(mapOf(0 to 6, 1 to 1, 2 to 1, 3 to 1)), 0), log = log)
         showcase.show {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
                 LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it.pawn }, onBack = { backs++ }, onResults = {}) }
@@ -224,10 +228,7 @@ class BoardSemanticsTest : UiTest() {
     }
 
     @Test
-    fun `what just happened is said - a capture - and the winner once the game is over`() = uiTest(TestScreen(411, 891)) {
-        show(state().copy(current = 2, lastEvent = GameEvent.Moved(1, 5, Move(0, 15, 20, listOf(PawnRef(0, 1))), finished = false)))
-        compose.onNodeWithText("Gambit captured 1 of Alex's pawns.").assertExists()
-        compose.onNodeWithText("Sam, tap the die to roll.").assertExists()
+    fun `the winner is said once the game is over`() = uiTest(TestScreen(411, 891)) {
         show(state().copy(phase = TurnPhase.Finished, finishingOrder = listOf(1, 0, 3, 2)))
         compose.onNodeWithText("Gambit wins!").assertExists()
         compose.onNodeWithText("Results").assertExists()
@@ -245,16 +246,69 @@ class BoardSemanticsTest : UiTest() {
         assertEquals("Sam, tap the die to roll.", prompt.config[SemanticsProperties.ContentDescription].single())
     }
 
+    /** A log of every kind of line, oldest first, with what each says. */
+    private val everyLine = listOf(
+        LogEntry(GameEvent.Moved(0, 6, Move(0, Y, 0), finished = false)) to "Alex brought a pawn out.",
+        LogEntry(GameEvent.Moved(0, 4, Move(0, 0, 4), finished = false)) to "Alex moved a pawn 4 squares.",
+        LogEntry(GameEvent.Moved(0, 1, Move(0, 4, 5), finished = false)) to "Alex moved a pawn 1 square.",
+        LogEntry(GameEvent.NoMove(1, 3)) to "Gambit rolled 3 and had no move.",
+        LogEntry(GameEvent.RollAgainLimit(2, 6)) to "Sam rolled a third 6 in a row, so the turn passed.",
+        LogEntry(GameEvent.Moved(3, 2, Move(1, H - 2, H), finished = false)) to "Payout brought a pawn home.",
+        LogEntry(GameEvent.Moved(3, 2, Move(2, H - 2, H), finished = true), place = 1) to "Payout has every pawn home, in 1st place.",
+        LogEntry(GameEvent.Moved(1, 5, Move(0, 15, 20, listOf(PawnRef(0, 1))), finished = false)) to "Gambit captured 1 of Alex's pawns.",
+    )
+
     @Test
-    fun `the line saying what happened shows each player it names in their colour - and is said as before`() = uiTest(TestScreen(411, 891)) {
-        show(state().copy(current = 2, lastEvent = GameEvent.Moved(1, 5, Move(0, 15, 20, listOf(PawnRef(0, 1))), finished = false)))
-        val line = compose.onNodeWithText("Gambit captured 1 of Alex's pawns.").fetchSemanticsNode().config[SemanticsProperties.Text].single()
+    fun `the log under the die says every move - newest first - back to who went first - each with its time - word for word`() =
+        uiTest(TestScreen(411, 891)) {
+            // A minute apart, the first a minute after the game started.
+            val log = everyLine.mapIndexed { i, (entry, _) -> entry.copy(atEpochMillis = (i + 1) * 60_000L) }
+            show(state().copy(current = 2, lastEvent = everyLine.last().first.event), log)
+            compose.onNodeWithText("Moves").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+            compose.onNodeWithText("Sam, tap the die to roll.").assertExists()
+            val lines = (listOf("Alex rolled highest, so goes first.") + everyLine.map { it.second }).reversed()
+            val list = compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.CollectionInfo))
+            assertEquals(lines.size, list.fetchSemanticsNode().config[SemanticsProperties.CollectionInfo].rowCount)
+            val minutes = mutableListOf<Int>()
+            lines.forEachIndexed { index, line ->
+                list.performScrollToIndex(index)
+                val node = compose.onNode(hasContentDescription(line)).fetchSemanticsNode()
+                assertEquals(index, node.config[SemanticsProperties.CollectionItemInfo].rowIndex)
+                assertEquals(index == 0, node.config.getOrNull(SemanticsProperties.LiveRegion) == LiveRegionMode.Polite, line)
+                // Shown after its time, "[hh:mm:ss] ", in the phone's time zone; said without it.
+                val shown = node.config[SemanticsProperties.Text].joinToString("") { it.text }
+                val time = Regex("""^\[(\d\d):(\d\d):00] (.*)$""").find(shown) ?: error("No time on \"$shown\"")
+                assertEquals(line, time.groupValues[3])
+                minutes += time.groupValues[2].toInt()
+            }
+            // A minute between each, newest first, whatever the time zone.
+            assertEquals(List(lines.size - 1) { 1 }, minutes.zipWithNext { newer, older -> (newer - older + 60) % 60 })
+        }
+
+    @Test
+    fun `on a screen with no room for the log its newest line is shown alone - and heard as it comes`() = uiTest(TestScreen(320, 470)) {
+        show(state().copy(current = 2, lastEvent = everyLine.last().first.event), everyLine.map { it.first })
+        compose.onNodeWithText("Moves").assertDoesNotExist()
+        compose.onNode(hasContentDescription("Gambit captured 1 of Alex's pawns."))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+        compose.onNode(hasContentDescription("Alex brought a pawn out.")).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a line in the log shows each player it names in their colour - not bold - and is said as written`() = uiTest(TestScreen(411, 891)) {
+        show(state().copy(current = 2, lastEvent = GameEvent.Moved(1, 5, Move(0, 15, 20, listOf(PawnRef(0, 1))), finished = false)), listOf(LogEntry(GameEvent.Moved(1, 5, Move(0, 15, 20, listOf(PawnRef(0, 1))), finished = false))))
+        val node = compose.onNode(hasContentDescription("Gambit captured 1 of Alex's pawns.")).fetchSemanticsNode()
+        // The time, then the line: two texts in one row.
+        val (time, line) = node.config[SemanticsProperties.Text]
         assertEquals(
             listOf("Gambit" to PlayerColour.defaultFor(1).color, "Alex" to PlayerColour.defaultFor(0).color),
             line.spanStyles.sortedBy { it.start }.map { line.text.substring(it.start, it.end) to it.item.color },
         )
         // Coloured, not bold: bold is the prompt's.
         assertEquals(listOf(null, null), line.spanStyles.map { it.item.fontWeight })
+        assertTrue(Regex("""^\[\d\d:\d\d:\d\d] $""").matches(time.text), time.text)
+        assertEquals("Gambit captured 1 of Alex's pawns.", line.text)
+        assertEquals("Gambit captured 1 of Alex's pawns.", node.config[SemanticsProperties.ContentDescription].single())
     }
 
     @Test

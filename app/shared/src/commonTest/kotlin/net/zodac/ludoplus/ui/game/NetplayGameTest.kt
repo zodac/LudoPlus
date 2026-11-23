@@ -161,7 +161,7 @@ class NetplayGameTest {
         nearby.fromGuest("jo", NetMessage.Roll)
         runCurrent()
         assertTrue(host.game.value!!.state.lastEvent != null)
-        assertEquals(SavedGameJson.encode(host.game.value!!), (nearby.hostSent.last().second as NetMessage.Game).json)
+        assertEquals(SavedGameJson.encode(host.game.value!!, withLog = false), (nearby.hostSent.last().second as NetMessage.Game).json)
     }
 
     /** A seed whose roll-off puts Jo, seat 2, first. */
@@ -204,7 +204,7 @@ class NetplayGameTest {
         runCurrent()
         assertTrue(host.awaySeats.value.isEmpty())
         assertFalse(nearby.findable)
-        assertEquals(SavedGameJson.encode(host.game.value!!), (nearby.hostSent.last { it.first == "jo-again" }.second as NetMessage.Game).json)
+        assertEquals(SavedGameJson.encode(host.game.value!!, withLog = false), (nearby.hostSent.last { it.first == "jo-again" }.second as NetMessage.Game).json)
     }
 
     @Test
@@ -349,7 +349,7 @@ class NetplayGameTest {
         assertTrue(again.id != first.id)
         assertEquals(PlayerType.NEARBY, again.players[1].type)
         assertEquals("Jo", again.players[1].name)
-        assertEquals(SavedGameJson.encode(again), (nearby.hostSent.first { it.first == "jo" }.second as NetMessage.Game).json)
+        assertEquals(SavedGameJson.encode(again, withLog = false), (nearby.hostSent.first { it.first == "jo" }.second as NetMessage.Game).json)
 
         nearby.fromGuest("jo", NetMessage.Leave)
         runCurrent()
