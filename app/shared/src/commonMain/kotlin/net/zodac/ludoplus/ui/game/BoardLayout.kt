@@ -17,7 +17,7 @@ import net.zodac.ludoplus.model.PawnPosition
 
 /**
  * Where everything on a board sits, in board units: the board is [size] units square, one unit a square's side, (0, 0)
- * its top-left corner. Seat 0's arm points left and play runs clockwise. Pure, so the drawing and the taps agree by test.
+ * its top-left corner. Seat 0's yard is at the bottom left, its arm pointing down, and play runs clockwise. Pure, so the drawing and the taps agree by test.
  *
  * The classic 15x15 cross is [ClassicBoardLayout]; every other board ([BoardGeometry.forPlayers]) is a
  * [StarBoardLayout] of arms round a centre.
@@ -117,8 +117,9 @@ data class Cell(val column: Int, val row: Int) {
 }
 
 /**
- * The classic 15x15 cross. Seat 0's yard is the top-left corner; each other seat's part of the board is seat 0's turned
- * a quarter clockwise per seat.
+ * The classic 15x15 cross. Seat 0's yard is the bottom-left corner; each other seat's part of the board is seat 0's turned
+ * a quarter clockwise per seat. Seat 0's part is set out below as if its yard were the top-left corner, then turned
+ * [SEAT_0_TURN] quarters clockwise into place.
  */
 object ClassicBoardLayout : BoardLayout {
     /** The board's width and height, in squares. */
@@ -129,11 +130,14 @@ object ClassicBoardLayout : BoardLayout {
 
     private const val CENTRE = SIZE / 2f
 
-    /** Seat 0's quarter of the track, from its start square: its arm's top row, then up the next arm and across. */
+    /** How many quarters clockwise seat 0's part is turned from the top-left corner it's set out in: to the bottom left. */
+    private const val SEAT_0_TURN = 3
+
+    /** Seat 0's quarter of the track as set out, from its start square: its arm's top row, then up the next arm and across. */
     private val SEAT_0_QUARTER: List<Cell> =
         (1..5).map { Cell(it, 6) } + (5 downTo 0).map { Cell(6, it) } + Cell(7, 0) + Cell(8, 0)
 
-    /** Seat 0's yard pawns' spots, centres in board units. */
+    /** Seat 0's yard pawns' spots as set out, centres in board units. */
     private val SEAT_0_YARD_SPOTS = listOf(Offset(2f, 2f), Offset(4f, 2f), Offset(2f, 4f), Offset(4f, 4f))
 
     override val geometry: BoardGeometry = BoardGeometry.CLASSIC
@@ -182,19 +186,19 @@ object ClassicBoardLayout : BoardLayout {
     private fun square(left: Float, top: Float, side: Float) =
         listOf(Offset(left, top), Offset(left + side, top), Offset(left + side, top + side), Offset(left, top + side))
 
-    /** A point turned [quarters] quarter turns clockwise about the board's centre. */
+    /** A point of seat 0's part, as set out, turned into seat [quarters]'s place: [quarters] more quarters clockwise. */
     private fun Offset.turned(quarters: Int): Offset {
         var point = this
-        repeat(quarters % 4) { point = Offset(SIZE - point.y, point.x) }
+        repeat((quarters + SEAT_0_TURN) % 4) { point = Offset(SIZE - point.y, point.x) }
         return point
     }
 
     private fun Cell.turned(quarters: Int): Cell = turnedArea(quarters, 1)
 
-    /** The top-left square of a [size]-square block whose top-left is this, turned [quarters] clockwise. */
+    /** The top-left square of a [size]-square block of seat 0's part, as set out, turned into seat [quarters]'s place. */
     private fun Cell.turnedArea(quarters: Int, size: Int): Cell {
         var cell = this
-        repeat(quarters % 4) { cell = Cell(SIZE - size - cell.row, cell.column) }
+        repeat((quarters + SEAT_0_TURN) % 4) { cell = Cell(SIZE - size - cell.row, cell.column) }
         return cell
     }
 }
@@ -353,8 +357,8 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
     }
 
     private companion object {
-        /** Seat 0's arm points left, as on the classic board. */
-        const val ARM_START_DEGREES = 180.0
+        /** Seat 0's arm points down, as on the classic board, so its yard is at the bottom left. */
+        const val ARM_START_DEGREES = 90.0
         const val ARM_LENGTH = 6
         const val HALF_ARM = 1.5
         const val LEAVING_LANE = 0.5

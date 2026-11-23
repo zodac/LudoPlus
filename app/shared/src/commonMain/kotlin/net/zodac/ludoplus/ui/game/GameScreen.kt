@@ -47,9 +47,11 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -355,7 +357,7 @@ fun GameContent(
     val rollStep = tutorial?.step is TutorialStep.Roll
     val players = @Composable {
         if (notice != null) NetplayNotice(notice)
-        if (tutorial == null) PlayerCards(started, columns = 2) else TutorialCoachCard(tutorial)
+        if (tutorial == null) PlayerCards(started) else TutorialCoachCard(tutorial)
     }
     val background = LocalGameVisualTheme.current.background
     ScreenScaffold(
@@ -441,14 +443,24 @@ private fun TutorialCoachCard(tutorial: TutorialView) {
     }
 }
 
-/** The players, [columns] to a row, in seat order: the one whose turn it is outlined in their colour. */
+/**
+ * The players, laid out as their yards are round the board ([playerCardRows]): the one whose turn it is outlined in their
+ * colour. TalkBack reads them in player order, whatever the rows.
+ */
 @Composable
-private fun PlayerCards(game: StartedGame, columns: Int) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        game.players.indices.chunked(columns).forEach { row ->
+private fun PlayerCards(game: StartedGame) {
+    val seats = game.state.players.map { it.seat }
+    val rows = remember(game.state.board, seats) { playerCardRows(BoardLayout.of(game.state.board), seats) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.semantics { isTraversalGroup = true }) {
+        rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { index -> PlayerCard(game, index, Modifier.weight(1f)) }
-                repeat(columns - row.size) { Box(Modifier.weight(1f)) }
+                row.forEach { index ->
+                    if (index == null) {
+                        Box(Modifier.weight(1f))
+                    } else {
+                        PlayerCard(game, index, Modifier.weight(1f).semantics { traversalIndex = index.toFloat() })
+                    }
+                }
             }
         }
     }

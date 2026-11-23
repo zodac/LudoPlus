@@ -38,8 +38,8 @@ class TurnHighlightTest : UiTest() {
                 LudoBoard(state, List(4) { PlayerColour.defaultFor(it) }, emptyList(), {}, Modifier.size(300.dp).testTag(ART))
             }
         }
-        // Red's yard is the top-left six squares; this point is a tenth of a square in from its left edge.
-        fun redYardEdge(): Color = pixel(0.1f / 15, 3f / 15)
+        // Red's yard is the bottom-left six squares; this point is a tenth of a square in from its left edge.
+        fun redYardEdge(): Color = pixel(0.1f / 15, 12f / 15)
 
         assertClose(Color.White, redYardEdge(), "Red's turn: the ring")
         state = state.copy(current = 1)

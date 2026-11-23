@@ -47,18 +47,23 @@ import net.zodac.ludoplus.ui.theme.BoardInk
 import net.zodac.ludoplus.ui.theme.color
 import org.jetbrains.compose.resources.StringResource
 
-/** A pawn in a diagram: [seat]'s, standing at [centre] (board units). A [ghost] is where a pawn was, drawn faint. */
+/**
+ * A pawn in a diagram, in the default colour of [seat] (0 Red), standing at [centre] (board units). A [ghost] is where a
+ * pawn was, drawn faint.
+ */
 internal class DiagramPawn(val seat: Int, val centre: Offset, val radius: Float = 0.38f, val ghost: Boolean = false, val home: Boolean = false)
 
 /** An arrow through [points] (board units), dashed for a pawn sent back rather than moved. */
 internal class DiagramArrow(val points: List<Offset>, val dashed: Boolean = false)
 
 /**
- * One diagram: the part of the classic board in [view] (board units), with [pawns] and [arrows] on it, and the die
- * showing [die] (if any) at [dieAt], its top-left corner in board units. TalkBack hears it as one image, [description].
+ * One diagram: the part of the classic board in [view] (board units), Red's yard at seat [redSeat] and the other colours
+ * round from it, with [pawns] and [arrows] on it, and the die showing [die] (if any) at [dieAt], its top-left corner in
+ * board units. TalkBack hears it as one image, [description].
  */
 internal class Diagram(
     val view: Rect,
+    val redSeat: Int,
     val description: StringResource,
     val pawns: List<DiagramPawn> = emptyList(),
     val arrows: List<DiagramArrow> = emptyList(),
@@ -74,6 +79,12 @@ private val MAX_DIAGRAM_WIDTH = 420.dp
 
 private val board = ClassicBoardLayout.geometry
 
+/**
+ * Where Red sits in a close-up diagram: seat 1, whose yard is the board's top-left corner, so a close-up's view starts at
+ * the board's edge and reads left to right. The whole board's diagram has Red at seat 0, where a game has the first player.
+ */
+private const val CLOSE_UP = 1
+
 /** Where [seat]'s pawn stands [progress] steps on from its start square (`BoardGeometry`'s progress). */
 private fun at(seat: Int, progress: Int): Offset = ClassicBoardLayout.centreOf(seat, PawnPosition.of(progress, board), 0)
 
@@ -83,6 +94,7 @@ private fun homeCentre(seat: Int): Offset = ClassicBoardLayout.homeTriangle(seat
 /** The board: Red's whole route, a lap of the track from its start square, then up its home column to home. */
 private val BOARD_DIAGRAM = Diagram(
     view = Rect(0f, 0f, ClassicBoardLayout.SIZE.toFloat(), ClassicBoardLayout.SIZE.toFloat()),
+    redSeat = 0,
     description = Res.string.rules_board_diagram_cd,
     pawns = listOf(DiagramPawn(0, at(0, 0))) + (1..3).map { DiagramPawn(0, ClassicBoardLayout.yardSpot(0, it), radius = 0.5f) } +
         (1..3).flatMap { seat -> (0..3).map { DiagramPawn(seat, ClassicBoardLayout.yardSpot(seat, it), radius = 0.5f) } },
@@ -92,11 +104,12 @@ private val BOARD_DIAGRAM = Diagram(
 /** Your turn: a 6 brings a red pawn out of its yard onto its start square. */
 private val TURN_DIAGRAM = Diagram(
     view = Rect(0f, 0f, 8f, 8f),
+    redSeat = CLOSE_UP,
     description = Res.string.rules_turn_diagram_cd,
     // The pawn leaving is the yard's lower left, nearest the start square, so its arrow crosses no other pawn.
-    pawns = listOf(DiagramPawn(0, ClassicBoardLayout.yardSpot(0, 2), radius = 0.5f, ghost = true), DiagramPawn(0, at(0, 0))) +
-        listOf(0, 1, 3).map { DiagramPawn(0, ClassicBoardLayout.yardSpot(0, it), radius = 0.5f) },
-    arrows = listOf(DiagramArrow(listOf(ClassicBoardLayout.yardSpot(0, 2), at(0, 0)))),
+    pawns = listOf(DiagramPawn(0, ClassicBoardLayout.yardSpot(CLOSE_UP, 2), radius = 0.5f, ghost = true), DiagramPawn(0, at(CLOSE_UP, 0))) +
+        listOf(0, 1, 3).map { DiagramPawn(0, ClassicBoardLayout.yardSpot(CLOSE_UP, it), radius = 0.5f) },
+    arrows = listOf(DiagramArrow(listOf(ClassicBoardLayout.yardSpot(CLOSE_UP, 2), at(CLOSE_UP, 0)))),
     die = 6,
     dieAt = Offset(6.2f, 0.2f),
 )
@@ -108,16 +121,17 @@ private const val CAPTURE_ROLL = 4
 /** Captures: Red rolls 4 onto Green's pawn, which goes back to Green's yard; Blue sits safe on a star square. */
 private val CAPTURE_DIAGRAM = Diagram(
     view = Rect(1f, 0f, 13f, 9f),
+    redSeat = CLOSE_UP,
     description = Res.string.rules_capture_diagram_cd,
     pawns = listOf(
-        DiagramPawn(0, at(0, CAPTURE_FROM), ghost = true),
-        DiagramPawn(0, at(0, CAPTURE_FROM + CAPTURE_ROLL)),
-        DiagramPawn(1, ClassicBoardLayout.yardSpot(1, 2), radius = 0.5f),
-        DiagramPawn(3, at(0, board.starOffset)),
+        DiagramPawn(0, at(CLOSE_UP, CAPTURE_FROM), ghost = true),
+        DiagramPawn(0, at(CLOSE_UP, CAPTURE_FROM + CAPTURE_ROLL)),
+        DiagramPawn(1, ClassicBoardLayout.yardSpot(CLOSE_UP + 1, 2), radius = 0.5f),
+        DiagramPawn(3, at(CLOSE_UP, board.starOffset)),
     ),
     arrows = listOf(
-        DiagramArrow((CAPTURE_FROM..CAPTURE_FROM + CAPTURE_ROLL).map { at(0, it) }),
-        DiagramArrow(listOf(at(0, CAPTURE_FROM + CAPTURE_ROLL), ClassicBoardLayout.yardSpot(1, 2)), dashed = true),
+        DiagramArrow((CAPTURE_FROM..CAPTURE_FROM + CAPTURE_ROLL).map { at(CLOSE_UP, it) }),
+        DiagramArrow(listOf(at(CLOSE_UP, CAPTURE_FROM + CAPTURE_ROLL), ClassicBoardLayout.yardSpot(CLOSE_UP + 1, 2)), dashed = true),
     ),
     die = CAPTURE_ROLL,
     dieAt = Offset(11.2f, 7.2f),
@@ -129,12 +143,13 @@ private const val WINNING_ROLL = 3
 /** Winning: a red pawn 3 squares from home needs exactly a 3; another is already home. */
 private val WINNING_DIAGRAM = Diagram(
     view = Rect(0f, 5.5f, 9f, 9.5f),
+    redSeat = CLOSE_UP,
     description = Res.string.rules_winning_diagram_cd,
     pawns = listOf(
-        DiagramPawn(0, at(0, board.homeProgress - WINNING_ROLL)),
-        DiagramPawn(0, ClassicBoardLayout.homeSpot(0, 0), radius = HOME_PAWN_RADIUS, home = true),
+        DiagramPawn(0, at(CLOSE_UP, board.homeProgress - WINNING_ROLL)),
+        DiagramPawn(0, ClassicBoardLayout.homeSpot(CLOSE_UP, 0), radius = HOME_PAWN_RADIUS, home = true),
     ),
-    arrows = listOf(DiagramArrow((board.homeProgress - WINNING_ROLL..<board.homeProgress).map { at(0, it) } + Offset(6.2f, 7.5f))),
+    arrows = listOf(DiagramArrow((board.homeProgress - WINNING_ROLL..<board.homeProgress).map { at(CLOSE_UP, it) } + Offset(6.2f, 7.5f))),
     die = WINNING_ROLL,
     dieAt = Offset(7.3f, 5.6f),
 )
@@ -155,7 +170,7 @@ enum class RulesDiagramKind(internal val diagram: Diagram) {
 fun RulesDiagram(kind: RulesDiagramKind, modifier: Modifier = Modifier) {
     val diagram = kind.diagram
     val view = diagram.view
-    val colours = List(board.seats) { PlayerColour.defaultFor(it).color }
+    val colours = List(board.seats) { PlayerColour.defaultFor((it - diagram.redSeat).mod(board.seats)).color }
     val description = stringResource(diagram.description)
     BoxWithConstraints(
         modifier = modifier
@@ -175,7 +190,7 @@ fun RulesDiagram(kind: RulesDiagramKind, modifier: Modifier = Modifier) {
                 with(ClassicBoardStyle) { drawBoard(ClassicBoardLayout, unit, colours) }
                 for (arrow in diagram.arrows) drawArrow(arrow, unit)
                 for (pawn in diagram.pawns) {
-                    val colour = colours[pawn.seat].let { if (pawn.ghost) it.copy(alpha = 0.35f) else it }
+                    val colour = PlayerColour.defaultFor(pawn.seat).color.let { if (pawn.ghost) it.copy(alpha = 0.35f) else it }
                     if (pawn.home) with(ClassicBoardStyle) { drawHomeSpot(pawn.centre * unit, pawn.radius * unit) }
                     with(ClassicPawnStyle) { drawPawn(pawn.centre * unit, pawn.radius * unit, colour, ringed = false) }
                 }

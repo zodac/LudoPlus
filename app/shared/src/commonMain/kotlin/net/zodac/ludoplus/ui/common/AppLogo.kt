@@ -98,8 +98,8 @@ private const val PAWN_RADIUS = 0.155f
 /** How much the board is flattened into perspective once turned (the launcher icon's 0.56). */
 private const val BOARD_TILT = 0.56f
 
-/** The board's turn, so that red's yard is nearest (the launcher icon's). */
-private const val BOARD_TURN = 225f
+/** The board's turn, so that red's yard, at its bottom left, is nearest (the launcher icon's). */
+private const val BOARD_TURN = 315f
 
 /**
  * The app's mark on the main menu: the launcher icon's art, drawn live in Compose in [theme]'s board and pawns (the

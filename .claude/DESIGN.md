@@ -593,8 +593,8 @@ board and pawns.
 
 **Boards and pawns** keep the players' colours readable: a board style changes the track, the safe squares' marks, the
 surround, and the texture, never which colour a seat is; a pawn style changes shape and material, never whose it is. A
-board or pawn tile on the Styles page is a corner of the board (`BoardCornerPreview`): seat 0's yard with three pawns,
-one on its start square, and the next seat's pawn on the track, in the default seat colours, the tile's style drawn
+board or pawn tile on the Styles page is a corner of the board (`BoardCornerPreview`): the top-left yard (seat 1's, coloured as
+seat 0) with three pawns, one on its start square, and the next seat's pawn on the track, in the default seat colours, the tile's style drawn
 with the player's pick of the other.
 
 The boards are Classic, Wood, Ocean, Retro, Paper, Starry, Stone, and Neon. Every family but Classic is a

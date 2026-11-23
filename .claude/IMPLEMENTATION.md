@@ -54,7 +54,7 @@ Sources: [Wikipedia, "Ludo"](https://en.wikipedia.org/wiki/Ludo),
 ### The board
 
 - A 15x15 cross. Each player has a coloured corner **yard** holding four pawns. Colours run red, green, yellow, and
-    blue, clockwise.
+    blue, clockwise. Player 1's yard is at the bottom left on every board (the maintainer, 2026-11-23).
 - **The track** is 52 squares around the cross, shared by everyone. Each colour has a **start square** on the
     track, just outside its yard.
 - **The home column** is 5 squares of the player's own colour, leading from the track into the centre. The centre
@@ -202,7 +202,9 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     under the Die roll motion group, ringed in the turn's colour (and the turn's yard ringed, 2026-11-23). Shake to
     roll waits for its setting (Phase 5).
 - [x] Player cards: name, CPU icon, a dot per pawn home, the current player outlined in their colour, and their place
-    once finished. A line by the die says what to do now; the end shows the winner. Under them, the move log
+    once finished, laid out as the yards are round the board (`playerCardRows`, 2026-11-23: player 1 bottom left, a
+    yard straight above the middle on a row of its own; TalkBack still reads them in player order). A line by the die
+    says what to do now; the end shows the winner. Under them, the move log
     (`MoveLogPanel.kt`, 2026-11-23): every move, roll with no move, and turn lost to a run of roll-again rolls, newest
     first, back to who went first, each after its time ("[14:05:09]", the phone's clock), in a card that scrolls back to
     its top as each comes. It's saved with the game, and left out of Nearby messages (a guest's phone builds its own

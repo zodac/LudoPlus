@@ -29,12 +29,13 @@ class BoardLayoutTest {
 
     @Test
     fun `each seat's start - star - home column - and yard are where the classic board has them`() {
-        assertEquals(listOf(Cell(1, 6), Cell(8, 1), Cell(13, 8), Cell(6, 13)), (0..3).map { ClassicBoardLayout.trackCell(board.startSquare(it)) })
-        assertEquals(listOf(Cell(6, 2), Cell(12, 6), Cell(8, 12), Cell(2, 8)), (0..3).map { ClassicBoardLayout.trackCell(board.startSquare(it) + 8) })
-        assertEquals((1..5).map { Cell(it, 7) }, (0..4).map { ClassicBoardLayout.homeColumnCell(0, it) })
-        assertEquals((1..5).map { Cell(7, it) }, (0..4).map { ClassicBoardLayout.homeColumnCell(1, it) })
-        assertEquals((13 downTo 9).map { Cell(it, 7) }, (0..4).map { ClassicBoardLayout.homeColumnCell(2, it) })
-        assertEquals(listOf(Cell(0, 0), Cell(9, 0), Cell(9, 9), Cell(0, 9)), (0..3).map { ClassicBoardLayout.yardOrigin(it) })
+        // Seat 0 (the first player) at the bottom left, the rest round from it clockwise.
+        assertEquals(listOf(Cell(6, 13), Cell(1, 6), Cell(8, 1), Cell(13, 8)), (0..3).map { ClassicBoardLayout.trackCell(board.startSquare(it)) })
+        assertEquals(listOf(Cell(2, 8), Cell(6, 2), Cell(12, 6), Cell(8, 12)), (0..3).map { ClassicBoardLayout.trackCell(board.startSquare(it) + 8) })
+        assertEquals((13 downTo 9).map { Cell(7, it) }, (0..4).map { ClassicBoardLayout.homeColumnCell(0, it) })
+        assertEquals((1..5).map { Cell(it, 7) }, (0..4).map { ClassicBoardLayout.homeColumnCell(1, it) })
+        assertEquals((1..5).map { Cell(7, it) }, (0..4).map { ClassicBoardLayout.homeColumnCell(2, it) })
+        assertEquals(listOf(Cell(0, 9), Cell(0, 0), Cell(9, 0), Cell(9, 9)), (0..3).map { ClassicBoardLayout.yardOrigin(it) })
     }
 
     @Test

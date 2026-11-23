@@ -1164,10 +1164,16 @@ private fun <T : TableArt> ColourDots(colours: List<StyleColour<T>>, shown: Styl
 /** The board units across [BoardCornerPreview]'s view: the yard and the track beside it. Its height follows the tile's. */
 private const val CORNER_VIEW_WIDTH = 9f
 
-/** The seats' colours in [BoardCornerPreview]: the default ones, as the Rules diagrams use. */
-private val CornerSeatColours: List<Color> by lazy { List(ClassicBoardLayout.geometry.seats) { PlayerColour.defaultFor(it).color } }
+/** The seat whose yard is the board's top-left corner, the one [BoardCornerPreview] shows. */
+private const val CORNER_SEAT = 1
 
-/** Where [BoardCornerPreview]'s other player's pawn stands: the first track square beside seat 0's yard that isn't its own. */
+/** The seats' colours in [BoardCornerPreview]: the default ones, as the Rules diagrams use, the first at [CORNER_SEAT]. */
+private val CornerSeatColours: List<Color> by lazy {
+    val seats = ClassicBoardLayout.geometry.seats
+    List(seats) { PlayerColour.defaultFor((it - CORNER_SEAT).mod(seats)).color }
+}
+
+/** Where [BoardCornerPreview]'s other player's pawn stands: the first track square beside the corner's yard that isn't its own. */
 private val CornerVisitorSquare: Int by lazy {
     (0..<ClassicBoardLayout.geometry.trackLength).first { square ->
         val cell = ClassicBoardLayout.trackCell(square)
@@ -1176,8 +1182,9 @@ private val CornerVisitorSquare: Int by lazy {
 }
 
 /**
- * A corner of the board in [board]'s style, its pawns in [pawns]': seat 0's yard with three of its pawns, the fourth
- * out on its start square, and the next seat's pawn on the track beside the yard, in the default seat colours. The
+ * A corner of the board in [board]'s style, its pawns in [pawns]': the top-left yard ([CORNER_SEAT]'s) with three of its
+ * pawns, the fourth out on its start square, and the next seat's pawn on the track beside the yard, in the default seat
+ * colours from the first. The
  * Board and Pawns tiles' preview, each showing the player's pick of the other.
  */
 @Composable
@@ -1186,9 +1193,11 @@ private fun BoardCornerPreview(board: BoardStyle, pawns: PawnStyle, modifier: Mo
         val unit = size.width / CORNER_VIEW_WIDTH
         with(board) { drawBoard(ClassicBoardLayout, unit, CornerSeatColours) }
         with(pawns) {
-            for (slot in 0..2) drawPawn(ClassicBoardLayout.yardSpot(0, slot) * unit, YARD_PAWN_RADIUS * unit, CornerSeatColours[0], ringed = false)
-            drawPawn(ClassicBoardLayout.trackCell(0).centre * unit, PAWN_RADIUS * unit, CornerSeatColours[0], ringed = false)
-            drawPawn(ClassicBoardLayout.trackCell(CornerVisitorSquare).centre * unit, PAWN_RADIUS * unit, CornerSeatColours[1], ringed = false)
+            val colour = CornerSeatColours[CORNER_SEAT]
+            for (slot in 0..2) drawPawn(ClassicBoardLayout.yardSpot(CORNER_SEAT, slot) * unit, YARD_PAWN_RADIUS * unit, colour, ringed = false)
+            val start = ClassicBoardLayout.trackCell(ClassicBoardLayout.geometry.startSquare(CORNER_SEAT))
+            drawPawn(start.centre * unit, PAWN_RADIUS * unit, colour, ringed = false)
+            drawPawn(ClassicBoardLayout.trackCell(CornerVisitorSquare).centre * unit, PAWN_RADIUS * unit, CornerSeatColours[CORNER_SEAT + 1], ringed = false)
         }
     }
 }
