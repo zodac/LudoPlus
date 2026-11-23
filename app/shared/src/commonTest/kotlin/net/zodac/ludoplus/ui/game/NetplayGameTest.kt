@@ -41,6 +41,7 @@ import net.zodac.ludoplus.netplay.Nearby
 import net.zodac.ludoplus.netplay.NetCodec
 import net.zodac.ludoplus.netplay.NetMessage
 import net.zodac.ludoplus.netplay.PROTOCOL_VERSION
+import net.zodac.ludoplus.netplay.RefusedReason
 import net.zodac.ludoplus.netplay.SeatKind
 
 /** A Nearby that links nothing: what's sent, kept; each side's events, delivered by hand. */
@@ -322,5 +323,100 @@ class NetplayGameTest {
         runCurrent()
         assertEquals(GuestState.Lost, guest.guestState.value)
         assertNull(nearby.found)
+    }
+
+    @Test
+    fun `a guest is warned before its turn runs out - and only then`() = runTest(dispatcher) {
+        val nearby = FakeNearby()
+        hostWithGuest(nearby, joFirst)
+        advanceTimeBy(GameViewModel.GUEST_TURN_MILLIS - GameViewModel.TURN_WARNING_MILLIS - 1)
+        runCurrent()
+        assertTrue(nearby.hostSent.none { it.second == NetMessage.TurnEnding })
+        advanceTimeBy(2)
+        runCurrent()
+        assertEquals(listOf("jo"), nearby.hostSent.filter { it.second == NetMessage.TurnEnding }.map { it.first })
+    }
+
+    @Test
+    fun `the host's Play Again keeps each guest in its seat - the CPU in a seat whose guest left - and sends the new game`() = runTest(dispatcher) {
+        val nearby = FakeNearby()
+        val host = hostWithGuest(nearby)
+        val first = assertNotNull(host.game.value)
+        nearby.hostSent.clear()
+        assertTrue(host.playAgain { "Player $it" })
+        runCurrent()
+        val again = assertNotNull(host.game.value)
+        assertTrue(again.id != first.id)
+        assertEquals(PlayerType.NEARBY, again.players[1].type)
+        assertEquals("Jo", again.players[1].name)
+        assertEquals(SavedGameJson.encode(again), (nearby.hostSent.first { it.first == "jo" }.second as NetMessage.Game).json)
+
+        nearby.fromGuest("jo", NetMessage.Leave)
+        runCurrent()
+        assertTrue(host.playAgain { "Player $it" })
+        runCurrent()
+        val third = assertNotNull(host.game.value)
+        assertEquals(PlayerType.AI, third.players[1].type)
+        assertEquals("Jo", third.players[1].name)
+    }
+
+    @Test
+    fun `a guest can't play again itself - and shows the host's next game afresh`() = runTest(dispatcher) {
+        val nearby = FakeNearby()
+        val guest = viewModel()
+        guest.join(nearby, FoundGame("host", "Sam"), "Jo", null)
+        checkNotNull(nearby.joinEvents)(LinkEvent.Connected("host"))
+        nearby.fromHost(NetMessage.Welcome(1, "t1"))
+        val players = listOf(PlayerConfig(1, PlayerType.HUMAN, "Sam"), PlayerConfig(2, PlayerType.NEARBY, "Jo"))
+        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), RollOff(emptyList(), 0), id = "a".repeat(32))
+        nearby.fromHost(NetMessage.Game(1, SavedGameJson.encode(start)))
+        runCurrent()
+        nearby.fromHost(NetMessage.Game(2, SavedGameJson.encode(start.copy(state = start.state.copy(current = 1)))))
+        runCurrent()
+        assertEquals(1, guest.game.value?.steps)
+
+        assertFalse(guest.playAgain { "Player $it" })
+        assertEquals("a".repeat(32), guest.game.value?.id)
+
+        val next = start.copy(id = "b".repeat(32), startedAtEpochMillis = 2_000L)
+        nearby.fromHost(NetMessage.Game(3, SavedGameJson.encode(next)))
+        runCurrent()
+        assertEquals("b".repeat(32), guest.game.value?.id)
+        assertEquals(0, guest.game.value?.steps)
+        assertEquals(1, guest.game.value?.guestSeat)
+    }
+
+    @Test
+    fun `a guest reconnecting to another host of the same name is refused - and tries the next one`() = runTest(dispatcher) {
+        val nearby = FakeNearby()
+        val guest = viewModel()
+        guest.join(nearby, FoundGame("host", "Sam"), "Jo", null)
+        checkNotNull(nearby.joinEvents)(LinkEvent.Connected("host"))
+        nearby.fromHost(NetMessage.Welcome(1, "t1"))
+        val players = listOf(PlayerConfig(1, PlayerType.HUMAN, "Sam"), PlayerConfig(2, PlayerType.NEARBY, "Jo"))
+        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), RollOff(emptyList(), 0), id = "a".repeat(32))
+        nearby.fromHost(NetMessage.Game(1, SavedGameJson.encode(start)))
+        runCurrent()
+        checkNotNull(nearby.joinEvents)(LinkEvent.Disconnected("host"))
+        runCurrent()
+
+        val sams = listOf(FoundGame("other-sam", "Sam"), FoundGame("host2", "Sam"))
+        checkNotNull(nearby.found)(sams)
+        assertEquals(FoundGame("other-sam", "Sam"), nearby.joined.last())
+        checkNotNull(nearby.joinEvents)(LinkEvent.Connected("other-sam"))
+        nearby.fromHost(NetMessage.Refused(RefusedReason.STARTED))
+        runCurrent()
+        assertIs<GuestState.Reconnecting>(guest.guestState.value)
+        assertEquals(FoundGame("host2", "Sam"), nearby.joined.last())
+        // The search finding both again doesn't send it back to the one that refused it.
+        checkNotNull(nearby.found)(sams)
+        assertEquals(FoundGame("host2", "Sam"), nearby.joined.last())
+
+        checkNotNull(nearby.joinEvents)(LinkEvent.Connected("host2"))
+        assertEquals(NetMessage.Hello(PROTOCOL_VERSION, "Jo", null, token = "t1"), nearby.guestSent.last())
+        nearby.fromHost(NetMessage.Welcome(1, "t1"))
+        nearby.fromHost(NetMessage.Game(2, SavedGameJson.encode(start)))
+        runCurrent()
+        assertIs<GuestState.Playing>(guest.guestState.value)
     }
 }

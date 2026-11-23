@@ -233,14 +233,33 @@ class GameViewModel(
      */
     fun startGame(defaultName: (slot: Int) -> String): Boolean = startGame(defaultName, lobby = null)
 
-    /** [startGame], with each Nearby seat's player named and coloured as they took it in the [lobby]. */
-    private fun startGame(defaultName: (slot: Int) -> String, lobby: List<LobbySeat>?): Boolean {
+    /**
+     * Game Over's Play Again: [startGame]; in a game this phone hosts, with the same guests in their seats (the CPU in a
+     * seat whose guest left), sent to them as it starts. A guest's phone can't: the host plays again for everyone.
+     */
+    fun playAgain(defaultName: (slot: Int) -> String): Boolean {
+        if (guestSession != null) return false
+        val session = hostSession?.takeIf { it.started } ?: return startGame(defaultName)
+        timedOutSeat = null
+        return startGame(defaultName, session.seats.value, previous = _game.value)
+    }
+
+    /**
+     * [startGame], with each Nearby seat's player named and coloured as they took it in the [lobby]; one that played the
+     * [previous] game as the CPU (its guest left) is the CPU again.
+     */
+    private fun startGame(defaultName: (slot: Int) -> String, lobby: List<LobbySeat>?, previous: StartedGame? = null): Boolean {
         if (!setupForm.setupRestored.value) return false
         val setup = setupForm.setup.value
         if (setup.duplicateNameSlots(defaultName).isNotEmpty()) return false
         val players = setupForm.playerConfigs(defaultName).mapIndexed { seat, player ->
             val taken = lobby?.getOrNull(seat)?.takeIf { player.type == PlayerType.NEARBY }
-            if (taken == null) player else player.copy(name = taken.name ?: player.name, colour = taken.colour)
+            val left = previous?.players?.getOrNull(seat)?.takeIf { taken != null && it.type == PlayerType.AI }
+            when {
+                left != null -> left
+                taken == null -> player
+                else -> player.copy(name = taken.name ?: player.name, colour = taken.colour)
+            }
         }
         val mode = setup.playedMode
         val rollOff = RollOff.roll(players.size, mode.rules.dieFaces, random)
@@ -625,7 +644,8 @@ class GameViewModel(
 
     /**
      * On the host, gives a guest whose turn it is [GUEST_TURN_MILLIS] (while the game is on screen) for each roll and
-     * move: one it doesn't make by then, the CPU makes, and the rest of the turn with it.
+     * move, warning it [TURN_WARNING_MILLIS] before the end: one it doesn't make by then, the CPU makes, and the rest of
+     * the turn with it.
      */
     private fun timeGuestTurn(game: StartedGame) {
         val waiting = !game.state.isFinished && game.players[game.state.current].type == PlayerType.NEARBY && !computerPlays(game)
@@ -635,7 +655,10 @@ class GameViewModel(
         if (!waiting) return
         guestTurnState = game.state
         guestTurn = viewModelScope.launch {
-            pausableDelay(GUEST_TURN_MILLIS)
+            pausableDelay(GUEST_TURN_MILLIS - TURN_WARNING_MILLIS)
+            if (_game.value?.state != game.state) return@launch
+            hostSession?.turnEnding(game.state.current)
+            pausableDelay(TURN_WARNING_MILLIS)
             guestTurn = null
             if (_game.value?.state != game.state) return@launch
             timedOutSeat = game.state.current
@@ -763,7 +786,7 @@ class GameViewModel(
     /** Joins [found] over [nearby] as [name] in [colour] (the host may give another): see [guestState]. */
     fun join(nearby: Nearby, found: FoundGame, name: String, colour: PlayerColour?) {
         if (guestSession != null) return
-        val session = GuestSession { message -> joining?.send(NetCodec.encode(message)) }
+        val session = GuestSession(onRejoinRefused = { reconnectRefused?.invoke() }) { message -> joining?.send(NetCodec.encode(message)) }
         guestSession = session
         link(nearby, session, found, name) { session.hello(name, colour) }
         viewModelScope.launch {
@@ -797,20 +820,35 @@ class GameViewModel(
     /** While reconnecting with no link up: links to the host if the search has found it. */
     private var reconnectTo: (() -> Unit)? = null
 
+    /** While reconnecting: drops the link to a host that wouldn't give the seat back (another of the same name), and tries the next. */
+    private var reconnectRefused: (() -> Unit)? = null
+
     /**
      * Looks for [hostName]'s game again, and, once found, asks for [session]'s seat back over a new link: for
-     * [RECONNECT_MILLIS] at most (while the game is on screen), then gives up.
+     * [RECONNECT_MILLIS] at most (while the game is on screen), then gives up. A game of that name that refuses it is
+     * another host's: the next one found is tried, and that one isn't again.
      */
     private fun reconnect(nearby: Nearby, session: GuestSession, hostName: String, name: String) {
         if (reconnecting != null) return
         joining?.close()
         joining = null
         var games = emptyList<FoundGame>()
+        val refusedBy = mutableSetOf<String>()
+        var trying: FoundGame? = null
         val tryLink = {
-            val host = games.firstOrNull { it.name == hostName }
-            if (joining == null && host != null) link(nearby, session, host, name, session::rejoin)
+            val host = games.firstOrNull { it.name == hostName && it.endpoint !in refusedBy }
+            if (joining == null && host != null) {
+                trying = host
+                link(nearby, session, host, name, session::rejoin)
+            }
         }
         reconnectTo = tryLink
+        reconnectRefused = {
+            trying?.let { refusedBy += it.endpoint }
+            joining?.close()
+            joining = null
+            tryLink()
+        }
         reconnecting = nearby.discover {
             games = it
             tryLink()
@@ -825,6 +863,7 @@ class GameViewModel(
         reconnecting?.stop()
         reconnecting = null
         reconnectTo = null
+        reconnectRefused = null
         reconnectTimeout?.cancel()
         reconnectTimeout = null
     }
@@ -838,14 +877,18 @@ class GameViewModel(
         joining = null
     }
 
-    /** The host's latest [game], shown here: its first sets up this phone's achievements for its own seat. */
+    /**
+     * The host's latest [game], shown here: the first of each game (the host's Play Again starts another) sets up this
+     * phone's achievements for its own seat.
+     */
     private fun showGuestGame(game: StartedGame) {
-        val before = _game.value
+        val shown = _game.value
         val seat = checkNotNull(game.guestSeat)
+        val before = shown?.takeIf { it.id == game.id && it.startedAtEpochMillis == game.startedAtEpochMillis }
         if (before == null) {
             playMark = elapsedMillis().takeIf { foreground.value }
             tracker = if (game.earnsAchievements) AchievementTracker(game.players, mySeat = seat) else null
-            if (game.earnsAchievements) record(AchievementEngine.atGameStart(game.players, previousGame = null, localHour(now()), mySeat = seat))
+            if (game.earnsAchievements) record(AchievementEngine.atGameStart(game.players, previousGame = shown?.state, localHour(now()), mySeat = seat))
         } else {
             track(before.state, game.state)
         }
@@ -860,6 +903,9 @@ class GameViewModel(
     companion object {
         /** How long a guest has for each roll and move before the CPU makes it: see [timeGuestTurn]. */
         const val GUEST_TURN_MILLIS = 60_000L
+
+        /** How long before a guest's turn runs out ([GUEST_TURN_MILLIS]) the host warns it. */
+        const val TURN_WARNING_MILLIS = 15_000L
 
         /** How long a guest whose link dropped looks for its host before giving up. */
         const val RECONNECT_MILLIS = 120_000L

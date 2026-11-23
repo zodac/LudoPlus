@@ -110,7 +110,8 @@ class HostSession(
         }
         val refusal = when {
             hello.protocol != PROTOCOL_VERSION -> RefusedReason.VERSION
-            started -> RefusedReason.STARTED
+            // Coming back to a seat this host never gave: another host's guest, looking for a host of the same name.
+            started || hello.token != null -> RefusedReason.STARTED
             endpoint in guests -> null
             mutableSeats.value.none { it.open } -> RefusedReason.FULL
             else -> null
@@ -192,6 +193,11 @@ class HostSession(
         broadcast(message)
     }
 
+    /** Tells the guest at [seat] that its turn is nearly up (`GameViewModel.GUEST_TURN_MILLIS`). */
+    fun turnEnding(seat: Int) {
+        for ((endpoint, guestSeat) in guests) if (guestSeat == seat) send(endpoint, NetMessage.TurnEnding)
+    }
+
     /** Ends the session for every guest. */
     fun end() {
         broadcast(NetMessage.Ended)
@@ -218,8 +224,11 @@ sealed interface GuestState {
     /** Seated at [seat], waiting for the host to start; [seats] the table as the host last sent it. */
     data class Seated(val seat: Int, val seats: List<LobbySeat>) : GuestState
 
-    /** In the game, at [seat]: [game] as the host last sent it. */
-    data class Playing(val seat: Int, val game: StartedGame) : GuestState
+    /**
+     * In the game, at [seat]: [game] as the host last sent it. [turnEnding] once the host has said this guest's turn is
+     * nearly up, until it sends the next game.
+     */
+    data class Playing(val seat: Int, val game: StartedGame, val turnEnding: Boolean = false) : GuestState
 
     /** The link to the host dropped in the game, at [seat]: finding it again to take the seat back ([game] the last sent). */
     data class Reconnecting(val seat: Int, val game: StartedGame) : GuestState
@@ -236,10 +245,11 @@ sealed interface GuestState {
 /**
  * A guest's side of a Nearby session, as a state machine: its [NetMessage.Hello], then the host's answers ([state]), and
  * its player's roll and move sent while it's their turn. A link [lost] in a game under way is [GuestState.Reconnecting]
- * until a new one [rejoin]s or it [giveUp]. [send] hands a message to the transport for the host, over the link of the
- * moment. No radio here: the transport calls [received] and [lost]. Main thread only.
+ * until a new one [rejoin]s or it [giveUp]; a host that won't have it back (another of the same name) calls
+ * [onRejoinRefused], to try the next, and it stays reconnecting. [send] hands a message to the transport for the host,
+ * over the link of the moment. No radio here: the transport calls [received] and [lost]. Main thread only.
  */
-class GuestSession(private val send: (NetMessage) -> Unit) {
+class GuestSession(private val onRejoinRefused: () -> Unit = {}, private val send: (NetMessage) -> Unit) {
 
     private val mutableState = MutableStateFlow<GuestState>(GuestState.Joining)
     val state: StateFlow<GuestState> = mutableState.asStateFlow()
@@ -279,9 +289,12 @@ class GuestSession(private val send: (NetMessage) -> Unit) {
         val now = mutableState.value
         mutableState.value = when (message) {
             is NetMessage.Welcome -> {
+                if (now is GuestState.Reconnecting) {
+                    // Back in its seat, the game it's sent next carrying on; or seated by another host, which isn't its own.
+                    if (message.token != token) onRejoinRefused()
+                    return
+                }
                 token = message.token
-                // Back in its seat: the game it's sent next carries on.
-                if (now is GuestState.Reconnecting) return
                 GuestState.Seated(message.seat, (now as? GuestState.Seated)?.seats.orEmpty())
             }
             is NetMessage.Lobby -> (now as? GuestState.Seated)?.copy(seats = message.seats) ?: now
@@ -292,9 +305,19 @@ class GuestSession(private val send: (NetMessage) -> Unit) {
                 gameNumber = message.number
                 GuestState.Playing(seat, game)
             }
-            // A host that won't have it back has lost it for good.
-            is NetMessage.Refused -> if (now is GuestState.Reconnecting) GuestState.Lost else GuestState.Refused(message.reason)
+            is NetMessage.Refused -> {
+                if (now is GuestState.Reconnecting) {
+                    onRejoinRefused()
+                    return
+                }
+                GuestState.Refused(message.reason)
+            }
             NetMessage.Ended -> GuestState.Ended
+            NetMessage.TurnEnding -> {
+                val playing = now as? GuestState.Playing ?: return
+                if (playing.game.state.isFinished || playing.game.state.current != playing.seat) return
+                playing.copy(turnEnding = true)
+            }
             // A guest's message, sent to a guest: nothing to do.
             else -> now
         }

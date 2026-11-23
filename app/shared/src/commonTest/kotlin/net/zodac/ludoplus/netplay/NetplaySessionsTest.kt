@@ -68,6 +68,7 @@ class NetplaySessionsTest {
             NetMessage.Lobby(TABLE),
             NetMessage.Game(7, "{\"x\":1}"),
             NetMessage.Ended,
+            NetMessage.TurnEnding,
         )
         for (message in messages) assertEquals(message, NetCodec.decode(NetCodec.encode(message)))
         assertNull(NetCodec.decode("not json".encodeToByteArray()))
@@ -259,17 +260,75 @@ class NetplaySessionsTest {
     }
 
     @Test
-    fun `a guest stops reconnecting when it gives up or the host won't have it back - and a link lost before the game is lost for good`() {
+    fun `a guest stops reconnecting when it gives up - and a link lost before the game is lost for good`() {
         val playing = { GuestSession {}.apply { handle(NetMessage.Welcome(1, "t1")); handle(NetMessage.Game(1, SavedGameJson.encode(GAME))); lost() } }
         val givenUp = playing()
         givenUp.giveUp()
         assertEquals(GuestState.Lost, givenUp.state.value)
-        val refused = playing()
-        refused.handle(NetMessage.Refused(RefusedReason.STARTED))
-        assertEquals(GuestState.Lost, refused.state.value)
         val seated = GuestSession {}
         seated.handle(NetMessage.Welcome(1, "t1"))
         seated.lost()
         assertEquals(GuestState.Lost, seated.state.value)
+    }
+
+    @Test
+    fun `a host refuses a guest coming back to a seat it never gave - in the lobby or the game`() {
+        val host = Host()
+        host.session.handle("x", NetMessage.Hello(PROTOCOL_VERSION, "Jo", null, token = "theirs"))
+        assertEquals(listOf<NetMessage>(NetMessage.Refused(RefusedReason.STARTED)), host.sentTo("x"))
+        assertNull(host.session.seats.value[1].name)
+        host.session.handle("jo", NetMessage.Hello(PROTOCOL_VERSION, "Jo", null))
+        host.session.handle("alex", NetMessage.Hello(PROTOCOL_VERSION, "Alex", null))
+        host.session.start()
+        host.session.handle("y", NetMessage.Hello(PROTOCOL_VERSION, "Jo", null, token = "theirs"))
+        assertEquals(listOf<NetMessage>(NetMessage.Refused(RefusedReason.STARTED)), host.sentTo("y"))
+    }
+
+    @Test
+    fun `a host tells only the seat's own guest that its turn is nearly up`() {
+        val host = Host()
+        host.session.handle("jo", NetMessage.Hello(PROTOCOL_VERSION, "Jo", null))
+        host.session.handle("alex", NetMessage.Hello(PROTOCOL_VERSION, "Alex", null))
+        host.session.start()
+        host.sent.clear()
+        host.session.turnEnding(3)
+        assertEquals(listOf<Pair<String, NetMessage>>("alex" to NetMessage.TurnEnding), host.sent)
+    }
+
+    @Test
+    fun `a guest hears its turn is nearly up only on its own turn - until the next game it's sent`() {
+        val guest = GuestSession {}
+        guest.handle(NetMessage.Welcome(1, "t1"))
+        // Sam's turn: not Jo's to hurry.
+        guest.handle(NetMessage.Game(1, SavedGameJson.encode(GAME.copy(state = GAME.state.copy(current = 0)))))
+        guest.handle(NetMessage.TurnEnding)
+        assertEquals(false, (guest.state.value as GuestState.Playing).turnEnding)
+        guest.handle(NetMessage.Game(2, SavedGameJson.encode(GAME)))
+        guest.handle(NetMessage.TurnEnding)
+        assertEquals(true, (guest.state.value as GuestState.Playing).turnEnding)
+        val later = GAME.copy(state = LudoEngine.applyRoll(GAME.state, 4))
+        guest.handle(NetMessage.Game(3, SavedGameJson.encode(later)))
+        assertEquals(GuestState.Playing(1, later), guest.state.value)
+    }
+
+    @Test
+    fun `a guest reconnecting to a host that won't have it back - or seats it afresh - stays reconnecting and says so`() {
+        var refusals = 0
+        val guest = GuestSession(onRejoinRefused = { refusals++ }) {}
+        guest.handle(NetMessage.Welcome(1, "t1"))
+        guest.handle(NetMessage.Game(1, SavedGameJson.encode(GAME)))
+        guest.lost()
+        guest.handle(NetMessage.Refused(RefusedReason.STARTED))
+        assertEquals(1, refusals)
+        assertIs<GuestState.Reconnecting>(guest.state.value)
+        // An older host of the same name seats it in its lobby: another token, so not its own.
+        guest.handle(NetMessage.Welcome(2, "other"))
+        assertEquals(2, refusals)
+        assertIs<GuestState.Reconnecting>(guest.state.value)
+        // Its own host, at last.
+        guest.handle(NetMessage.Welcome(1, "t1"))
+        assertEquals(2, refusals)
+        guest.handle(NetMessage.Game(2, SavedGameJson.encode(GAME)))
+        assertEquals(GuestState.Playing(1, GAME), guest.state.value)
     }
 }

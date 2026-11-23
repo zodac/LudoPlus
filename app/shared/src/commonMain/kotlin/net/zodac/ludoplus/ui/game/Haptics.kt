@@ -33,6 +33,11 @@ class GameHaptics(createPlayer: () -> HapticsPlayer) {
         if (enabled) play(HapticEffect.CAPTURE_BUZZ)
     }
 
+    /** A Nearby guest's turn is nearly up: the capture's longer buzz. */
+    fun playTurnWarning() {
+        if (enabled) play(HapticEffect.CAPTURE_BUZZ)
+    }
+
     private fun play(effect: HapticEffect) {
         playerCreated = true
         player.play(effect)

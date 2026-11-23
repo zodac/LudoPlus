@@ -74,6 +74,7 @@ import net.zodac.ludoplus.resources.netplay_lost
 import net.zodac.ludoplus.resources.netplay_reconnecting
 import net.zodac.ludoplus.resources.netplay_seat_away
 import net.zodac.ludoplus.resources.netplay_seats_away
+import net.zodac.ludoplus.resources.netplay_turn_ending
 import net.zodac.ludoplus.resources.game_die_second_cd
 import net.zodac.ludoplus.resources.game_die_selected_spoken
 import net.zodac.ludoplus.resources.game_die_showing_named_cd
@@ -179,23 +180,30 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
         if (celebrate) lifecycle.delayWhileResumed(pacing.waitAfter(started.state.lastEvent, started.state.board.homeProgress))
         finishedView = FinishedView.RESULTS
     }
+    val guestState by viewModel.guestState.collectAsStateWithLifecycle()
     if (started.state.isFinished && finishedView == FinishedView.RESULTS) {
         val defaultNames = (1..started.players.size).map { stringResource(Res.string.common_default_player_name, it) }
-        val playAgain: () -> Unit = { viewModel.startGame { defaultNames[it - 1] } }
+        val playAgain: () -> Unit = { viewModel.playAgain { defaultNames[it - 1] } }
         GameOverScreen(
             game = started,
             onBackToMenu = onBackToMenu,
-            onPlayAgain = if (isTutorial) onNewGame else playAgain,
+            // A guest's phone plays again when its host does.
+            onPlayAgain = when {
+                isTutorial -> onNewGame
+                guestState != null -> null
+                else -> playAgain
+            },
             onReviewBoard = { finishedView = FinishedView.REVIEW },
             celebrate = celebrate,
             onCelebrated = { celebrate = false },
             tutorial = isTutorial,
+            hostPlaysAgain = guestState is GuestState.Playing,
         )
         return
     }
     val tutorialStep by viewModel.tutorialStep.collectAsStateWithLifecycle()
     val tutorialPart by viewModel.tutorialPart.collectAsStateWithLifecycle()
-    val guestState by viewModel.guestState.collectAsStateWithLifecycle()
+    TurnEndingBuzz((guestState as? GuestState.Playing)?.turnEnding == true)
     val awaySeats by viewModel.awaySeats.collectAsStateWithLifecycle()
     SuperuserRollPicker(viewModel)
     val window = LocalWindowInfo.current.containerSize
@@ -230,6 +238,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
  */
 @Composable
 private fun netplayNotice(guestState: GuestState?, awaySeats: Set<Int>, game: StartedGame): String? = when {
+    guestState is GuestState.Playing && guestState.turnEnding -> stringResource(Res.string.netplay_turn_ending)
     guestState is GuestState.Reconnecting -> stringResource(Res.string.netplay_reconnecting)
     guestState == GuestState.Lost -> stringResource(Res.string.netplay_lost)
     guestState == GuestState.Ended && !game.state.isFinished -> stringResource(Res.string.netplay_ended)
@@ -237,6 +246,13 @@ private fun netplayNotice(guestState: GuestState?, awaySeats: Set<Int>, game: St
     awaySeats.size == 1 -> stringResource(Res.string.netplay_seat_away, game.players[awaySeats.single()].name)
     awaySeats.isNotEmpty() -> pluralStringResource(Res.plurals.netplay_seats_away, awaySeats.size, awaySeats.size)
     else -> null
+}
+
+/** A buzz as a guest's turn becomes nearly up ([GuestState.Playing.turnEnding]), once each time. */
+@Composable
+private fun TurnEndingBuzz(turnEnding: Boolean) {
+    val haptics = rememberGameHaptics()
+    LaunchedEffect(turnEnding) { if (turnEnding) haptics.playTurnWarning() }
 }
 
 /**

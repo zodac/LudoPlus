@@ -259,6 +259,8 @@
     <string name="gameover_review">Review Board</string>
     <string name="gameover_main_menu">Main Menu</string>
     <string name="gameover_play_again">Play Again</string>
+    <!-- On a Nearby guest's Game Over page, in place of Play Again: the host's phone starts the next game for everyone. -->
+    <string name="gameover_host_plays_again">If the host plays again, the new game starts here.</string>
     <!-- What a player did, joined into one line: "23 turns, 4 captures". -->
     <plurals name="gameover_turns">
         <item quantity="one">%1$d turn</item>
@@ -519,6 +521,8 @@
     <string name="netplay_ended">The host ended the game.</string>
     <!-- On a guest's board while its link to the host is down in a game: it's finding the host again to get its seat back. -->
     <string name="netplay_reconnecting">Reconnecting to the host...</string>
+    <!-- On a guest's board when the host says its turn is nearly up: the CPU makes the roll or move soon unless the player does. -->
+    <string name="netplay_turn_ending">Your turn is nearly up: play now, or the CPU will.</string>
     <!-- On the host's board while a guest's phone is out of the game, until it's back: %1$s is its player's name. -->
     <string name="netplay_seat_away">%1$s dropped out: the CPU plays for now</string>
     <!-- On the host's board while more than one guest's phone is out of the game: %1$d is how many. -->

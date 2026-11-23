@@ -62,7 +62,13 @@ Connections: no server, no accounts. This file is the plan and the one source on
         Not found in time, or refused, it's `Lost`. A link lost in the lobby, or after the game, is lost for good.
     - **Turn timeout**: on the host, a guest has `GUEST_TURN_MILLIS` (60 s, while the host's game is on screen) for each
         roll and move; one it doesn't make, the CPU makes, and the rest of that turn. A roll or move from the guest
-        takes the turn back.
+        takes the turn back. `TURN_WARNING_MILLIS` (15 s) before the end, the host sends that guest `TurnEnding`
+        (2026-11-23): its board says "Your turn is nearly up: play now, or the CPU will." and its phone buzzes, until
+        the next game it's sent. An older guest reads the message as nothing, so the protocol's version stays 1.
+    - **Reconnecting to the right host**: a host refuses a `Hello` carrying a token it never gave (`STARTED`), in the
+        lobby too; a guest coming back that's refused, or welcomed under another token (an older host of the same
+        name seating it afresh), stays `Reconnecting`, drops that link, and tries the next game of its host's name,
+        never again the one that refused it, until `RECONNECT_MILLIS` runs out (2026-11-23).
     - The board says so in a line over the players (a polite live region): the guest's "Reconnecting to the host...",
         "Lost the host's phone.", or "The host ended the game."; the host's "Jo dropped out: the CPU plays for now"
         (or how many did) (`NetplayNoticeTest`).
@@ -72,9 +78,12 @@ Connections: no server, no accounts. This file is the plan and the one source on
     on two phones, which needs a Play-signed build from an internal testing track (`PLAY_GAMES.md`, "Testing"), so a
     Play Console project first, and the data-safety form itself.
 
-Known gaps: a guest's Game Over "Play Again" starts a game on its own form; a host that leaves ends the session for
-everyone (each guest sees "The host ended the game"); a guest isn't warned before its turn runs out; and a guest that
-rejoins a host of the same name that isn't its own is refused, and gives up rather than trying another.
+**Playing again** (2026-11-23): the host's Game Over Play Again starts the next game with each guest in its seat, as
+named in the lobby, the CPU in a seat whose guest left, and sends it at once. A guest's Game Over has no Play Again:
+while it's linked, a line says "If the host plays again, the new game starts here.", and the host's next game (a new
+id) replaces the finished one there, set up afresh for its own seat's achievements and records.
+
+Known gap: a host that leaves ends the session for everyone (each guest sees "The host ended the game").
 
 ## Remote play (Phase 13)
 

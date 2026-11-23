@@ -15,7 +15,8 @@ import net.zodac.ludoplus.model.storedIdOf
 
 /**
  * The netplay protocol's version: a guest whose version isn't the host's is refused at [NetMessage.Hello], as neither
- * could read all of the other's messages. Bumped by any change an older app couldn't read.
+ * could read all of the other's messages. Bumped by any change an older app couldn't read. A new message an older app can
+ * do without ([NetMessage.TurnEnding]) needs none: [NetCodec] reads one it doesn't know as nothing.
  */
 const val PROTOCOL_VERSION = 1
 
@@ -55,6 +56,9 @@ sealed interface NetMessage {
 
     /** The host has ended the session: the game is over or abandoned. */
     data object Ended : NetMessage
+
+    /** The guest's turn is nearly up: the CPU makes the roll or move it's waiting for unless the guest does soon. */
+    data object TurnEnding : NetMessage
 }
 
 /** Why a guest wasn't given a seat. */
@@ -62,7 +66,7 @@ enum class RefusedReason(val id: String) {
     /** No Nearby seat is open. */
     FULL("full"),
 
-    /** The game has started without this guest. */
+    /** The game has started without this guest, or (for a guest coming back) its seat isn't at this host's table. */
     STARTED("started"),
 
     /** The apps' protocols differ: one of them needs updating. */
@@ -138,6 +142,7 @@ object NetCodec {
             put("game", message.json)
         }
         NetMessage.Ended -> buildJsonObject { put("type", "ended") }
+        NetMessage.TurnEnding -> buildJsonObject { put("type", "turn_ending") }
     }.toJson().encodeToByteArray()
 
     /** The message in [bytes], or null if it isn't one this app can read. */
@@ -166,6 +171,7 @@ object NetCodec {
             )
             "game" -> NetMessage.Game(obj.int("number"), obj.string("game"))
             "ended" -> NetMessage.Ended
+            "turn_ending" -> NetMessage.TurnEnding
             else -> null
         }
     }.getOrNull()

@@ -10,7 +10,9 @@ import net.zodac.ludoplus.data.records.GameRecordRepository
 import net.zodac.ludoplus.data.records.InMemoryGameResultDao
 import net.zodac.ludoplus.data.settings.SettingsRepository
 import net.zodac.ludoplus.game.GameState
+import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.RollOff
+import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
@@ -87,5 +89,58 @@ class NetplayNoticeTest : UiTest() {
         nearby.fromGuest("jo-again", NetMessage.Hello(PROTOCOL_VERSION, "Jo", null, token))
         compose.waitForIdle()
         compose.onNodeWithText("dropped out", substring = true).assertDoesNotExist()
+    }
+
+    /** A guest's phone, seated at Jo's seat (2) in Sam's game. */
+    private fun guest(nearby: FakeNearby): GameViewModel {
+        val guest = viewModel()
+        guest.join(nearby, FoundGame("host", "Sam"), "Jo", null)
+        checkNotNull(nearby.joinEvents)(LinkEvent.Connected("host"))
+        nearby.fromHost(NetMessage.Welcome(1, "t1"))
+        return guest
+    }
+
+    private val players = listOf(PlayerConfig(1, PlayerType.HUMAN, "Sam"), PlayerConfig(2, PlayerType.NEARBY, "Jo"))
+
+    @Test
+    fun `a guest hears that its turn is nearly up - until it's played`() = uiTest(TestScreen(411, 891)) {
+        val nearby = FakeNearby()
+        val guest = guest(nearby)
+        val game = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 1), RollOff(emptyList(), 1), id = "a".repeat(32))
+        nearby.fromHost(NetMessage.Game(1, SavedGameJson.encode(game)))
+        compose.waitForIdle()
+        show(guest)
+        compose.onNodeWithText("nearly up", substring = true).assertDoesNotExist()
+
+        nearby.fromHost(NetMessage.TurnEnding)
+        compose.waitForIdle()
+        compose.onNodeWithText("Your turn is nearly up: play now, or the CPU will.").assertExists()
+
+        nearby.fromHost(NetMessage.Game(2, SavedGameJson.encode(game.copy(state = LudoEngine.applyRoll(game.state, 3)))))
+        compose.waitForIdle()
+        compose.onNodeWithText("nearly up", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a guest's Game Over has no Play Again - it says the host's starts the next game - which then shows`() = uiTest(TestScreen(411, 891)) {
+        val nearby = FakeNearby()
+        val guest = guest(nearby)
+        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), RollOff(emptyList(), 0), id = "a".repeat(32))
+        val home = start.state.board.homeProgress
+        val finished = start.copy(
+            state = start.state.copy(phase = TurnPhase.Finished, finishingOrder = listOf(1, 0), players = start.state.players.map { it.copy(pawns = List(4) { home }) }),
+            finishMillis = mapOf(1 to 0L, 0 to 0L),
+        )
+        nearby.fromHost(NetMessage.Game(1, SavedGameJson.encode(finished)))
+        compose.waitForIdle()
+        show(guest)
+        compose.onNodeWithText("If the host plays again, the new game starts here.").assertExists()
+        compose.onNodeWithText("Play Again").assertDoesNotExist()
+        compose.onNodeWithText("Main Menu").assertExists()
+
+        nearby.fromHost(NetMessage.Game(2, SavedGameJson.encode(start.copy(id = "b".repeat(32), startedAtEpochMillis = 2_000L))))
+        compose.waitForIdle()
+        compose.onNodeWithText("If the host plays again", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Main Menu").assertDoesNotExist()
     }
 }

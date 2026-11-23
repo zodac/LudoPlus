@@ -58,6 +58,7 @@ import net.zodac.ludoplus.resources.gameover_captured
 import net.zodac.ludoplus.resources.gameover_duration_hours
 import net.zodac.ludoplus.resources.gameover_duration_minutes
 import net.zodac.ludoplus.resources.gameover_finished_in
+import net.zodac.ludoplus.resources.gameover_host_plays_again
 import net.zodac.ludoplus.resources.gameover_play_again
 import net.zodac.ludoplus.resources.gameover_review
 import net.zodac.ludoplus.resources.gameover_title
@@ -100,7 +101,8 @@ private const val CELEBRATION_MILLIS = 3300
  * [onCelebrated] is called as it starts.
  *
  * The ways on are [onReviewBoard] (back to the finished board), [onBackToMenu], and [onPlayAgain] (a new game with the
- * same players).
+ * same players). A guest's phone in a Nearby game has no [onPlayAgain]: with [hostPlaysAgain], a line says the host's
+ * Play Again starts the next game there.
  *
  * The [tutorial]'s shows the winner alone, without the game's figures, then a line that it's done, and two ways on:
  * Done ([onBackToMenu], back where it was started) and New Game ([onPlayAgain]).
@@ -109,12 +111,13 @@ private const val CELEBRATION_MILLIS = 3300
 fun GameOverScreen(
     game: StartedGame,
     onBackToMenu: () -> Unit,
-    onPlayAgain: () -> Unit,
+    onPlayAgain: (() -> Unit)?,
     onReviewBoard: () -> Unit,
     modifier: Modifier = Modifier,
     celebrate: Boolean = true,
     onCelebrated: () -> Unit = {},
     tutorial: Boolean = false,
+    hostPlaysAgain: Boolean = false,
 ) {
     val state = game.state
     val order = state.finishingOrder
@@ -175,7 +178,7 @@ fun GameOverScreen(
                                     OutlinedButton(onClick = onBackToMenu, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
                                         Text(stringResource(Res.string.gameover_tutorial_done), style = MaterialTheme.typography.titleMedium)
                                     }
-                                    Button(onClick = onPlayAgain, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
+                                    Button(onClick = { onPlayAgain?.invoke() }, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
                                         Text(stringResource(Res.string.gameover_tutorial_new_game), style = MaterialTheme.typography.titleMedium)
                                     }
                                 }
@@ -184,12 +187,23 @@ fun GameOverScreen(
                                     Text(stringResource(Res.string.gameover_review), style = MaterialTheme.typography.titleMedium)
                                 }
                                 Spacer(modifier = Modifier.height(12.dp))
+                                if (hostPlaysAgain) {
+                                    Text(
+                                        text = stringResource(Res.string.gameover_host_plays_again),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     OutlinedButton(onClick = onBackToMenu, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
                                         Text(stringResource(Res.string.gameover_main_menu), style = MaterialTheme.typography.titleMedium)
                                     }
-                                    Button(onClick = onPlayAgain, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
-                                        Text(stringResource(Res.string.gameover_play_again), style = MaterialTheme.typography.titleMedium)
+                                    if (onPlayAgain != null) {
+                                        Button(onClick = onPlayAgain, modifier = Modifier.weight(1f).heightIn(min = MAIN_ACTION_HEIGHT)) {
+                                            Text(stringResource(Res.string.gameover_play_again), style = MaterialTheme.typography.titleMedium)
+                                        }
                                     }
                                 }
                             }
