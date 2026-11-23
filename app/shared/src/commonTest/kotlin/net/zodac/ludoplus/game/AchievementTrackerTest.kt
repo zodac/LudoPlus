@@ -250,11 +250,11 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `Locked Out is 15 turns with every pawn still in the yard - a pawn captured back there doesn't count`() {
-        val fourteen = Play(game(turns = 13)).roll(3)
-        assertFalse(Achievement.LOCKED_OUT in fourteen.earned)
-        assertEquals(setOf(Achievement.LOCKED_OUT), Play(game(turns = 14)).roll(3).earned)
-        assertEquals(emptySet(), Play(game(turns = 14, timesCaptured = 1)).roll(3).earned)
+    fun `Locked Out is 5 turns with every pawn still in the yard - a pawn captured back there doesn't count`() {
+        val four = Play(game(turns = 3)).roll(3)
+        assertFalse(Achievement.LOCKED_OUT in four.earned)
+        assertEquals(setOf(Achievement.LOCKED_OUT), Play(game(turns = 4)).roll(3).earned)
+        assertEquals(emptySet(), Play(game(turns = 4, timesCaptured = 1)).roll(3).earned)
     }
 
     @Test
@@ -266,7 +266,7 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `a win against three Hard CPUs - with none captured either way - in few turns - before any opponent's pawn is home`() {
+    fun `a win against three Hard CPUs - with none captured either way - before any opponent's pawn is home`() {
         val play = Play(game(listOf(HOME, HOME, HOME, HOME - 1), listOf(10, Y, Y, Y), turns = 59), configs(difficulty = Difficulty.HARD)).play(1, pawn = 3)
         assertEquals(
             setOf(
@@ -276,8 +276,6 @@ class AchievementTrackerTest {
                 Achievement.CLEAN_SWEEP,
                 Achievement.PACIFIST,
                 Achievement.UNTOUCHABLE,
-                Achievement.SPEED_DEMON,
-                Achievement.LAST_HUMAN_STANDING,
                 Achievement.HOW_DO_YOU_DO_FELLOW_CPUS,
             ),
             play.earned,
@@ -500,17 +498,37 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `Full House is every pawn in the home column - Safety First every pawn on a safe square - Leapfrog three pawns passed in one move`() {
+    fun `Full House is every pawn in the home column - Leapfrog three pawns passed in one move`() {
         assertTrue(Achievement.FULL_HOUSE in Play(game(listOf(51, 52, 53, 49))).play(2, pawn = 3).earned)
         assertFalse(Achievement.FULL_HOUSE in Play(game(listOf(51, 52, HOME, 49))).play(2, pawn = 3).earned)
-
-        // Squares 0, 8, 13, and 21: starts and stars.
-        assertTrue(Achievement.SAFETY_FIRST in Play(game(listOf(0, 8, 13, 19))).play(2, pawn = 3).earned)
-        assertFalse(Achievement.SAFETY_FIRST in Play(game(listOf(0, 8, 13, 19))).play(1, pawn = 3).earned)
 
         // Green's pawns on squares 1, 2, and 3 (13 + 40 to 42): red's pawn from its start square to 6 passes them all.
         assertTrue(Achievement.LEAPFROG in Play(game(listOf(0, Y, Y, Y), listOf(40, 41, 42, Y))).play(6, pawn = 0).earned)
         assertFalse(Achievement.LEAPFROG in Play(game(listOf(0, Y, Y, Y), listOf(40, 41, Y, Y))).play(6, pawn = 0).earned)
+    }
+
+    @Test
+    fun `My Favourite Spot is every pawn on one square - but not the start square`() {
+        val track = Play(game(listOf(10, 10, 10, 7))).play(3, pawn = 3)
+        assertTrue(Achievement.MY_FAVOURITE_SPOT in track.earned)
+        assertTrue(Achievement.MY_FAVOURITE_SPOT in Play(game(listOf(52, 52, 52, LAST_TRACK))).play(2, pawn = 3).earned, "the home column counts")
+
+        assertFalse(Achievement.MY_FAVOURITE_SPOT in Play(game(listOf(0, 0, 0, Y))).play(6, pawn = 3).earned, "the start square doesn't count")
+        assertFalse(Achievement.MY_FAVOURITE_SPOT in Play(game(listOf(10, 10, 10, 6))).play(3, pawn = 3).earned)
+        assertFalse(Achievement.MY_FAVOURITE_SPOT in Play(game(listOf(HOME, HOME, HOME, 54))).play(2, pawn = 3).earned, "home isn't a square")
+    }
+
+    @Test
+    fun `We're All Friends Here is a pawn of every player on one square - by anyone's move`() {
+        // The star square 8: green's progress 47 (13 + 47), yellow's 34, and blue's 21.
+        val mine = Play(game(listOf(5, Y, Y, Y), listOf(47, Y, Y, Y), listOf(34, Y, Y, Y), listOf(21, Y, Y, Y))).play(3, pawn = 0)
+        assertTrue(Achievement.WERE_ALL_FRIENDS_HERE in mine.earned)
+
+        val theirs = Play(game(listOf(8, Y, Y, Y), listOf(44, Y, Y, Y), listOf(34, Y, Y, Y), listOf(21, Y, Y, Y), current = GREEN)).play(3, pawn = 0)
+        assertEquals(setOf(Achievement.WERE_ALL_FRIENDS_HERE), theirs.earned)
+
+        val noBlue = Play(game(listOf(5, Y, Y, Y), listOf(47, Y, Y, Y), listOf(34, Y, Y, Y), listOf(20, Y, Y, Y))).play(3, pawn = 0)
+        assertFalse(Achievement.WERE_ALL_FRIENDS_HERE in noBlue.earned, "Blue's pawn is a square short")
     }
 
     @Test
@@ -524,8 +542,6 @@ class AchievementTrackerTest {
 
         fun win(players: List<PlayerConfig> = configs(), turns: Int = 70, captures: Int = 0, timesCaptured: Int = 0) =
             Play(game(listOf(HOME, HOME, HOME, HOME - 1), turns = turns, captures = captures, timesCaptured = timesCaptured), players).play(1, pawn = 3).earned
-        assertTrue(Achievement.LIGHTNING_FAST in win(turns = 49))
-        assertFalse(Achievement.LIGHTNING_FAST in win(turns = 50))
         assertTrue(Achievement.CONQUEROR in win(captures = 10))
         assertFalse(Achievement.CONQUEROR in win(captures = 9))
         assertTrue(Achievement.NEVER_SAY_DIE in win(timesCaptured = 10))
@@ -582,8 +598,23 @@ class AchievementTrackerTest {
     @Test
     fun `Time Flies is an hour of one game on screen - once`() {
         val tracker = AchievementTracker(configs())
-        assertEquals(GameFeats(), tracker.playTime(59 * 60 * 1_000L))
-        assertEquals(GameFeats(setOf(Achievement.TIME_FLIES)), tracker.playTime(60 * 60 * 1_000L))
-        assertEquals(GameFeats(), tracker.playTime(2 * 60 * 60 * 1_000L))
+        val playing = game(listOf(10, Y, Y, Y))
+        assertEquals(GameFeats(), tracker.playTime(59 * 60 * 1_000L, playing))
+        assertEquals(GameFeats(setOf(Achievement.TIME_FLIES)), tracker.playTime(60 * 60 * 1_000L, playing))
+        assertEquals(GameFeats(), tracker.playTime(2 * 60 * 60 * 1_000L, playing))
+    }
+
+    @Test
+    fun `Speed Demon is player 1's win within 5 minutes of the game on screen - once - and never another's win`() {
+        val won = Play(game(listOf(HOME, HOME, HOME, HOME - 1))).play(1, pawn = 3).state
+        val minutes = { m: Int -> m * 60 * 1_000L }
+        assertEquals(GameFeats(), AchievementTracker(configs()).playTime(minutes(4), game(listOf(HOME, HOME, HOME, HOME - 1))), "not won yet")
+        assertEquals(GameFeats(), AchievementTracker(configs()).playTime(minutes(5) + 1, won))
+        val tracker = AchievementTracker(configs())
+        assertEquals(GameFeats(setOf(Achievement.SPEED_DEMON)), tracker.playTime(minutes(5), won))
+        assertEquals(GameFeats(), tracker.playTime(minutes(5), won), "once")
+
+        val lost = Play(game(listOf(HOME, HOME, HOME, 53), listOf(HOME, HOME, HOME, HOME - 1), current = GREEN)).play(1, pawn = 3).state
+        assertEquals(GameFeats(), AchievementTracker(configs()).playTime(minutes(1), lost), "green's win")
     }
 }

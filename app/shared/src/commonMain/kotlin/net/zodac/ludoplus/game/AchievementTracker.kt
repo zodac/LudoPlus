@@ -152,6 +152,7 @@ class AchievementTracker(
             }
         }
         if (after.players[mySeat].timesCaptured >= PUNCHING_BAG_CAPTURES) feats += Achievement.PUNCHING_BAG
+        if (event is GameEvent.Moved && everyPlayerSharesASquare(after)) feats += Achievement.WERE_ALL_FRIENDS_HERE
         // A partner isn't an opponent: in a team game, they're racing for player 1's place too.
         val opponents = after.players.indices.filter { it != mySeat && !after.rules.arePartners(mySeat, it) }
         val myHome = after.players[mySeat].pawnsHome(board)
@@ -183,10 +184,20 @@ class AchievementTracker(
         return GameFeats(feats, counts, won)
     }
 
-    /** What [playMillis] of this game on screen earns: [Achievement.TIME_FLIES] from an hour, once. */
-    fun playTime(playMillis: Long): GameFeats {
-        if (!active || playMillis < TIME_FLIES_MILLIS || !earned.add(Achievement.TIME_FLIES)) return GameFeats()
-        return GameFeats(setOf(Achievement.TIME_FLIES))
+    /**
+     * What [playMillis] of this game on screen earns, with the game now at [state]: [Achievement.TIME_FLIES] from an hour,
+     * and [Achievement.SPEED_DEMON] for player 1 placed first within [SPEED_DEMON_MILLIS]. Each once.
+     *
+     * Shown the play time as each step is made, so a win is seen with the time it was won in: the clock stops then.
+     */
+    fun playTime(playMillis: Long, state: GameState): GameFeats {
+        if (!active) return GameFeats()
+        val feats = buildSet {
+            if (playMillis >= TIME_FLIES_MILLIS) add(Achievement.TIME_FLIES)
+            if (state.winner != null && state.placeOf(mySeat) == 1 && playMillis <= SPEED_DEMON_MILLIS) add(Achievement.SPEED_DEMON)
+        } - earned
+        earned += feats
+        return GameFeats(feats)
     }
 
     /** Player 1's counts not yet handed over, now: for a game leaving the screen, which may never come back. */
@@ -302,12 +313,19 @@ class AchievementTracker(
         val pawns = after.players[mySeat].pawns
         val onBoard = pawns.filter { it in 0..<board.homeProgress }
         if (onBoard.size != onBoard.toSet().size) feats += Achievement.BUDDY_SYSTEM
+        if (pawns.distinct().singleOrNull().let { it != null && it in 1..<board.homeProgress }) feats += Achievement.MY_FAVOURITE_SPOT
         if (onBoard.size == pawnsPerPlayer) feats += Achievement.ALL_HANDS_ON_DECK
         if (pawns.all { it in board.trackSteps..<board.homeProgress }) feats += Achievement.FULL_HOUSE
-        if (pawns.all { it in 0..<board.trackSteps && board.isSafe(board.trackSquare(after.players[mySeat].seat, it)) }) {
-            feats += Achievement.SAFETY_FIRST
-        }
         if (passedOver(before, move) >= LEAPFROG_PAWNS) feats += Achievement.LEAPFROG
+    }
+
+    /** Whether one track square holds a pawn of every player in [state]. */
+    private fun everyPlayerSharesASquare(state: GameState): Boolean {
+        val board = state.board
+        return state.players
+            .map { player -> player.pawns.filter { it in 0..<board.trackSteps }.map { board.trackSquare(player.seat, it) }.toSet() }
+            .reduce { shared, squares -> shared intersect squares }
+            .isNotEmpty()
     }
 
     /** How many opponents' pawns stand on the track squares [move] passes over, between where it starts and lands. */
@@ -331,8 +349,6 @@ class AchievementTracker(
         if (me.captures >= CONQUEROR_CAPTURES) add(Achievement.CONQUEROR)
         if (me.timesCaptured == 0) add(Achievement.UNTOUCHABLE)
         if (me.timesCaptured >= NEVER_SAY_DIE_CAPTURED) add(Achievement.NEVER_SAY_DIE)
-        if (me.turns <= SPEED_DEMON_TURNS) add(Achievement.SPEED_DEMON)
-        if (me.turns <= LIGHTNING_TURNS) add(Achievement.LIGHTNING_FAST)
         if (firstHome == mySeat) add(Achievement.FRONT_RUNNER)
         if (lastOut) add(Achievement.LATE_BLOOMER)
         if (seenFromStart && !everBehind) add(Achievement.WIRE_TO_WIRE)
@@ -341,7 +357,6 @@ class AchievementTracker(
             val table = opponents.map { players[it] }
             if (table.all { it.type == PlayerType.HUMAN }) add(Achievement.LIFE_OF_THE_PARTY)
             if (table.all { it.type == PlayerType.AI }) {
-                add(Achievement.LAST_HUMAN_STANDING)
                 if (table.all { it.difficulty == Difficulty.HARD }) add(Achievement.HOW_DO_YOU_DO_FELLOW_CPUS)
                 if (table.all { it.difficulty == Difficulty.EASY }) add(Achievement.TRAINING_WHEELS)
             }
@@ -379,7 +394,7 @@ class AchievementTracker(
         const val WELCOME_PARTY_SQUARES = 6
         const val LEAPFROG_PAWNS = 3
         const val NEAR_MISSES = 3
-        const val LOCKED_OUT_TURNS = 15
+        const val LOCKED_OUT_TURNS = 5
         const val PUNCHING_BAG_CAPTURES = 15
         const val FULL_SPREAD_ROLLS = 6
         const val SIX_PACK_SIXES = 30
@@ -392,11 +407,8 @@ class AchievementTracker(
         val COUNTING_UP = (1..SIX).toList()
         const val TIME_FLIES_MILLIS = 60 * 60 * 1_000L
 
-        /** About the fastest tenth of wins against Medium CPUs (simulated, 2026-11-17): the average is about 80. */
-        const val SPEED_DEMON_TURNS = 60
-
-        /** About the fastest hundredth of wins against Medium CPUs (simulated, 2026-11-17). */
-        const val LIGHTNING_TURNS = 50
+        /** Five minutes of the game on screen (the maintainer, 2026-11-23). */
+        const val SPEED_DEMON_MILLIS = 5 * 60 * 1_000L
         const val FULL_TABLE_OPPONENTS = 3
     }
 }

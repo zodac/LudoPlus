@@ -3,8 +3,6 @@ package net.zodac.ludoplus.ui.styles
 import androidx.compose.ui.graphics.Color
 import net.zodac.ludoplus.ui.theme.color
 import net.zodac.ludoplus.model.PlayerColour
-import net.zodac.ludoplus.ui.game.YARD_PAWN_RADIUS
-import net.zodac.ludoplus.ui.game.PAWN_RADIUS
 import net.zodac.ludoplus.ui.game.ClassicBoardLayout
 import net.zodac.ludoplus.ui.common.DevicePullEffect
 import net.zodac.ludoplus.ui.style.PawnStyle
@@ -172,7 +170,7 @@ import net.zodac.ludoplus.ui.theme.GoldAccent
 // Each category's tile size on its page, and the shape its pick's preview is scaled from on the Styles page.
 private val DICE_PREVIEW_SIZE = 72.dp
 private val DIE_ART_SIZE = 44.dp
-// A corner of the board (BoardCornerPreview): a yard with its pawns and the track beside it, the shape a frame once
+// A corner of the board (BoardCornerPreview): a yard and the track beside it, the shape a frame once
 // had - small enough for three across a gallery on a ~376dp phone (3 x 97dp in ~320dp, with 12dp gaps).
 private val BOARD_PREVIEW_WIDTH = 97.dp
 private val BOARD_PREVIEW_HEIGHT = 76.dp
@@ -336,7 +334,6 @@ internal fun StyleCategoryTiles(
         }
 
         StyleCategory.BOARD -> run {
-            val pawns = picks.visualTheme.pawns
             StyleFamilyTiles(
                 catalog = BoardStyles,
                 selectedId = picks.boardStyleId,
@@ -349,12 +346,11 @@ internal fun StyleCategoryTiles(
                 unlockedOnly = unlockedOnly,
                 flashOverArt = true,
             ) { board ->
-                BoardCornerPreview(board, pawns, modifier = Modifier.matchParentSize())
+                BoardCornerPreview(board, modifier = Modifier.matchParentSize())
             }
         }
 
         StyleCategory.PAWNS -> run {
-            val board = picks.visualTheme.board
             StyleFamilyTiles(
                 catalog = PawnStyles,
                 selectedId = picks.pawnStyleId,
@@ -367,7 +363,7 @@ internal fun StyleCategoryTiles(
                 unlockedOnly = unlockedOnly,
                 flashOverArt = true,
             ) { pawns ->
-                BoardCornerPreview(board, pawns, modifier = Modifier.matchParentSize())
+                PawnPreview(pawns, modifier = Modifier.matchParentSize())
             }
         }
 
@@ -1068,7 +1064,7 @@ private fun unlockRequirement(family: StyleFamily<*>, access: StyleAccess): Stri
     when (val unlock = family.unlock) {
         StyleUnlock.Free -> stringResource(Res.string.styles_unlock_free, stringResource(family.name))
         is StyleUnlock.AchievementCount ->
-            pluralStringResource(Res.plurals.styles_unlock_count, unlock.count, unlock.count, stringResource(family.name), access.achievements.countedUnlocks)
+            pluralStringResource(Res.plurals.styles_unlock_count, unlock.count, unlock.count, stringResource(family.name), access.achievements.unlockedCount)
         // Never a secret one: its style isn't shown until it's earned (StyleUnlock.hiddenWhileLocked).
         is StyleUnlock.SpecificAchievement -> stringResource(Res.string.styles_unlock_specific, stringResource(unlock.achievement.title), stringResource(family.name))
         is StyleUnlock.AnyAchievement ->
@@ -1173,32 +1169,28 @@ private val CornerSeatColours: List<Color> by lazy {
     List(seats) { PlayerColour.defaultFor((it - CORNER_SEAT).mod(seats)).color }
 }
 
-/** Where [BoardCornerPreview]'s other player's pawn stands: the first track square beside the corner's yard that isn't its own. */
-private val CornerVisitorSquare: Int by lazy {
-    (0..<ClassicBoardLayout.geometry.trackLength).first { square ->
-        val cell = ClassicBoardLayout.trackCell(square)
-        cell.column in ClassicBoardLayout.YARD_SIZE..CORNER_VIEW_WIDTH.toInt() - 1 && cell.row in 1..<ClassicBoardLayout.YARD_SIZE
+/**
+ * A corner of the board in [board]'s style, bare: the top-left yard ([CORNER_SEAT]'s) and the track beside it, in the
+ * default seat colours from the first. The Board tiles' preview; no pawns, so it doesn't read as a Pawns tile.
+ */
+@Composable
+private fun BoardCornerPreview(board: BoardStyle, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.clipToBounds()) {
+        with(board) { drawBoard(ClassicBoardLayout, size.width / CORNER_VIEW_WIDTH, CornerSeatColours) }
     }
 }
 
+/** The share of its tile's height [PawnPreview]'s pawn is drawn at, as the radius a style's pawn stands within. */
+private const val PAWN_PREVIEW_RADIUS = 0.36f
+
 /**
- * A corner of the board in [board]'s style, its pawns in [pawns]': the top-left yard ([CORNER_SEAT]'s) with three of its
- * pawns, the fourth out on its start square, and the next seat's pawn on the track beside the yard, in the default seat
- * colours from the first. The
- * Board and Pawns tiles' preview, each showing the player's pick of the other.
+ * One pawn in [pawns]' style, alone and centred, in [CORNER_SEAT]'s default colour: the Pawns tiles' preview. No board
+ * under it, so it doesn't read as a Board tile.
  */
 @Composable
-private fun BoardCornerPreview(board: BoardStyle, pawns: PawnStyle, modifier: Modifier = Modifier) {
+private fun PawnPreview(pawns: PawnStyle, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier.clipToBounds()) {
-        val unit = size.width / CORNER_VIEW_WIDTH
-        with(board) { drawBoard(ClassicBoardLayout, unit, CornerSeatColours) }
-        with(pawns) {
-            val colour = CornerSeatColours[CORNER_SEAT]
-            for (slot in 0..2) drawPawn(ClassicBoardLayout.yardSpot(CORNER_SEAT, slot) * unit, YARD_PAWN_RADIUS * unit, colour, ringed = false)
-            val start = ClassicBoardLayout.trackCell(ClassicBoardLayout.geometry.startSquare(CORNER_SEAT))
-            drawPawn(start.centre * unit, PAWN_RADIUS * unit, colour, ringed = false)
-            drawPawn(ClassicBoardLayout.trackCell(CornerVisitorSquare).centre * unit, PAWN_RADIUS * unit, CornerSeatColours[CORNER_SEAT + 1], ringed = false)
-        }
+        with(pawns) { drawPawn(center, size.height * PAWN_PREVIEW_RADIUS, CornerSeatColours[CORNER_SEAT], ringed = false) }
     }
 }
 
@@ -1226,12 +1218,12 @@ internal fun StylePickPreview(category: StyleCategory, picks: SavedStyles) {
 
             StyleCategory.BOARD ->
                 StylePreview(BoardStyles.unlockedById(picks.boardStyleId, access), size, selected = false, { SolidColor(surface) }, { board ->
-                    BoardCornerPreview(board, picks.visualTheme.pawns, modifier = Modifier.matchParentSize())
+                    BoardCornerPreview(board, modifier = Modifier.matchParentSize())
                 })
 
             StyleCategory.PAWNS ->
                 StylePreview(PawnStyles.unlockedById(picks.pawnStyleId, access), size, selected = false, { SolidColor(surface) }, { pawns ->
-                    BoardCornerPreview(picks.visualTheme.board, pawns, modifier = Modifier.matchParentSize())
+                    PawnPreview(pawns, modifier = Modifier.matchParentSize())
                 })
 
             StyleCategory.BACKGROUND ->

@@ -76,8 +76,7 @@ import net.zodac.ludoplus.online.OnlineSyncRequests
  * Its play time ([StartedGame.playMillis]) counts, by [elapsedMillis], only while it's on screen and not held.
  *
  * Given a [tutorial], it plays that guided game instead ([startTutorial]): every roll and move is the script's, only the
- * step's own action is taken, and nothing is kept (no save, no records, no setup saved, and no achievements but
- * finishing it).
+ * step's own action is taken, and nothing is kept (no save, no records, no setup saved, and no achievements).
  *
  * Every step of a game is shown to an [AchievementTracker], and what it earns player 1 goes to [achievements] (none
  * without one): a new game's start, at [localHour] of its start time, and a saved game's continuing too.
@@ -184,7 +183,7 @@ class GameViewModel(
             if (timedOutSeat != timed.state.current) timedOutSeat = null
             timeGuestTurn(timed)
         }
-        tracker?.let { record(it.playTime(timed.playMillis)) }
+        tracker?.let { record(it.playTime(timed.playMillis, timed.state)) }
         // A guest's game is the host's to keep: nothing to save here, but its own seat's records.
         if (timed.guestSeat != null) {
             if (timed.state.isFinished && !wasFinished) recordFinished(timed)
@@ -499,10 +498,6 @@ class GameViewModel(
             val step = progress.current
             when {
                 step != null -> progress.shown.value = step
-                progress.part.value == progress.script.parts.lastIndex -> {
-                    // Its last step played: the one thing the tutorial earns.
-                    achievements?.let { withContext(NonCancellable) { orNullOnFailure { it.record(AchievementEngine.atTutorialEnd()) } } }
-                }
                 progress.part.value < progress.script.parts.lastIndex -> {
                     // A beat on the part's last move before the board is set out for the next.
                     pausableDelay(pacing.thinkMillis)
@@ -933,7 +928,6 @@ class GameViewModel(
                     savedGame = container.inProgressGameRepository,
                     records = container.gameRecordRepository,
                     tutorial = script,
-                    achievements = container.achievementUnlocker,
                     savedStyles = container.savedStyles,
                 )
             }

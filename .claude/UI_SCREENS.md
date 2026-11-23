@@ -16,7 +16,7 @@ Achievements, banners, Styles, Leaderboard and menu decisions. The general rules
 
 ## The achievements list
 
-**One list, grouped by theme, easiest first** (the declaration order of `Achievement`). Winning, Misfortune, and
+**One list, grouped by theme, easiest first** (the declaration order of `Achievement`), Completionist last of the Milestones. Winning, Misfortune, and
 Miscellaneous run in alphabetical order instead, and so do the Easter Eggs, which come last.
 
 - **Unlocking doesn't move a row.** It's highlighted in place, with its own icon and a raised `secondaryContainer`
@@ -26,7 +26,7 @@ Miscellaneous run in alphabetical order instead, and so do the Easter Eggs, whic
     wraps to two lines at 12sp: unlike the banner, which keeps one line down to 11sp. `AchievementsTextTest` pins it. The
     row sits under `IntrinsicSize.Min` (equal cards in landscape), so `ShrinkThenWrapText` answers intrinsic heights.
 - **The count is "earned of total", and the Easter Eggs are in earned but not in total**: a player with everything
-    reads "110 of 100 earned". This is intended, not a bug (`AchievementsTextTest`). It is not about secrecy: every
+    reads "101 of 94 earned". This is intended, not a bug (`AchievementsTextTest`). It is not about secrecy: every
     Easter Egg's row (title shown, description "???") is in the list from the start.
 - The unlocked/total count sits centred above the list. In landscape, where the list has two cards to a row, it moves
     into the app bar after the back arrow, with the Unearned switch at the bar's end (see `UI.md`, "Landscape pages").
@@ -142,7 +142,7 @@ The constants are at the top of `AchievementBannerHost.kt`:
     - **Order.** `announce(update, ownsAllStyles)` (`app/AchievementEvents.kt`) emits each unlock followed by its own styles banner if
         it has styles behind it (`styleRewards`: "Earned 'Big Fan': 'Glitch' dice and background", or "the hidden
         'Multicolour' dice colour"); then **at most one** styles banner for every count lock crossed
-        (`stylesUnlockedByCount`, from `countedUnlocksBefore` to `countedUnlocksAfter`); then the progress nudges.
+        (`stylesUnlockedByCount`, from `unlockedCountBefore` to `unlockedCountAfter`); then the progress nudges.
     - The achievement's own banner keeps its star.
     - **None for an owner of every style** (the purchase, `PURCHASES.md`): `AchievementUnlocker` reads `ownsAllStyles` as
         it announces, and only the unlock and progress banners show. The star stays on rows and unlock banners.
@@ -169,7 +169,7 @@ available. `StyleRegistryTest` keeps the counts within what can be earned.
 - **Behind a specific achievement**, shown padlocked:
     - Googly die (Completionist);
     - Glitch die and background (Big Fan);
-    - Maths die (Number Cruncher);
+    - Maths die (Counting Up);
     - Wireframe die (Are You A Developer?);
     - Devil die (Too Much Of A Good Thing);
     - Starry die and background (Midnight Run).
@@ -214,8 +214,8 @@ landscape, filling the page.
     the preview has the card's height.
 - The preview is the pick's tile, still: no badge or dots, scaled to fill its room (`MIN_PREVIEW_SCALE`..
     `MAX_PREVIEW_SCALE`), from the room's start, so every preview lines up with its heading whatever its shape. The
-    Board and Pawns previews are a corner of the board (`BoardCornerPreview`), each in its pick with the player's pick
-    of the other.
+    Board preview is a bare corner of the board, no pawns (`BoardCornerPreview`); the Pawns preview one pawn alone, in
+    player 1's colour, no board (`PawnPreview`), so neither reads as the other (the maintainer, 2026-11-23).
 - Rejected on review: a blue field inside the card as New Game's pickers (wasted space; then the previews too small),
     no cards (the art bare on the backdrop), a tight card round the art alone, the chevron on the art's edge, the names
     under the preview in landscape (the previews tiny), and centred previews (the narrow cup stood apart).
@@ -263,7 +263,7 @@ app bar end (`UnlockAllStylesButton`, `UnlockAllStylesIcon`, `UnlockAllStylesBut
     tile; sides are `TILES_SIDE_PADDING` (8dp). On a 360dp phone this fits four dice or backgrounds
     (`StyleCategoryPageTest`), and three boards or pawns.
 - **Tile sizes.** Dice are 72x72dp. Backgrounds are 72x80dp (a phone's game screen, a little taller than wide). Boards
-    and pawns are 97x76dp, so three fit across: a corner of the board, `CORNER_VIEW_WIDTH` (9) squares across.
+    and pawns are 97x76dp, so three fit across: a board's corner, `CORNER_VIEW_WIDTH` (9) squares across, or one pawn.
 - **Fitting the screen** (decided 2026-11-10): only at a larger font or display size (`isDisplayZoomed`: the screen's
     density above `PlatformServices.defaultDensity`), a category page that would scroll draws its tiles smaller to fit
     (`fittedTileScale`): smaller dp, the same sp, so the names keep their size, and a smaller tile can gain a column.

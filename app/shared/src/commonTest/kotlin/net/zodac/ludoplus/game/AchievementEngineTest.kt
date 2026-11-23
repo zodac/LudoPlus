@@ -8,13 +8,11 @@ import net.zodac.ludoplus.model.Achievement
 import net.zodac.ludoplus.model.AchievementCategory
 import net.zodac.ludoplus.model.AchievementCounter
 import net.zodac.ludoplus.model.AchievementVisibility
-import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.GameMode
-import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
 import net.zodac.ludoplus.model.ProgressStyle
-import net.zodac.ludoplus.model.maxPlayerNameLength
+import net.zodac.ludoplus.model.RETIRED_ACHIEVEMENT_IDS
 
 private const val NOW = 1_000L
 
@@ -85,46 +83,29 @@ class AchievementEngineTest {
         assertTrue(Achievement.MIDNIGHT_RUN !in AchievementEngine.atGameStart(PLAYERS, null, 23).achievements)
 
         assertEquals(GameFeats(setOf(Achievement.LETS_FINISH_THIS)), AchievementEngine.atGameResume())
-        assertEquals(GameFeats(setOf(Achievement.BACK_TO_SCHOOL)), AchievementEngine.atTutorialEnd())
         assertEquals(GameFeats(setOf(Achievement.SIDEWAYS)), AchievementEngine.atSideways())
     }
 
     @Test
-    fun `every name with one first letter is Alliteration - a person's name as wide as allowed What's In A Name`() {
+    fun `every name with one first letter is Alliteration`() {
         val names = listOf("Mia", "max", "Moe", "Mel")
         val same = PLAYERS.mapIndexed { i, player -> player.copy(name = names[i]) }
         assertTrue(Achievement.ALLITERATION in AchievementEngine.atGameStart(same, null, 14).achievements)
         assertTrue(Achievement.ALLITERATION !in AchievementEngine.atGameStart(PLAYERS, null, 14).achievements, "Me, P2, P3, P4")
         val digits = PLAYERS.mapIndexed { i, player -> player.copy(name = "${i}x") }
         assertTrue(Achievement.ALLITERATION !in AchievementEngine.atGameStart(digits, null, 14).achievements)
-
-        // The form's cap, the most players' whatever the count, so a game of two can earn it too.
-        val cap = maxPlayerNameLength(BoardGeometry.MAX_PLAYERS)
-        val long = PLAYERS.toMutableList().apply { this[0] = this[0].copy(name = "W".repeat(cap)) }
-        assertTrue(Achievement.WHATS_IN_A_NAME in AchievementEngine.atGameStart(long, null, 14).achievements)
-        assertTrue(Achievement.WHATS_IN_A_NAME in AchievementEngine.atGameStart(long.take(2), null, 14).achievements)
-        val short = PLAYERS.toMutableList().apply { this[0] = this[0].copy(name = "W".repeat(cap - 1)) }
-        assertTrue(Achievement.WHATS_IN_A_NAME !in AchievementEngine.atGameStart(short, null, 14).achievements)
-        val cpu = PLAYERS.toMutableList().apply { this[1] = this[1].copy(name = "W".repeat(cap)) }
-        assertTrue(Achievement.WHATS_IN_A_NAME !in AchievementEngine.atGameStart(cpu, null, 14).achievements, "a CPU's name isn't typed")
     }
 
     @Test
-    fun `a player named Ludo is Who's Ludo - player 1 named CPU I Am Not A Robot - nobody in their seat's colour Musical Chairs`() {
+    fun `a player named Ludo is Who's Ludo`() {
         val ludo = PLAYERS.toMutableList().apply { this[3] = PlayerConfig(4, PlayerType.AI, "ludo") }
         assertTrue(Achievement.WHOS_LUDO in AchievementEngine.atGameStart(ludo, null, 14).achievements)
         assertTrue(Achievement.WHOS_LUDO !in AchievementEngine.atGameStart(PLAYERS, null, 14).achievements)
+    }
 
-        val cpu = PLAYERS.toMutableList().apply { this[0] = PlayerConfig(1, PlayerType.HUMAN, "Cpu") }
-        assertTrue(Achievement.I_AM_NOT_A_ROBOT in AchievementEngine.atGameStart(cpu, null, 14).achievements)
-        val opponentCpu = PLAYERS.toMutableList().apply { this[1] = PlayerConfig(2, PlayerType.HUMAN, "CPU") }
-        assertTrue(Achievement.I_AM_NOT_A_ROBOT !in AchievementEngine.atGameStart(opponentCpu, null, 14).achievements)
-
-        // Each in the next seat's colour round the table.
-        val shuffled = PLAYERS.mapIndexed { seat, player -> player.copy(colour = PlayerColour.defaultFor(seat + 1)) }
-        assertTrue(Achievement.MUSICAL_CHAIRS in AchievementEngine.atGameStart(shuffled, null, 14).achievements)
-        val oneHome = shuffled.toMutableList().apply { this[2] = this[2].copy(colour = PlayerColour.defaultFor(2)); this[3] = this[3].copy(colour = PlayerColour.defaultFor(1)) }
-        assertTrue(Achievement.MUSICAL_CHAIRS !in AchievementEngine.atGameStart(oneHome, null, 14).achievements)
+    @Test
+    fun `no achievement takes a retired one's id`() {
+        assertTrue(Achievement.entries.none { it.id in RETIRED_ACHIEVEMENT_IDS }, Achievement.entries.filter { it.id in RETIRED_ACHIEVEMENT_IDS }.toString())
     }
 
     @Test

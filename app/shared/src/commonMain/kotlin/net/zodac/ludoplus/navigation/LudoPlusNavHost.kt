@@ -24,7 +24,6 @@ import net.zodac.ludoplus.app.AppContainer
 import net.zodac.ludoplus.app.LocalAppContainer
 import net.zodac.ludoplus.data.orNullOnFailure
 import net.zodac.ludoplus.game.style.StyleCategory
-import net.zodac.ludoplus.model.Achievement
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.common_default_player_name
 import net.zodac.ludoplus.resources.game_tutorial_cpu_name
@@ -87,12 +86,6 @@ fun LudoPlusNavHost(navController: NavHostController = rememberNavController(), 
         }
         PageCoverOverlay(cover)
     }
-}
-
-/** Earns [achievement] as the page it's in is opened ("Read The Manual", "Number Cruncher"). */
-@Composable
-private fun EarnedOnOpening(container: AppContainer, achievement: Achievement) {
-    LaunchedEffect(achievement) { container.achievementUnlocker.unlock(setOf(achievement)) }
 }
 
 /** Each page, opened by a [change] of page under the cover. */
@@ -199,7 +192,6 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
         )
     }
     composable(Screen.RULES) {
-        EarnedOnOpening(container, Achievement.READ_THE_MANUAL)
         RulesScreen(onBack = navigateUp, onStartTutorial = { navigate(Screen.TUTORIAL) })
     }
     composable(Screen.TUTORIAL) {
@@ -226,7 +218,6 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
         LeaderboardScreen(viewModel = viewModel(factory = LeaderboardViewModel.factory(container)), onBack = navigateUp)
     }
     composable(Screen.STATISTICS) {
-        EarnedOnOpening(container, Achievement.NUMBER_CRUNCHER)
         StatisticsScreen(viewModel = viewModel(factory = StatisticsViewModel.factory(container)), onBack = navigateUp)
     }
     composable(Screen.ACHIEVEMENTS) {

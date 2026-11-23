@@ -2,14 +2,9 @@ package net.zodac.ludoplus.game
 
 import net.zodac.ludoplus.data.achievements.AchievementsState
 import net.zodac.ludoplus.model.Achievement
-import net.zodac.ludoplus.model.AchievementCategory
 import net.zodac.ludoplus.model.AchievementCounter
-import net.zodac.ludoplus.model.BoardGeometry
-import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
-import net.zodac.ludoplus.model.maxPlayerNameLength
-import net.zodac.ludoplus.model.nameWidth
 import net.zodac.ludoplus.model.ProgressStyle
 
 /** One "getting closer" banner: [achievement] moved from [previous] to [current] out of its target. */
@@ -21,13 +16,13 @@ data class AchievementUpdate(
     val counters: Map<AchievementCounter, Int> = emptyMap(),
     val progressed: List<AchievementProgress> = emptyList(),
     val unlockedAtMillis: Long = 0L,
-    /** [AchievementsState.countedUnlocks] before this update - what a style's count lock is measured against. */
-    val countedUnlocksBefore: Int = 0,
+    /** [AchievementsState.unlockedCount] before this update - what a style's count lock is measured against. */
+    val unlockedCountBefore: Int = 0,
 ) {
     val isEmpty: Boolean get() = newlyUnlocked.isEmpty() && counters.isEmpty() && progressed.isEmpty()
 
-    /** [AchievementsState.countedUnlocks] once this update is recorded: Easter Eggs aren't counted. */
-    val countedUnlocksAfter: Int get() = countedUnlocksBefore + newlyUnlocked.count { it.category != AchievementCategory.EASTER_EGGS }
+    /** [AchievementsState.unlockedCount] once this update is recorded, Easter Eggs included. */
+    val unlockedCountAfter: Int get() = unlockedCountBefore + newlyUnlocked.size
 
     fun unlockedAt(): Map<Achievement, Long> = newlyUnlocked.associateWith { unlockedAtMillis }
 }
@@ -60,9 +55,6 @@ object AchievementEngine {
     /** [Achievement.WHOS_LUDO]'s player's name, in any case. */
     private const val LUDO_NAME = "Ludo"
 
-    /** [Achievement.I_AM_NOT_A_ROBOT]'s name for player 1, in any case. */
-    private const val CPU_NAME = "CPU"
-
     /** The hours a new game starts in for [Achievement.MIDNIGHT_RUN]: midnight up to 6am. */
     private val MIDNIGHT_HOURS = 0 until 6
 
@@ -84,19 +76,13 @@ object AchievementEngine {
             if (players.withIndex().any { (seat, it) -> seat != mySeat && it.type in people && it.name == CREATOR_NAME }) add(Achievement.BIG_FAN)
             if (localHour in MIDNIGHT_HOURS) add(Achievement.MIDNIGHT_RUN)
             if (players.any { it.name.equals(LUDO_NAME, ignoreCase = true) }) add(Achievement.WHOS_LUDO)
-            if (me.name.equals(CPU_NAME, ignoreCase = true)) add(Achievement.I_AM_NOT_A_ROBOT)
             if (players.map { it.name.firstOrNull()?.lowercaseChar() }.distinct().singleOrNull()?.isLetter() == true) add(Achievement.ALLITERATION)
-            if (players.any { it.type == PlayerType.HUMAN && it.name.nameWidth() >= maxPlayerNameLength(BoardGeometry.MAX_PLAYERS) }) add(Achievement.WHATS_IN_A_NAME)
-            if (players.withIndex().all { (seat, player) -> player.colour != PlayerColour.defaultFor(seat) }) add(Achievement.MUSICAL_CHAIRS)
         }
         return GameFeats(earned)
     }
 
     /** What a game shown with the phone on its side earns. */
     fun atSideways(): GameFeats = GameFeats(setOf(Achievement.SIDEWAYS))
-
-    /** What finishing the tutorial earns. */
-    fun atTutorialEnd(): GameFeats = GameFeats(setOf(Achievement.BACK_TO_SCHOOL))
 
     /** What continuing a saved game earns. */
     fun atGameResume(): GameFeats = GameFeats(setOf(Achievement.LETS_FINISH_THIS))
@@ -131,7 +117,7 @@ object AchievementEngine {
             newlyUnlocked += Achievement.COMPLETIONIST
         }
         val progressed = Achievement.entries.mapNotNull { progressEvent(it, counters, before, newlyUnlocked) }
-        return AchievementUpdate(newlyUnlocked, counters, progressed, now, countedUnlocksBefore = before.countedUnlocks)
+        return AchievementUpdate(newlyUnlocked, counters, progressed, now, unlockedCountBefore = before.unlockedCount)
     }
 
     /**
@@ -147,7 +133,7 @@ object AchievementEngine {
         if (!before.isUnlocked(Achievement.COMPLETIONIST) && (before.unlockedAt.keys + reached).containsAll(Achievement.COMPLETION_REQUIREMENTS)) {
             reached += Achievement.COMPLETIONIST
         }
-        return AchievementUpdate(reached, unlockedAtMillis = now, countedUnlocksBefore = before.countedUnlocks)
+        return AchievementUpdate(reached, unlockedAtMillis = now, unlockedCountBefore = before.unlockedCount)
     }
 
     /** How far along [achievement] is with [counters], capped at its target. */

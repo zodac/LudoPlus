@@ -137,16 +137,10 @@ val AchievementHeartRed = Color(0xFFE53935)
 /** Are You A Developer?'s icon: Android's developer cyan. */
 val AchievementDeveloperCyan = Color(0xFF3FE6FF)
 
-/** I Am Not A Robot's toy robot: brushed silver. */
-val AchievementRobotSilver = Color(0xFFC9CED6)
-
-/** Musical Chairs' note: brass gold. */
-val AchievementMusicGold = Color(0xFFF2C14E)
-
 /** Who's Ludo?'s name badge: the brand's own violet seed. */
 val AchievementBadgeViolet = Color(0xFF9C6BFF)
 
-/** Alliteration's letters and What's In A Name?'s signature: fountain-pen ink blue. */
+/** Alliteration's letters: fountain-pen ink blue. */
 val AchievementInkBlue = Color(0xFF6FA8FF)
 
 /** Sideways' turning phone: teal. */

@@ -33,8 +33,8 @@ import net.zodac.ludoplus.ui.style.StyleCatalogs
 @OptIn(ExperimentalCoroutinesApi::class)
 class StylesUnlockedBannerTest {
 
-    /** The achievements a count lock counts: every one but an Easter Egg. */
-    private val countedAchievements = Achievement.entries.filter { it.category != AchievementCategory.EASTER_EGGS }
+    /** The achievements a count lock counts: every one, Easter Eggs included, those with styles of their own last. */
+    private val countedAchievements = Achievement.entries.sortedBy { it.styleRewards.isNotEmpty() }
 
     /** Every count-locked style, with the count that unlocks it. */
     private val countLocks: List<Pair<Int, StyleReward>> = StyleCatalogs.flatMap { catalog ->
@@ -42,6 +42,12 @@ class StylesUnlockedBannerTest {
             (family.unlock as? StyleUnlock.AchievementCount)?.let { it.count to StyleReward(family.name, catalog.noun) }
         }
     }
+
+    /**
+     * The highest count a lock waits on that can be reached: the 95 and 100 locks can't until the maintainer's new
+     * achievements come (2026-11-23; `StyleRegistryTest`).
+     */
+    private val highestCountInReach: Int get() = countLocks.map { it.first }.filter { it <= countedAchievements.size }.max()
 
     private fun stateWith(counted: Int, vararg extra: Achievement): AchievementsState =
         AchievementsState((countedAchievements.take(counted) + extra).associateWith { 0L })
@@ -80,23 +86,23 @@ class StylesUnlockedBannerTest {
             if (count !in counts) assertEquals(emptyList(), stylesUnlockedByCount(count - 1, count), "at $count")
         }
 
-        // Across categories - and no specifically locked one.
+        // Across categories - and no specifically locked one, nor one waiting on a count beyond them all.
         val all = stylesUnlockedByCount(0, countedAchievements.size)
-        assertEquals(countLocks.map { it.second }.toSet(), all.toSet())
+        assertEquals(countLocks.filter { it.first <= countedAchievements.size }.map { it.second }.toSet(), all.toSet())
         assertTrue(all.map { it.categoryNoun }.toSet().size > 1, "$all")
         assertTrue(all.none { it.styleName == Res.string.style_family_maths || it.styleName == Res.string.style_family_starry }, "$all")
     }
 
     @Test
     fun `an update crossing counts announces one styles banner after its unlocks - and none when no count is reached`() {
-        // An update knows the counted achievements before and after it.
+        // An update knows the achievements earned before and after it.
         val update = AchievementEngine.unlockNow(setOf(countedAchievements[22]), stateWith(22), 0L)
-        assertEquals(22, update.countedUnlocksBefore)
-        assertEquals(23, update.countedUnlocksAfter)
-        // An Easter Egg isn't counted: earning one moves no count lock.
+        assertEquals(22, update.unlockedCountBefore)
+        assertEquals(23, update.unlockedCountAfter)
+        // An Easter Egg counts like any other.
         val egg = Achievement.entries.first { it.category == AchievementCategory.EASTER_EGGS }
         val eggUpdate = AchievementEngine.unlockNow(setOf(egg), stateWith(22), 0L)
-        assertEquals(22, eggUpdate.countedUnlocksAfter)
+        assertEquals(23, eggUpdate.unlockedCountAfter)
 
         val crossing = AchievementEngine.unlockNow(countedAchievements.subList(20, 30).toSet(), stateWith(20), 0L)
         val expectedStyles = stylesUnlockedByCount(20, 30)
@@ -112,20 +118,21 @@ class StylesUnlockedBannerTest {
 
     @Test
     fun `an achievement with styles behind it is followed by their own banner - before the count's and the progress`() {
-        val ownStyle = AchievementEngine.unlockNow(setOf(Achievement.NUMBER_CRUNCHER), stateWith(0), 0L)
+        val ownStyle = AchievementEngine.unlockNow(setOf(Achievement.COUNTING_UP), stateWith(0), 0L)
         assertEquals(
             listOf(
-                AchievementEvent.Unlocked(Achievement.NUMBER_CRUNCHER),
+                AchievementEvent.Unlocked(Achievement.COUNTING_UP),
                 AchievementEvent.StylesUnlocked(
                     listOf(UnlockedStyle(Res.string.style_family_maths, Res.string.style_noun_dice)),
-                    StylesEarnedBy.OneAchievement(Achievement.NUMBER_CRUNCHER),
+                    StylesEarnedBy.OneAchievement(Achievement.COUNTING_UP),
                 ),
             ),
             events { announce(ownStyle, ownsAllStyles = false) },
         )
 
-        // With a count crossed too (Garden dice at 95): the achievement's banner, its styles, then the count's styles.
-        val crossing = AchievementEngine.unlockNow(setOf(countedAchievements[94], Achievement.BIG_FAN), stateWith(94), 0L)
+        // With a count crossed too: the achievement's banner, its styles, then the count's styles.
+        val count = highestCountInReach
+        val crossing = AchievementEngine.unlockNow(setOf(countedAchievements[count - 1], Achievement.BIG_FAN), stateWith(count - 1), 0L)
         val banners = events { announce(crossing, ownsAllStyles = false) }.filter { it !is AchievementEvent.Progressed }
         val bigFan = banners.indexOf(AchievementEvent.Unlocked(Achievement.BIG_FAN))
         val ownBanner = banners[bigFan + 1] as AchievementEvent.StylesUnlocked
@@ -141,8 +148,9 @@ class StylesUnlockedBannerTest {
 
     @Test
     fun `an owner of every style gets the unlock and progress banners - in order - and no styles banner of either kind`() {
-        // Big Fan has styles of its own, and the step onto 95 crosses Garden dice's count.
-        val crossing = AchievementEngine.unlockNow(setOf(countedAchievements[94], Achievement.BIG_FAN), stateWith(94), 0L)
+        // Big Fan has styles of its own, and the step onto a count lock's count crosses it.
+        val count = highestCountInReach
+        val crossing = AchievementEngine.unlockNow(setOf(countedAchievements[count - 1], Achievement.BIG_FAN), stateWith(count - 1), 0L)
         val owned = events { announce(crossing, ownsAllStyles = true) }
         assertTrue(owned.none { it is AchievementEvent.StylesUnlocked }, "$owned")
         assertEquals(events { announce(crossing, ownsAllStyles = false) }.filterNot { it is AchievementEvent.StylesUnlocked }, owned)

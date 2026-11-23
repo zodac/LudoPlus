@@ -60,16 +60,16 @@ class AchievementsLastRowTest : UiTest() {
         }
     }
 
-    /** That the card of the list's last row, Completionist, starts exactly where the pinned header ends. */
+    /** That the card of the list's last row, Who Made This? (the last Miscellaneous), starts exactly where the pinned header ends. */
     private fun ComposeUiTest.assertLastRowDirectlyUnderHeader() {
         val headerBottom = onAllNodes(hasContentDescription("Next category")).fetchSemanticsNodes().minOf { it.boundsInRoot.center.y } + HALF_HEADER_PX
-        val row = onNode(hasText("Completionist")).fetchSemanticsNode().boundsInRoot
+        val row = onNode(hasText("Who Made This?")).fetchSemanticsNode().boundsInRoot
         assertEquals(headerBottom, row.top, "The last row's top against the pinned header's bottom")
     }
 
     @Test
     fun `the only row left rests directly under its header`() = uiTest(TestScreen(360, 800, density = 3f)) {
-        showEndOfUnearned(Achievement.entries - Achievement.COMPLETIONIST)
+        showEndOfUnearned(Achievement.entries - Achievement.WHO_MADE_THIS)
         assertLastRowDirectlyUnderHeader()
     }
 

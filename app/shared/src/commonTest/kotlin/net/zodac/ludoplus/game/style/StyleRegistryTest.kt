@@ -40,11 +40,11 @@ class StyleRegistryTest {
         assertEquals(StyleUnlock.SpecificAchievement(Achievement.MIDNIGHT_RUN), group(DiceStyleRegistry, "starry").unlock)
         assertEquals(StyleUnlock.SpecificAchievement(Achievement.MIDNIGHT_RUN), group(TableBackgroundRegistry, "starry").unlock)
         assertEquals(StyleUnlock.SpecificAchievement(Achievement.TOO_MUCH_OF_A_GOOD_THING), group(DiceStyleRegistry, "devil").unlock)
-        assertEquals(StyleUnlock.SpecificAchievement(Achievement.NUMBER_CRUNCHER), group(DiceStyleRegistry, "maths").unlock)
+        assertEquals(StyleUnlock.SpecificAchievement(Achievement.COUNTING_UP), group(DiceStyleRegistry, "maths").unlock)
         assertEquals(StyleUnlock.AchievementCount(55), group(DiceStyleRegistry, "d20").unlock)
         assertEquals(StyleUnlock.AchievementCount(55), group(TableBackgroundRegistry, "floating_dice").unlock)
         assertEquals(listOf("d20_white", "d20_black", "d20_blue"), group(DiceStyleRegistry, "d20").variants.map { it.id })
-        for (achievement in listOf(Achievement.MIDNIGHT_RUN, Achievement.TOO_MUCH_OF_A_GOOD_THING, Achievement.NUMBER_CRUNCHER)) {
+        for (achievement in listOf(Achievement.MIDNIGHT_RUN, Achievement.TOO_MUCH_OF_A_GOOD_THING, Achievement.COUNTING_UP)) {
             assertTrue(achievement.unlocksStyle, achievement.name)
         }
     }
@@ -96,13 +96,10 @@ class StyleRegistryTest {
     }
 
     @Test
-    fun `no count lock is beyond the 100 counted achievements - and the water set opens at 15`() {
-        val counted = Achievement.entries.count { it.category != AchievementCategory.EASTER_EGGS }
-        assertEquals(100, counted)
-        for (registry in registries) for (group in registry.groups) {
-            val unlock = group.unlock
-            if (unlock is StyleUnlock.AchievementCount) assertTrue(unlock.count <= counted, "${group.name.key} needs ${unlock.count}")
-        }
+    fun `every count lock is within the achievements, Easter Eggs included - and the water set opens at 15`() {
+        val counts = registries.flatMap { it.groups }.mapNotNull { (it.unlock as? StyleUnlock.AchievementCount)?.count }
+        assertEquals(100, counts.max())
+        assertTrue(counts.all { it <= Achievement.entries.size }, "${Achievement.entries.size} achievements")
         assertEquals(StyleUnlock.AchievementCount(15), group(DiceStyleRegistry, "ocean").unlock)
         assertEquals(StyleUnlock.AchievementCount(15), group(TableBackgroundRegistry, "ocean").unlock)
         assertEquals(listOf("ocean_waves", "ocean_lagoon"), group(TableBackgroundRegistry, "ocean").variants.map { it.id })
@@ -117,14 +114,16 @@ class StyleRegistryTest {
     }
 
     @Test
-    fun `an Easter Egg opens its style - but never counts towards a count lock`() {
+    fun `an Easter Egg opens its style - and counts towards a count lock like any other`() {
         val eggs = Achievement.entries.filter { it.category == AchievementCategory.EASTER_EGGS }
-        val allEggs = earned(*eggs.toTypedArray())
-        assertEquals(0, allEggs.achievements.countedUnlocks)
-        // Leather opens at 5 counted achievements: ten Easter Eggs don't open it.
-        assertFalse(DiceStyleRegistry.isUnlocked("leather_tan", allEggs))
-        val fiveCounted = earned(*Achievement.entries.filter { it.category != AchievementCategory.EASTER_EGGS }.take(5).toTypedArray())
-        assertTrue(DiceStyleRegistry.isUnlocked("leather_tan", fiveCounted))
+        val fourEggs = earned(*eggs.take(4).toTypedArray())
+        assertEquals(4, fourEggs.achievements.unlockedCount)
+        // Leather opens at 5 achievements: four Easter Eggs don't open it, and a fifth does.
+        assertFalse(DiceStyleRegistry.isUnlocked("leather_tan", fourEggs))
+        assertTrue(DiceStyleRegistry.isUnlocked("leather_tan", earned(*eggs.take(5).toTypedArray())))
+        // Every achievement, Easter Eggs included, opens the 100 locks: Neon.
+        assertFalse(DiceStyleRegistry.isUnlocked("neon_night", earned(*Achievement.entries.take(99).toTypedArray())))
+        assertTrue(DiceStyleRegistry.isUnlocked("neon_night", earned(*Achievement.entries.take(100).toTypedArray())))
 
         assertTrue(Achievement.BIG_FAN.unlocksStyle)
         val everythingButBigFan = earned(*Achievement.entries.filter { it != Achievement.BIG_FAN }.toTypedArray())

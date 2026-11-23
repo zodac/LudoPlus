@@ -174,7 +174,7 @@ class GameAchievementsTest {
     }
 
     @Test
-    fun `the tutorial earns nothing but Back To School - for playing it to its end`() = runTest(dispatcher) {
+    fun `the tutorial earns nothing - played to its end`() = runTest(dispatcher) {
         val store = InMemoryAchievementStore()
         val viewModel = viewModel(store, tutorial = TutorialScript.CLASSIC)
         viewModel.startTutorial(defaultName = "Player 1", cpuName = "Green")
@@ -188,7 +188,7 @@ class GameAchievementsTest {
             advanceTimeBy(2_000)
             runCurrent()
         }
-        assertEquals(setOf(Achievement.BACK_TO_SCHOOL), store.unlocked)
+        assertEquals(emptySet(), store.unlocked)
         assertEquals(emptyMap(), store.mutableState.value.counters)
     }
 }

@@ -513,31 +513,34 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
 
 ## Achievements
 
-`model/Achievement.kt` (110: 100 counted, 10 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
+`model/Achievement.kt` (101: 94 counted, 7 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
 (pure), `data/achievements/`, `app/AchievementUnlocker.kt`, `ui/achievements/`. Rebuilt for Ludo in Phase 6; DiceFive's
 110 are in `5423b6c`.
 
 - **Ids.**
     - The enum constant is the English title in snake case; the stored `id` is that in lower case
         (`GETTING_COMFORTABLE`/`"getting_comfortable"`). `AchievementEngineTest` enforces it. Permanent once released.
+    - Removed achievements' ids are kept in `RETIRED_ACHIEVEMENT_IDS`, never to be used again (eleven, 2026-11-23).
     - String keys follow the constant: `achievement_<constant>_title`, `_description`.
 - **Player 1 only.** The person in seat 1 earns them; every other seat, person or CPU, is an opponent. The tutorial
     earns nothing.
-- **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (19), The Die (8), Captures (16), Racing
-    (12), Winning (17), Misfortune (17), Miscellaneous (10, hidden), Collection (Completionist), and Easter Eggs (10,
-    hidden, outside Completionist and the page's total): 100 counted, as DiceFive had. Each entry's description is its rule; the thresholds are the
-    tracker's constants (`AchievementTracker`'s companion). The maintainer is reviewing the list (asked for 100, plus 10
-    Easter Eggs, on 2026-11-17, "a variety of them in groups, like DiceFive").
-    - Speed Demon (60 turns) and Lightning Fast (50), and Punching Bag (15 captured), come from simulated games: a win
-        takes player 1 about 80 turns, the fastest tenth about 60, the fastest hundredth about 50.
+- **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (19, Pest and Completionist among
+    them, Completionist last), The Die (8), Captures (15), Racing (12), Winning (15), Misfortune (17), Miscellaneous (8,
+    hidden), and Easter Eggs (7, hidden, outside Completionist and the page's total): 94 counted. Each entry's
+    description is its rule; the thresholds are the tracker's constants (`AchievementTracker`'s companion). The maintainer asked for 100, plus 10
+    Easter Eggs, on 2026-11-17 ("a variety of them in groups, like DiceFive"), removed eleven on 2026-11-23, and is
+    adding new ones: My Favourite Spot (every pawn on one square, not the start square, home column included) and
+    We're All Friends Here (a pawn of every player on one track square, by anyone's move) on 2026-11-23, when Pest and
+    Completionist moved to Milestones and the Collection category went.
+    - Speed Demon is a win within 5 minutes of the game on screen (`StartedGame.playMillis`, as Time Flies counts it; the
+        maintainer, 2026-11-23). Locked Out is 5 turns, and Lifetime Achievement 500 games.
+    - Punching Bag (15 captured) comes from simulated games: a player is captured about 6 times a game.
     - Easter Eggs: Alliteration (every name starting with one letter), Are You A Developer? (the version tapped seven
-        times), Big Fan (a person named "zodac", exactly), I Am Not A Robot (player 1 named "CPU", any case), Midnight Run
-        (a new game from midnight to 6am), Musical Chairs (nobody in their seat's own colour), Sideways (a game shown
-        with the phone on its side), Time Flies (an hour of one game on screen), What's In A Name? (a person's name as
-        wide as the setup form allows), Who's Ludo? (anyone named "Ludo", any case).
+        times), Big Fan (a person named "zodac", exactly), Midnight Run (a new game from midnight to 6am), Sideways (a
+        game shown with the phone on its side), Time Flies (an hour of one game on screen), Who's Ludo? (anyone named
+        "Ludo", any case).
     - Wire To Wire needs the whole game seen (from player 1's first roll): one continued from its save can't earn it.
-    - Opening the Rules (Read The Manual), Statistics (Number Cruncher), or About (Who Made This?), and finishing the
-        tutorial (Back To School) earn hidden ones. The tutorial earns nothing else.
+    - Opening About (Who Made This?) earns a hidden one. The tutorial earns nothing.
 - **Counters** (`AchievementCounter`): games played, games won, the win and losing streaks, captures, pawns home,
     rolls, 6s, squares moved, and last places. Each
     moves as its event happens, never at a game's end only, so a game left unfinished still counts what was played.
@@ -639,11 +642,13 @@ Each category is two lists in the same order:
     `StyleRegistryTest` checks every family name across the categories.
 - **Locks.** Every other family is locked behind a count of achievements (`StyleUnlock.AchievementCount`) or one
     achievement (`SpecificAchievement`).
-    - A count is of **counted** achievements: every one but an Easter Egg (`AchievementsState.countedUnlocks`), as the
-        Achievements page totals them. No count lock is above 100.
+    - A count is of **every** earned achievement, Easter Eggs included (`AchievementsState.unlockedCount`; the
+        maintainer, 2026-11-23), unlike the Achievements page's total, which leaves the Easter Eggs out. No count lock
+        is above 100, and every one is within the achievements there are (`StyleRegistryTest`).
     - The styles DiceFive locked behind its own achievements (2026-11-17): the Starry die and background open with
-        Midnight Run; Devil with Too Much Of A Good Thing; Maths with Number Cruncher; D20 and the Floating Dice
-        background at 55, the one count no other style uses (`D20_UNLOCK`). The Irish, golden Egg, and D20 colours
+        Midnight Run; Devil with Too Much Of A Good Thing; Maths with Counting Up (Number Cruncher's until it was
+        removed, 2026-11-23); D20 and the Floating Dice background at 55, the one count no other style uses
+        (`D20_UNLOCK`). The Irish, golden Egg, and D20 colours
         that DiceFive kept secret are ordinary colours of their families. Googly (Completionist), Glitch (Big Fan), and
         Wireframe (Are You A Developer?) keep their achievements.
     - A colour can still be secret (`StyleVariant.secretAchievement`): not offered at all until earned. None is yet.

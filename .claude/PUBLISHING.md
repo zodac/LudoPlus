@@ -118,7 +118,7 @@ until the player signs in.
     - the built-in modes under "Three ways to play" (and that heading's count);
     - the house rules under "House rules", all nine, and custom modes;
     - "Play together nearby" (the play app's Nearby games, `NETPLAY.md`);
-    - "Over 100 achievements" (110 today: 100 count towards completion, plus 10 Easter Eggs);
+    - "Over 100 achievements" (101 today: 94 count towards completion, plus 7 Easter Eggs; more are coming);
     - the style counts (8 boards, 7 sets of pawns, 35 dice, and 20 backgrounds), as `README.md` gives them;
     - what "Google Play Games" says sign-in brings (`PLAY_GAMES.md`);
     - the purchases ("Unlock all styles", "Remove ads"; `PURCHASES.md`) and the ad banner (`ADS.md`).

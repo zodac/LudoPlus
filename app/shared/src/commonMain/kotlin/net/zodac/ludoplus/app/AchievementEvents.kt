@@ -91,12 +91,12 @@ fun announce(update: AchievementUpdate, ownsAllStyles: Boolean) {
             )
         }
     }
-    val styles = if (ownsAllStyles) emptyList() else stylesUnlockedByCount(update.countedUnlocksBefore, update.countedUnlocksAfter)
+    val styles = if (ownsAllStyles) emptyList() else stylesUnlockedByCount(update.unlockedCountBefore, update.unlockedCountAfter)
     if (styles.isNotEmpty()) {
         AchievementEvents.emit(
             AchievementEvent.StylesUnlocked(
                 styles.map { UnlockedStyle(it.styleName, it.categoryNoun) },
-                StylesEarnedBy.Count(update.countedUnlocksAfter),
+                StylesEarnedBy.Count(update.unlockedCountAfter),
             ),
         )
     }

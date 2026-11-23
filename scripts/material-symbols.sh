@@ -26,7 +26,6 @@ Acute acute
 Add add
 Air air
 Album album
-AllInclusive all_inclusive
 Anchor anchor
 Android android
 ArrowBack arrow_back mirror
@@ -39,7 +38,6 @@ AutoAwesome auto_awesome
 AvgPace avg_pace
 BackHand back_hand
 Badge badge
-BarChart bar_chart
 Block block
 Bolt bolt
 Cabin cabin
@@ -48,7 +46,6 @@ Cancel cancel
 Casino casino
 Castle castle
 Celebration celebration
-Chair chair
 Check check
 CheckCircle check_circle
 Close close
@@ -65,7 +62,6 @@ DoorOpen door_open
 Download download
 Elderly elderly
 EmojiEvents emoji_events
-EmojiPeople emoji_people
 EventRepeat event_repeat
 FastForward fast_forward
 Favorite favorite
@@ -76,7 +72,6 @@ Filter7 filter_7
 FilterNone filter_none
 FitnessCenter fitness_center
 Flag flag
-FlashOn flash_on
 FlutterDash flutter_dash
 FormatListNumbered format_list_numbered
 FormatPaint format_paint
@@ -85,8 +80,8 @@ Gavel gavel
 GridView grid_view
 GridViewOutlined grid_view fill0
 Groups groups
+Handshake handshake
 Healing healing
-HealthAndSafety health_and_safety
 HeartBroken heart_broken
 Help help mirror
 HelpOutline help fill0 mirror
@@ -117,12 +112,10 @@ Looks3 looks_3
 Looks6 looks_6
 LooksOne looks_one
 Memory memory
-MenuBook menu_book
 MilitaryTech military_tech
 ModeHeat mode_heat
 MotionPhotosOff motion_photos_off
 MoveUp move_up
-MusicNote music_note
 MyLocation my_location
 NearMe near_me
 Numbers numbers
@@ -139,6 +132,7 @@ PhotoCamera photo_camera
 PlayArrow play_arrow
 Psychology psychology
 Public public
+PushPin push_pin
 QuestionMark question_mark
 Quiz quiz
 RecordVoiceOver record_voice_over
@@ -152,14 +146,11 @@ Rocket rocket
 RocketLaunch rocket_launch
 Savings savings
 Schedule schedule
-School school
 ScreenRotation screen_rotation
 SentimentDissatisfied sentiment_dissatisfied
 SentimentNeutral sentiment_neutral
-Signature signature
 Skull skull
 SlowMotionVideo slow_motion_video
-SmartToy smart_toy
 SocialLeaderboard social_leaderboard
 Sort sort mirror
 Speed speed

@@ -686,7 +686,7 @@ private fun CountWithMark(count: @Composable () -> Unit, mark: @Composable () ->
  *
  * The up/down arrows on its right jump to the previous/next category's header, which then pins in
  * this one's place - a long list is otherwise a lot of flinging to get from Milestones to
- * Collection. A null [onPrevious]/[onNext] (the first/last category) greys that arrow out rather
+ * Easter Eggs. A null [onPrevious]/[onNext] (the first/last category) greys that arrow out rather
  * than removing it, so the pair always sits in the same place. They're stock icon buttons, so the
  * header is the 48dp minimum touch height rather than the bare label's.
  */

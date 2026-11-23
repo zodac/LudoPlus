@@ -22,6 +22,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import kotlin.math.abs
 import kotlin.test.BeforeTest
@@ -208,13 +209,14 @@ class AchievementsTextTest : UiTest() {
     @Test
     fun `a row whose achievement unlocks a style reads the style with it - and a tap shows it`() = uiTest {
         showAchievements(achievementsViewModel())
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Number Cruncher"))
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Counting Up"))
         val reward = "Earn this to unlock the 'Maths' die style"
         val row = compose.onNode(hasContentDescription(reward) and SemanticsMatcher.keyIsDefined(SemanticsActions.OnClick))
         assertEquals("Show which style this unlocks", row.fetchSemanticsNode().config[SemanticsActions.OnClick].label)
         // Heard, not seen, until the tap shows it as a tip.
         compose.onNodeWithText(reward).assertDoesNotExist()
-        row.performClick()
+        // Its click, not a touch: scrolled to the list's top, the row lies under its group's sticky header.
+        row.performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         compose.onNodeWithText(reward).assertExists()
         // A row with no style behind it has no tap at all.

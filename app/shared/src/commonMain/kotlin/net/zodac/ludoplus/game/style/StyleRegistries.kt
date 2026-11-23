@@ -451,7 +451,7 @@ object DiceStyleRegistry : StyleRegistry(
                 StyleVariant("maths_black", Res.string.style_colour_black),
                 StyleVariant("maths_green", Res.string.style_colour_green),
             ),
-            unlock = StyleUnlock.SpecificAchievement(Achievement.NUMBER_CRUNCHER),
+            unlock = StyleUnlock.SpecificAchievement(Achievement.COUNTING_UP),
         ),
         StyleGroup(
             Res.string.style_family_wireframe,

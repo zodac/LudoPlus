@@ -20,8 +20,6 @@ import net.zodac.ludoplus.ui.theme.AchievementBadgeViolet
 import net.zodac.ludoplus.ui.theme.AchievementClockAmber
 import net.zodac.ludoplus.ui.theme.AchievementHeartRed
 import net.zodac.ludoplus.ui.theme.AchievementInkBlue
-import net.zodac.ludoplus.ui.theme.AchievementMusicGold
-import net.zodac.ludoplus.ui.theme.AchievementRobotSilver
 import net.zodac.ludoplus.ui.theme.AchievementSidewaysTeal
 
 /**
@@ -42,6 +40,7 @@ val Achievement.icon: ImageVector
         Achievement.ONE_MORE_TIME -> Symbols.Replay
         Achievement.WARMING_UP -> Symbols.Whatshot
         Achievement.GETTING_COMFORTABLE -> Symbols.Numbers
+        Achievement.PEST -> Symbols.PestControl
         Achievement.CHAMPION -> Symbols.SocialLeaderboard
         // Climbing, not a flame: Hot Streak has the flame.
         Achievement.ON_A_ROLL -> Symbols.KeyboardDoubleArrowUp
@@ -54,10 +53,10 @@ val Achievement.icon: ImageVector
         Achievement.UNSTOPPABLE -> Symbols.Crown
         Achievement.LIVING_LEGEND -> Symbols.WorkspacePremium
         Achievement.OLD_HAND -> Symbols.Elderly
-        Achievement.PART_OF_THE_FURNITURE -> Symbols.Chair
         Achievement.DIE_HARD -> Symbols.FitnessCenter
-        Achievement.IMMORTAL -> Symbols.AllInclusive
         Achievement.LIFETIME_ACHIEVEMENT -> Symbols.HistoryEdu
+        // Drawn for this app: the trophy in crystal, for the last of them all.
+        Achievement.COMPLETIONIST -> CRYSTAL_TROPHY_ICON
 
         // ---- The Die ------------------------------------------------------------------------
         Achievement.OFF_THE_MARK -> Symbols.Start
@@ -72,7 +71,6 @@ val Achievement.icon: ImageVector
 
         // ---- Captures -----------------------------------------------------------------------
         Achievement.GOTCHA -> Symbols.Target
-        Achievement.PEST -> Symbols.PestControl
         // Two stacked, for two pawns with one move.
         Achievement.TWO_FOR_ONE -> Symbols.FilterNone
         Achievement.WELCOME_PARTY -> Symbols.Celebration
@@ -115,10 +113,8 @@ val Achievement.icon: ImageVector
         Achievement.FIRST_VICTORY -> Symbols.Flag
         Achievement.FRONT_RUNNER -> Symbols.LooksOne
         Achievement.HOW_DO_YOU_DO_FELLOW_CPUS -> Symbols.Memory
-        Achievement.LAST_HUMAN_STANDING -> Symbols.EmojiPeople
         Achievement.LATE_BLOOMER -> Symbols.LocalFlorist
         Achievement.LIFE_OF_THE_PARTY -> Symbols.Diversity3
-        Achievement.LIGHTNING_FAST -> Symbols.FlashOn
         Achievement.NEVER_SAY_DIE -> Symbols.Healing
         Achievement.PACIFIST -> Symbols.ThumbUp
         Achievement.PHOTO_FINISH -> Symbols.PhotoCamera
@@ -149,33 +145,24 @@ val Achievement.icon: ImageVector
         Achievement.WOODEN_SPOON -> Symbols.TrendingDown
 
         // ---- Miscellaneous (hidden) ---------------------------------------------------------
-        Achievement.BACK_TO_SCHOOL -> Symbols.School
         Achievement.BUDDY_SYSTEM -> Symbols.Groups
         Achievement.DEJA_VU -> Symbols.Repeat
         Achievement.INCH_BY_INCH -> Symbols.SlowMotionVideo
         Achievement.LEAPFROG -> Symbols.Redo
-        Achievement.NUMBER_CRUNCHER -> Symbols.BarChart
-        Achievement.READ_THE_MANUAL -> Symbols.MenuBook
-        Achievement.SAFETY_FIRST -> Symbols.HealthAndSafety
+        Achievement.MY_FAVOURITE_SPOT -> Symbols.PushPin
         Achievement.SO_NEAR_YET_SO_FAR -> Symbols.SentimentNeutral
+        Achievement.WERE_ALL_FRIENDS_HERE -> Symbols.Handshake
         Achievement.WHO_MADE_THIS -> Symbols.Info
-
-        // ---- Collection ---------------------------------------------------------------------
-        // Drawn for this app: the trophy in crystal, for the last of them all.
-        Achievement.COMPLETIONIST -> CRYSTAL_TROPHY_ICON
 
         // ---- Easter Eggs --------------------------------------------------------------------
         // Every icon in this category is a fixed colour rather than the ambient tint - see [iconTintOrUnspecified].
         Achievement.ALLITERATION -> Symbols.Abc
         Achievement.ARE_YOU_A_DEVELOPER -> Symbols.DeveloperMode
         Achievement.BIG_FAN -> Symbols.Favorite
-        Achievement.I_AM_NOT_A_ROBOT -> Symbols.SmartToy
         // A crescent moon and two stars, for the small hours it was earned in.
         Achievement.MIDNIGHT_RUN -> rememberMidnightIcon()
-        Achievement.MUSICAL_CHAIRS -> Symbols.MusicNote
         Achievement.SIDEWAYS -> Symbols.ScreenRotation
         Achievement.TIME_FLIES -> Symbols.Schedule
-        Achievement.WHATS_IN_A_NAME -> Symbols.Signature
         Achievement.WHOS_LUDO -> Symbols.Badge
     }
 
@@ -190,11 +177,8 @@ fun Achievement.iconTintOrUnspecified(tint: Color): Color = when (this) {
     Achievement.ARE_YOU_A_DEVELOPER -> AchievementDeveloperCyan
     Achievement.BIG_FAN -> AchievementHeartRed
     Achievement.MIDNIGHT_RUN -> Color.Unspecified
-    Achievement.I_AM_NOT_A_ROBOT -> AchievementRobotSilver
-    Achievement.MUSICAL_CHAIRS -> AchievementMusicGold
     Achievement.SIDEWAYS -> AchievementSidewaysTeal
     Achievement.TIME_FLIES -> AchievementClockAmber
-    Achievement.WHATS_IN_A_NAME -> AchievementInkBlue
     Achievement.WHOS_LUDO -> AchievementBadgeViolet
     else -> tint
 }

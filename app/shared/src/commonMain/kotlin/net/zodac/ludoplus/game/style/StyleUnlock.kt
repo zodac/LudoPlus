@@ -37,7 +37,7 @@ sealed interface StyleUnlock {
             require(count > 0) { "An achievement count of $count isn't a lock" }
         }
 
-        override fun isMet(access: StyleAccess): Boolean = access.ownsAllStyles || access.achievements.countedUnlocks >= count
+        override fun isMet(access: StyleAccess): Boolean = access.ownsAllStyles || access.achievements.unlockedCount >= count
     }
 
     /** Earning any one of [achievements] - for a style whose colours each have an achievement of their own (see [StyleVariant.secretAchievement]). */
@@ -96,7 +96,7 @@ val Achievement.unlocksStyle: Boolean
     get() = styleRewards.isNotEmpty()
 
 /**
- * Every style whose [StyleUnlock.AchievementCount] lock is met at [countAfter] counted achievements
+ * Every style whose [StyleUnlock.AchievementCount] lock is met at [countAfter] achievements
  * but wasn't at [countBefore], in the Styles screen's category order - what one update's "style
  * unlocked" banner names. A style locked behind one particular achievement is never here.
  */

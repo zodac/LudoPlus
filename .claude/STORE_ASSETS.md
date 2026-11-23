@@ -19,7 +19,7 @@ alone by default; `--parts icon,feature,video` the rest.
     (`Scenes.midGame`), the Rules' Captures page, the win and the results (`Scenes.lastMove`),
     the Leaderboard, and Lap Of Honour unlocking on the Achievements page. Rolls are dealt through `AppContainer.diceRandom`
     (`DealtRandom`). Every achievement but `Scenes.VIDEO_LOCKED` is earned first, quietly, so no banner covers a scene
-    but the last's, and the page reads "92 of 100" (an Easter egg would count past the total). The sound is the app's own
+    but the last's, and the page reads "85 of 92" (an Easter egg would count past the total). The sound is the app's own
     clips, logged at their frames (`RecordingSoundPool`, `SoundLog`) and mixed in, under CC0 music ("Happy Vibes" by
     Ruskerdax, fetched by the script), with `video-description.txt` for YouTube. No tutorial: it's not important enough
     for the video (the maintainer, 2026-11-18).

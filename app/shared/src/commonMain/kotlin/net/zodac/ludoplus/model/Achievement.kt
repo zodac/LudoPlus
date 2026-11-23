@@ -7,8 +7,6 @@ import net.zodac.ludoplus.resources.achievement_alliteration_description
 import net.zodac.ludoplus.resources.achievement_alliteration_title
 import net.zodac.ludoplus.resources.achievement_are_you_a_developer_description
 import net.zodac.ludoplus.resources.achievement_are_you_a_developer_title
-import net.zodac.ludoplus.resources.achievement_back_to_school_description
-import net.zodac.ludoplus.resources.achievement_back_to_school_title
 import net.zodac.ludoplus.resources.achievement_back_to_square_one_description
 import net.zodac.ludoplus.resources.achievement_back_to_square_one_title
 import net.zodac.ludoplus.resources.achievement_big_fan_description
@@ -81,20 +79,14 @@ import net.zodac.ludoplus.resources.achievement_hot_streak_description
 import net.zodac.ludoplus.resources.achievement_hot_streak_title
 import net.zodac.ludoplus.resources.achievement_how_do_you_do_fellow_cpus_description
 import net.zodac.ludoplus.resources.achievement_how_do_you_do_fellow_cpus_title
-import net.zodac.ludoplus.resources.achievement_i_am_not_a_robot_description
-import net.zodac.ludoplus.resources.achievement_i_am_not_a_robot_title
 import net.zodac.ludoplus.resources.achievement_i_robot_description
 import net.zodac.ludoplus.resources.achievement_i_robot_title
-import net.zodac.ludoplus.resources.achievement_immortal_description
-import net.zodac.ludoplus.resources.achievement_immortal_title
 import net.zodac.ludoplus.resources.achievement_inch_by_inch_description
 import net.zodac.ludoplus.resources.achievement_inch_by_inch_title
 import net.zodac.ludoplus.resources.achievement_insult_to_injury_description
 import net.zodac.ludoplus.resources.achievement_insult_to_injury_title
 import net.zodac.ludoplus.resources.achievement_lap_of_honour_description
 import net.zodac.ludoplus.resources.achievement_lap_of_honour_title
-import net.zodac.ludoplus.resources.achievement_last_human_standing_description
-import net.zodac.ludoplus.resources.achievement_last_human_standing_title
 import net.zodac.ludoplus.resources.achievement_late_bloomer_description
 import net.zodac.ludoplus.resources.achievement_late_bloomer_title
 import net.zodac.ludoplus.resources.achievement_leapfrog_description
@@ -105,8 +97,6 @@ import net.zodac.ludoplus.resources.achievement_life_of_the_party_description
 import net.zodac.ludoplus.resources.achievement_life_of_the_party_title
 import net.zodac.ludoplus.resources.achievement_lifetime_achievement_description
 import net.zodac.ludoplus.resources.achievement_lifetime_achievement_title
-import net.zodac.ludoplus.resources.achievement_lightning_fast_description
-import net.zodac.ludoplus.resources.achievement_lightning_fast_title
 import net.zodac.ludoplus.resources.achievement_living_legend_description
 import net.zodac.ludoplus.resources.achievement_living_legend_title
 import net.zodac.ludoplus.resources.achievement_locked_out_description
@@ -119,8 +109,8 @@ import net.zodac.ludoplus.resources.achievement_menace_description
 import net.zodac.ludoplus.resources.achievement_menace_title
 import net.zodac.ludoplus.resources.achievement_midnight_run_description
 import net.zodac.ludoplus.resources.achievement_midnight_run_title
-import net.zodac.ludoplus.resources.achievement_musical_chairs_description
-import net.zodac.ludoplus.resources.achievement_musical_chairs_title
+import net.zodac.ludoplus.resources.achievement_my_favourite_spot_description
+import net.zodac.ludoplus.resources.achievement_my_favourite_spot_title
 import net.zodac.ludoplus.resources.achievement_never_left_home_description
 import net.zodac.ludoplus.resources.achievement_never_left_home_title
 import net.zodac.ludoplus.resources.achievement_never_say_die_description
@@ -129,8 +119,6 @@ import net.zodac.ludoplus.resources.achievement_nobody_is_safe_description
 import net.zodac.ludoplus.resources.achievement_nobody_is_safe_title
 import net.zodac.ludoplus.resources.achievement_not_so_fast_description
 import net.zodac.ludoplus.resources.achievement_not_so_fast_title
-import net.zodac.ludoplus.resources.achievement_number_cruncher_description
-import net.zodac.ludoplus.resources.achievement_number_cruncher_title
 import net.zodac.ludoplus.resources.achievement_off_the_mark_description
 import net.zodac.ludoplus.resources.achievement_off_the_mark_title
 import net.zodac.ludoplus.resources.achievement_old_hand_description
@@ -143,8 +131,6 @@ import net.zodac.ludoplus.resources.achievement_one_more_time_description
 import net.zodac.ludoplus.resources.achievement_one_more_time_title
 import net.zodac.ludoplus.resources.achievement_pacifist_description
 import net.zodac.ludoplus.resources.achievement_pacifist_title
-import net.zodac.ludoplus.resources.achievement_part_of_the_furniture_description
-import net.zodac.ludoplus.resources.achievement_part_of_the_furniture_title
 import net.zodac.ludoplus.resources.achievement_parting_shot_description
 import net.zodac.ludoplus.resources.achievement_parting_shot_title
 import net.zodac.ludoplus.resources.achievement_payback_description
@@ -161,12 +147,8 @@ import net.zodac.ludoplus.resources.achievement_public_enemy_description
 import net.zodac.ludoplus.resources.achievement_public_enemy_title
 import net.zodac.ludoplus.resources.achievement_punching_bag_description
 import net.zodac.ludoplus.resources.achievement_punching_bag_title
-import net.zodac.ludoplus.resources.achievement_read_the_manual_description
-import net.zodac.ludoplus.resources.achievement_read_the_manual_title
 import net.zodac.ludoplus.resources.achievement_regular_description
 import net.zodac.ludoplus.resources.achievement_regular_title
-import net.zodac.ludoplus.resources.achievement_safety_first_description
-import net.zodac.ludoplus.resources.achievement_safety_first_title
 import net.zodac.ludoplus.resources.achievement_scenic_route_description
 import net.zodac.ludoplus.resources.achievement_scenic_route_title
 import net.zodac.ludoplus.resources.achievement_sideways_description
@@ -211,8 +193,8 @@ import net.zodac.ludoplus.resources.achievement_welcome_party_description
 import net.zodac.ludoplus.resources.achievement_welcome_party_title
 import net.zodac.ludoplus.resources.achievement_well_rolled_description
 import net.zodac.ludoplus.resources.achievement_well_rolled_title
-import net.zodac.ludoplus.resources.achievement_whats_in_a_name_description
-import net.zodac.ludoplus.resources.achievement_whats_in_a_name_title
+import net.zodac.ludoplus.resources.achievement_were_all_friends_here_description
+import net.zodac.ludoplus.resources.achievement_were_all_friends_here_title
 import net.zodac.ludoplus.resources.achievement_who_made_this_description
 import net.zodac.ludoplus.resources.achievement_who_made_this_title
 import net.zodac.ludoplus.resources.achievement_whos_ludo_description
@@ -222,7 +204,6 @@ import net.zodac.ludoplus.resources.achievement_wire_to_wire_title
 import net.zodac.ludoplus.resources.achievement_wooden_spoon_description
 import net.zodac.ludoplus.resources.achievement_wooden_spoon_title
 import net.zodac.ludoplus.resources.category_captures
-import net.zodac.ludoplus.resources.category_collection
 import net.zodac.ludoplus.resources.category_easter_eggs
 import net.zodac.ludoplus.resources.category_milestones
 import net.zodac.ludoplus.resources.category_miscellaneous
@@ -301,6 +282,25 @@ enum class CounterMerge {
 const val MAX_ACHIEVEMENT_TITLE_LENGTH = 38
 
 /**
+ * The ids of achievements 1.0.0 and 1.0.1 shipped, since removed (the maintainer, 2026-11-23). A phone that earned one
+ * keeps its stored key, which nothing reads any more; no new achievement may take one of these ids
+ * (`AchievementEngineTest`).
+ */
+val RETIRED_ACHIEVEMENT_IDS: Set<String> = setOf(
+    "back_to_school",
+    "i_am_not_a_robot",
+    "immortal",
+    "last_human_standing",
+    "lightning_fast",
+    "musical_chairs",
+    "number_cruncher",
+    "part_of_the_furniture",
+    "read_the_manual",
+    "safety_first",
+    "whats_in_a_name",
+)
+
+/**
  * What an achievement is about, and the order those themes are shown in, so a ladder's rungs sit together.
  *
  * Every [EASTER_EGGS] achievement is [AchievementVisibility.HIDDEN] and outside [Achievement.COMPLETIONIST]: an
@@ -315,7 +315,6 @@ enum class AchievementCategory(val label: StringResource) {
     WINNING(Res.string.category_winning),
     MISFORTUNE(Res.string.category_misfortune),
     MISCELLANEOUS(Res.string.category_miscellaneous),
-    COLLECTION(Res.string.category_collection),
     EASTER_EGGS(Res.string.category_easter_eggs),
 }
 
@@ -366,7 +365,7 @@ enum class Achievement(
     /** How many steps of progress between banners, for a running total that announces more often than each quarter. */
     val progressStepSize: Int? = null,
 ) : StoredId {
-    // ---- Milestones: games, wins, and rolls, easiest first --------------------------------------------------------
+    // ---- Milestones: games, wins, rolls, and captures, easiest first, then Completionist --------------------------
     THE_JOURNEY_BEGINS(
         "the_journey_begins",
         Res.string.achievement_the_journey_begins_title,
@@ -396,6 +395,12 @@ enum class Achievement(
         Res.string.achievement_getting_comfortable_title,
         Res.string.achievement_getting_comfortable_description,
         AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 10,
+    ),
+    PEST(
+        "pest",
+        Res.string.achievement_pest_title,
+        Res.string.achievement_pest_description,
+        AchievementCategory.MILESTONES, AchievementCounter.CAPTURES, target = 10,
     ),
     CHAMPION(
         "champion",
@@ -457,29 +462,23 @@ enum class Achievement(
         Res.string.achievement_old_hand_description,
         AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 250,
     ),
-    PART_OF_THE_FURNITURE(
-        "part_of_the_furniture",
-        Res.string.achievement_part_of_the_furniture_title,
-        Res.string.achievement_part_of_the_furniture_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 500,
-    ),
     DIE_HARD(
         "die_hard",
         Res.string.achievement_die_hard_title,
         Res.string.achievement_die_hard_description,
         AchievementCategory.MILESTONES, AchievementCounter.DIE_ROLLS, target = 50_000,
     ),
-    IMMORTAL(
-        "immortal",
-        Res.string.achievement_immortal_title,
-        Res.string.achievement_immortal_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 250,
-    ),
     LIFETIME_ACHIEVEMENT(
         "lifetime_achievement",
         Res.string.achievement_lifetime_achievement_title,
         Res.string.achievement_lifetime_achievement_description,
         AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 1_000,
+    ),
+    COMPLETIONIST(
+        "completionist",
+        Res.string.achievement_completionist_title,
+        Res.string.achievement_completionist_description,
+        AchievementCategory.MILESTONES, countsTowardCompletion = false,
     ),
 
     // ---- The Die: what's rolled, easiest first --------------------------------------------------------------------
@@ -538,12 +537,6 @@ enum class Achievement(
         Res.string.achievement_gotcha_title,
         Res.string.achievement_gotcha_description,
         AchievementCategory.CAPTURES,
-    ),
-    PEST(
-        "pest",
-        Res.string.achievement_pest_title,
-        Res.string.achievement_pest_description,
-        AchievementCategory.CAPTURES, AchievementCounter.CAPTURES, target = 10,
     ),
     TWO_FOR_ONE(
         "two_for_one",
@@ -741,12 +734,6 @@ enum class Achievement(
         Res.string.achievement_how_do_you_do_fellow_cpus_description,
         AchievementCategory.WINNING,
     ),
-    LAST_HUMAN_STANDING(
-        "last_human_standing",
-        Res.string.achievement_last_human_standing_title,
-        Res.string.achievement_last_human_standing_description,
-        AchievementCategory.WINNING,
-    ),
     LATE_BLOOMER(
         "late_bloomer",
         Res.string.achievement_late_bloomer_title,
@@ -757,12 +744,6 @@ enum class Achievement(
         "life_of_the_party",
         Res.string.achievement_life_of_the_party_title,
         Res.string.achievement_life_of_the_party_description,
-        AchievementCategory.WINNING,
-    ),
-    LIGHTNING_FAST(
-        "lightning_fast",
-        Res.string.achievement_lightning_fast_title,
-        Res.string.achievement_lightning_fast_description,
         AchievementCategory.WINNING,
     ),
     NEVER_SAY_DIE(
@@ -913,12 +894,6 @@ enum class Achievement(
     ),
 
     // ---- Miscellaneous: hidden, alphabetical ----------------------------------------------------------------------
-    BACK_TO_SCHOOL(
-        "back_to_school",
-        Res.string.achievement_back_to_school_title,
-        Res.string.achievement_back_to_school_description,
-        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
-    ),
     BUDDY_SYSTEM(
         "buddy_system",
         Res.string.achievement_buddy_system_title,
@@ -943,22 +918,10 @@ enum class Achievement(
         Res.string.achievement_leapfrog_description,
         AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
     ),
-    NUMBER_CRUNCHER(
-        "number_cruncher",
-        Res.string.achievement_number_cruncher_title,
-        Res.string.achievement_number_cruncher_description,
-        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
-    ),
-    READ_THE_MANUAL(
-        "read_the_manual",
-        Res.string.achievement_read_the_manual_title,
-        Res.string.achievement_read_the_manual_description,
-        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
-    ),
-    SAFETY_FIRST(
-        "safety_first",
-        Res.string.achievement_safety_first_title,
-        Res.string.achievement_safety_first_description,
+    MY_FAVOURITE_SPOT(
+        "my_favourite_spot",
+        Res.string.achievement_my_favourite_spot_title,
+        Res.string.achievement_my_favourite_spot_description,
         AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
     ),
     SO_NEAR_YET_SO_FAR(
@@ -967,19 +930,17 @@ enum class Achievement(
         Res.string.achievement_so_near_yet_so_far_description,
         AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
     ),
+    WERE_ALL_FRIENDS_HERE(
+        "were_all_friends_here",
+        Res.string.achievement_were_all_friends_here_title,
+        Res.string.achievement_were_all_friends_here_description,
+        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
+    ),
     WHO_MADE_THIS(
         "who_made_this",
         Res.string.achievement_who_made_this_title,
         Res.string.achievement_who_made_this_description,
         AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
-    ),
-
-    // ---- Collection: the set itself -------------------------------------------------------------------------------
-    COMPLETIONIST(
-        "completionist",
-        Res.string.achievement_completionist_title,
-        Res.string.achievement_completionist_description,
-        AchievementCategory.COLLECTION, countsTowardCompletion = false,
     ),
 
     // ---- Easter Eggs: hidden, alphabetical, last, and outside Completionist ---------------------------------------
@@ -1001,22 +962,10 @@ enum class Achievement(
         Res.string.achievement_big_fan_description,
         AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN,
     ),
-    I_AM_NOT_A_ROBOT(
-        "i_am_not_a_robot",
-        Res.string.achievement_i_am_not_a_robot_title,
-        Res.string.achievement_i_am_not_a_robot_description,
-        AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN,
-    ),
     MIDNIGHT_RUN(
         "midnight_run",
         Res.string.achievement_midnight_run_title,
         Res.string.achievement_midnight_run_description,
-        AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN,
-    ),
-    MUSICAL_CHAIRS(
-        "musical_chairs",
-        Res.string.achievement_musical_chairs_title,
-        Res.string.achievement_musical_chairs_description,
         AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN,
     ),
     SIDEWAYS(
@@ -1029,12 +978,6 @@ enum class Achievement(
         "time_flies",
         Res.string.achievement_time_flies_title,
         Res.string.achievement_time_flies_description,
-        AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN,
-    ),
-    WHATS_IN_A_NAME(
-        "whats_in_a_name",
-        Res.string.achievement_whats_in_a_name_title,
-        Res.string.achievement_whats_in_a_name_description,
         AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN,
     ),
     WHOS_LUDO(
