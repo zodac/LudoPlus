@@ -49,6 +49,10 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -687,8 +691,19 @@ private fun ColumnScope.StatusLines(
         state.rules.dice > 1 -> stringResource(Res.string.game_prompt_roll_dice, current)
         else -> stringResource(Res.string.game_prompt_roll, current)
     }
+    val colourOf = { player: Int -> seatColours[state.players[player].seat] ?: PlayerColour.defaultFor(state.players[player].seat) }
+    val named = { players: List<Int> -> players.map { name(it) to colourOf(it).color } }
+    // Who the line names: each in their own colour (bold only in the prompt below).
+    val happenedNames = when {
+        event == null -> listOf(game.rollOff.first)
+        event is GameEvent.Moved && event.finished -> (event.move.owner ?: event.player).let { owner ->
+            state.players.indices.filter { it == owner || state.rules.arePartners(owner, it) }
+        }
+        event is GameEvent.Moved -> listOf(event.player) + event.move.captures.map { it.player }.distinct()
+        else -> listOf(event.player)
+    }
     Text(
-        text = happened.orEmpty(),
+        text = withNamesInColour(happened.orEmpty(), named(happenedNames)),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         minLines = 2,
@@ -696,10 +711,9 @@ private fun ColumnScope.StatusLines(
         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
     // A screen reader can make any move from here as well as from its pawn's square.
-    val colourOf = { player: Int -> seatColours[state.players[player].seat] ?: PlayerColour.defaultFor(state.players[player].seat) }
     val actions = moves.map { move -> CustomAccessibilityAction(moveLabel(state, move, colourOf)) { onMove(move); true } }
     Text(
-        text = prompt,
+        text = withNamesInColour(prompt, named(listOf(state.current)), bold = true),
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Start,
@@ -709,6 +723,22 @@ private fun ColumnScope.StatusLines(
             if (actions.isNotEmpty()) customActions = actions
         },
     )
+}
+
+/**
+ * [text] with each of [names] in it drawn in its colour, a player's name in their own, and with [bold], bold: the first
+ * place each is found that no longer name has taken.
+ */
+internal fun withNamesInColour(text: String, names: List<Pair<String, Color>>, bold: Boolean = false): AnnotatedString = buildAnnotatedString {
+    append(text)
+    val taken = mutableListOf<IntRange>()
+    for ((name, colour) in names.filter { it.first.isNotEmpty() }.sortedByDescending { it.first.length }) {
+        var start = text.indexOf(name)
+        while (start >= 0 && taken.any { start <= it.last && start + name.length - 1 >= it.first }) start = text.indexOf(name, start + 1)
+        if (start < 0) continue
+        taken += start until start + name.length
+        addStyle(SpanStyle(color = colour, fontWeight = FontWeight.Bold.takeIf { bold }), start, start + name.length)
+    }
 }
 
 /** With two dice, the die the next move uses ([selected]), and while there's a choice, how to pick another ([onSelect]). */

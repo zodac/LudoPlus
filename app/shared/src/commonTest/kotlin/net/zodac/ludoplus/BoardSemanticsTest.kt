@@ -1,6 +1,7 @@
 package net.zodac.ludoplus
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.font.FontWeight
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import net.zodac.ludoplus.game.GameEvent
@@ -23,6 +25,7 @@ import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.HouseRule
+import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
 import net.zodac.ludoplus.model.TeamMode
@@ -31,7 +34,9 @@ import net.zodac.ludoplus.platform.LocalPlatformServices
 import net.zodac.ludoplus.platform.SilentPlatformServices
 import net.zodac.ludoplus.ui.game.GameContent
 import net.zodac.ludoplus.ui.game.StartedGame
+import net.zodac.ludoplus.ui.game.withNamesInColour
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
+import net.zodac.ludoplus.ui.theme.color
 
 private const val Y = -1
 private const val H = 56
@@ -226,5 +231,38 @@ class BoardSemanticsTest : UiTest() {
         show(state().copy(phase = TurnPhase.Finished, finishingOrder = listOf(1, 0, 3, 2)))
         compose.onNodeWithText("Gambit wins!").assertExists()
         compose.onNodeWithText("Results").assertExists()
+    }
+
+    @Test
+    fun `the prompt by the die shows the current player's name in their colour - and is said as before`() = uiTest(TestScreen(411, 891)) {
+        show(state().copy(current = 2))
+        val prompt = compose.onNodeWithText("Sam, tap the die to roll.").fetchSemanticsNode()
+        val text = prompt.config[SemanticsProperties.Text].single()
+        val span = text.spanStyles.single()
+        assertEquals("Sam", text.text.substring(span.start, span.end))
+        assertEquals(PlayerColour.defaultFor(2).color, span.item.color)
+        assertEquals(FontWeight.Bold, span.item.fontWeight)
+        assertEquals("Sam, tap the die to roll.", prompt.config[SemanticsProperties.ContentDescription].single())
+    }
+
+    @Test
+    fun `the line saying what happened shows each player it names in their colour - and is said as before`() = uiTest(TestScreen(411, 891)) {
+        show(state().copy(current = 2, lastEvent = GameEvent.Moved(1, 5, Move(0, 15, 20, listOf(PawnRef(0, 1))), finished = false)))
+        val line = compose.onNodeWithText("Gambit captured 1 of Alex's pawns.").fetchSemanticsNode().config[SemanticsProperties.Text].single()
+        assertEquals(
+            listOf("Gambit" to PlayerColour.defaultFor(1).color, "Alex" to PlayerColour.defaultFor(0).color),
+            line.spanStyles.sortedBy { it.start }.map { line.text.substring(it.start, it.end) to it.item.color },
+        )
+        // Coloured, not bold: bold is the prompt's.
+        assertEquals(listOf(null, null), line.spanStyles.map { it.item.fontWeight })
+    }
+
+    @Test
+    fun `each name is coloured once - a short one never inside a longer one - and one not there is left`() {
+        val text = withNamesInColour("Jo captured 1 of Joe's pawns.", listOf("Jo" to Color.Red, "Joe" to Color.Blue, "Sam" to Color.Green, "" to Color.Cyan))
+        assertEquals(
+            listOf(Triple(0, 2, Color.Red), Triple(17, 20, Color.Blue)),
+            text.spanStyles.sortedBy { it.start }.map { Triple(it.start, it.end, it.item.color) },
+        )
     }
 }
