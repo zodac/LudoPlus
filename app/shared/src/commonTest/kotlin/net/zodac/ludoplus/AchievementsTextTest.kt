@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -210,7 +211,8 @@ class AchievementsTextTest : UiTest() {
     fun `a row whose achievement unlocks a style reads the style with it - and a tap shows it`() = uiTest {
         showAchievements(achievementsViewModel())
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Counting Up"))
-        val reward = "Earn this to unlock the 'Maths' die style"
+        // Kept out of Two Dice, so the modes left come first (each name kept on one line).
+        val reward = "Can only be earned in the 'Classic', 'Quick', 'Portals', 'Survival', 'Chaos', and 'Haunted\u00A0House' modes\nEarn this to unlock the 'Maths' die style"
         val row = compose.onNode(hasContentDescription(reward) and SemanticsMatcher.keyIsDefined(SemanticsActions.OnClick))
         assertEquals("Show which style this unlocks", row.fetchSemanticsNode().config[SemanticsActions.OnClick].label)
         // Heard, not seen, until the tap shows it as a tip.
@@ -219,6 +221,13 @@ class AchievementsTextTest : UiTest() {
         row.performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         compose.onNodeWithText(reward).assertExists()
+        // One kept out of a mode, with no style behind it, has the modes' tip alone; one that's a mode's own names it already.
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Pacifist"))
+        val modes = compose.onNode(hasText("Pacifist"))
+        assertEquals("Show which modes can earn this", modes.fetchSemanticsNode().config[SemanticsActions.OnClick].label)
+        modes.assert(hasContentDescription("Can only be earned in the 'Classic', 'Two\u00A0Dice', 'Portals', 'Survival', 'Chaos', and 'Haunted\u00A0House' modes"))
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Agent Of Chaos"))
+        assertTrue(SemanticsActions.OnClick !in compose.onNode(hasText("Agent Of Chaos")).fetchSemanticsNode().config)
         // A row with no style behind it has no tap at all.
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Who Made This?"))
         val plain = compose.onNode(hasText("Who Made This?")).fetchSemanticsNode()

@@ -6,13 +6,13 @@ achievement audit (what each mode or house rule blocks or guards) is in `GAME_MO
 
 | Mode | `id` | Different from Classic | Achievements |
 | --- | --- | --- | --- |
-| `CLASSIC` | `classic` | The classic rules (`IMPLEMENTATION.md`, "The classic rules"). The default | Yes |
-| `QUICK` | `quick` | Two pawns each (`pawnsPerPlayer = 2`) | No |
-| `TWO_DICE` | `two_dice` | Two dice, each moved on its own (`dice = 2`); doubles roll again, not 6s (`rollAgainOnDoubles`, `rollAgainRolls` empty) | No |
-| `PORTALS` | `portals` | Portals on the track (`portals = true`): a move ending on one comes out at its pair | No |
-| `SURVIVAL` | `survival` | Six pawns, starting out (`startsOut`), on an endless board: a captured pawn is out, and the last player with one wins (`lastStanding`), with sudden death (`suddenDeath`) | No |
-| `CHAOS` | `chaos` | Power-ups on the track (`powerUps = true`, `model/PowerUp.kt`) | No |
-| `HAUNTED_HOUSE` | `haunted_house` | Ghosts on the track (`ghosts = true`, `game/Ghosts.kt`) | No |
+| `CLASSIC` | `classic` | The classic rules (`IMPLEMENTATION.md`, "The classic rules"). The default | All |
+| `QUICK` | `quick` | Two pawns each (`pawnsPerPlayer = 2`) | Its own, and all but a few |
+| `TWO_DICE` | `two_dice` | Two dice, each moved on its own (`dice = 2`); doubles roll again, not 6s (`rollAgainOnDoubles`, `rollAgainRolls` empty) | Its own, and all but a few |
+| `PORTALS` | `portals` | Portals on the track (`portals = true`): a move ending on one comes out at its pair | Its own, and all but a few |
+| `SURVIVAL` | `survival` | Six pawns, starting out (`startsOut`), on an endless board: a captured pawn is out, and the last player with one wins (`lastStanding`), with sudden death (`suddenDeath`) | Its own, and all but a few |
+| `CHAOS` | `chaos` | Power-ups on the track (`powerUps = true`, `model/PowerUp.kt`) | Its own, and all but a few |
+| `HAUNTED_HOUSE` | `haunted_house` | Ghosts on the track (`ghosts = true`, `game/Ghosts.kt`) | Its own, and all but a few |
 
 **Custom modes** (`model/CustomMode.kt`) are the player's own: a built-in base and house rules, saved under a name
 (`DESIGN.md`, "Game modes"). They are data in the settings, not `GameMode` entries: a game of one is its base mode's,
@@ -25,7 +25,7 @@ with the house rules on.
 `GameState.rules`, never the mode.
 
 - `GameMode` fields: `id` (stored, permanent once released), `displayName`, `description` (New Game's one line: say
-    what's different), `rules`, `earnsAchievements` (only Classic, until modes get their own achievements), `ranking` (what
+    what's different), `rules`, `ranking` (what
     its Leaderboard ranks wins by), and `onlineLeaderboardKey` (null for a mode not ranked by turns).
 - A house rule that changes nothing in a mode's rules says so (`HouseRule.appliesTo`): it's locked there, and not played.
 - `GameRules` fields: the board (`forPlayers` swaps it by count), `pawnsPerPlayer`, `dieFaces`, `dice`, the yard-exit and
@@ -47,7 +47,8 @@ with the house rules on.
     for the mode (`SavedGameJsonTest`).
 - **Records**: each mode has its own Leaderboard (per player count) and Statistics page from its `id`; nothing to add.
     The Leaderboard and Statistics pages list `GameMode.entries` in their mode rows.
-- **Achievements**: off unless `earnsAchievements`; if on, audit it (`GAME_MODES_AUDIT.md`).
+- **Achievements**: its win and a feat of its own (`Achievement.mode`, `isModeWin`; `AchievementModeTest`), and an audit of
+    every other one in it (`GAME_MODES_AUDIT.md`).
 - **The Rules screen**: a page in the Game Modes group (`RulesContent.kt`), and `RulesTextTest`'s words.
 - **Docs**: this table, `DESIGN.md`'s "Game modes", and `IMPLEMENTATION.md`'s Phase 9.
 - **Verify** with the `test` skill's full gate, render the board, then send the debug APK. Commit as

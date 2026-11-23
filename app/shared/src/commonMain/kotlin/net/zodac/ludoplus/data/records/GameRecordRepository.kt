@@ -94,6 +94,9 @@ class GameRecordRepository(
         dao.count()
     }
 
+    /** How many of the modes player 1 has finished a game of, with no house rules on. */
+    suspend fun modesFinished(): Int = dao.modesFinished().let { finished -> GameMode.entries.count { it.id in finished } }
+
     /** Whether any game has been recorded: a person has finished one. */
     suspend fun hasFinishedGame(): Boolean = dao.count() > 0
 

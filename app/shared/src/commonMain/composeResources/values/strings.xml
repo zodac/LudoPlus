@@ -531,7 +531,7 @@
     <!-- The setup form's House Rules card (model/HouseRule.kt): a picker of switches, the modifiers. Closed, it shows how many are on (common_modifiers_*) over the description, or the note while any is on. -->
     <string name="setup_house_rules">House Rules</string>
     <string name="setup_house_rules_description">Common changes to the classic rules, in any mix</string>
-    <string name="setup_house_rules_active_note">Off the Leaderboard and Statistics, and no achievements</string>
+    <string name="setup_house_rules_active_note">Off the Leaderboard and Statistics, and only its own achievements</string>
     <!-- In place of the picker until a first game is finished. -->
     <string name="setup_house_rules_locked">Finish a game to unlock house rules</string>
     <!-- In place of the picker while a custom mode is picked: %1$s is its name, %2$s its house rules' names as a list. -->
@@ -815,6 +815,7 @@
     <string name="category_captures">Captures</string>
     <string name="category_racing">Racing</string>
     <string name="category_winning">Winning</string>
+    <string name="category_game_modes">Game Modes</string>
     <string name="category_misfortune">Misfortune</string>
     <string name="category_miscellaneous">Miscellaneous</string>
     <string name="category_easter_eggs">Easter Eggs</string>
@@ -854,6 +855,40 @@
     <string name="achievement_old_hand_description">Finish 250 games</string>
     <string name="achievement_die_hard_title">Die Hard</string>
     <string name="achievement_die_hard_description">Roll the die 50,000 times</string>
+    <string name="achievement_everything_everywhere_all_at_once_title">Everything Everywhere All At Once</string>
+    <string name="achievement_everything_everywhere_all_at_once_description">Win a game with every house rule on</string>
+    <string name="achievement_where_were_going_we_dont_need_rules_title">Where We're Going, We Don't Need Rules</string>
+    <string name="achievement_where_were_going_we_dont_need_rules_description">Start a game of any mode but `Classic`</string>
+    <string name="achievement_quick_on_the_draw_title">Quick On The Draw</string>
+    <string name="achievement_quick_on_the_draw_description">Win a game of `Quick` mode</string>
+    <string name="achievement_blink_and_youll_miss_it_title">Blink And You'll Miss It</string>
+    <string name="achievement_blink_and_youll_miss_it_description">Win a game of `Quick` mode in 25 turns or fewer</string>
+    <string name="achievement_double_or_nothing_title">Double Or Nothing</string>
+    <string name="achievement_double_or_nothing_description">Win a game of `Two Dice` mode</string>
+    <string name="achievement_two_birds_two_stones_title">Two Birds, Two Stones</string>
+    <string name="achievement_two_birds_two_stones_description">In `Two Dice` mode, capture with each die of one roll</string>
+    <string name="achievement_through_the_looking_glass_title">Through The Looking Glass</string>
+    <string name="achievement_through_the_looking_glass_description">Win a game of `Portals` mode</string>
+    <string name="achievement_there_and_back_again_title">There And Back Again</string>
+    <string name="achievement_there_and_back_again_description">In `Portals` mode, take one pawn through a portal, then back through the same pair</string>
+    <string name="achievement_last_pawn_standing_title">Last Pawn Standing</string>
+    <string name="achievement_last_pawn_standing_description">Win a game of `Survival` mode</string>
+    <string name="achievement_barely_a_scratch_title">Barely A Scratch</string>
+    <string name="achievement_barely_a_scratch_description">Win a game of `Survival` mode with four or more pawns left</string>
+    <string name="achievement_agent_of_chaos_title">Agent Of Chaos</string>
+    <string name="achievement_agent_of_chaos_description">Win a game of `Chaos` mode</string>
+    <string name="achievement_one_of_everything_title">One Of Everything</string>
+    <string name="achievement_one_of_everything_description">In `Chaos` mode, take all six power-ups in one game</string>
+    <string name="achievement_living_to_tell_the_tale_title">Living To Tell The Tale</string>
+    <string name="achievement_living_to_tell_the_tale_description">Win a game of `Haunted House` mode</string>
+    <string name="achievement_not_a_ghost_of_a_chance_title">Not A Ghost Of A Chance</string>
+    <string name="achievement_not_a_ghost_of_a_chance_description">Win a game of `Haunted House` mode without a ghost ever catching you</string>
+    <string name="achievement_road_closed_title">Road Closed</string>
+    <string name="achievement_road_closed_description">Have an opponent's turn pass because of your blockade, with Blockades on</string>
+    <string name="achievement_third_times_the_charm_title">Third Time's The Charm</string>
+    <string name="achievement_third_times_the_charm_description">Bring a pawn out on your third try, with Three Tries on</string>
+    <string name="achievement_grand_tour_title">Grand Tour</string>
+    <string name="achievement_grand_tour_description">Finish a game in every game mode</string>
     <string name="achievement_lifetime_achievement_title">Lifetime Achievement</string>
     <string name="achievement_lifetime_achievement_description">Finish 500 games</string>
     <string name="achievement_completionist_title">Completionist</string>
@@ -1129,18 +1164,18 @@
     <string name="rules_survival_2">A captured pawn is out of the game. Lose all six and you're out: the last player with a pawn left wins, and everyone else is placed by how long they lasted.</string>
     <string name="rules_survival_3">Start squares and star squares are safe at first, until sudden death. Start squares stop being safe first, then star squares too. The line above the board counts the rounds, and with more players it takes longer.</string>
     <string name="rules_survival_4">On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when sudden death comes.</string>
-    <string name="rules_survival_records">The Leaderboard ranks Survival wins by the most pawns left. Survival games don't earn achievements.</string>
+    <string name="rules_survival_records">The Leaderboard ranks Survival wins by the most pawns left.</string>
     <string name="rules_chaos_1">In Chaos there are power-ups on the track, one on each player's stretch of it. End a move on one to use it at once:</string>
     <string name="rules_chaos_2">Only one power-up works in a move: a pawn moved onto another leaves it there. A power-up that's taken comes back somewhere else a few rolls later.</string>
     <string name="rules_chaos_3">Bouncing off a shield earns no roll unless your pawn captures where it settles. A pawn brought out of the yard can't bounce, so a shield doesn't stop it.</string>
     <string name="rules_haunted_house_1">In Haunted House, ghosts haunt the track, one for every two players. After every second turn one of them drifts up to 6 squares, forwards or back, and you won't know which one or how far until it does.</string>
     <string name="rules_haunted_house_2">A ghost sends every pawn on the square it lands on back to its yard, whoever's they are, unless the square is safe. Landing on a ghost yourself does no harm: it only catches pawns when it moves.</string>
-    <string name="rules_modes_records">Each mode has its own Leaderboard and its own page in Statistics. Only Classic games earn achievements.</string>
+    <string name="rules_modes_records">Each mode has its own Leaderboard, its own page in Statistics, and achievements of its own.</string>
     <!-- The House Rules pages: an introduction, then each house rule (house_rule_*) as a line of its own (rules_house_rule_line), grouped by what they change. -->
     <string name="rules_house_rules_title">House Rules</string>
     <string name="rules_house_rules_tab">About</string>
     <string name="rules_house_rules_1">House rules are common changes to the classic rules. Switch them on in *House Rules* on New Game, in any mix.</string>
-    <string name="rules_house_rules_2">A game with any house rule on doesn't count towards the Leaderboard or Statistics, and earns no achievements.</string>
+    <string name="rules_house_rules_2">A game with any house rule on doesn't count towards the Leaderboard or Statistics, and only earns the house rules' own achievements.</string>
     <string name="rules_house_rolling_title">Rolling Again</string>
     <string name="rules_house_rolling_tab">Rolling</string>
     <string name="rules_house_yard_title">Leaving the Yard</string>
@@ -1410,6 +1445,15 @@
     <string name="achievements_reward_locked">Earn this to unlock %1$s</string>
     <!-- TalkBack's name for tapping the star on an achievement. -->
     <string name="achievements_reward_show_action">Show which style this unlocks</string>
+    <!-- The tip on tapping an achievement that only some game modes can earn, naming those modes. %1$s is the list of them, each from achievements_mode_quoted; the count of modes chooses the form. -->
+    <plurals name="achievements_mode_tooltip_only">
+        <item quantity="one">Can only be earned in %1$s mode</item>
+        <item quantity="other">Can only be earned in the %1$s modes</item>
+    </plurals>
+    <!-- One game mode's name (mode_*) in achievements_mode_tooltip_only's list. -->
+    <string name="achievements_mode_quoted">'%1$s'</string>
+    <!-- TalkBack's name for tapping an achievement only some game modes can earn. -->
+    <string name="achievements_mode_show_action">Show which modes can earn this</string>
     <!-- The tooltip on an unlocked achievement's star. %1$s is what it unlocked, from styles_reward_*. -->
     <string name="achievements_reward_unlocked">You've unlocked %1$s!</string>
 </resources>

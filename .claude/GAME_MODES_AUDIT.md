@@ -4,19 +4,19 @@ Which achievements each mode, modifier, or rules setting blocks or makes easier,
 mechanics are in `GAME_MODES.md`; the achievements themselves in `DESIGN.md`, "Achievements".
 
 > DiceFive's audit (Quickfire, Stud, Third Wind, Hit List, D20, Tricolour, and its modifiers) is in commit `5423b6c`
-> (`git show 5423b6c:.claude/GAME_MODES_AUDIT.md`). Its fields for limiting an achievement to some modes
-> (`Achievement.mode`, `notEarnableIn`, `impossibleIn`, `earnableWithModifiers`) and the Achievements screen's tip
-> naming the modes left were not brought back with Phase 6: there is one mode. Restore them from there with the
-> second mode or the first modifier (Phase 9).
+> (`git show 5423b6c:.claude/GAME_MODES_AUDIT.md`). Its fields came back on 2026-11-24, with every mode opened to the
+> ordinary achievements (the maintainer): `Achievement.mode`, `notEarnableIn`, `impossibleIn`, and
+> `earnableWithHouseRules`, judged by `isEarnableIn` and `GameFeats.earnableIn`. The Achievements screen's tip names the
+> modes left for one that is limited. `AchievementModeTest` pins each mode's sets.
 
 ## How to audit
 
 For each achievement a new mode, modifier, or setting changes, decide:
 
-- **Can't be earned with it.** Mark it impossible there (the restored `impossibleIn`). An impossibility explains
+- **Can't be earned with it.** Add the mode to its `impossibleIn`. An impossibility explains
     itself: no tip.
-- **Earned for free with it.** Add a guard and a test for it in `AchievementTrackerTest`, and keep it out (the restored
-    `notEarnableIn`, or `mode` for one kept to a single mode). **Prove the test** by removing that one guard and
+- **Earned for free with it.** Add a guard and a test for it in `AchievementTrackerTest`, and keep it out (`notEarnableIn`,
+    or `mode` for one kept to a single mode). **Prove the test** by removing that one guard and
     watching it fail, one guard at a time.
 - **Easier but not free.** Don't guard it. **Report the "easier" list to the maintainer** rather than deciding alone.
 - **Count the thing, not its proxy.**
@@ -64,49 +64,95 @@ off the Leaderboard (`GameRecordRepository.recordGame`).
 
 ## House rules (New Game)
 
-Modifiers (Phase 9, `DESIGN.md`, "Modifiers"). **A game with any house rule on earns no achievement** (the maintainer,
-2026-11-18): `GameViewModel` keeps no tracker for it, so nothing is free and nothing needs a guard.
-`GameAchievementsTest` plays one out and checks that nothing was recorded. If that rule changes, audit each house rule
-here first: Endless 6s takes Too Much Of A Good Thing away, Free Start, Out on a 1, and Three Tries change the
-yard-exit family (Locked Out, Off The Mark), Blockades and Guarded Starts the capture family, and No Capture Roll and
-No Home Roll the roll counts.
+Modifiers (Phase 9, `DESIGN.md`, "Modifiers"). **A game with any house rule on earns only the house rules' own**, and
+moves no counter or streak, whatever its mode (`Achievement.earnableWithHouseRules`; the maintainer, 2026-11-24, as
+DiceFive): Road Closed (Blockades), Third Time's The Charm (Three Tries), Everything Everywhere All At Once (a win with
+every one that changes something in the mode), and Where We're Going, We Don't Need Rules, for starting another mode. So
+nothing else is free, and no house rule needs an audit of its own.
+
+How often, in 600 simulated games a setting of four Medium CPUs: Road Closed 75% of games with Blockades, Third Time's
+The Charm 64% with Three Tries, and Everything Everywhere the winner's (26% of 200 games).
+
+## How the modes were audited (2026-11-24)
+
+Every achievement was measured, unguarded, over 600 games a mode of four Medium CPUs, player 1 in seat 1, and compared
+with Classic. **Kept out** are those a mode makes routine, or that measure something else there; **easier** ones are left,
+and reported to the maintainer. Counters (games, wins, streaks, captures, rolls) count in every mode.
+
+| Mode | Own, and how often (a game) |
+| --- | --- |
+| Quick | Quick On The Draw (the win), Blink And You'll Miss It 1.8% (25 turns or fewer; a win's median is 34) |
+| Two Dice | Double Or Nothing, Two Birds, Two Stones 12% |
+| Portals | Through The Looking Glass, There And Back Again 41% (Easy 59%, Hard 27%) |
+| Survival | Last Pawn Standing, Barely A Scratch 3.3% (a sixth of wins) |
+| Chaos | Agent Of Chaos, One Of Everything 12% |
+| Haunted House | Living To Tell The Tale, Not A Ghost Of A Chance 3.7% (harder with more players: never, in eight-player simulations) |
+
+Grand Tour (a game finished of every mode, none with house rules) is worked out from the records each time a game ends, so
+games from before it count (`AchievementCounter.MODES_FINISHED`, raised, never added to). A new mode raises its target;
+anyone already holding it keeps it.
 
 ## Quick (a mode)
 
-Two pawns each (Phase 9). **Earns no achievement** (`GameMode.earnsAchievements` false; the maintainer, 2026-11-18),
-so nothing needs a guard: `GameAchievementsTest` plays one out and checks nothing was recorded. If it ever earns them,
-the Pawn count family (every "all but one" and "every pawn" achievement) and the Track length family's turn thresholds
-need the audit first: a Quick game is about half as long.
+Two pawns each, about half as long.
+
+| Kept out | Quick, against Classic |
+| --- | --- |
+| Full House | 8.2%, against 0.0%: two pawns in the column, not four |
+| Comeback Kid | 12.8%, against 0.5%: "all but one" is one pawn |
+| Defeat From The Jaws Of Victory | 14.8%, against 0.2%: and three pawns home is its own words |
+| Untouchable | 14.8%, against 0.8% |
+| Pacifist | 5.5%, against 0.0% |
+| My Favourite Spot | 9.5%, against 2.0%: two pawns on a square is Buddy System |
+| Speed Demon | Half the game in the same five minutes |
+
+**Easier:** Clean Sweep (2.3%, against 0.2%), Never Left Home (4.7%, against 0.7%), Pipped To The Post, All Hands On Deck,
+and the games-played and win counters (games end sooner).
 
 ## Two Dice (a mode)
 
-Two dice, each moved on its own (Phase 9). **Earns no achievement** (`GameMode.earnsAchievements` false; the
-maintainer, 2026-11-18): `GameAchievementsTest` plays one out and checks nothing was recorded. If it ever earns them,
-the Rolls family needs the audit first (every 6 and roll-again achievement: a run is of doubles, and each roll is two
-values), and the Track length family's turn thresholds (a turn moves about twice as far).
+Both dice count as rolls, and either may be a first-roll 6.
+
+| Kept out | Why |
+| --- | --- |
+| Broken Record, Bottom Of The Barrel, Counting Up, Dry Spell, Full Spread, Hot Hand | A run of rolls is one die's: two at once measure something else |
+| Express Delivery | 84%, against 9.3% |
+
+**Can't be earned:** Too Much Of A Good Thing (doubles roll again, not 6s). **Easier:** Off The Mark (31%, against 15%), Hat
+Trick (12%, against 2.3%), Double Delivery (13%, against 4.0%), Insult To Injury (16%, against 8.3%), Early Bird, and the
+roll and 6 counters.
 
 ## Portals (a mode)
 
-Portals on the track (2026-11-24). **Earns no achievement** (`GameMode.earnsAchievements` false). If it ever earns them,
-the Track length family needs the audit first (a portal moves a pawn up to 16 squares without a roll, and
-`SQUARES_MOVED` counts them), and Locked Out, Scenic Route, and the square-by-square ones.
+**Kept out:** Express Delivery (40%, against 9.3%). **Easier:** Double Delivery (11%, against 4.0%). Squares moved are those
+walked, not those a portal skips.
 
 ## Survival (a mode)
 
-Six pawns, no home, and captured pawns out (2026-11-24). **Earns no achievement** (`GameMode.earnsAchievements` false). If
-it ever earns them, nearly every family needs the audit: nothing comes home or out of a yard, "every pawn" is six, and a
-game's end is the last one standing.
+Six pawns, no home, captured pawns out. A game counts as finished when player 1 is knocked out; a win or a loss, at its
+end.
+
+| Kept out | Survival, against Classic |
+| --- | --- |
+| All Hands On Deck, Buddy System | The opening stack: 100% |
+| Clean Sweep, Wire To Wire | Nobody brings a pawn home: every win |
+| Two For One, Hat Trick | Stacks are captured together: 19% and 13%, against 2.2% and 2.3% |
+| Sitting Ducks, Insult To Injury | The same, lost: 26% and 43%, against 2.8% and 8.3% |
+| Leapfrog | 64%, against 42%: a stack is three pawns |
+
+**Can't be earned:** everything about home, a yard, a last square, or a pawn captured twice (`AchievementModeTest` lists all
+29). **Easier:** Payback (29%, against 16%), We're All Friends Here.
 
 ## Chaos (a mode)
 
-Power-ups on the track (2026-11-24). **Earns no achievement** (`GameMode.earnsAchievements` false). If it ever earns them,
-the Rolls, Captures, and Track length families need the audit first: doubled rolls, pawns moved without one, shields, and
-a pawn out of the yard without a 6. `AchievementTracker` reads the move alone, not its power-up's effect.
+Nothing is free: the closest, Express Delivery, is 14%, against 9.3%. A power-up's captures and pawns home count
+(`GameEvent.Moved.allCaptures`, `endedAt`). Untouchable is easier (shields).
 
 ## Haunted House (a mode)
 
-Ghosts that send pawns back (2026-11-24). **Earns no achievement** (`GameMode.earnsAchievements` false).
+A ghost's catch is nobody's capture (`timesHaunted`), so Untouchable, Punching Bag, and the rest are of rivals' alone.
+**Easier**, for the longer games: Six Pack (40%, against 7.3%), On The Warpath (21%, against 13%), and Time Flies.
 
 ## Custom modes (New Game)
 
-A base mode with house rules: their games, as any with house rules, earn nothing, so nothing needs a guard.
+A base mode with house rules: their games, as any with house rules, earn only the house rules' own.

@@ -43,6 +43,7 @@ import net.zodac.ludoplus.game.TutorialScript
 import net.zodac.ludoplus.game.TutorialStep
 import net.zodac.ludoplus.game.localHourOfDay
 import net.zodac.ludoplus.game.nowEpochMillis
+import net.zodac.ludoplus.model.AchievementCounter
 import net.zodac.ludoplus.model.CustomMode
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PlayerColour
@@ -203,7 +204,13 @@ class GameViewModel(
         // Written even if the screen is left at once (it starts at once, on the main thread's immediate dispatcher).
         // One that fails costs this game's records, not the app.
         viewModelScope.launch {
-            withContext(NonCancellable) { orNullOnFailure { records.recordGame(game, endedAt) } }
+            withContext(NonCancellable) {
+                orNullOnFailure {
+                    records.recordGame(game, endedAt)
+                    // Each mode finished counts towards Grand Tour, whichever game it was in.
+                    if (!game.state.rules.hasHouseRules) record(GameFeats(levels = mapOf(AchievementCounter.MODES_FINISHED to records.modesFinished())))
+                }
+            }
             // The win reaches the online leaderboards, and the record the cloud save.
             OnlineSyncRequests.request()
         }
@@ -288,9 +295,8 @@ class GameViewModel(
             customName = setup.customMode?.name,
             id = Uuid.random().toHexString(),
         )
-        // A game with house rules earns nothing.
-        tracker = if (started.earnsAchievements) AchievementTracker(players) else null
-        if (started.earnsAchievements) record(AchievementEngine.atGameStart(players, previousGame, localHour(startedAt)))
+        tracker = AchievementTracker(players)
+        record(AchievementEngine.atGameStart(players, previousGame, localHour(startedAt), game = started.state))
         commit(started)
         viewModelScope.launch { setup.saveTo(settingsRepository) }
         playCpuTurn()
@@ -326,8 +332,8 @@ class GameViewModel(
         if (_game.value != null) return true
         playMark = elapsedMillis().takeIf { foreground.value }
         _game.value = game
-        tracker = if (game.earnsAchievements) AchievementTracker(game.players) else null
-        if (game.earnsAchievements) record(AchievementEngine.atGameResume())
+        tracker = AchievementTracker(game.players)
+        record(AchievementEngine.atGameResume().earnableIn(game.state))
         playCpuTurn()
         return true
     }
@@ -427,8 +433,7 @@ class GameViewModel(
 
     /** The game is on screen with the phone on its side: "Sideways", for a game (never the tutorial). */
     fun onShownSideways() {
-        if (_game.value?.earnsAchievements != true) return
-        record(AchievementEngine.atSideways())
+        record(AchievementEngine.atSideways().earnableIn(_game.value?.state ?: return))
     }
 
     /** Whether superuser mode can be turned on here: a debug build's game, never the tutorial. */
@@ -885,8 +890,8 @@ class GameViewModel(
         val before = shown?.takeIf { it.id == game.id && it.startedAtEpochMillis == game.startedAtEpochMillis }
         if (before == null) {
             playMark = elapsedMillis().takeIf { foreground.value }
-            tracker = if (game.earnsAchievements) AchievementTracker(game.players, mySeat = seat) else null
-            if (game.earnsAchievements) record(AchievementEngine.atGameStart(game.players, previousGame = shown?.state, localHour(now()), mySeat = seat))
+            tracker = AchievementTracker(game.players, mySeat = seat)
+            record(AchievementEngine.atGameStart(game.players, previousGame = shown?.state, localHour(now()), mySeat = seat, game = game.state))
         } else {
             track(before.state, game.state)
         }
@@ -986,12 +991,6 @@ data class StartedGame(
 
     /** Whether the player whose turn it is is the computer, which the host plays. */
     val currentIsComputer: Boolean get() = guestSeat == null && players[state.current].type == PlayerType.AI
-
-    /**
-     * Whether the game earns achievements: in a mode that earns them ([GameMode.earnsAchievements]), and with no house
-     * rule on ([net.zodac.ludoplus.model.GameRules.hasHouseRules]).
-     */
-    val earnsAchievements: Boolean get() = mode.earnsAchievements && !state.rules.hasHouseRules
 }
 
 /** Milliseconds from a fixed, unspecified start that the wall clock's changes don't move: for measuring play time. */

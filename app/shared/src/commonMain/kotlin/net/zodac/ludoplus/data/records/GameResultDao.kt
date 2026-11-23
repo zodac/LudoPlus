@@ -56,6 +56,10 @@ interface GameResultDao {
     )
     suspend fun unpostedWin(gameModeId: String, playerCount: Int, afterEpochMillis: Long): UnpostedWinRow
 
+    /** The modes player 1 has finished a game of, with no house rules on. */
+    @Query("SELECT DISTINCT gameModeId FROM results WHERE isPrimaryPlayer = 1 AND houseRules = 0")
+    suspend fun modesFinished(): List<String>
+
     @Query("SELECT COUNT(*) FROM results")
     suspend fun count(): Int
 

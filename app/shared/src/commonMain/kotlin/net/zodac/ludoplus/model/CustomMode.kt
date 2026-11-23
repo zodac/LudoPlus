@@ -3,7 +3,7 @@ package net.zodac.ludoplus.model
 /**
  * A player's own game mode (Phase 9 of `.claude/IMPLEMENTATION.md`): a built-in [base] mode with [houseRules] on,
  * saved under [name] and picked on New Game. It always has a house rule (without one it would be its base), so its
- * games, as any with house rules, stay off the Leaderboard and out of Statistics, and earn no achievements.
+ * games, as any with house rules, stay off the Leaderboard and out of Statistics, and earn only the house rules' own achievements.
  *
  * [id] is its key in the settings, kept when it's renamed; [name] is unique among the player's, whatever its case.
  */

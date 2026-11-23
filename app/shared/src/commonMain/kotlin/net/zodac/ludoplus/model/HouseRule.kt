@@ -24,7 +24,7 @@ import org.jetbrains.compose.resources.StringResource
 /**
  * A house rule: a modifier, switched on at New Game, that changes one of the [GameRules] (Phase 9 of
  * `.claude/IMPLEMENTATION.md`). Any mix may be on. A game with any on stays off the Leaderboard and out of Statistics,
- * and earns no achievements (`.claude/DESIGN.md`, "Modifiers").
+ * and earns only the house rules' own achievements (`.claude/DESIGN.md`, "Modifiers").
  *
  * Each is data: [applyTo] changes the rules, and the engine reads only the rules, never which house rules are on.
  * [id] is the stable storage key, so **never change one once released** - rename [title] instead.

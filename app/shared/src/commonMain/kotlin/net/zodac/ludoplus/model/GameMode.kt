@@ -33,11 +33,6 @@ enum class GameMode(
     val description: StringResource,
     val rules: GameRules,
     /**
-     * Whether its games earn achievements. Every mode's games count on its own Leaderboard and in Statistics; only
-     * Classic's earn achievements until modes have their own (the maintainer, 2026-11-18).
-     */
-    val earnsAchievements: Boolean = false,
-    /**
      * Its online leaderboards' key (Play Games), one board for each player count ([onlineLeaderboardKey]). Permanent once
      * released, as the boards are: a rule change that makes old wins unfair needs a new key (`.claude/PLAY_GAMES.md`).
      * Null for a mode with none: they rank the fewest turns, which isn't how it ranks ([ranking]).
@@ -52,7 +47,6 @@ enum class GameMode(
         displayName = Res.string.mode_classic,
         description = Res.string.mode_classic_description,
         rules = GameRules(),
-        earnsAchievements = true,
         onlineLeaderboardKey = "classic",
     ),
 
@@ -216,7 +210,7 @@ data class GameRules(
     /** Whether a game of these rules draws chances of its own, besides the dice: power-ups' or ghosts'. */
     val hasChances: Boolean get() = powerUps || ghosts
 
-    /** Whether any house rule is on: such a game stays off the Leaderboard and out of Statistics, and earns no achievements. */
+    /** Whether any house rule is on: such a game stays off the Leaderboard and out of Statistics, and earns only the house rules' own achievements. */
     val hasHouseRules: Boolean get() = houseRules.isNotEmpty()
 
     /**

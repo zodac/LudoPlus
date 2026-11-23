@@ -9,10 +9,14 @@ import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.layout.Layout
 import androidx.compose.foundation.Image
 import net.zodac.ludoplus.resources.achievements_styles_unlocked_named
+import net.zodac.ludoplus.resources.achievements_mode_quoted
+import net.zodac.ludoplus.resources.achievements_mode_show_action
+import net.zodac.ludoplus.resources.achievements_mode_tooltip_only
 import net.zodac.ludoplus.resources.achievements_reward_show_action
 import net.zodac.ludoplus.resources.achievements_reward_locked
 import net.zodac.ludoplus.resources.achievements_reward_unlocked
 import androidx.compose.foundation.clickable
+import net.zodac.ludoplus.ui.common.pluralStringResource
 import net.zodac.ludoplus.ui.common.rememberAppTooltipState
 import net.zodac.ludoplus.ui.common.AppTooltip
 import net.zodac.ludoplus.ui.common.spokenList
@@ -761,12 +765,15 @@ private fun AchievementRow(
     )
     fun ink(normal: Color): Color = lerp(normal, flashInk, flash)
     // The style(s) it unlocks: a tap's tip, and read with the row by TalkBack. Not while superuser mode holds the row.
-    val rewardMessage = rewardTooltipMessage(item.achievement, unlocked)?.takeUnless { superuserModeActive }
+    val rewardMessage = rewardTooltipMessage(item.achievement, unlocked)
+    // And the modes it's limited to, where it's kept out of some.
+    val tipMessage = listOfNotNull(modeTooltipMessage(item.achievement, unlocked), rewardMessage)
+        .joinToString("\n").ifEmpty { null }?.takeUnless { superuserModeActive }
     val tooltipState = rememberAppTooltipState(persistent = true)
     val scope = rememberCoroutineScope()
-    val showReward = stringResource(Res.string.achievements_reward_show_action)
+    val showTip = stringResource(if (rewardMessage != null) Res.string.achievements_reward_show_action else Res.string.achievements_mode_show_action)
 
-    AppTooltip(message = rewardMessage.orEmpty(), state = tooltipState, enabled = false) {
+    AppTooltip(message = tipMessage.orEmpty(), state = tooltipState, enabled = false) {
         Card(
             modifier = modifier
                 .fillMaxWidth()
@@ -774,8 +781,8 @@ private fun AchievementRow(
                 // style it unlocks.
                 .semantics(mergeDescendants = true) {}
                 .then(
-                    if (rewardMessage != null) {
-                        Modifier.clickable(onClickLabel = showReward) { scope.launch { tooltipState.show() } }
+                    if (tipMessage != null) {
+                        Modifier.clickable(onClickLabel = showTip) { scope.launch { tooltipState.show() } }
                     } else {
                         Modifier
                     },
@@ -883,7 +890,7 @@ private fun AchievementRow(
                         item.achievement.hasProgressBar -> ProgressRow(item, ::ink)
                     }
                     // Heard, not seen: the tip shows it on a tap.
-                    if (rewardMessage != null) Box(modifier = Modifier.semantics { contentDescription = rewardMessage })
+                    if (tipMessage != null) Box(modifier = Modifier.semantics { contentDescription = tipMessage })
                 }
             }
         }
@@ -929,6 +936,19 @@ private fun Modifier.hiddenUnderPinnedHeader(listState: LazyListState, key: Any)
         hiddenHeight >= size.height -> Unit
         else -> clipRect(top = hiddenHeight) { this@drawWithContent.drawContent() }
     }
+}
+
+/**
+ * "Can only be earned in the 'Classic' and 'Chaos' modes", for an [achievement] kept out of some: none once it's earned, for
+ * a hidden one, or for one that's a mode's own, which its description names.
+ */
+@Composable
+private fun modeTooltipMessage(achievement: Achievement, unlocked: Boolean): String? {
+    val modes = achievement.limitedModes
+    if (modes.isEmpty() || unlocked || achievement.visibility == AchievementVisibility.HIDDEN || achievement.mode != null) return null
+    // Each name kept on one line.
+    val names = spokenList(modes.map { stringResource(Res.string.achievements_mode_quoted, stringResource(it.displayName).replace(' ', '\u00A0')) })
+    return pluralStringResource(Res.plurals.achievements_mode_tooltip_only, modes.size, names)
 }
 
 /**

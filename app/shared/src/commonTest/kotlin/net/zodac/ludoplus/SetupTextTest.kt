@@ -170,7 +170,7 @@ class SetupTextTest : UiTest() {
         compose.onNodeWithText("Done").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("1 enabled").assertExists()
-        compose.onNodeWithText("Off the Leaderboard and Statistics, and no achievements").assertExists()
+        compose.onNodeWithText("Off the Leaderboard and Statistics, and only its own achievements").assertExists()
     }
 
     @Test

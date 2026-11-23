@@ -205,8 +205,43 @@ import net.zodac.ludoplus.resources.achievement_wire_to_wire_description
 import net.zodac.ludoplus.resources.achievement_wire_to_wire_title
 import net.zodac.ludoplus.resources.achievement_wooden_spoon_description
 import net.zodac.ludoplus.resources.achievement_wooden_spoon_title
+import net.zodac.ludoplus.resources.achievement_everything_everywhere_all_at_once_title
+import net.zodac.ludoplus.resources.achievement_everything_everywhere_all_at_once_description
+import net.zodac.ludoplus.resources.achievement_where_were_going_we_dont_need_rules_title
+import net.zodac.ludoplus.resources.achievement_where_were_going_we_dont_need_rules_description
+import net.zodac.ludoplus.resources.achievement_quick_on_the_draw_title
+import net.zodac.ludoplus.resources.achievement_quick_on_the_draw_description
+import net.zodac.ludoplus.resources.achievement_blink_and_youll_miss_it_title
+import net.zodac.ludoplus.resources.achievement_blink_and_youll_miss_it_description
+import net.zodac.ludoplus.resources.achievement_double_or_nothing_title
+import net.zodac.ludoplus.resources.achievement_double_or_nothing_description
+import net.zodac.ludoplus.resources.achievement_two_birds_two_stones_title
+import net.zodac.ludoplus.resources.achievement_two_birds_two_stones_description
+import net.zodac.ludoplus.resources.achievement_through_the_looking_glass_title
+import net.zodac.ludoplus.resources.achievement_through_the_looking_glass_description
+import net.zodac.ludoplus.resources.achievement_there_and_back_again_title
+import net.zodac.ludoplus.resources.achievement_there_and_back_again_description
+import net.zodac.ludoplus.resources.achievement_last_pawn_standing_title
+import net.zodac.ludoplus.resources.achievement_last_pawn_standing_description
+import net.zodac.ludoplus.resources.achievement_barely_a_scratch_title
+import net.zodac.ludoplus.resources.achievement_barely_a_scratch_description
+import net.zodac.ludoplus.resources.achievement_agent_of_chaos_title
+import net.zodac.ludoplus.resources.achievement_agent_of_chaos_description
+import net.zodac.ludoplus.resources.achievement_one_of_everything_title
+import net.zodac.ludoplus.resources.achievement_one_of_everything_description
+import net.zodac.ludoplus.resources.achievement_living_to_tell_the_tale_title
+import net.zodac.ludoplus.resources.achievement_living_to_tell_the_tale_description
+import net.zodac.ludoplus.resources.achievement_not_a_ghost_of_a_chance_title
+import net.zodac.ludoplus.resources.achievement_not_a_ghost_of_a_chance_description
+import net.zodac.ludoplus.resources.achievement_road_closed_title
+import net.zodac.ludoplus.resources.achievement_road_closed_description
+import net.zodac.ludoplus.resources.achievement_third_times_the_charm_title
+import net.zodac.ludoplus.resources.achievement_third_times_the_charm_description
+import net.zodac.ludoplus.resources.achievement_grand_tour_title
+import net.zodac.ludoplus.resources.achievement_grand_tour_description
 import net.zodac.ludoplus.resources.category_captures
 import net.zodac.ludoplus.resources.category_easter_eggs
+import net.zodac.ludoplus.resources.category_game_modes
 import net.zodac.ludoplus.resources.category_milestones
 import net.zodac.ludoplus.resources.category_miscellaneous
 import net.zodac.ludoplus.resources.category_misfortune
@@ -251,6 +286,12 @@ enum class AchievementCounter(
 
     /** Games player 1 has finished last in. */
     LAST_PLACES("LAST_PLACES"),
+
+    /**
+     * The game modes player 1 has finished a game of, with no house rules on: worked out from the game records, never
+     * added to, so the latest figure is the one.
+     */
+    MODES_FINISHED("MODES_FINISHED", cloudMerge = CounterMerge.LATEST),
 
     /** Player 1's losses in a row: up one each time another player wins, back to 0 with a win of theirs. */
     LOSS_STREAK("LOSS_STREAK", cloudMerge = CounterMerge.LATEST),
@@ -315,6 +356,7 @@ enum class AchievementCategory(val label: StringResource) {
     CAPTURES(Res.string.category_captures),
     RACING(Res.string.category_racing),
     WINNING(Res.string.category_winning),
+    GAME_MODES(Res.string.category_game_modes),
     MISFORTUNE(Res.string.category_misfortune),
     MISCELLANEOUS(Res.string.category_miscellaneous),
     EASTER_EGGS(Res.string.category_easter_eggs),
@@ -366,6 +408,22 @@ enum class Achievement(
     val visibility: AchievementVisibility = AchievementVisibility.NORMAL,
     /** How many steps of progress between banners, for a running total that announces more often than each quarter. */
     val progressStepSize: Int? = null,
+    /** The one game mode this can be earned in, or null for any ([isEarnableIn]). */
+    val mode: GameMode? = null,
+    /** Whether this is [mode]'s own win. */
+    val isModeWin: Boolean = false,
+    /**
+     * The modes this is deliberately kept out of, though it could happen there: the mode makes it too easy, or measures
+     * something else. The Achievements screen's tip names the modes left ([limitedModes]).
+     */
+    val notEarnableIn: Set<GameMode> = emptySet(),
+    /** The modes whose rules rule it out. Kept out of these too, but that explains itself: no tip on its own. */
+    val impossibleIn: Set<GameMode> = emptySet(),
+    /**
+     * Whether a game with house rules on can earn this: true only for the house rules' own achievements, and for starting
+     * a game of another mode. Such a game earns no other, and moves no counter.
+     */
+    val earnableWithHouseRules: Boolean = false,
 ) : StoredId {
     // ---- Milestones: games, wins, rolls, and captures, easiest first, then Completionist --------------------------
     THE_JOURNEY_BEGINS(
@@ -500,19 +558,19 @@ enum class Achievement(
         "broken_record",
         Res.string.achievement_broken_record_title,
         Res.string.achievement_broken_record_description,
-        AchievementCategory.THE_DIE,
+        AchievementCategory.THE_DIE, notEarnableIn = setOf(GameMode.TWO_DICE),
     ),
     FULL_SPREAD(
         "full_spread",
         Res.string.achievement_full_spread_title,
         Res.string.achievement_full_spread_description,
-        AchievementCategory.THE_DIE,
+        AchievementCategory.THE_DIE, notEarnableIn = setOf(GameMode.TWO_DICE),
     ),
     HOT_HAND(
         "hot_hand",
         Res.string.achievement_hot_hand_title,
         Res.string.achievement_hot_hand_description,
-        AchievementCategory.THE_DIE,
+        AchievementCategory.THE_DIE, notEarnableIn = setOf(GameMode.TWO_DICE),
     ),
     SIX_PACK(
         "six_pack",
@@ -524,7 +582,7 @@ enum class Achievement(
         "counting_up",
         Res.string.achievement_counting_up_title,
         Res.string.achievement_counting_up_description,
-        AchievementCategory.THE_DIE,
+        AchievementCategory.THE_DIE, notEarnableIn = setOf(GameMode.TWO_DICE),
     ),
     SIXTH_SENSE(
         "sixth_sense",
@@ -544,7 +602,7 @@ enum class Achievement(
         "two_for_one",
         Res.string.achievement_two_for_one_title,
         Res.string.achievement_two_for_one_description,
-        AchievementCategory.CAPTURES,
+        AchievementCategory.CAPTURES, notEarnableIn = setOf(GameMode.SURVIVAL),
     ),
     WELCOME_PARTY(
         "welcome_party",
@@ -562,7 +620,7 @@ enum class Achievement(
         "hat_trick",
         Res.string.achievement_hat_trick_title,
         Res.string.achievement_hat_trick_description,
-        AchievementCategory.CAPTURES,
+        AchievementCategory.CAPTURES, notEarnableIn = setOf(GameMode.SURVIVAL),
     ),
     PAYBACK(
         "payback",
@@ -574,19 +632,19 @@ enum class Achievement(
         "not_so_fast",
         Res.string.achievement_not_so_fast_title,
         Res.string.achievement_not_so_fast_description,
-        AchievementCategory.CAPTURES,
+        AchievementCategory.CAPTURES, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     TALL_POPPY(
         "tall_poppy",
         Res.string.achievement_tall_poppy_title,
         Res.string.achievement_tall_poppy_description,
-        AchievementCategory.CAPTURES,
+        AchievementCategory.CAPTURES, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     PARTING_SHOT(
         "parting_shot",
         Res.string.achievement_parting_shot_title,
         Res.string.achievement_parting_shot_description,
-        AchievementCategory.CAPTURES,
+        AchievementCategory.CAPTURES, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     PICKING_ON_YOU(
         "picking_on_you",
@@ -630,55 +688,55 @@ enum class Achievement(
         "home_sweet_home",
         Res.string.achievement_home_sweet_home_title,
         Res.string.achievement_home_sweet_home_description,
-        AchievementCategory.RACING,
+        AchievementCategory.RACING, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     HOMECOMING(
         "homecoming",
         Res.string.achievement_homecoming_title,
         Res.string.achievement_homecoming_description,
-        AchievementCategory.RACING, AchievementCounter.PAWNS_HOME, target = 10,
+        AchievementCategory.RACING, AchievementCounter.PAWNS_HOME, target = 10, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     EARLY_BIRD(
         "early_bird",
         Res.string.achievement_early_bird_title,
         Res.string.achievement_early_bird_description,
-        AchievementCategory.RACING,
+        AchievementCategory.RACING, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     ALL_HANDS_ON_DECK(
         "all_hands_on_deck",
         Res.string.achievement_all_hands_on_deck_title,
         Res.string.achievement_all_hands_on_deck_description,
-        AchievementCategory.RACING,
+        AchievementCategory.RACING, notEarnableIn = setOf(GameMode.SURVIVAL),
     ),
     DOUBLE_DELIVERY(
         "double_delivery",
         Res.string.achievement_double_delivery_title,
         Res.string.achievement_double_delivery_description,
-        AchievementCategory.RACING,
+        AchievementCategory.RACING, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     EXPRESS_DELIVERY(
         "express_delivery",
         Res.string.achievement_express_delivery_title,
         Res.string.achievement_express_delivery_description,
-        AchievementCategory.RACING,
+        AchievementCategory.RACING, notEarnableIn = setOf(GameMode.TWO_DICE, GameMode.PORTALS), impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     LAP_OF_HONOUR(
         "lap_of_honour",
         Res.string.achievement_lap_of_honour_title,
         Res.string.achievement_lap_of_honour_description,
-        AchievementCategory.RACING,
+        AchievementCategory.RACING, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     FULL_HOUSE(
         "full_house",
         Res.string.achievement_full_house_title,
         Res.string.achievement_full_house_description,
-        AchievementCategory.RACING,
+        AchievementCategory.RACING, notEarnableIn = setOf(GameMode.QUICK), impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     FREQUENT_TRAVELLER(
         "frequent_traveller",
         Res.string.achievement_frequent_traveller_title,
         Res.string.achievement_frequent_traveller_description,
-        AchievementCategory.RACING, AchievementCounter.PAWNS_HOME, target = 100,
+        AchievementCategory.RACING, AchievementCounter.PAWNS_HOME, target = 100, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     MARATHON(
         "marathon",
@@ -690,7 +748,7 @@ enum class Achievement(
         "globetrotter",
         Res.string.achievement_globetrotter_title,
         Res.string.achievement_globetrotter_description,
-        AchievementCategory.RACING, AchievementCounter.PAWNS_HOME, target = 1_000,
+        AchievementCategory.RACING, AchievementCounter.PAWNS_HOME, target = 1_000, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     ULTRAMARATHON(
         "ultramarathon",
@@ -704,19 +762,25 @@ enum class Achievement(
         "clean_sweep",
         Res.string.achievement_clean_sweep_title,
         Res.string.achievement_clean_sweep_description,
-        AchievementCategory.WINNING,
+        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.SURVIVAL),
     ),
     COMEBACK_KID(
         "comeback_kid",
         Res.string.achievement_comeback_kid_title,
         Res.string.achievement_comeback_kid_description,
-        AchievementCategory.WINNING,
+        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.QUICK), impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     CONQUEROR(
         "conqueror",
         Res.string.achievement_conqueror_title,
         Res.string.achievement_conqueror_description,
         AchievementCategory.WINNING,
+    ),
+    EVERYTHING_EVERYWHERE_ALL_AT_ONCE(
+        "everything_everywhere_all_at_once",
+        Res.string.achievement_everything_everywhere_all_at_once_title,
+        Res.string.achievement_everything_everywhere_all_at_once_description,
+        AchievementCategory.WINNING, earnableWithHouseRules = true,
     ),
     FIRST_VICTORY(
         "first_victory",
@@ -728,7 +792,7 @@ enum class Achievement(
         "front_runner",
         Res.string.achievement_front_runner_title,
         Res.string.achievement_front_runner_description,
-        AchievementCategory.WINNING,
+        AchievementCategory.WINNING, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     HOW_DO_YOU_DO_FELLOW_CPUS(
         "how_do_you_do_fellow_cpus",
@@ -740,7 +804,7 @@ enum class Achievement(
         "late_bloomer",
         Res.string.achievement_late_bloomer_title,
         Res.string.achievement_late_bloomer_description,
-        AchievementCategory.WINNING,
+        AchievementCategory.WINNING, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     LIFE_OF_THE_PARTY(
         "life_of_the_party",
@@ -752,25 +816,25 @@ enum class Achievement(
         "never_say_die",
         Res.string.achievement_never_say_die_title,
         Res.string.achievement_never_say_die_description,
-        AchievementCategory.WINNING,
+        AchievementCategory.WINNING, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     PACIFIST(
         "pacifist",
         Res.string.achievement_pacifist_title,
         Res.string.achievement_pacifist_description,
-        AchievementCategory.WINNING,
+        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.QUICK),
     ),
     PHOTO_FINISH(
         "photo_finish",
         Res.string.achievement_photo_finish_title,
         Res.string.achievement_photo_finish_description,
-        AchievementCategory.WINNING,
+        AchievementCategory.WINNING, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     SPEED_DEMON(
         "speed_demon",
         Res.string.achievement_speed_demon_title,
         Res.string.achievement_speed_demon_description,
-        AchievementCategory.WINNING,
+        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.QUICK),
     ),
     TRAINING_WHEELS(
         "training_wheels",
@@ -782,13 +846,111 @@ enum class Achievement(
         "untouchable",
         Res.string.achievement_untouchable_title,
         Res.string.achievement_untouchable_description,
-        AchievementCategory.WINNING,
+        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.QUICK),
     ),
     WIRE_TO_WIRE(
         "wire_to_wire",
         Res.string.achievement_wire_to_wire_title,
         Res.string.achievement_wire_to_wire_description,
-        AchievementCategory.WINNING,
+        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.SURVIVAL),
+    ),
+
+    // ---- Game Modes: starting another mode, each mode's win and its feat, the house rules', then every mode --------
+    WHERE_WERE_GOING_WE_DONT_NEED_RULES(
+        "where_were_going_we_dont_need_rules",
+        Res.string.achievement_where_were_going_we_dont_need_rules_title,
+        Res.string.achievement_where_were_going_we_dont_need_rules_description,
+        AchievementCategory.GAME_MODES, impossibleIn = setOf(GameMode.CLASSIC), earnableWithHouseRules = true,
+    ),
+    QUICK_ON_THE_DRAW(
+        "quick_on_the_draw",
+        Res.string.achievement_quick_on_the_draw_title,
+        Res.string.achievement_quick_on_the_draw_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.QUICK, isModeWin = true,
+    ),
+    BLINK_AND_YOULL_MISS_IT(
+        "blink_and_youll_miss_it",
+        Res.string.achievement_blink_and_youll_miss_it_title,
+        Res.string.achievement_blink_and_youll_miss_it_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.QUICK,
+    ),
+    DOUBLE_OR_NOTHING(
+        "double_or_nothing",
+        Res.string.achievement_double_or_nothing_title,
+        Res.string.achievement_double_or_nothing_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.TWO_DICE, isModeWin = true,
+    ),
+    TWO_BIRDS_TWO_STONES(
+        "two_birds_two_stones",
+        Res.string.achievement_two_birds_two_stones_title,
+        Res.string.achievement_two_birds_two_stones_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.TWO_DICE,
+    ),
+    THROUGH_THE_LOOKING_GLASS(
+        "through_the_looking_glass",
+        Res.string.achievement_through_the_looking_glass_title,
+        Res.string.achievement_through_the_looking_glass_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.PORTALS, isModeWin = true,
+    ),
+    THERE_AND_BACK_AGAIN(
+        "there_and_back_again",
+        Res.string.achievement_there_and_back_again_title,
+        Res.string.achievement_there_and_back_again_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.PORTALS,
+    ),
+    LAST_PAWN_STANDING(
+        "last_pawn_standing",
+        Res.string.achievement_last_pawn_standing_title,
+        Res.string.achievement_last_pawn_standing_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.SURVIVAL, isModeWin = true,
+    ),
+    BARELY_A_SCRATCH(
+        "barely_a_scratch",
+        Res.string.achievement_barely_a_scratch_title,
+        Res.string.achievement_barely_a_scratch_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.SURVIVAL,
+    ),
+    AGENT_OF_CHAOS(
+        "agent_of_chaos",
+        Res.string.achievement_agent_of_chaos_title,
+        Res.string.achievement_agent_of_chaos_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.CHAOS, isModeWin = true,
+    ),
+    ONE_OF_EVERYTHING(
+        "one_of_everything",
+        Res.string.achievement_one_of_everything_title,
+        Res.string.achievement_one_of_everything_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.CHAOS,
+    ),
+    LIVING_TO_TELL_THE_TALE(
+        "living_to_tell_the_tale",
+        Res.string.achievement_living_to_tell_the_tale_title,
+        Res.string.achievement_living_to_tell_the_tale_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.HAUNTED_HOUSE, isModeWin = true,
+    ),
+    NOT_A_GHOST_OF_A_CHANCE(
+        "not_a_ghost_of_a_chance",
+        Res.string.achievement_not_a_ghost_of_a_chance_title,
+        Res.string.achievement_not_a_ghost_of_a_chance_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.HAUNTED_HOUSE,
+    ),
+    ROAD_CLOSED(
+        "road_closed",
+        Res.string.achievement_road_closed_title,
+        Res.string.achievement_road_closed_description,
+        AchievementCategory.GAME_MODES, earnableWithHouseRules = true,
+    ),
+    THIRD_TIMES_THE_CHARM(
+        "third_times_the_charm",
+        Res.string.achievement_third_times_the_charm_title,
+        Res.string.achievement_third_times_the_charm_description,
+        AchievementCategory.GAME_MODES, impossibleIn = setOf(GameMode.SURVIVAL), earnableWithHouseRules = true,
+    ),
+    GRAND_TOUR(
+        "grand_tour",
+        Res.string.achievement_grand_tour_title,
+        Res.string.achievement_grand_tour_description,
+        AchievementCategory.GAME_MODES, AchievementCounter.MODES_FINISHED, target = GameMode.entries.size, progressStepSize = 1,
     ),
 
     // ---- Misfortune: alphabetical ---------------------------------------------------------------------------------
@@ -796,31 +958,31 @@ enum class Achievement(
         "back_to_square_one",
         Res.string.achievement_back_to_square_one_title,
         Res.string.achievement_back_to_square_one_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     BOTTOM_OF_THE_BARREL(
         "bottom_of_the_barrel",
         Res.string.achievement_bottom_of_the_barrel_title,
         Res.string.achievement_bottom_of_the_barrel_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, notEarnableIn = setOf(GameMode.TWO_DICE),
     ),
     DEFEAT_FROM_THE_JAWS_OF_VICTORY(
         "defeat_from_the_jaws_of_victory",
         Res.string.achievement_defeat_from_the_jaws_of_victory_title,
         Res.string.achievement_defeat_from_the_jaws_of_victory_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, notEarnableIn = setOf(GameMode.QUICK), impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     DRY_SPELL(
         "dry_spell",
         Res.string.achievement_dry_spell_title,
         Res.string.achievement_dry_spell_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, notEarnableIn = setOf(GameMode.TWO_DICE),
     ),
     GROUNDHOG_DAY(
         "groundhog_day",
         Res.string.achievement_groundhog_day_title,
         Res.string.achievement_groundhog_day_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     I_ROBOT(
         "i_robot",
@@ -832,13 +994,13 @@ enum class Achievement(
         "insult_to_injury",
         Res.string.achievement_insult_to_injury_title,
         Res.string.achievement_insult_to_injury_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, notEarnableIn = setOf(GameMode.SURVIVAL),
     ),
     LOCKED_OUT(
         "locked_out",
         Res.string.achievement_locked_out_title,
         Res.string.achievement_locked_out_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     LOSING_STREAK(
         "losing_streak",
@@ -850,31 +1012,31 @@ enum class Achievement(
         "never_left_home",
         Res.string.achievement_never_left_home_title,
         Res.string.achievement_never_left_home_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     PIPPED_TO_THE_POST(
         "pipped_to_the_post",
         Res.string.achievement_pipped_to_the_post_title,
         Res.string.achievement_pipped_to_the_post_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     PUNCHING_BAG(
         "punching_bag",
         Res.string.achievement_punching_bag_title,
         Res.string.achievement_punching_bag_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     SCENIC_ROUTE(
         "scenic_route",
         Res.string.achievement_scenic_route_title,
         Res.string.achievement_scenic_route_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     SITTING_DUCKS(
         "sitting_ducks",
         Res.string.achievement_sitting_ducks_title,
         Res.string.achievement_sitting_ducks_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, notEarnableIn = setOf(GameMode.SURVIVAL),
     ),
     SPOON_COLLECTOR(
         "spoon_collector",
@@ -886,7 +1048,7 @@ enum class Achievement(
         "too_much_of_a_good_thing",
         Res.string.achievement_too_much_of_a_good_thing_title,
         Res.string.achievement_too_much_of_a_good_thing_description,
-        AchievementCategory.MISFORTUNE,
+        AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.TWO_DICE),
     ),
     WOODEN_SPOON(
         "wooden_spoon",
@@ -900,37 +1062,37 @@ enum class Achievement(
         "buddy_system",
         Res.string.achievement_buddy_system_title,
         Res.string.achievement_buddy_system_description,
-        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
+        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN, notEarnableIn = setOf(GameMode.SURVIVAL),
     ),
     DEJA_VU(
         "deja_vu",
         Res.string.achievement_deja_vu_title,
         Res.string.achievement_deja_vu_description,
-        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
+        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     INCH_BY_INCH(
         "inch_by_inch",
         Res.string.achievement_inch_by_inch_title,
         Res.string.achievement_inch_by_inch_description,
-        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
+        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     LEAPFROG(
         "leapfrog",
         Res.string.achievement_leapfrog_title,
         Res.string.achievement_leapfrog_description,
-        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
+        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN, notEarnableIn = setOf(GameMode.SURVIVAL),
     ),
     MY_FAVOURITE_SPOT(
         "my_favourite_spot",
         Res.string.achievement_my_favourite_spot_title,
         Res.string.achievement_my_favourite_spot_description,
-        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
+        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN, notEarnableIn = setOf(GameMode.QUICK),
     ),
     SO_NEAR_YET_SO_FAR(
         "so_near_yet_so_far",
         Res.string.achievement_so_near_yet_so_far_title,
         Res.string.achievement_so_near_yet_so_far_description,
-        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
+        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     WERE_ALL_FRIENDS_HERE(
         "were_all_friends_here",
@@ -1003,6 +1165,13 @@ enum class Achievement(
             counter == AchievementCounter.WIN_STREAK || counter == AchievementCounter.LOSS_STREAK -> ProgressStyle.STREAK
             else -> ProgressStyle.CUMULATIVE
         }
+
+    /** Whether this can be earned in a game of [gameMode]. */
+    fun isEarnableIn(gameMode: GameMode): Boolean = (mode == null || mode == gameMode) && gameMode !in notEarnableIn && gameMode !in impossibleIn
+
+    /** The modes this can be earned in, for one deliberately limited to some; empty for one that isn't. */
+    val limitedModes: List<GameMode>
+        get() = if (mode == null && notEarnableIn.isEmpty()) emptyList() else GameMode.entries.filter(::isEarnableIn)
 
     val hasProgressBar: Boolean
         get() = progressStyle != ProgressStyle.NONE

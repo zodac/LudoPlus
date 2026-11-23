@@ -111,6 +111,8 @@ val Achievement.icon: ImageVector
         Achievement.CLEAN_SWEEP -> Symbols.DeleteSweep
         Achievement.COMEBACK_KID -> Symbols.TrendingUp
         Achievement.CONQUEROR -> Symbols.Castle
+        // The sum of them all.
+        Achievement.EVERYTHING_EVERYWHERE_ALL_AT_ONCE -> Symbols.Functions
         Achievement.FIRST_VICTORY -> Symbols.Flag
         Achievement.FRONT_RUNNER -> Symbols.LooksOne
         Achievement.HOW_DO_YOU_DO_FELLOW_CPUS -> Symbols.Memory
@@ -124,6 +126,27 @@ val Achievement.icon: ImageVector
         // Locked away, out of reach: never captured.
         Achievement.UNTOUCHABLE -> Symbols.Lock
         Achievement.WIRE_TO_WIRE -> Symbols.Timeline
+
+        // ---- Game Modes ---------------------------------------------------------------------
+        Achievement.WHERE_WERE_GOING_WE_DONT_NEED_RULES -> Symbols.SportsEsports
+        Achievement.QUICK_ON_THE_DRAW -> Symbols.FastForward
+        Achievement.BLINK_AND_YOULL_MISS_IT -> Symbols.Acute
+        Achievement.DOUBLE_OR_NOTHING -> Symbols.Savings
+        Achievement.TWO_BIRDS_TWO_STONES -> Symbols.MoveUp
+        Achievement.THROUGH_THE_LOOKING_GLASS -> Symbols.AutoAwesome
+        Achievement.THERE_AND_BACK_AGAIN -> Symbols.SyncAlt
+        // Holding fast.
+        Achievement.LAST_PAWN_STANDING -> Symbols.Anchor
+        Achievement.BARELY_A_SCRATCH -> Symbols.Stars
+        Achievement.AGENT_OF_CHAOS -> Symbols.Psychology
+        Achievement.ONE_OF_EVERYTHING -> Symbols.GridView
+        Achievement.LIVING_TO_TELL_THE_TALE -> Symbols.RecordVoiceOver
+        // Gone like the wind.
+        Achievement.NOT_A_GHOST_OF_A_CHANCE -> Symbols.Air
+        // Rocks across the road.
+        Achievement.ROAD_CLOSED -> Symbols.Landslide
+        Achievement.THIRD_TIMES_THE_CHARM -> Symbols.AssignmentTurnedIn
+        Achievement.GRAND_TOUR -> Symbols.MyLocation
 
         // ---- Misfortune ---------------------------------------------------------------------
         Achievement.BACK_TO_SQUARE_ONE -> Symbols.RestartAlt

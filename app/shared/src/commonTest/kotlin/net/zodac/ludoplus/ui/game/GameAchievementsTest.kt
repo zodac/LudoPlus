@@ -115,7 +115,7 @@ class GameAchievementsTest {
     }
 
     @Test
-    fun `a game with house rules earns nothing - started, played out, or continued`() = runTest(dispatcher) {
+    fun `a Classic game with a house rule that has no achievement earns nothing - started, played out, or continued`() = runTest(dispatcher) {
         val store = InMemoryAchievementStore()
         val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
         val viewModel = viewModel(store, saved, hour = 2)
@@ -145,7 +145,7 @@ class GameAchievementsTest {
     }
 
     @Test
-    fun `a game of any mode but Classic earns nothing - started or played out - two dice's moves made die by die`() = runTest(dispatcher) {
+    fun `a game of any other mode earns - from its start to its end - but only what that mode can`() = runTest(dispatcher) {
         for (mode in GameMode.entries - GameMode.CLASSIC) {
             val store = InMemoryAchievementStore()
             val viewModel = viewModel(store, hour = 2)
@@ -168,8 +168,12 @@ class GameAchievementsTest {
                 runCurrent()
             }
             runCurrent()
-            assertEquals(emptySet(), store.unlocked, "$mode")
-            assertEquals(emptyMap(), store.mutableState.value.counters, "$mode")
+            assertTrue(store.unlocked.containsAll(setOf(Achievement.THE_JOURNEY_BEGINS, Achievement.WHERE_WERE_GOING_WE_DONT_NEED_RULES, Achievement.MIDNIGHT_RUN)), "$mode")
+            assertEquals(emptyList(), store.unlocked.filterNot { it.isEarnableIn(mode) }, "$mode")
+            val counters = store.mutableState.value.counters
+            assertEquals(1, counters[AchievementCounter.GAMES_PLAYED], "$mode")
+            // This mode, towards Grand Tour, with the Classic game recorded before.
+            assertEquals(2, counters[AchievementCounter.MODES_FINISHED], "$mode")
         }
     }
 

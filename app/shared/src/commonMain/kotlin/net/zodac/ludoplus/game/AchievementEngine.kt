@@ -3,6 +3,7 @@ package net.zodac.ludoplus.game
 import net.zodac.ludoplus.data.achievements.AchievementsState
 import net.zodac.ludoplus.model.Achievement
 import net.zodac.ludoplus.model.AchievementCounter
+import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
 import net.zodac.ludoplus.model.ProgressStyle
@@ -36,8 +37,19 @@ data class GameFeats(
     val achievements: Set<Achievement> = emptySet(),
     val counts: Map<AchievementCounter, Int> = emptyMap(),
     val streak: Boolean? = null,
+    /** Figures worked out elsewhere that a counter is raised to, never added to it ([AchievementCounter.MODES_FINISHED]). */
+    val levels: Map<AchievementCounter, Int> = emptyMap(),
 ) {
-    val isEmpty: Boolean get() = achievements.isEmpty() && counts.isEmpty() && streak == null
+    val isEmpty: Boolean get() = achievements.isEmpty() && counts.isEmpty() && streak == null && levels.isEmpty()
+
+    /**
+     * These as a game of [state] earns them: each achievement its mode can earn, and with house rules on, only the house
+     * rules' own ([Achievement.earnableWithHouseRules]) and no counter or streak.
+     */
+    fun earnableIn(state: GameState): GameFeats {
+        val achievements = achievements.filter { it.isEarnableIn(state.mode) && (it.earnableWithHouseRules || !state.rules.hasHouseRules) }.toSet()
+        return if (state.rules.hasHouseRules) GameFeats(achievements) else copy(achievements = achievements)
+    }
 }
 
 /**
@@ -64,21 +76,23 @@ object AchievementEngine {
     /**
      * What a new game for [players] earns as it starts, at [localHour] on the phone's clock. [previousGame] is
      * the finished game it replaced on the same screen ([Achievement.ONE_MORE_TIME] when this device's player lost it),
-     * or null. [mySeat] is this device's player's seat: seat 0, but for a guest's in a Nearby game.
+     * or null. [mySeat] is this device's player's seat: seat 0, but for a guest's in a Nearby game. [game] is the new one's
+     * state, for its mode and house rules.
      */
-    fun atGameStart(players: List<PlayerConfig>, previousGame: GameState?, localHour: Int, mySeat: Int = 0): GameFeats {
+    fun atGameStart(players: List<PlayerConfig>, previousGame: GameState?, localHour: Int, mySeat: Int = 0, game: GameState? = null): GameFeats {
         val me = players.getOrNull(mySeat) ?: return GameFeats()
         if (me.type == PlayerType.AI) return GameFeats()
         val people = setOf(PlayerType.HUMAN, PlayerType.NEARBY)
         val earned = buildSet {
             add(Achievement.THE_JOURNEY_BEGINS)
-            if (previousGame != null && previousGame.isFinished && previousGame.placeOf(mySeat) != 1) add(Achievement.ONE_MORE_TIME)
+            if (game != null && game.mode != GameMode.CLASSIC) add(Achievement.WHERE_WERE_GOING_WE_DONT_NEED_RULES)
+            if (previousGame != null && previousGame.isFinished && !previousGame.rules.hasHouseRules && previousGame.placeOf(mySeat) != 1) add(Achievement.ONE_MORE_TIME)
             if (players.withIndex().any { (seat, it) -> seat != mySeat && it.type in people && it.name == CREATOR_NAME }) add(Achievement.BIG_FAN)
             if (localHour in MIDNIGHT_HOURS) add(Achievement.MIDNIGHT_RUN)
             if (players.any { it.name.equals(LUDO_NAME, ignoreCase = true) }) add(Achievement.WHOS_LUDO)
             if (players.map { it.name.firstOrNull()?.lowercaseChar() }.distinct().singleOrNull()?.isLetter() == true) add(Achievement.ALLITERATION)
         }
-        return GameFeats(earned)
+        return GameFeats(earned).let { if (game == null) it else it.earnableIn(game) }
     }
 
     /** What a game shown with the phone on its side earns. */
@@ -99,6 +113,7 @@ object AchievementEngine {
         if (feats.isEmpty) return AchievementUpdate()
         val counters = buildMap {
             for ((counter, count) in feats.counts) if (count != 0) put(counter, before.counter(counter) + count)
+            for ((counter, level) in feats.levels) if (level > before.counter(counter)) put(counter, level)
             feats.streak?.let { won ->
                 val (up, broken) = if (won) AchievementCounter.WIN_STREAK to AchievementCounter.LOSS_STREAK else AchievementCounter.LOSS_STREAK to AchievementCounter.WIN_STREAK
                 put(up, before.counter(up) + 1)

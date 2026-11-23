@@ -5,7 +5,9 @@ import net.zodac.ludoplus.model.AchievementCounter
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.PlayerConfig
+import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PlayerType
+import net.zodac.ludoplus.model.PowerUp
 
 /**
  * Watches one game being played, a step at a time ([observe]), and says what each step earned player 1 ([GameFeats]):
@@ -95,6 +97,15 @@ class AchievementTracker(
     /** Whether player 1 was the last to bring a pawn out of their yard. */
     private var lastOut = false
 
+    /** Player 1's moves by the dice of one roll that captured: for [Achievement.TWO_BIRDS_TWO_STONES]. */
+    private val rollCaptures = mutableListOf<Move>()
+
+    /** The portal squares each of player 1's pawns has gone in by since it left its yard. */
+    private val portalsTaken = mutableMapOf<Int, MutableSet<Int>>()
+
+    /** The power-ups player 1 has taken this game. */
+    private val powerUpsTaken = mutableSetOf<PowerUp>()
+
     /** What's been earned already, so it isn't earned again. */
     private val earned = mutableSetOf<Achievement>()
 
@@ -106,7 +117,8 @@ class AchievementTracker(
         val counts = mutableMapOf<AchievementCounter, Int>()
         val board = after.board
         val pawnsPerPlayer = after.rules.pawnsPerPlayer
-        val lastTrackSquare = board.trackSteps - 1
+        // None on an endless board.
+        val lastTrackSquare = if (board.endless) null else board.trackSteps - 1
         val startsTurn = event !is GameEvent.Moved && !before.rollingAgain
         if (event.player == mySeat) {
             if (event !is GameEvent.Moved) {
@@ -114,17 +126,19 @@ class AchievementTracker(
                     turnCaptures = 0
                     turnHomes = 0
                 }
-                playerOneRolled(rollOf(event), before, startsTurn, feats)
+                playerOneRolled(diceOf(event), before, startsTurn, feats)
+                rollCaptures.clear()
             }
             when (event) {
-                is GameEvent.RollAgainLimit -> feats += Achievement.TOO_MUCH_OF_A_GOOD_THING
+                // Three doubles, with two dice, aren't three 6s.
+                is GameEvent.RollAgainLimit -> if (event.second == null) feats += Achievement.TOO_MUCH_OF_A_GOOD_THING
                 is GameEvent.NoMove -> {
                     val me = before.players[mySeat]
                     if (me.pawnsHome(board) == pawnsPerPlayer - 1 && me.pawns.any { it == board.homeProgress - 1 } && ++nearMisses >= NEAR_MISSES) {
                         feats += Achievement.SO_NEAR_YET_SO_FAR
                     }
                     val now = after.players[mySeat]
-                    if (now.turns >= LOCKED_OUT_TURNS && now.pawns.all { it == PawnPosition.YARD_PROGRESS } && now.timesCaptured == 0) {
+                    if (now.turns >= LOCKED_OUT_TURNS && now.pawns.all { it == PawnPosition.YARD_PROGRESS } && now.timesCaptured == 0 && now.timesHaunted == 0) {
                         feats += Achievement.LOCKED_OUT
                     }
                 }
@@ -134,7 +148,7 @@ class AchievementTracker(
         } else {
             if (startsTurn) theirTurnCaptures = 0
             if (event is GameEvent.Moved) {
-                val mine = event.move.captures.filter { it.player == mySeat }
+                val mine = event.allCaptures.filter { it.player == mySeat }
                 if (mine.isNotEmpty()) {
                     if (mine.size >= 2) feats += Achievement.SITTING_DUCKS
                     theirTurnCaptures += mine.size
@@ -144,13 +158,14 @@ class AchievementTracker(
                         val times = (timesEachCaptured[pawn.pawn] ?: 0) + 1
                         timesEachCaptured[pawn.pawn] = times
                         if (times >= GROUNDHOG_CAPTURES) feats += Achievement.GROUNDHOG_DAY
-                        if (pawn.pawn == lapPawn) lapPawn = null
-                        leftYardOnTurn -= pawn.pawn
+                        sentBack(pawn.pawn)
                     }
                     payback = event.player to after.players[mySeat].turns + 1
                 }
             }
+            if (event is GameEvent.NoMove && event.triesLeft == 0 && closedRoadTo(before, event.roll)) feats += Achievement.ROAD_CLOSED
         }
+        for (caught in after.ghostMove?.caught.orEmpty()) if (caught.player == mySeat) sentBack(caught.pawn)
         if (after.players[mySeat].timesCaptured >= PUNCHING_BAG_CAPTURES) feats += Achievement.PUNCHING_BAG
         if (event is GameEvent.Moved && everyPlayerSharesASquare(after)) feats += Achievement.WERE_ALL_FRIENDS_HERE
         // A partner isn't an opponent: in a team game, they're racing for player 1's place too.
@@ -159,7 +174,7 @@ class AchievementTracker(
         if (opponents.any { after.players[it].pawnsHome(board) > myHome }) everBehind = true
         if (myHome == 0 && opponents.any { after.players[it].pawnsHome(board) == pawnsPerPlayer - 1 }) trailedBadly = true
         if (myHome == pawnsPerPlayer - 1 && opponents.all { after.players[it].pawnsHome(board) == 0 }) ledBadly = true
-        if (before.players.all { it.pawnsHome(board) == 0 } && event is GameEvent.Moved && event.move.to == board.homeProgress) firstHome = event.player
+        if (before.players.all { it.pawnsHome(board) == 0 } && event is GameEvent.Moved && event.endedAt == board.homeProgress) firstHome = event.player
 
         var won: Boolean? = null
         if (before.winner == null && after.winner != null) {
@@ -167,9 +182,10 @@ class AchievementTracker(
             feats += if (won) wonAchievements(after, opponents) else lostAchievements(after)
             if (won) counts.add(AchievementCounter.GAMES_WON)
         }
-        if (mySeat !in before.finishingOrder && mySeat in after.finishingOrder) {
+        if (before.placeOf(mySeat) == null && after.placeOf(mySeat) != null) {
             counts.add(AchievementCounter.GAMES_PLAYED)
-            if (after.isFinished && after.placeOf(mySeat) == after.placeOf(after.finishingOrder.last())) {
+            // The last of the teams, a player alone being a team of one: placed at once when knocked out first.
+            if (after.placeOf(mySeat) == after.players.indices.map(after.rules::teamOf).distinct().size) {
                 feats += Achievement.WOODEN_SPOON
                 counts.add(AchievementCounter.LAST_PLACES)
             }
@@ -177,11 +193,12 @@ class AchievementTracker(
 
         feats -= earned
         earned += feats
+        if (after.rules.hasHouseRules) pending.clear()
         if (feats.isNotEmpty() || counts.isNotEmpty() || won != null || after.isFinished) {
             for ((counter, count) in pending) counts.add(counter, count)
             pending.clear()
         }
-        return GameFeats(feats, counts, won)
+        return GameFeats(feats, counts, won).earnableIn(after)
     }
 
     /**
@@ -197,35 +214,55 @@ class AchievementTracker(
             if (state.winner != null && state.placeOf(mySeat) == 1 && playMillis <= SPEED_DEMON_MILLIS) add(Achievement.SPEED_DEMON)
         } - earned
         earned += feats
-        return GameFeats(feats)
+        return GameFeats(feats).earnableIn(state)
     }
 
     /** Player 1's counts not yet handed over, now: for a game leaving the screen, which may never come back. */
     fun flush(): GameFeats = GameFeats(counts = pending.toMap()).also { pending.clear() }
 
-    private fun rollOf(event: GameEvent): Int = when (event) {
-        is GameEvent.Rolled -> event.roll
-        is GameEvent.NoMove -> event.roll
-        is GameEvent.RollAgainLimit -> event.roll
-        is GameEvent.Moved -> event.roll
+    /** The dice [event] rolled: one, or two. */
+    private fun diceOf(event: GameEvent): List<Int> = when (event) {
+        is GameEvent.Rolled -> listOfNotNull(event.roll, event.second)
+        is GameEvent.NoMove -> listOfNotNull(event.roll, event.second)
+        is GameEvent.RollAgainLimit -> listOfNotNull(event.roll, event.second)
+        is GameEvent.Moved -> listOf(event.roll)
     }
 
-    private fun playerOneRolled(roll: Int, before: GameState, startsTurn: Boolean, feats: MutableSet<Achievement>) {
-        pending.add(AchievementCounter.DIE_ROLLS)
+    /** Player 1's pawn [pawn] is back in its yard: what's kept of its way round starts again. */
+    private fun sentBack(pawn: Int) {
+        if (pawn == lapPawn) lapPawn = null
+        leftYardOnTurn -= pawn
+        portalsTaken -= pawn
+    }
+
+    /** Whether the player of [before] with no move for [roll] would have one but for a blockade of player 1's. */
+    private fun closedRoadTo(before: GameState, roll: Int): Boolean {
+        if (!before.rules.blockades) return false
+        val me = before.players[mySeat]
+        val open = before.copy(players = before.players.mapIndexed { i, side -> if (i == mySeat) side.copy(pawns = me.pawns.map { PawnPosition.YARD_PROGRESS }) else side })
+        return LudoEngine.legalMoves(open, roll).isNotEmpty()
+    }
+
+    private fun playerOneRolled(dice: List<Int>, before: GameState, startsTurn: Boolean, feats: MutableSet<Achievement>) {
+        pending.add(AchievementCounter.DIE_ROLLS, dice.size)
+        // A run of rolls is of one die's: two dice's are kept out of ([Achievement.notEarnableIn]).
+        val roll = dice.first()
+        val sixes = dice.count { it == SIX }
         val first = startsTurn && before.players[mySeat].turns == 0
         if (first) {
             seenFromStart = true
             firstRolls = mutableListOf()
-            if (roll == SIX) feats += Achievement.OFF_THE_MARK
+            if (sixes > 0) feats += Achievement.OFF_THE_MARK
         }
         firstRolls?.let { rolls ->
             rolls += roll
             if (rolls.size == FULL_SPREAD_ROLLS && rolls.toSet() == (1..SIX).toSet()) feats += Achievement.FULL_SPREAD
             if (rolls.size >= FULL_SPREAD_ROLLS) firstRolls = null
         }
-        if (roll == SIX) {
-            pending.add(AchievementCounter.SIXES_ROLLED)
-            if (++gameSixes >= SIX_PACK_SIXES) feats += Achievement.SIX_PACK
+        if (sixes > 0) {
+            pending.add(AchievementCounter.SIXES_ROLLED, sixes)
+            gameSixes += sixes
+            if (gameSixes >= SIX_PACK_SIXES) feats += Achievement.SIX_PACK
             rollsWithoutSix = 0
         } else if (++rollsWithoutSix >= DRY_SPELL_ROLLS) {
             feats += Achievement.DRY_SPELL
@@ -246,7 +283,7 @@ class AchievementTracker(
         event: GameEvent.Moved,
         before: GameState,
         after: GameState,
-        lastTrackSquare: Int,
+        lastTrackSquare: Int?,
         feats: MutableSet<Achievement>,
         counts: MutableMap<AchievementCounter, Int>,
     ) {
@@ -256,8 +293,9 @@ class AchievementTracker(
         val me = before.players[mySeat]
         val turn = after.players[mySeat].turns
         nearMisses = 0
-        pending.add(AchievementCounter.SQUARES_MOVED, move.to - move.from)
-        val captures = move.captures
+        // The squares it walked: to a portal, not through it, and back off a shield.
+        pending.add(AchievementCounter.SQUARES_MOVED, (move.via ?: move.to) - move.from)
+        val captures = event.allCaptures
         if (captures.isNotEmpty()) {
             counts.add(AchievementCounter.CAPTURES, captures.size)
             feats += Achievement.GOTCHA
@@ -265,6 +303,8 @@ class AchievementTracker(
             if (move.from == 0) feats += Achievement.STRAIGHT_OUT_THE_GATE
             if (me.pawnsHome(board) == pawnsPerPlayer - 1) feats += Achievement.PARTING_SHOT
             turnCaptures += captures.size
+            move.roll?.let { rollCaptures += event.move }
+            if (rollCaptures.size >= 2) feats += Achievement.TWO_BIRDS_TWO_STONES
             if (turnCaptures >= HAT_TRICK_CAPTURES) feats += Achievement.HAT_TRICK
             for (captured in captures) {
                 val of = (capturesOf[captured.player] ?: 0) + 1
@@ -292,15 +332,28 @@ class AchievementTracker(
                 if (opponents.none { neverOut(before.players[it]) }) lastOut = true
             }
             leftYardOnTurn[move.pawn] = turn
+            // Two tries missed, and this the third.
+            if (before.yardTriesUsed == 2) feats += Achievement.THIRD_TIMES_THE_CHARM
+        }
+        event.effect?.let { effect ->
+            powerUpsTaken += effect.powerUp
+            if (powerUpsTaken.size == PowerUp.entries.size) feats += Achievement.ONE_OF_EVERYTHING
+            effect.calledUp?.let { leftYardOnTurn[it] = turn }
+        }
+        move.via?.let { via ->
+            // In by one end having been in by the other: there, and back.
+            val taken = portalsTaken.getOrPut(move.pawn) { mutableSetOf() }
+            if (board.trackSquare(me.seat, move.to) in taken) feats += Achievement.THERE_AND_BACK_AGAIN
+            taken += board.trackSquare(me.seat, via)
         }
         when {
             move.from == PawnPosition.YARD_PROGRESS -> lapPawn = move.pawn
-            move.pawn != lapPawn -> lapPawn = null
+            move.pawn != lapPawn || event.effect?.calledUp != null -> lapPawn = null
         }
-        if (move.to == board.homeProgress) {
+        if (event.endedAt == board.homeProgress) {
             counts.add(AchievementCounter.PAWNS_HOME)
             feats += Achievement.HOME_SWEET_HOME
-            if (event.roll == 1) feats += Achievement.INCH_BY_INCH
+            if (event.roll == 1 && move.to == board.homeProgress) feats += Achievement.INCH_BY_INCH
             if (move.pawn == lapPawn) feats += Achievement.LAP_OF_HONOUR
             lapPawn = null
             if (++turnHomes >= 2) feats += Achievement.DOUBLE_DELIVERY
@@ -332,7 +385,7 @@ class AchievementTracker(
     private fun passedOver(state: GameState, move: Move): Int {
         val board = state.board
         val seat = state.players[mySeat].seat
-        val squares = (maxOf(move.from + 1, 0) until minOf(move.to, board.trackSteps)).map { board.trackSquare(seat, it) }.toSet()
+        val squares = (maxOf(move.from + 1, 0) until minOf(move.rolledTo, board.trackSteps)).map { board.trackSquare(seat, it) }.toSet()
         return state.players.withIndex().filter { it.index != mySeat }.sumOf { (_, player) ->
             player.pawns.count { it in 0..<board.trackSteps && board.trackSquare(player.seat, it) in squares }
         }
@@ -343,6 +396,13 @@ class AchievementTracker(
         val board = after.board
         val me = after.players[mySeat]
         add(Achievement.FIRST_VICTORY)
+        Achievement.entries.filterTo(this) { it.isModeWin && it.mode == after.mode }
+        if (me.turns <= BLINK_TURNS) add(Achievement.BLINK_AND_YOULL_MISS_IT)
+        if (me.pawnsLeft >= SCRATCH_PAWNS) add(Achievement.BARELY_A_SCRATCH)
+        if (me.timesHaunted == 0) add(Achievement.NOT_A_GHOST_OF_A_CHANCE)
+        if (after.rules.houseRules.isNotEmpty() && after.rules.houseRules == HouseRule.entries.filter { it.appliesTo(after.mode.rules) }.toSet()) {
+            add(Achievement.EVERYTHING_EVERYWHERE_ALL_AT_ONCE)
+        }
         if (trailedBadly) add(Achievement.COMEBACK_KID)
         if (opponents.all { after.players[it].pawnsHome(board) == 0 }) add(Achievement.CLEAN_SWEEP)
         if (me.captures == 0) add(Achievement.PACIFIST)
@@ -410,5 +470,7 @@ class AchievementTracker(
         /** Five minutes of the game on screen (the maintainer, 2026-11-23). */
         const val SPEED_DEMON_MILLIS = 5 * 60 * 1_000L
         const val FULL_TABLE_OPPONENTS = 3
+        const val BLINK_TURNS = 25
+        const val SCRATCH_PAWNS = 4
     }
 }

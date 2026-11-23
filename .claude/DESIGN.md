@@ -166,15 +166,15 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 | Mode | Rules beyond Classic | Leaderboard and Statistics | Achievements |
 | --- | --- | --- | --- |
 | Classic | The classic rules | Yes | Yes |
-| Quick | Two pawns each; each yard draws two spots, on opposite corners (the maintainer, 2026-11-18) | Yes, its own | No |
-| Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | No |
-| Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | No |
-| Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; sudden death late on | Yes, its own, by most pawns left | No |
-| Chaos | Power-ups on the track, taken by the pawn that ends its move on one | Yes, its own | No |
-| Haunted House | Ghosts on the track, which send the pawns they land on back to their yards | Yes, its own | No |
+| Quick | Two pawns each; each yard draws two spots, on opposite corners (the maintainer, 2026-11-18) | Yes, its own | Its own, and all but a few |
+| Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | Its own, and all but a few |
+| Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | Its own, and all but a few |
+| Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; sudden death late on | Yes, its own, by most pawns left | Its own, and all but a few |
+| Chaos | Power-ups on the track, taken by the pawn that ends its move on one | Yes, its own | Its own, and all but a few |
+| Haunted House | Ghosts on the track, which send the pawns they land on back to their yards | Yes, its own | Its own, and all but a few |
 
-Every mode has its own Leaderboard (one a player count) and its own Statistics page. Only Classic earns achievements
-(`GameMode.earnsAchievements`) until the maintainer's review of the list adds any for a mode (2026-11-18). The Rules
+Every mode has its own Leaderboard (one a player count) and its own Statistics page, and earns achievements (the
+maintainer, 2026-11-24; "Achievements"). The Rules
 screen has a Game Modes group, a page a mode beyond Classic.
 
 **Two Dice** (`GameRules.dice`, `rollAgainOnDoubles`). A roll is both dice (`LudoEngine.applyDice`); the move phase
@@ -286,9 +286,8 @@ the records.
 - **Guarded Starts.** A start square no one sits at (2 players on the classic board) is safe for nobody. A pawn
     leaving its yard captures any other on its start square. TalkBack says "safe for Red" there, not "safe".
 - **Off the record.** A game with any house rule on (`GameRules.hasHouseRules`) stays off the Leaderboard
-    (`playedUnmodified` false) and out of Statistics (`GameResult.houseRules`, database version 2), and earns no
-    achievements: `GameViewModel` keeps no `AchievementTracker` for it, and records nothing at its start, its
-    continuing, or its end (`StartedGame.earnsAchievements`; the maintainer, 2026-11-18). Its rows are still written, so
+    (`playedUnmodified` false) and out of Statistics (`GameResult.houseRules`, database version 2), and earns
+    only the house rules' own achievements, moving no counter (`GameFeats.earnableIn`; the maintainer, 2026-11-24). Its rows are still written, so
     New Game's tutorial link knows a game was finished. The card's note says so while any is on.
 - **Remembered** as the `house_rules` preference (a set of ids; one no longer known is dropped), and saved with the
     game by id (`SavedGameJson` version 2; an unknown id fails the read).
@@ -575,7 +574,7 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
 
 ## Achievements
 
-`model/Achievement.kt` (102: 94 counted, 8 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
+`model/Achievement.kt` (119: 111 counted, 8 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
 (pure), `data/achievements/`, `app/AchievementUnlocker.kt`, `ui/achievements/`. Rebuilt for Ludo in Phase 6; DiceFive's
 110 are in `5423b6c`.
 
@@ -587,8 +586,8 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
 - **Player 1 only.** The person in seat 1 earns them; every other seat, person or CPU, is an opponent. The tutorial
     earns nothing.
 - **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (19, Pest and Completionist among
-    them, Completionist last), The Die (8), Captures (15), Racing (12), Winning (15), Misfortune (17), Miscellaneous (8,
-    hidden), and Easter Eggs (8, hidden, outside Completionist and the page's total): 94 counted. Each entry's
+    them, Completionist last), The Die (8), Captures (15), Racing (12), Winning (16), Game Modes (16), Misfortune (17), Miscellaneous (8,
+    hidden), and Easter Eggs (8, hidden, outside Completionist and the page's total): 111 counted. Each entry's
     description is its rule; the thresholds are the tracker's constants (`AchievementTracker`'s companion). The maintainer asked for 100, plus 10
     Easter Eggs, on 2026-11-17 ("a variety of them in groups, like DiceFive"), removed eleven on 2026-11-23, and is
     adding new ones: My Favourite Spot (every pawn on one square, not the start square, home column included) and
@@ -623,7 +622,13 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
         unlocks it, and the last of the rest brings Completionist.
     - Every unlock goes through the app's one `AchievementUnlocker` (`AppContainer.achievementUnlocker`), whose locks
         (its own and the store's `locked`) serialise them all across screens, so nothing is announced twice.
-- **Modes.** One mode for now; the audit is in `GAME_MODES_AUDIT.md`.
+- **Modes and house rules** (the maintainer, 2026-11-24, as DiceFive). Every mode earns the ordinary achievements, but for
+    those its rules make free, rule out, or turn into something else (`Achievement.notEarnableIn`, `impossibleIn`; the audit
+    is in `GAME_MODES_AUDIT.md`). The Game Modes category has one for starting any mode but Classic, each mode's win and a
+    feat of its own, two house rules', and Grand Tour; Everything Everywhere All At Once, a win with every house rule on, is
+    in Winning. A game with house rules earns only those marked `earnableWithHouseRules`, and moves no counter. A limited
+    one's row has a tip naming the modes left ("Can only be earned in the 'Classic' and 'Chaos' modes"), read with the row by
+    TalkBack.
 - **Display.**
     - Declaration order is display order: grouped by `AchievementCategory`, easiest first. `AchievementEngineTest`
         fails if a category is split, or a counter's ladder is out of order; `AchievementTextTest` holds Winning,
@@ -642,7 +647,7 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
     - On Settings > About, tapping the author's name (`zodac`) `DebugCrashes.TAP_TARGET` (5) times turns on the crash
         mode (see "Errors").
 - **Not brought back yet.** Style rewards and the styles banners (Phase 7), the Play Games mirror and cloud merge
-    (Phase 10), and DiceFive's per-mode limits and tips (Phase 9).
+    (Phase 10).
 
 ## Table art (Styles)
 

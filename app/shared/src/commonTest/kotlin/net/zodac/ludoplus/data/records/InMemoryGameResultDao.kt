@@ -34,6 +34,8 @@ class InMemoryGameResultDao(finishedGame: Boolean = false) : GameResultDao {
             .sortedWith(compareBy<GameResult> { it.timesCaptured }.thenByDescending { it.captures }.thenBy { it.endedAtEpochMillis })
             .drop(offset).take(limit)
 
+    override suspend fun modesFinished(): List<String> = rows.filter { it.isPrimaryPlayer && !it.houseRules }.map { it.gameModeId }.distinct()
+
     override suspend fun leaderboardCount(gameModeId: String, playerCount: Int): Int = leaderboardRows(gameModeId, playerCount).size
 
     override suspend fun allByPlayer(): List<GameResult> =
