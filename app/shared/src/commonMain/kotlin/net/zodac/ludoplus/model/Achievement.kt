@@ -511,6 +511,24 @@ enum class Achievement(
         Res.string.achievement_pest_description,
         AchievementCategory.MILESTONES, AchievementCounter.CAPTURES, target = 10,
     ),
+    BOUNCER(
+        "bouncer",
+        Res.string.achievement_bouncer_title,
+        Res.string.achievement_bouncer_description,
+        AchievementCategory.MILESTONES, AchievementCounter.CAPTURES, target = 100,
+    ),
+    MENACE(
+        "menace",
+        Res.string.achievement_menace_title,
+        Res.string.achievement_menace_description,
+        AchievementCategory.MILESTONES, AchievementCounter.CAPTURES, target = 500,
+    ),
+    PUBLIC_ENEMY(
+        "public_enemy",
+        Res.string.achievement_public_enemy_title,
+        Res.string.achievement_public_enemy_description,
+        AchievementCategory.MILESTONES, AchievementCounter.CAPTURES, target = 1_000,
+    ),
     COMPLETIONIST(
         "completionist",
         Res.string.achievement_completionist_title,
@@ -587,18 +605,6 @@ enum class Achievement(
         Res.string.achievement_payback_description,
         AchievementCategory.CAPTURES,
     ),
-    NOT_SO_FAST(
-        "not_so_fast",
-        Res.string.achievement_not_so_fast_title,
-        Res.string.achievement_not_so_fast_description,
-        AchievementCategory.CAPTURES, impossibleIn = setOf(GameMode.SURVIVAL),
-    ),
-    TALL_POPPY(
-        "tall_poppy",
-        Res.string.achievement_tall_poppy_title,
-        Res.string.achievement_tall_poppy_description,
-        AchievementCategory.CAPTURES, impossibleIn = setOf(GameMode.SURVIVAL),
-    ),
     PARTING_SHOT(
         "parting_shot",
         Res.string.achievement_parting_shot_title,
@@ -622,24 +628,6 @@ enum class Achievement(
         Res.string.achievement_on_the_warpath_title,
         Res.string.achievement_on_the_warpath_description,
         AchievementCategory.CAPTURES,
-    ),
-    BOUNCER(
-        "bouncer",
-        Res.string.achievement_bouncer_title,
-        Res.string.achievement_bouncer_description,
-        AchievementCategory.CAPTURES, AchievementCounter.CAPTURES, target = 100,
-    ),
-    MENACE(
-        "menace",
-        Res.string.achievement_menace_title,
-        Res.string.achievement_menace_description,
-        AchievementCategory.CAPTURES, AchievementCounter.CAPTURES, target = 500,
-    ),
-    PUBLIC_ENEMY(
-        "public_enemy",
-        Res.string.achievement_public_enemy_title,
-        Res.string.achievement_public_enemy_description,
-        AchievementCategory.CAPTURES, AchievementCounter.CAPTURES, target = 1_000,
     ),
 
     // ---- Racing: bringing pawns round and home, easiest first -----------------------------------------------------
@@ -1011,10 +999,22 @@ enum class Achievement(
         Res.string.achievement_my_favourite_spot_description,
         AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN, notEarnableIn = setOf(GameMode.QUICK),
     ),
+    NOT_SO_FAST(
+        "not_so_fast",
+        Res.string.achievement_not_so_fast_title,
+        Res.string.achievement_not_so_fast_description,
+        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN, impossibleIn = setOf(GameMode.SURVIVAL),
+    ),
     SO_NEAR_YET_SO_FAR(
         "so_near_yet_so_far",
         Res.string.achievement_so_near_yet_so_far_title,
         Res.string.achievement_so_near_yet_so_far_description,
+        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN, impossibleIn = setOf(GameMode.SURVIVAL),
+    ),
+    TALL_POPPY(
+        "tall_poppy",
+        Res.string.achievement_tall_poppy_title,
+        Res.string.achievement_tall_poppy_description,
         AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     WERE_ALL_FRIENDS_HERE(

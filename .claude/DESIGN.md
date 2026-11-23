@@ -585,8 +585,8 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
     - String keys follow the constant: `achievement_<constant>_title`, `_description`.
 - **Player 1 only.** The person in seat 1 earns them; every other seat, person or CPU, is an opponent. The tutorial
     earns nothing.
-- **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (17, Pest and Completionist among
-    them, Completionist last), The Die (5), Captures (15), Racing (10), Winning (15), Game Modes (15), Misfortune (15), Miscellaneous (8,
+- **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (20, Pest and Completionist among
+    them, Completionist last), The Die (5), Captures (10), Racing (10), Winning (15), Game Modes (15), Misfortune (15), Miscellaneous (10,
     hidden), and Easter Eggs (10, hidden, outside Completionist and the page's total): 100 counted. Each entry's
     description is its rule; the thresholds are the tracker's constants (`AchievementTracker`'s companion). The maintainer asked for 100, plus 10
     Easter Eggs, on 2026-11-17 ("a variety of them in groups, like DiceFive"), removed eleven on 2026-11-23 and

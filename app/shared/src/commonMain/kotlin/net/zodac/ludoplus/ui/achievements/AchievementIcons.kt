@@ -55,6 +55,10 @@ val Achievement.icon: ImageVector
         // A crown for ten wins in a row: a flame would be too close to Hot Streak's.
         Achievement.UNSTOPPABLE -> Symbols.Crown
         Achievement.PEST -> Symbols.PestControl
+        // Shown the door.
+        Achievement.BOUNCER -> Symbols.Logout
+        Achievement.MENACE -> Symbols.Dangerous
+        Achievement.PUBLIC_ENEMY -> Symbols.Skull
         // Drawn for this app: the trophy in crystal, for the last of them all.
         Achievement.COMPLETIONIST -> CRYSTAL_TROPHY_ICON
 
@@ -75,18 +79,11 @@ val Achievement.icon: ImageVector
         Achievement.HAT_TRICK -> Symbols.Looks3
         // Justice done, on the very next turn.
         Achievement.PAYBACK -> Symbols.Gavel
-        Achievement.NOT_SO_FAST -> Symbols.Block
-        // Cut down to size.
-        Achievement.TALL_POPPY -> Symbols.ContentCut
         Achievement.PARTING_SHOT -> Symbols.NearMe
         Achievement.PICKING_ON_YOU -> Symbols.PersonRemove
         // The whole world: every opponent.
         Achievement.NOBODY_IS_SAFE -> Symbols.Public
         Achievement.ON_THE_WARPATH -> Symbols.Swords
-        // Shown the door.
-        Achievement.BOUNCER -> Symbols.Logout
-        Achievement.MENACE -> Symbols.Dangerous
-        Achievement.PUBLIC_ENEMY -> Symbols.Skull
 
         // ---- Racing -------------------------------------------------------------------------
         Achievement.HOME_SWEET_HOME -> Symbols.House
@@ -165,7 +162,10 @@ val Achievement.icon: ImageVector
         Achievement.INCH_BY_INCH -> Symbols.SlowMotionVideo
         Achievement.LEAPFROG -> Symbols.Redo
         Achievement.MY_FAVOURITE_SPOT -> Symbols.PushPin
+        Achievement.NOT_SO_FAST -> Symbols.Block
         Achievement.SO_NEAR_YET_SO_FAR -> Symbols.SentimentNeutral
+        // Cut down to size.
+        Achievement.TALL_POPPY -> Symbols.ContentCut
         Achievement.WERE_ALL_FRIENDS_HERE -> Symbols.Handshake
         Achievement.WHO_MADE_THIS -> Symbols.Info
 
