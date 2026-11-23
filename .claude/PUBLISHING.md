@@ -15,6 +15,8 @@ The rest is a checklist for when the submission happens.
 
 In order:
 
+Steps 1 and 2, the upload key, and the CI secrets: done (the maintainer, 2026-11-23).
+
 1. **A Play Console developer account.** It costs $25 and identity verification takes days, and nothing else can start
    without it.
 2. **A hosted privacy policy.** The draft is `docs/privacy-policy.md`.

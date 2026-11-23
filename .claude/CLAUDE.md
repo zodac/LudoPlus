@@ -30,8 +30,8 @@ them all home first. Releasing from 1.0.0 (2026-11-18).
         be added back: shared code in `app/shared` (Android its one target), Android's platform code apart from it
         (`MULTIPLATFORM.md`).
 - **Google Play Games Services** (`PLAY_GAMES.md`) and the "Unlock all styles" purchase (`PURCHASES.md`) came over from
-    DiceFive; "Remove ads" and a combined purchase joined it. There is no Play Console project yet (2026-11-16), so none
-    is wired to one.
+    DiceFive; "Remove ads" and a combined purchase joined it. The Play Console account exists (2026-11-23), but none of
+    them is wired to it yet.
 - **Ads: one banner, in the play app only** (`ADS.md`; the maintainer, 2026-11-18, reversing DiceFive's "Never ads"):
     AdMob at the foot of every page but the game, under the achievement banners and untouchable while one shows, gone
     with "Remove ads". Personalised, behind Google's consent form; the listing's audience is 13 and over. The github app
