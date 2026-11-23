@@ -26,7 +26,6 @@ import net.zodac.ludoplus.app.AppContainer
 import net.zodac.ludoplus.game.CpuStrategy
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.LudoEngine
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.Achievement
 import net.zodac.ludoplus.model.AchievementCategory
@@ -136,7 +135,7 @@ internal object StoreState {
             val state = playToEnd(GameState.new(GameMode.CLASSIC, 4, first = index % 4), random)
             val playMillis = 12 * 60_000L + random.nextLong(14 * 60_000L)
             val finish = state.finishingOrder.withIndex().associate { (place, player) -> player to playMillis * (place + 3) / 6 }
-            val game = StartedGame(GameMode.CLASSIC, Cast.TABLE, state, RollOff(emptyList(), index % 4), playMillis = playMillis, finishMillis = finish)
+            val game = StartedGame(GameMode.CLASSIC, Cast.TABLE, state, first = index % 4, playMillis = playMillis, finishMillis = finish)
             container.gameRecordRepository.recordGame(game, endedAtEpochMillis = now - (HISTORY_GAMES - index) * 2 * DAY_MILLIS)
         }
         container.settingsRepository.batch { setPlayerName(1, Cast.YOU) }
@@ -155,7 +154,7 @@ internal object StoreState {
 
     /** Saves [state] as the game to continue, at [Cast.TABLE]. */
     fun saveGame(container: AppContainer, state: GameState) {
-        container.inProgressGameRepository.save(StartedGame(GameMode.CLASSIC, Cast.TABLE, state, RollOff(emptyList(), 0), playMillis = STAGED_PLAY_MILLIS))
+        container.inProgressGameRepository.save(StartedGame(GameMode.CLASSIC, Cast.TABLE, state, first = 0, playMillis = STAGED_PLAY_MILLIS))
         runBlocking { withTimeout(10_000) { container.inProgressGameRepository.hasInProgressGame.first { it } } }
     }
 

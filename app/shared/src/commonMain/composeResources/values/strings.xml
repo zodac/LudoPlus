@@ -217,7 +217,7 @@
     <string name="game_prompt_cpu_move_dice">%1$s rolled %2$d and %3$d.</string>
     <string name="game_prompt_cpu_move_die_left">%1$s has %2$d left.</string>
     <!-- The move log under the die and that line, one line for each thing that happened. %1$s is the player who acted, %2$d their roll. -->
-    <string name="game_event_first">%1$s rolled highest, so goes first.</string>
+    <string name="game_event_first">%1$s goes first.</string>
     <string name="game_event_no_move">%1$s rolled %2$d and had no move.</string>
     <!-- With the Three Tries house rule, a roll that didn't bring a pawn out: %3$d is how many rolls are left this turn. -->
     <plurals name="game_event_no_move_tries">
@@ -965,7 +965,7 @@
     <!-- A tab: keep it short. -->
     <string name="rules_how_to_play_tab">How to Play</string>
     <string name="rules_how_to_play_1">Race your four pawns a full lap of the board and into home, in the middle. The first player to bring all four pawns home wins.</string>
-    <string name="rules_how_to_play_2">Players take turns clockwise, each rolling one die. To decide who goes first, everyone rolls once, and the highest roll starts. Ties roll again.</string>
+    <string name="rules_how_to_play_2">Players take turns clockwise, each rolling one die. The first player listed on New Game goes first.</string>
 
     <!-- Rules screen: everything else (ui/rules/RulesScreen.kt) -->
     <string name="rules_title">Rules</string>

@@ -26,7 +26,6 @@ import net.zodac.ludoplus.data.records.GameRecordRepository
 import net.zodac.ludoplus.data.records.InMemoryGameResultDao
 import net.zodac.ludoplus.data.settings.SettingsRepository
 import net.zodac.ludoplus.game.GameState
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PlayerConfig
@@ -145,32 +144,46 @@ class NetplayGameTest {
     @Test
     fun `the host starts with the guest in its seat - sends it the game - and takes its roll only on its turn`() = runTest(dispatcher) {
         val nearby = FakeNearby()
-        // A seed whose roll-off puts Jo, seat 2, first.
-        val seed = generateSequence(0) { it + 1 }.first { RollOff.roll(2, 6, Random(it)).first == 1 }
-        val host = hostWithGuest(nearby, seed)
+        val host = hostWithGuest(nearby, samNoSix)
         val game = assertNotNull(host.game.value)
         assertEquals(PlayerType.NEARBY, game.players[1].type)
         assertEquals("Jo", game.players[1].name)
-        assertEquals(1, game.state.current)
-        assertTrue(game.currentIsCpu)
+        // Sam, player 1, goes first.
+        assertEquals(0, game.state.current)
         assertIs<NetMessage.Game>(nearby.hostSent.last().second)
+
+        // Jo's roll is no roll of Sam's.
+        nearby.fromGuest("jo", NetMessage.Roll)
+        runCurrent()
+        assertEquals(game.state, host.game.value?.state)
+        passToJo(host)
+        assertTrue(host.game.value!!.currentIsCpu)
 
         // Sam's tap is no roll of Jo's.
         host.roll()
         assertEquals(TurnPhase.AwaitingRoll, host.game.value?.state?.phase)
         nearby.fromGuest("jo", NetMessage.Roll)
         runCurrent()
-        assertTrue(host.game.value!!.state.lastEvent != null)
+        assertEquals(1, host.game.value!!.state.lastEvent?.player)
         assertEquals(SavedGameJson.encode(host.game.value!!, withLog = false), (nearby.hostSent.last().second as NetMessage.Game).json)
     }
 
-    /** A seed whose roll-off puts Jo, seat 2, first. */
-    private val joFirst = generateSequence(0) { it + 1 }.first { RollOff.roll(2, 6, Random(it)).first == 1 }
+    /** A seed whose first roll, Sam's, isn't a 6: with every pawn in the yard, the turn passes to Jo. */
+    private val samNoSix = generateSequence(0) { it + 1 }.first { Random(it).nextInt(1, 7) != 6 }
 
-    /** A seed whose roll-off puts Jo first, who then rolls a 6: a pawn to bring out. */
-    private val joFirstWithASix = generateSequence(0) { it + 1 }.first { seed ->
+    /** A seed whose first roll, Sam's, isn't a 6, and whose next, Jo's, is: a pawn to bring out. */
+    private val joSixAfterSam = generateSequence(0) { it + 1 }.first { seed ->
         val random = Random(seed)
-        RollOff.roll(2, 6, random).first == 1 && random.nextInt(1, 7) == 6
+        random.nextInt(1, 7) != 6 && random.nextInt(1, 7) == 6
+    }
+
+    /** Sam, at the host, rolls no 6 (the [samNoSix] seed's roll), and the turn passes to Jo. */
+    private fun TestScope.passToJo(host: GameViewModel) {
+        host.roll()
+        runCurrent()
+        val state = assertNotNull(host.game.value).state
+        assertEquals(0, state.lastEvent?.player)
+        assertEquals(1, state.current)
     }
 
     @Test
@@ -186,7 +199,8 @@ class NetplayGameTest {
     @Test
     fun `a guest whose phone drops out is played by the CPU until it's back - the host findable meanwhile`() = runTest(dispatcher) {
         val nearby = FakeNearby()
-        val host = hostWithGuest(nearby, joFirst)
+        val host = hostWithGuest(nearby, samNoSix)
+        passToJo(host)
         assertFalse(nearby.findable)
         checkNotNull(nearby.hostEvents)(LinkEvent.Disconnected("jo"))
         runCurrent()
@@ -196,7 +210,7 @@ class NetplayGameTest {
         // The CPU rolls for Jo, after its usual wait.
         advanceTimeBy(1_000)
         runCurrent()
-        assertNotNull(host.game.value?.state?.lastEvent)
+        assertEquals(1, host.game.value?.state?.lastEvent?.player)
 
         val token = nearby.hostSent.first { it.first == "jo" && it.second is NetMessage.Welcome }.second.let { (it as NetMessage.Welcome).token }
         checkNotNull(nearby.hostEvents)(LinkEvent.Connected("jo-again"))
@@ -210,15 +224,16 @@ class NetplayGameTest {
     @Test
     fun `a guest that lets its turn run out has the rest of it played by the CPU`() = runTest(dispatcher) {
         val nearby = FakeNearby()
-        val host = hostWithGuest(nearby, joFirst)
+        val host = hostWithGuest(nearby, samNoSix)
+        passToJo(host)
         advanceTimeBy(GameViewModel.GUEST_TURN_MILLIS - 1)
         runCurrent()
-        assertNull(host.game.value?.state?.lastEvent)
+        assertEquals(0, host.game.value?.state?.lastEvent?.player)
         // Out of time: the CPU plays the rest of Jo's turn, after its usual wait.
         advanceTimeBy(1_000)
         runCurrent()
         val after = assertNotNull(host.game.value)
-        assertNotNull(after.state.lastEvent)
+        assertEquals(1, after.state.lastEvent?.player)
         advanceTimeBy(10_000)
         runCurrent()
         assertEquals(0, host.game.value?.state?.current)
@@ -232,7 +247,8 @@ class NetplayGameTest {
     @Test
     fun `a guest that plays once its time is out takes its turn back from the CPU`() = runTest(dispatcher) {
         val nearby = FakeNearby()
-        val host = hostWithGuest(nearby, joFirstWithASix)
+        val host = hostWithGuest(nearby, joSixAfterSam)
+        passToJo(host)
         advanceTimeBy(GameViewModel.GUEST_TURN_MILLIS)
         runCurrent()
         // The CPU is about to roll for Jo, but Jo rolls first: a 6.
@@ -260,7 +276,7 @@ class NetplayGameTest {
         assertIs<GuestState.Seated>(guest.guestState.value)
 
         val players = listOf(PlayerConfig(1, PlayerType.HUMAN, "Sam"), PlayerConfig(2, PlayerType.NEARBY, "Jo"))
-        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 1), RollOff(emptyList(), 1), id = "a".repeat(32))
+        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 1), first = 1, id = "a".repeat(32))
         nearby.fromHost(NetMessage.Game(1, SavedGameJson.encode(start)))
         runCurrent()
         assertEquals(1, guest.game.value?.guestSeat)
@@ -292,7 +308,7 @@ class NetplayGameTest {
         checkNotNull(nearby.joinEvents)(LinkEvent.Connected("host"))
         nearby.fromHost(NetMessage.Welcome(1, "t1"))
         val players = listOf(PlayerConfig(1, PlayerType.HUMAN, "Sam"), PlayerConfig(2, PlayerType.NEARBY, "Jo"))
-        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), RollOff(emptyList(), 0), id = "a".repeat(32))
+        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), first = 0, id = "a".repeat(32))
         nearby.fromHost(NetMessage.Game(1, SavedGameJson.encode(start)))
         runCurrent()
 
@@ -328,7 +344,7 @@ class NetplayGameTest {
     @Test
     fun `a guest is warned before its turn runs out - and only then`() = runTest(dispatcher) {
         val nearby = FakeNearby()
-        hostWithGuest(nearby, joFirst)
+        passToJo(hostWithGuest(nearby, samNoSix))
         advanceTimeBy(GameViewModel.GUEST_TURN_MILLIS - GameViewModel.TURN_WARNING_MILLIS - 1)
         runCurrent()
         assertTrue(nearby.hostSent.none { it.second == NetMessage.TurnEnding })
@@ -368,7 +384,7 @@ class NetplayGameTest {
         checkNotNull(nearby.joinEvents)(LinkEvent.Connected("host"))
         nearby.fromHost(NetMessage.Welcome(1, "t1"))
         val players = listOf(PlayerConfig(1, PlayerType.HUMAN, "Sam"), PlayerConfig(2, PlayerType.NEARBY, "Jo"))
-        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), RollOff(emptyList(), 0), id = "a".repeat(32))
+        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), first = 0, id = "a".repeat(32))
         nearby.fromHost(NetMessage.Game(1, SavedGameJson.encode(start)))
         runCurrent()
         nearby.fromHost(NetMessage.Game(2, SavedGameJson.encode(start.copy(state = start.state.copy(current = 1)))))
@@ -394,7 +410,7 @@ class NetplayGameTest {
         checkNotNull(nearby.joinEvents)(LinkEvent.Connected("host"))
         nearby.fromHost(NetMessage.Welcome(1, "t1"))
         val players = listOf(PlayerConfig(1, PlayerType.HUMAN, "Sam"), PlayerConfig(2, PlayerType.NEARBY, "Jo"))
-        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), RollOff(emptyList(), 0), id = "a".repeat(32))
+        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), first = 0, id = "a".repeat(32))
         nearby.fromHost(NetMessage.Game(1, SavedGameJson.encode(start)))
         runCurrent()
         checkNotNull(nearby.joinEvents)(LinkEvent.Disconnected("host"))

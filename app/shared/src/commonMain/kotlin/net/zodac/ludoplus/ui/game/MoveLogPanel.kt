@@ -66,7 +66,7 @@ private val MIN_LOG_HEIGHT = 56.dp
 
 /**
  * The game's move log, under the die and the prompt: every move ([StartedGame.log]), newest first, back to who went
- * first (outside the tutorial, which has no roll-off), in a card that scrolls, brought back to its top as each move comes.
+ * first (outside the tutorial), in a card that scrolls, brought back to its top as each move comes.
  * Each line starts with when it happened, "[14:05:09]", and names its players in their colours. TalkBack hears its title
  * as a heading, the lines as a list ("1 of 12") without their times, and the newest line as it comes (a polite live
  * region). Where there isn't room for the card (a short screen, a large font), the newest line alone.
@@ -128,8 +128,8 @@ internal fun MoveLogPanel(game: StartedGame, seatColours: List<PlayerColour?>, t
  */
 @Composable
 private fun LogLine(game: StartedGame, seatColours: List<PlayerColour?>, entry: LogEntry?, newest: Boolean, modifier: Modifier) {
-    val line = if (entry == null) stringResource(Res.string.game_event_first, game.players[game.rollOff.first].name) else logLine(game, entry)
-    val names = if (entry == null) listOf(game.rollOff.first) else logNames(game, entry)
+    val line = if (entry == null) stringResource(Res.string.game_event_first, game.players[game.first].name) else logLine(game, entry)
+    val names = if (entry == null) listOf(game.first) else logNames(game, entry)
     val pattern = stringResource(Res.string.game_log_time_pattern)
     val languageTag = stringResource(Res.string.common_locale)
     val at = entry?.atEpochMillis ?: game.startedAtEpochMillis

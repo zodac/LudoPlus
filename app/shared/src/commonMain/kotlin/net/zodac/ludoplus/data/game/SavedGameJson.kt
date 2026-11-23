@@ -30,7 +30,6 @@ import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.game.PlayerState
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
@@ -67,7 +66,11 @@ object SavedGameJson {
         // Each finished player's finish time, keyed by player index.
         put("finishMillis", JsonObject(game.finishMillis.entries.associate { (player, millis) -> player.toString() to JsonNumber(millis) }))
         put("players", JsonArray(game.players.map(::encodePlayer)))
-        put("rollOff", encodeRollOff(game.rollOff))
+        // Who went first, in the shape of the roll-off that once chose them (with no rounds), which 1.0.1 and older need.
+        put("rollOff", buildJsonObject {
+            put("rounds", JsonArray(emptyList()))
+            put("first", game.first)
+        })
         // A custom mode's name, for the game to be shown under; absent for a built-in mode.
         game.customName?.let { put("customName", it) }
         // The game's id, for telling its copies apart from other games' in a merge; absent for a game without one.
@@ -93,7 +96,8 @@ object SavedGameJson {
         require(version in 1..VERSION) { "Saved game version $version isn't one this app reads" }
         val mode = storedId<GameMode>(obj.string("mode"))
         val players = obj.objectList("players").map(::decodePlayer)
-        val rollOff = decodeRollOff(obj.obj("rollOff"), players.size)
+        val first = obj.obj("rollOff").int("first")
+        require(first in players.indices) { "No player $first to go first" }
         val teams = if ("teams" in obj) obj.array("teams").ints() else null
         require(teams == null || teams.size == players.size) { "${teams?.size} teams for ${players.size} players" }
         val rules = mode.rules.forPlayers(players.size).copy(
@@ -115,7 +119,7 @@ object SavedGameJson {
             mode,
             players,
             state,
-            rollOff,
+            first,
             startedAtEpochMillis = obj.long("startedAt"),
             playMillis = playMillis,
             finishMillis = finishMillis,
@@ -141,23 +145,6 @@ object SavedGameJson {
         difficulty = storedId<Difficulty>(obj.string("difficulty")),
         colour = storedId<PlayerColour>(obj.string("colour")),
     )
-
-    private fun encodeRollOff(rollOff: RollOff): JsonObject = buildJsonObject {
-        // Each round as an object of rolls keyed by player index.
-        put("rounds", JsonArray(rollOff.rounds.map { round -> JsonObject(round.entries.associate { (player, roll) -> player.toString() to JsonNumber(roll) }) }))
-        put("first", rollOff.first)
-    }
-
-    private fun decodeRollOff(obj: JsonObject, playerCount: Int): RollOff {
-        val rounds = obj.objectList("rounds").map { round ->
-            round.ints().entries.associate { (player, roll) ->
-                (player.toIntOrNull()?.takeIf { it in 0..<playerCount } ?: throw JsonParseException("No player \"$player\"")) to roll
-            }
-        }
-        val first = obj.int("first")
-        require(first in 0..<playerCount) { "No player $first to go first" }
-        return RollOff(rounds, first)
-    }
 
     private fun encodeState(state: GameState): JsonObject = buildJsonObject {
         put(

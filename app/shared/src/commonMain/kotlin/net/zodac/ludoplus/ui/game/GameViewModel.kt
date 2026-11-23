@@ -38,7 +38,6 @@ import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.MoveLog
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.game.TutorialScript
 import net.zodac.ludoplus.game.TutorialStep
@@ -267,7 +266,6 @@ class GameViewModel(
             }
         }
         val mode = setup.playedMode
-        val rollOff = RollOff.roll(players.size, mode.rules.dieFaces, random)
         cpuTurn?.cancel()
         val previousGame = _game.value?.state
         val startedAt = now()
@@ -278,7 +276,6 @@ class GameViewModel(
             state = GameState.new(
                 mode,
                 players.size,
-                first = rollOff.first,
                 rules = mode.rules.forPlayers(players.size).copy(
                     stopAtFirstWinner = stopAtFirstWinner.value,
                     teams = setup.teams,
@@ -286,7 +283,6 @@ class GameViewModel(
                     rollForPartners = setup.rollForPartners,
                 ).withHouseRules(setup.playedHouseRules),
             ),
-            rollOff = rollOff,
             startedAtEpochMillis = startedAt,
             customName = setup.customMode?.name,
             id = Uuid.random().toHexString(),
@@ -542,7 +538,7 @@ class GameViewModel(
         )
         playMark = elapsedMillis().takeIf { foreground.value }
         tutorialProgress?.begin(0)
-        commit(StartedGame(mode = script.gameMode, players = players, state = script.start(0), rollOff = RollOff(emptyList(), TutorialScript.YOU), startedAtEpochMillis = now()))
+        commit(StartedGame(mode = script.gameMode, players = players, state = script.start(0), first = TutorialScript.YOU, startedAtEpochMillis = now()))
     }
 
     /** The coach card's back (-1) and forward (+1): the start of the part before or after, or of this one going back. */
@@ -947,7 +943,7 @@ class GameViewModel(
 
 /**
  * A game being played: its [mode], its [players] in seat order (each sits at the seat of their index), its [state], and
- * the [rollOff] that chose who went first. It started at [startedAtEpochMillis], and has been on screen for [playMillis].
+ * the player who went [first]. It started at [startedAtEpochMillis], and has been on screen for [playMillis].
  * [finishMillis] holds, for each player placed, the [playMillis] when they were: when they brought every pawn home, or
  * for the last, when the game ended.
  */
@@ -955,7 +951,7 @@ data class StartedGame(
     val mode: GameMode,
     val players: List<PlayerConfig>,
     val state: GameState,
-    val rollOff: RollOff,
+    val first: Int = 0,
     val startedAtEpochMillis: Long = 0,
     val playMillis: Long = 0,
     val finishMillis: Map<Int, Long> = emptyMap(),

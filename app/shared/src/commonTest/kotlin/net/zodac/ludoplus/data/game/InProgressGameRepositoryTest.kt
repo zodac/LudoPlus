@@ -12,7 +12,6 @@ import kotlinx.coroutines.test.runTest
 import net.zodac.ludoplus.data.InMemoryPreferences
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.LudoEngine
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
@@ -24,7 +23,7 @@ class InProgressGameRepositoryTest {
         mode = GameMode.CLASSIC,
         players = List(4) { PlayerConfig(it + 1, PlayerType.HUMAN, "Player ${it + 1}") },
         state = GameState.new(GameMode.CLASSIC, 4),
-        rollOff = RollOff(listOf(mapOf(0 to 6, 1 to 5, 2 to 4, 3 to 3)), first = 0),
+        first = 0,
     )
 
     @Test

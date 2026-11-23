@@ -45,9 +45,9 @@ class MainActivitySmokeTest {
         compose.onNodeWithText("Start Game").performClick()
         compose.waitForIdle()
 
-        // The game screen: the roll-off's winner is named under the board.
+        // The game screen: player 1 is named under the board as going first.
         compose.waitUntil(timeoutMillis = waitMillis) {
-            compose.onAllNodesWithText("rolled highest, so goes first.", substring = true).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText(" goes first.", substring = true).fetchSemanticsNodes().isNotEmpty()
         }
 
         // Back asks before leaving a game that's on (Settings' "Confirm leaving game", on by default); Leave goes to the menu.

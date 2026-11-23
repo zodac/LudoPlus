@@ -16,7 +16,6 @@ import net.zodac.ludoplus.data.records.InMemoryGameResultDao
 import net.zodac.ludoplus.data.settings.SettingsRepository
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.PlayerState
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
@@ -60,7 +59,7 @@ class GameOverTest : UiTest() {
                 phase = TurnPhase.Finished,
                 finishingOrder = listOf(1, 0, 3, 2),
             ),
-            rollOff = RollOff(emptyList(), 0),
+            first = 0,
             playMillis = 4_400_000,
             finishMillis = mapOf(1 to 900_000L, 0 to 997_000L, 3 to 3_599_999L, 2 to 4_400_000L),
         )

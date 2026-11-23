@@ -7,7 +7,6 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.PlayerState
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
@@ -52,7 +51,7 @@ class GameRecordRepositoryTest {
             mode = GameMode.CLASSIC,
             players = players,
             state = state,
-            rollOff = RollOff(emptyList(), 0),
+            first = 0,
             playMillis = 600_000,
             finishMillis = order.withIndex().associate { (place, player) -> player to 100_000L * (place + 1) },
         )

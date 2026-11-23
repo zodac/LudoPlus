@@ -11,7 +11,6 @@ import net.zodac.ludoplus.data.records.InMemoryGameResultDao
 import net.zodac.ludoplus.data.settings.SettingsRepository
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.LudoEngine
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PlayerConfig
@@ -49,7 +48,7 @@ class NetplayNoticeTest : UiTest() {
         checkNotNull(nearby.joinEvents)(LinkEvent.Connected("host"))
         nearby.fromHost(NetMessage.Welcome(1, "t1"))
         val players = listOf(PlayerConfig(1, PlayerType.HUMAN, "Sam"), PlayerConfig(2, PlayerType.NEARBY, "Jo"))
-        val game = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), RollOff(emptyList(), 0), id = "a".repeat(32))
+        val game = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), first = 0, id = "a".repeat(32))
         nearby.fromHost(NetMessage.Game(1, SavedGameJson.encode(game)))
         compose.waitForIdle()
         show(guest)
@@ -106,7 +105,7 @@ class NetplayNoticeTest : UiTest() {
     fun `a guest hears that its turn is nearly up - until it's played`() = uiTest(TestScreen(411, 891)) {
         val nearby = FakeNearby()
         val guest = guest(nearby)
-        val game = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 1), RollOff(emptyList(), 1), id = "a".repeat(32))
+        val game = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 1), first = 1, id = "a".repeat(32))
         nearby.fromHost(NetMessage.Game(1, SavedGameJson.encode(game)))
         compose.waitForIdle()
         show(guest)
@@ -125,7 +124,7 @@ class NetplayNoticeTest : UiTest() {
     fun `a guest's Game Over has no Play Again - it says the host's starts the next game - which then shows`() = uiTest(TestScreen(411, 891)) {
         val nearby = FakeNearby()
         val guest = guest(nearby)
-        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), RollOff(emptyList(), 0), id = "a".repeat(32))
+        val start = StartedGame(GameMode.CLASSIC, players, GameState.new(GameMode.CLASSIC, 2, first = 0), first = 0, id = "a".repeat(32))
         val home = start.state.board.homeProgress
         val finished = start.copy(
             state = start.state.copy(phase = TurnPhase.Finished, finishingOrder = listOf(1, 0), players = start.state.players.map { it.copy(pawns = List(4) { home }) }),

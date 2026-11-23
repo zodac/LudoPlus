@@ -14,7 +14,6 @@ import kotlinx.coroutines.test.runTest
 import net.zodac.ludoplus.data.game.SavedGameJson
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.LudoEngine
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerConfig
@@ -37,7 +36,7 @@ private val GAME = StartedGame(
         PlayerConfig(4, PlayerType.HUMAN, "Alex"),
     ),
     state = GameState.new(GameMode.CLASSIC, 4, first = 1),
-    rollOff = RollOff(emptyList(), 1),
+    first = 1,
 )
 
 /** The netplay protocol and its two sessions, over no radio: what each side sends, and what it makes of the other's. */

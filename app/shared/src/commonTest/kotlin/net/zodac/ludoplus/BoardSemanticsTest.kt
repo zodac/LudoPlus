@@ -25,7 +25,6 @@ import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.HouseRule
@@ -67,7 +66,7 @@ class BoardSemanticsTest : UiTest() {
     private var backs = 0
 
     private fun show(state: GameState, log: List<LogEntry> = emptyList()) {
-        val game = StartedGame(state.mode, players, state, RollOff(listOf(mapOf(0 to 6, 1 to 1, 2 to 1, 3 to 1)), 0), log = log)
+        val game = StartedGame(state.mode, players, state, first = 0, log = log)
         showcase.show {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
                 LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it.pawn }, onBack = { backs++ }, onResults = {}) }
@@ -122,7 +121,7 @@ class BoardSemanticsTest : UiTest() {
         val rolled = LudoEngine.applyDice(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = if (i == 0) listOf(10, Y, Y, Y) else listOf(Y, Y, Y, Y)) }), listOf(3, 5))
         var state = rolled
         val picks = mutableListOf<Move>()
-        val game = { StartedGame(GameMode.TWO_DICE, players, state, RollOff(listOf(mapOf(0 to 6, 1 to 1, 2 to 1, 3 to 1)), 0)) }
+        val game = { StartedGame(GameMode.TWO_DICE, players, state, first = 0) }
         showcase.show {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
                 LudoPlusTheme { GameContent(game(), onRoll = {}, onMove = { picks += it }, onBack = {}, onResults = {}) }
@@ -266,7 +265,7 @@ class BoardSemanticsTest : UiTest() {
             show(state().copy(current = 2, lastEvent = everyLine.last().first.event), log)
             compose.onNodeWithText("Moves").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
             compose.onNodeWithText("Sam, tap the die to roll.").assertExists()
-            val lines = (listOf("Alex rolled highest, so goes first.") + everyLine.map { it.second }).reversed()
+            val lines = (listOf("Alex goes first.") + everyLine.map { it.second }).reversed()
             val list = compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.CollectionInfo))
             assertEquals(lines.size, list.fetchSemanticsNode().config[SemanticsProperties.CollectionInfo].rowCount)
             val minutes = mutableListOf<Int>()

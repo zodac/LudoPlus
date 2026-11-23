@@ -11,7 +11,6 @@ import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.MoveLog
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
@@ -36,7 +35,7 @@ class SavedGameJsonTest {
         mode = GameMode.CLASSIC,
         players = players,
         state = state,
-        rollOff = RollOff(listOf(mapOf(0 to 6, 1 to 6, 2 to 3, 3 to 1), mapOf(0 to 2, 1 to 5)), first = 1),
+        first = 1,
         startedAtEpochMillis = 1_763_000_000_123,
         playMillis = 98_765,
         // Every finished player's, as the game keeps them.
@@ -256,7 +255,7 @@ class SavedGameJsonTest {
                 "{\"slot\":2,\"type\":\"AI\",\"name\":\"Bot\",\"difficulty\":\"HARD\",\"colour\":\"RED\"}," +
                 "{\"slot\":3,\"type\":\"AI\",\"name\":\"Cog\",\"difficulty\":\"EASY\",\"colour\":\"GREEN\"}," +
                 "{\"slot\":4,\"type\":\"HUMAN\",\"name\":\"Dee\",\"difficulty\":\"MEDIUM\",\"colour\":\"YELLOW\"}]," +
-                "\"rollOff\":{\"rounds\":[{\"0\":6,\"1\":6,\"2\":3,\"3\":1},{\"0\":2,\"1\":5}],\"first\":1}," +
+                "\"rollOff\":{\"rounds\":[],\"first\":1}," +
                 "\"id\":\"0123456789abcdef0123456789abcdef\",\"steps\":17," +
                 "\"state\":{\"players\":[" +
                 "{\"seat\":0,\"pawns\":[-1,-1,-1,-1],\"turns\":0,\"captures\":0,\"timesCaptured\":0}," +
@@ -270,9 +269,16 @@ class SavedGameJsonTest {
     }
 
     @Test
-    fun `an unreadable player in the roll-off fails the read`() {
-        val json = SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4))).replace("{\"0\":2,\"1\":5}", "{\"0\":2,\"9\":5}")
-        assertFailsWith<JsonParseException> { SavedGameJson.decode(json) }
+    fun `a save from before the roll-off went reads - keeping who went first`() {
+        val json = SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4, first = 1)))
+            .replace("\"rounds\":[]", "\"rounds\":[{\"0\":6,\"1\":6,\"2\":3,\"3\":1},{\"0\":2,\"1\":5}]")
+        assertEquals(1, SavedGameJson.decode(json).first)
+    }
+
+    @Test
+    fun `a first player who isn't in the game fails the read`() {
+        val json = SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4))).replace("\"first\":1", "\"first\":4")
+        assertFailsWith<IllegalArgumentException> { SavedGameJson.decode(json) }
     }
 }
 
@@ -293,7 +299,7 @@ class SavedGameJsonLogTest {
             log = MoveLog.next(log, state, next, 1_763_000_000_000 + step * 1_500L)
             state = next
         }
-        return StartedGame(GameMode.CLASSIC, players, state, RollOff(listOf(mapOf(0 to 6, 1 to 2)), 0), id = "a", log = log)
+        return StartedGame(GameMode.CLASSIC, players, state, first = 0, id = "a", log = log)
     }
 
     @Test

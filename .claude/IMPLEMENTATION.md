@@ -66,7 +66,8 @@ Sources: [Wikipedia, "Ludo"](https://en.wikipedia.org/wiki/Ludo),
 
 ### Turns
 
-- **Who starts.** Each player rolls once, and the highest roll starts (ties roll again). Play then goes clockwise.
+- **Who starts.** Player 1 (the first on the setup page) always starts; play then goes clockwise. There is no roll
+    to start (the maintainer, 2026-11-23: the opening roll-off went).
 - **A turn** is one roll of a single six-sided die, then one move of one pawn by exactly that many squares. The
     player chooses which pawn.
 - **Leaving the yard.** Only a **6** brings a pawn out of the yard, onto its start square. That move uses the whole
@@ -177,8 +178,9 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     (`Rolled`, `NoMove`, `RollAgainLimit`, `Moved`) for the screen to show and say. Immutable, with `copy`.
 - [x] `LudoEngine` (`game/`): pure `applyRoll`, `legalMoves`, and `move`, and `roll` drawing from an injected
     `Random`, so tests are deterministic. A roll with no legal move passes the turn itself.
-- [x] Opening roll-off for first player (`RollOff`), keeping each round's rolls for the screen.
-- [x] Tests: each rule above (`LudoEngineTest`, `BoardGeometryTest`, `RollOffTest`), plus property tests over 2,000
+- [x] Player 1 starts (the opening roll-off was removed, 2026-11-23; saves still carry a `rollOff` with no rounds,
+    which 1.0.1 and older read).
+- [x] Tests: each rule above (`LudoEngineTest`, `BoardGeometryTest`), plus property tests over 2,000
     seeded random games of 2-4 players (`LudoEnginePropertyTest`: pawn count, positions in range, no two colours off a
     safe square, capture tallies agree, every game ends with every place decided).
 - [x] Spoken positions: `pawnSpoken` (`ui/game/PawnSpeech.kt`, "Red pawn 2, 14 squares from home"), with the pure

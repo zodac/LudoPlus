@@ -31,7 +31,6 @@ import net.zodac.ludoplus.data.settings.SettingsRepository
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
-import net.zodac.ludoplus.game.RollOff
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.CustomMode
@@ -56,7 +55,7 @@ class GameViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     /**
-     * A started game whose die and roll-off come from [seed]; seats 2 to 4 are CPUs unless [humans]. It saves to [saved],
+     * A started game whose die comes from [seed]; seats 2 to 4 are CPUs unless [humans]. It saves to [saved],
      * and its play time is read from [clock].
      */
     private fun TestScope.started(
@@ -78,24 +77,36 @@ class GameViewModelTest {
 
     private val GameViewModel.state get() = assertNotNull(game.value).state
 
-    /** The first seed whose roll-off [wanted] says yes to, so a test starts with the player it needs. */
-    private fun seedWhere(wanted: (first: Int) -> Boolean): Int =
-        generateSequence(0) { it + 1 }.first { wanted(RollOff.roll(4, 6, Random(it)).first) }
+    /** A seed whose first roll isn't a 6: with every pawn in the yard, player 1's roll passes the turn ([passToCpu]). */
+    private val noSixFirst = generateSequence(0) { it + 1 }.first { Random(it).nextInt(1, 7) != 6 }
+
+    /** Player 1 rolls no 6 (the [noSixFirst] seed's roll), and the turn passes to player 2, a CPU. */
+    private fun TestScope.passToCpu(viewModel: GameViewModel) {
+        viewModel.roll()
+        runCurrent()
+        assertEquals(0, viewModel.state.lastEvent?.player)
+        assertEquals(1, viewModel.state.current)
+    }
 
     @Test
-    fun `a new game starts with the roll-off's winner to roll - every pawn in its yard`() = runTest(dispatcher) {
-        val seed = seedWhere { true }
-        val viewModel = started(seed, humans = true)
+    fun `a new game starts with player 1 to roll - nothing rolled for them - every pawn in its yard`() = runTest(dispatcher) {
+        // Every seat but player 1's a CPU: still player 1 starts, and waits for their own roll.
+        val viewModel = started(0)
         val game = assertNotNull(viewModel.game.value)
-        assertEquals(RollOff.roll(4, 6, Random(seed)).first, game.state.current)
-        assertEquals(game.rollOff.first, game.state.current)
+        assertEquals(0, game.state.current)
+        assertEquals(0, game.first)
         assertEquals(TurnPhase.AwaitingRoll, game.state.phase)
-        assertEquals(listOf("Player 1", "Player 2", "Player 3", "Player 4"), game.players.map { it.name })
+        assertNull(game.state.lastEvent)
+        assertTrue(game.state.players.all { player -> player.pawns.all { it == YARD_PROGRESS } })
+        assertEquals("Player 1", game.players[0].name)
+        advanceTimeBy(60_000)
+        runCurrent()
+        assertEquals(game.state, viewModel.state)
     }
 
     @Test
     fun `a person rolls and moves - a move that isn't legal is ignored`() = runTest(dispatcher) {
-        val viewModel = started(seedWhere { true }, humans = true)
+        val viewModel = started(0, humans = true)
         // Roll until someone has a move: with every pawn in the yard, only a 6 gives one.
         repeat(200) { if (viewModel.state.phase == TurnPhase.AwaitingRoll) viewModel.roll() }
         val phase = assertIs<TurnPhase.AwaitingMove>(viewModel.state.phase)
@@ -108,14 +119,15 @@ class GameViewModelTest {
 
     @Test
     fun `a CPU's turn plays itself a pause at a time - and a person can't roll for it`() = runTest(dispatcher) {
-        val viewModel = started(seedWhere { it != 0 })
+        val viewModel = started(noSixFirst)
+        passToCpu(viewModel)
         val cpu = viewModel.state.current
-        assertNotEquals(0, cpu)
+        val waiting = viewModel.state
         viewModel.roll()
-        assertEquals(null, viewModel.state.lastEvent)
+        assertEquals(waiting, viewModel.state)
         advanceTimeBy(699)
         runCurrent()
-        assertEquals(null, viewModel.state.lastEvent)
+        assertEquals(waiting, viewModel.state)
         advanceTimeBy(2)
         runCurrent()
         assertEquals(cpu, assertNotNull(viewModel.state.lastEvent).player)
@@ -123,27 +135,28 @@ class GameViewModelTest {
 
     @Test
     fun `a CPU's turn waits while the game is off screen or under a dialog`() = runTest(dispatcher) {
-        val viewModel = started(seedWhere { it != 0 })
+        val viewModel = started(noSixFirst)
+        passToCpu(viewModel)
         viewModel.setForeground(false)
         advanceTimeBy(5_000)
         runCurrent()
-        assertEquals(null, viewModel.state.lastEvent)
+        assertEquals(0, viewModel.state.lastEvent?.player)
         viewModel.setForeground(true)
         viewModel.setHeld(true)
         advanceTimeBy(5_000)
         runCurrent()
-        assertEquals(null, viewModel.state.lastEvent)
+        assertEquals(0, viewModel.state.lastEvent?.player)
         // Back in front, the wait starts again.
         viewModel.setHeld(false)
         advanceTimeBy(701)
         runCurrent()
-        assertNotNull(viewModel.state.lastEvent)
+        assertEquals(1, viewModel.state.lastEvent?.player)
     }
 
     @Test
     fun `a game is saved as it starts and after every roll and move - and Continue brings it back as it was`() = runTest(dispatcher) {
         val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
-        val viewModel = started(seedWhere { true }, humans = true, saved = saved)
+        val viewModel = started(0, humans = true, saved = saved)
         assertEquals(viewModel.game.value, saved.load())
         repeat(200) { if (viewModel.state.phase == TurnPhase.AwaitingRoll) viewModel.roll() }
         assertIs<TurnPhase.AwaitingMove>(viewModel.state.phase)
@@ -165,7 +178,7 @@ class GameViewModelTest {
      */
     private suspend fun TestScope.resumedAt(pawns: List<Int>, roll: Int): GameViewModel {
         val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
-        val game = assertNotNull(started(seedWhere { true }, humans = true, saved = saved).game.value)
+        val game = assertNotNull(started(0, humans = true, saved = saved).game.value)
         val state = game.state.copy(players = game.state.players.mapIndexed { i, player -> if (i == game.state.current) player.copy(pawns = pawns) else player })
         saved.save(game.copy(state = LudoEngine.applyRoll(state, roll)))
         val resumed = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, GameRecordRepository(InMemoryGameResultDao()), Random(0), elapsedMillis = { 0L })
@@ -217,7 +230,7 @@ class GameViewModelTest {
 
     @Test
     fun `a game has an id of its own - and counts each change - so a merge can tell how far on a copy is`() = runTest(dispatcher) {
-        val viewModel = started(seedWhere { true }, humans = true)
+        val viewModel = started(0, humans = true)
         val game = assertNotNull(viewModel.game.value)
         assertTrue(Regex("[0-9a-f]{32}").matches(assertNotNull(game.id)))
         val steps = game.steps
@@ -225,7 +238,7 @@ class GameViewModelTest {
         assertEquals(steps + 1, viewModel.game.value?.steps)
         assertEquals(game.id, viewModel.game.value?.id)
         // Another game is another id.
-        assertNotEquals(game.id, started(seedWhere { true }, humans = true).game.value?.id)
+        assertNotEquals(game.id, started(0, humans = true).game.value?.id)
     }
 
     @Test
@@ -239,7 +252,8 @@ class GameViewModelTest {
     @Test
     fun `a resumed CPU's turn plays on by itself`() = runTest(dispatcher) {
         val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
-        val first = started(seedWhere { it != 0 }, saved = saved)
+        val first = started(noSixFirst, saved = saved)
+        passToCpu(first)
         val resumed = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, GameRecordRepository(InMemoryGameResultDao()), Random(1))
         resumed.setPacing(GamePacing(thinkMillis = 700, pawnsAnimated = false, dieAnimated = false))
         first.setForeground(false)
@@ -254,7 +268,7 @@ class GameViewModelTest {
     fun `a finished game's save is cleared - and its people are recorded once`() = runTest(dispatcher) {
         val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
         val records = GameRecordRepository(InMemoryGameResultDao())
-        val viewModel = started(seedWhere { true }, saved = saved, records = records)
+        val viewModel = started(0, saved = saved, records = records)
         assertNotNull(saved.load())
         // Player 1 plays its first move each time; the CPUs play themselves.
         while (!viewModel.state.isFinished) {
@@ -289,7 +303,7 @@ class GameViewModelTest {
     fun `play time counts only while the game is on screen and not under a dialog`() = runTest(dispatcher) {
         var clock = 1_000L
         val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
-        val viewModel = started(seedWhere { true }, humans = true, saved = saved, clock = { clock })
+        val viewModel = started(0, humans = true, saved = saved, clock = { clock })
         assertEquals(START, assertNotNull(viewModel.game.value).startedAtEpochMillis)
         clock += 4_000
         viewModel.roll()
