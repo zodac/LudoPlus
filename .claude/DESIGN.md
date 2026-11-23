@@ -574,22 +574,23 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
 
 ## Achievements
 
-`model/Achievement.kt` (119: 111 counted, 8 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
+`model/Achievement.kt` (113: 103 counted, 10 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
 (pure), `data/achievements/`, `app/AchievementUnlocker.kt`, `ui/achievements/`. Rebuilt for Ludo in Phase 6; DiceFive's
 110 are in `5423b6c`.
 
 - **Ids.**
     - The enum constant is the English title in snake case; the stored `id` is that in lower case
         (`GETTING_COMFORTABLE`/`"getting_comfortable"`). `AchievementEngineTest` enforces it. Permanent once released.
-    - Removed achievements' ids are kept in `RETIRED_ACHIEVEMENT_IDS`, never to be used again (eleven, 2026-11-23).
+    - Removed achievements' ids are kept in `RETIRED_ACHIEVEMENT_IDS`, never to be used again (eleven, 2026-11-23, and six, 2026-11-24).
     - String keys follow the constant: `achievement_<constant>_title`, `_description`.
 - **Player 1 only.** The person in seat 1 earns them; every other seat, person or CPU, is an opponent. The tutorial
     earns nothing.
 - **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (19, Pest and Completionist among
-    them, Completionist last), The Die (8), Captures (15), Racing (12), Winning (16), Game Modes (16), Misfortune (17), Miscellaneous (8,
-    hidden), and Easter Eggs (8, hidden, outside Completionist and the page's total): 111 counted. Each entry's
+    them, Completionist last), The Die (7), Captures (15), Racing (10), Winning (15), Game Modes (14), Misfortune (15), Miscellaneous (8,
+    hidden), and Easter Eggs (10, hidden, outside Completionist and the page's total): 103 counted. Each entry's
     description is its rule; the thresholds are the tracker's constants (`AchievementTracker`'s companion). The maintainer asked for 100, plus 10
-    Easter Eggs, on 2026-11-17 ("a variety of them in groups, like DiceFive"), removed eleven on 2026-11-23, and is
+    Easter Eggs, on 2026-11-17 ("a variety of them in groups, like DiceFive"), removed eleven on 2026-11-23 and eight
+    on 2026-11-24 (two of them never released), and is
     adding new ones: My Favourite Spot (every pawn on one square, not the start square, home column included) and
     We're All Friends Here (a pawn of every player on one track square, by anyone's move) on 2026-11-23, when Pest and
     Completionist moved to Milestones and the Collection category went.
@@ -598,17 +599,19 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
     - Punching Bag (15 captured) comes from simulated games: a player is captured about 6 times a game.
     - Easter Eggs: Alliteration (every name starting with one letter), Are You A Developer? (the version tapped seven
         times), Big Fan (a person named "zodac", exactly), Can't Wait To Get Going (the main menu's logo pawn tapped,
-        which hops three times; added 2026-11-23), Midnight Run (a new game from midnight to 6am), Sideways (a
-        game shown with the phone on its side), Time Flies (an hour of one game on screen), Who's Ludo? (anyone named
+        which hops three times; added 2026-11-23), Midnight Run (a new game from midnight to 6am), One By One
+        (every pawn home, none ever brought out with another on the board, by a move or Call Up, seen from the first roll),
+        Sideways (a game shown with the phone on its side), The Great Escape (all four pawns out together, each brought out
+        within the last four turns; both 2026-11-24), Time Flies (an hour of one game on screen), Who's Ludo? (anyone named
         "Ludo", any case).
     - Wire To Wire needs the whole game seen (from player 1's first roll): one continued from its save can't earn it.
     - Opening About (Who Made This?) earns a hidden one. So does tapping the menu's logo pawn (Can't Wait To Get Going,
         `MenuScreen`'s `onLogoPawnTapped`, unlocked in `LudoPlusNavHost`). The tutorial earns nothing.
-- **Counters** (`AchievementCounter`): games played, games won, the win and losing streaks, captures, pawns home,
+- **Counters** (`AchievementCounter`): games played, games won, the win streak, the modes finished, captures, pawns home,
     rolls, 6s, squares moved, and last places. Each
     moves as its event happens, never at a game's end only, so a game left unfinished still counts what was played.
     - A game counts as played the moment player 1 is placed; a win the moment they are first.
-    - The win streak goes up with a win, and back to 0 the moment another player wins; the losing streak the other way.
+    - The win streak goes up with a win, and back to 0 the moment another player wins.
     - Rolls, 6s, and squares moved wait to be written with the next step that earns anything else, or when the game leaves the screen
         (`AchievementTracker.flush`), so a roll alone doesn't write the store.
 - **When they're judged.** The engine decides, never a call site.
@@ -625,8 +628,8 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
 - **Modes and house rules** (the maintainer, 2026-11-24, as DiceFive). Every mode earns the ordinary achievements, but for
     those its rules make free, rule out, or turn into something else (`Achievement.notEarnableIn`, `impossibleIn`; the audit
     is in `GAME_MODES_AUDIT.md`). The Game Modes category has one for starting any mode but Classic, each mode's win and a
-    feat of its own, two house rules', and Grand Tour; Everything Everywhere All At Once, a win with every house rule on, is
-    in Winning. A game with house rules earns only those marked `earnableWithHouseRules`, and moves no counter. A limited
+    feat of its own, and Grand Tour; Everything Everywhere All At Once, a win of any mode but Classic with every house rule
+    that changes it on, is in Winning. A game with house rules earns only those marked `earnableWithHouseRules`, and moves no counter. A limited
     one's row has a tip naming the modes left ("Can only be earned in the 'Classic' and 'Chaos' modes"), read with the row by
     TalkBack.
 - **Display.**

@@ -97,6 +97,9 @@ class AchievementTracker(
     /** Whether player 1 was the last to bring a pawn out of their yard. */
     private var lastOut = false
 
+    /** Whether player 1 has never brought a pawn out with another on the board: for [Achievement.ONE_BY_ONE]. */
+    private var oneByOne = true
+
     /** Player 1's moves by the dice of one roll that captured: for [Achievement.TWO_BIRDS_TWO_STONES]. */
     private val rollCaptures = mutableListOf<Move>()
 
@@ -163,7 +166,6 @@ class AchievementTracker(
                     payback = event.player to after.players[mySeat].turns + 1
                 }
             }
-            if (event is GameEvent.NoMove && event.triesLeft == 0 && closedRoadTo(before, event.roll)) feats += Achievement.ROAD_CLOSED
         }
         for (caught in after.ghostMove?.caught.orEmpty()) if (caught.player == mySeat) sentBack(caught.pawn)
         if (after.players[mySeat].timesCaptured >= PUNCHING_BAG_CAPTURES) feats += Achievement.PUNCHING_BAG
@@ -235,14 +237,6 @@ class AchievementTracker(
         portalsTaken -= pawn
     }
 
-    /** Whether the player of [before] with no move for [roll] would have one but for a blockade of player 1's. */
-    private fun closedRoadTo(before: GameState, roll: Int): Boolean {
-        if (!before.rules.blockades) return false
-        val me = before.players[mySeat]
-        val open = before.copy(players = before.players.mapIndexed { i, side -> if (i == mySeat) side.copy(pawns = me.pawns.map { PawnPosition.YARD_PROGRESS }) else side })
-        return LudoEngine.legalMoves(open, roll).isNotEmpty()
-    }
-
     private fun playerOneRolled(dice: List<Int>, before: GameState, startsTurn: Boolean, feats: MutableSet<Achievement>) {
         pending.add(AchievementCounter.DIE_ROLLS, dice.size)
         // A run of rolls is of one die's: two dice's are kept out of ([Achievement.notEarnableIn]).
@@ -269,7 +263,6 @@ class AchievementTracker(
         }
         recentRolls.addLast(roll)
         if (recentRolls.size > COUNTING_UP.size) recentRolls.removeFirst()
-        if (recentRolls.size >= BROKEN_RECORD_ROLLS && recentRolls.takeLast(BROKEN_RECORD_ROLLS).distinct().size == 1) feats += Achievement.BROKEN_RECORD
         if (recentRolls.toList() == COUNTING_UP) feats += Achievement.COUNTING_UP
         onesInARow = if (roll == 1) onesInARow + 1 else 0
         if (onesInARow >= ONES_IN_A_ROW) feats += Achievement.BOTTOM_OF_THE_BARREL
@@ -332,13 +325,15 @@ class AchievementTracker(
                 if (opponents.none { neverOut(before.players[it]) }) lastOut = true
             }
             leftYardOnTurn[move.pawn] = turn
-            // Two tries missed, and this the third.
-            if (before.yardTriesUsed == 2) feats += Achievement.THIRD_TIMES_THE_CHARM
+            if (me.pawns.any { it in 0..<board.homeProgress }) oneByOne = false
         }
         event.effect?.let { effect ->
             powerUpsTaken += effect.powerUp
             if (powerUpsTaken.size == PowerUp.entries.size) feats += Achievement.ONE_OF_EVERYTHING
-            effect.calledUp?.let { leftYardOnTurn[it] = turn }
+            effect.calledUp?.let {
+                leftYardOnTurn[it] = turn
+                oneByOne = false
+            }
         }
         move.via?.let { via ->
             // In by one end having been in by the other: there, and back.
@@ -360,10 +355,12 @@ class AchievementTracker(
             leftYardOnTurn.remove(move.pawn)?.let { out ->
                 val turns = turn - out + 1
                 if (turns <= EXPRESS_TURNS) feats += Achievement.EXPRESS_DELIVERY
-                if (turns >= SCENIC_TURNS) feats += Achievement.SCENIC_ROUTE
             }
         }
         val pawns = after.players[mySeat].pawns
+        // The pawns out now, each still on its way since a turn this near: a partner's pawn isn't one of them.
+        if (move.owner == null && leftYardOnTurn.size == pawnsPerPlayer && leftYardOnTurn.values.all { it > turn - ESCAPE_TURNS }) feats += Achievement.THE_GREAT_ESCAPE
+        if (move.owner == null && seenFromStart && oneByOne && pawns.all { it == board.homeProgress }) feats += Achievement.ONE_BY_ONE
         val onBoard = pawns.filter { it in 0..<board.homeProgress }
         if (onBoard.size != onBoard.toSet().size) feats += Achievement.BUDDY_SYSTEM
         if (pawns.distinct().singleOrNull().let { it != null && it in 1..<board.homeProgress }) feats += Achievement.MY_FAVOURITE_SPOT
@@ -418,7 +415,6 @@ class AchievementTracker(
             if (table.all { it.type == PlayerType.HUMAN }) add(Achievement.LIFE_OF_THE_PARTY)
             if (table.all { it.type == PlayerType.AI }) {
                 if (table.all { it.difficulty == Difficulty.HARD }) add(Achievement.HOW_DO_YOU_DO_FELLOW_CPUS)
-                if (table.all { it.difficulty == Difficulty.EASY }) add(Achievement.TRAINING_WHEELS)
             }
         }
     }
@@ -462,8 +458,7 @@ class AchievementTracker(
         const val ONES_IN_A_ROW = 3
         const val HOT_HAND_TURNS = 3
         const val EXPRESS_TURNS = 12
-        const val SCENIC_TURNS = 60
-        const val BROKEN_RECORD_ROLLS = 4
+        const val ESCAPE_TURNS = 4
         val COUNTING_UP = (1..SIX).toList()
         const val TIME_FLIES_MILLIS = 60 * 60 * 1_000L
 

@@ -122,33 +122,29 @@ class AchievementEngineTest {
 
     @Test
     fun `a running total's progress banner shows at each quarter - never alongside its own unlock`() {
-        val before = AchievementsState(counters = mapOf(AchievementCounter.PAWNS_HOME to 24))
+        val before = AchievementsState(unlockedAt = mapOf(Achievement.HOMECOMING to 5L), counters = mapOf(AchievementCounter.PAWNS_HOME to 249))
         val update = AchievementEngine.evaluate(GameFeats(counts = mapOf(AchievementCounter.PAWNS_HOME to 1)), before, NOW)
-        assertEquals(listOf(AchievementProgress(Achievement.FREQUENT_TRAVELLER, 24, 25)), update.progressed)
+        assertEquals(listOf(AchievementProgress(Achievement.GLOBETROTTER, 249, 250)), update.progressed)
 
         val unlocking = AchievementEngine.evaluate(
             GameFeats(counts = mapOf(AchievementCounter.PAWNS_HOME to 1)),
-            AchievementsState(unlockedAt = mapOf(Achievement.HOMECOMING to 5L), counters = mapOf(AchievementCounter.PAWNS_HOME to 99)),
+            AchievementsState(unlockedAt = mapOf(Achievement.HOMECOMING to 5L), counters = mapOf(AchievementCounter.PAWNS_HOME to 999)),
             NOW,
         )
-        assertEquals(listOf(Achievement.FREQUENT_TRAVELLER), unlocking.newlyUnlocked)
-        assertEquals(emptyList(), unlocking.progressed.filter { it.achievement == Achievement.FREQUENT_TRAVELLER })
+        assertEquals(listOf(Achievement.GLOBETROTTER), unlocking.newlyUnlocked)
+        assertEquals(emptyList(), unlocking.progressed.filter { it.achievement == Achievement.GLOBETROTTER })
     }
 
     @Test
-    fun `a win steps the win streak up with a banner each step - another's win breaks it back to 0 and steps the losing one up`() {
+    fun `a win steps the win streak up with a banner each step - another's win breaks it back to 0`() {
         val two = AchievementsState(counters = mapOf(AchievementCounter.WIN_STREAK to 2))
         val third = AchievementEngine.evaluate(GameFeats(streak = true), two, NOW)
         assertEquals(mapOf(AchievementCounter.WIN_STREAK to 3), third.counters)
         assertEquals(listOf(Achievement.ON_A_ROLL), third.newlyUnlocked)
         assertEquals(listOf(AchievementProgress(Achievement.HOT_STREAK, 2, 3), AchievementProgress(Achievement.UNSTOPPABLE, 2, 3)), third.progressed)
 
-        assertEquals(mapOf(AchievementCounter.LOSS_STREAK to 1, AchievementCounter.WIN_STREAK to 0), AchievementEngine.evaluate(GameFeats(streak = false), two, NOW).counters)
-        assertEquals(mapOf(AchievementCounter.LOSS_STREAK to 1), AchievementEngine.evaluate(GameFeats(streak = false), AchievementsState(), NOW).counters, "no win streak to break")
-
-        val fourLosses = AchievementsState(counters = mapOf(AchievementCounter.LOSS_STREAK to 4))
-        assertEquals(listOf(Achievement.LOSING_STREAK), AchievementEngine.evaluate(GameFeats(streak = false), fourLosses, NOW).newlyUnlocked)
-        assertEquals(mapOf(AchievementCounter.WIN_STREAK to 1, AchievementCounter.LOSS_STREAK to 0), AchievementEngine.evaluate(GameFeats(streak = true), fourLosses, NOW).counters)
+        assertEquals(mapOf(AchievementCounter.WIN_STREAK to 0), AchievementEngine.evaluate(GameFeats(streak = false), two, NOW).counters)
+        assertEquals(emptyMap(), AchievementEngine.evaluate(GameFeats(streak = false), AchievementsState(), NOW).counters, "no win streak to break")
     }
 
     @Test

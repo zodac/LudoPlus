@@ -410,7 +410,7 @@ count but 4 has a board of its own; one player on two colours was dropped.
 - [x] Chaos, a mode (the maintainer, 2026-11-24): six power-ups on the track, Double, Shield, Teleport, Roll Again, Call
     Up, and Swap (`DESIGN.md`, "Game modes"). It reverses the decision above against power-up squares.
 - [x] Haunted House, a mode (the maintainer, 2026-11-24), the seventh, as DiceFive had: ghosts that send pawns back.
-- [x] Achievements for the modes and house rules (the maintainer, 2026-11-24), 17 of them, set up as DiceFive's were, and
+- [x] Achievements for the modes and house rules (the maintainer, 2026-11-24), 15 of them, set up as DiceFive's were, and
     the ordinary ones opened to every mode, each audited in each (`GAME_MODES_AUDIT.md`).
 - [x] Custom game modes (the maintainer, 2026-11-18): a base mode and at least one house rule, named and saved, listed
     in New Game's mode picker after the built-in modes, with New, Edit, and Delete on the card. As any game with house

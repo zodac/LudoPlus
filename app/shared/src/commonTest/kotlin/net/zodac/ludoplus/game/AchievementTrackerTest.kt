@@ -180,7 +180,7 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `a pawn home - Home Sweet Home - counts toward Frequent Traveller - and with a 1 is Inch By Inch`() {
+    fun `a pawn home - Home Sweet Home - counts toward Globetrotter - and with a 1 is Inch By Inch`() {
         val one = Play(game(listOf(HOME - 1, 10, Y, Y))).play(1, pawn = 0)
         assertEquals(setOf(Achievement.HOME_SWEET_HOME, Achievement.INCH_BY_INCH), one.earned)
         assertEquals(1, one.counts[AchievementCounter.PAWNS_HOME])
@@ -484,7 +484,7 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `Express Delivery takes a pawn yard to home within 12 turns - Scenic Route in 60 or more`() {
+    fun `Express Delivery takes a pawn yard to home within 12 turns`() {
         fun lap(homeTurn: Int): Set<Achievement> {
             val play = Play(game()).play(6, pawn = 0)
             // Out on turn 1; home on [homeTurn].
@@ -493,8 +493,6 @@ class AchievementTrackerTest {
         }
         assertTrue(Achievement.EXPRESS_DELIVERY in lap(12))
         assertFalse(Achievement.EXPRESS_DELIVERY in lap(13))
-        assertFalse(Achievement.SCENIC_ROUTE in lap(59))
-        assertTrue(Achievement.SCENIC_ROUTE in lap(60))
     }
 
     @Test
@@ -548,8 +546,6 @@ class AchievementTrackerTest {
         assertFalse(Achievement.NEVER_SAY_DIE in win(timesCaptured = 9))
         assertTrue(Achievement.LIFE_OF_THE_PARTY in win(configs(cpus = false)))
         assertFalse(Achievement.LIFE_OF_THE_PARTY in win())
-        assertTrue(Achievement.TRAINING_WHEELS in win(configs(difficulty = Difficulty.EASY)))
-        assertFalse(Achievement.TRAINING_WHEELS in win(configs(difficulty = Difficulty.MEDIUM)))
     }
 
     @Test
@@ -566,12 +562,7 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `Broken Record is one number four times in a row - Counting Up 1 to 6 in order - each across turns`() {
-        val record = Play(game()).rollEach(3, 3, 3)
-        assertFalse(Achievement.BROKEN_RECORD in record.earned)
-        assertTrue(Achievement.BROKEN_RECORD in record.rollEach(3).earned)
-        assertFalse(Achievement.BROKEN_RECORD in Play(game()).rollEach(3, 3, 2, 3, 3).earned)
-
+    fun `Counting Up is 1 to 6 in order - across turns`() {
         // Every pawn in the yard, so a 6 alone moves: the turn passes back after each other roll.
         val counting = Play(game()).rollEach(1, 2, 3, 4, 5)
         assertFalse(Achievement.COUNTING_UP in counting.earned)

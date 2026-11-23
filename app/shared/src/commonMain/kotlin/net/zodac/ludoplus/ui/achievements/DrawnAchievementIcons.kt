@@ -43,6 +43,36 @@ internal val CRACKED_TROPHY_ICON: ImageVector by lazy {
     }
 }
 
+/** An icon on a 24-unit grid, of one [path] whose overlaps are cut out. */
+private fun cutOutIcon(name: String, path: String): ImageVector =
+    ImageVector.Builder(name = name, defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f)
+        .addPath(addPathNodes(path), fill = INK, pathFillType = PathFillType.EvenOdd)
+        .build()
+
+/**
+ * A side-profile sports car and the trail of fire it leaves, as DiceFive drew it: an original, generic silhouette of a low
+ * wedge with a fastback rear, no badge or logo, for the film the title Where We're Going, We Don't Need Rules quotes. Its
+ * subpaths: the body (both wheel arches cut into its underside), the window, the wheels, then the fire.
+ */
+internal val TIME_MACHINE_CAR_ICON: ImageVector by lazy {
+    cutOutIcon(
+        "TimeMachineCar",
+        "M3.8,16.2 L3.8,13.2 L5.2,12.5 L10.8,10.2 L14.2,10.2 L17,12.5 L23.5,13.5 L23.5,15.6 L22.9,16.2 L21.8,16.2 A2.4,2.4 0,0 0,17 16.2 L9.8,16.2 " +
+            "A2.4,2.4 0,0 0,5 16.2 Z M11.1,10.9 L13.9,10.9 L15.6,12.3 L9.4,12.3 Z M5.5,16.4 A1.9,1.9 0,1 0,9.3 16.4 A1.9,1.9 0,1 0,5.5 16.4 Z " +
+            "M17.5,16.4 A1.9,1.9 0,1 0,21.3 16.4 A1.9,1.9 0,1 0,17.5 16.4 Z M5.6,18.3 L0.2,18.3 L0.2,17.6 Q0.6,16.4 0.4,15.2 Q1.9,16.3 1.9,17.4 " +
+            "Q2.5,16.4 2.3,15.8 Q3.6,16.6 3.7,17.5 Q4.2,17.5 4.3,17 Q4.9,17.6 5.6,17.7 Z",
+    )
+}
+
+/** A ghost as Haunted House's are, its eyes and mouth cut out. For Living To Tell The Tale. */
+internal val GHOST_ICON: ImageVector by lazy {
+    cutOutIcon(
+        "Ghost",
+        "M4.5,21.5 L4.5,10 C4.5,0 19.5,0 19.5,10 L19.5,21.5 Q17,16.8 14.5,21.5 Q12,16.8 9.5,21.5 Q7,16.8 4.5,21.5 Z " +
+            "M7.6,9.6 A1.5,2 0,1 0,10.6 9.6 A1.5,2 0,1 0,7.6 9.6 Z M13.4,9.6 A1.5,2 0,1 0,16.4 9.6 A1.5,2 0,1 0,13.4 9.6 Z M10.6,14.4 A1.4,1.2 0,1 0,13.4 14.4 A1.4,1.2 0,1 0,10.6 14.4 Z",
+    )
+}
+
 // ---- Fixed colours --------------------------------------------------------------------------------------------------
 // Shown untinted (Achievement.iconTintOrUnspecified gives them Color.Unspecified).
 

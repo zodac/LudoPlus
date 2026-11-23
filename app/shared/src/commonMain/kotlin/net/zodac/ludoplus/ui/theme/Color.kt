@@ -197,6 +197,12 @@ val AchievementSidewaysTeal = Color(0xFF4FD1C5)
 /** Time Flies' clock: amber. */
 val AchievementClockAmber = Color(0xFFFFB74D)
 
+/** One By One's houses: fixed, like the other Easter Eggs' icons. */
+val AchievementHomeGreen = Color(0xFF7BD88F)
+
+/** The Great Escape's runner: fixed, like the other Easter Eggs' icons. */
+val AchievementEscapeOrange = Color(0xFFFF8A50)
+
 /** The Completionist trophy's crystal, top left to bottom right: white, ice, cyan, violet. */
 val CrystalTrophyWhite = Color(0xFFFFFFFF)
 val CrystalTrophyIce = Color(0xFFCDEFFF)

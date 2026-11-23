@@ -154,39 +154,64 @@ class ModeAchievementsTest {
     }
 
     @Test
-    fun `Road Closed is a rival's turn passed by player 1's blockade - not by having no move anyway, or another's blockade`() {
-        val rules = setOf(HouseRule.BLOCKADES)
-        // Green on square 1 (progress 40), red's pair on 3: no 2 for green.
-        fun pass(red: List<Int>, yellow: List<Int> = listOf(Y, Y, Y, Y), roll: Int = 2) =
-            Steps(game(GameMode.CLASSIC, red, listOf(40, Y, Y, Y), yellow, current = GREEN, houseRules = rules)).roll(roll)
-        val closed = pass(listOf(3, 3, Y, Y))
-        assertTrue(closed.state.lastEvent is GameEvent.NoMove)
-        assertEquals(setOf(ROAD_CLOSED), closed.earned)
-        // Short of it, a 1 is a move.
-        assertEquals(emptySet(), pass(listOf(3, 3, Y, Y), roll = 1).earned)
-        // Yellow's pair on 3 (26 + 29) is what's in the way.
-        assertEquals(emptySet(), pass(listOf(20, Y, Y, Y), listOf(29, 29, Y, Y)).earned)
-        // No pawn out: nothing is in the way of it.
-        assertEquals(emptySet(), Steps(game(GameMode.CLASSIC, listOf(3, 3, Y, Y), current = GREEN, houseRules = rules)).roll(2).earned)
-    }
-
-    @Test
-    fun `Third Time's The Charm brings a pawn out on the third try - not the second`() {
-        val rules = setOf(HouseRule.THREE_TRIES)
-        assertEquals(setOf(THIRD_TIMES_THE_CHARM), Steps(game(GameMode.CLASSIC, houseRules = rules)).roll(1).roll(2).play(6).earned)
-        assertEquals(emptySet(), Steps(game(GameMode.CLASSIC, houseRules = rules)).roll(1).play(6).earned)
-    }
-
-    @Test
-    fun `Everything Everywhere All At Once is a win with every house rule that changes the mode`() {
+    fun `Everything Everywhere All At Once is a win of any mode but Classic with every house rule that changes it`() {
         val all = HouseRule.entries.toSet()
-        assertEquals(setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE), win(GameMode.CLASSIC, houseRules = all).earned)
+        assertEquals(setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE), win(GameMode.QUICK, houseRules = all).earned)
+        assertEquals(emptySet(), win(GameMode.CLASSIC, houseRules = all).earned)
         assertEquals(setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE), win(GameMode.CHAOS, houseRules = all).earned)
-        assertEquals(emptySet(), win(GameMode.CLASSIC, houseRules = all - HouseRule.FREE_START).earned)
+        assertEquals(emptySet(), win(GameMode.QUICK, houseRules = all - HouseRule.FREE_START).earned)
         val survival = HouseRule.entries.filter { it.appliesTo(GameMode.SURVIVAL.rules) }.toSet()
         val gone = List(6) { X }
         val state = game(GameMode.SURVIVAL, listOf(1, 20, X, X, X, X), listOf(42, X, X, X, X, X), gone, gone, houseRules = survival).copy(knockedOut = listOf(3, 2))
         assertEquals(setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE), Steps(state).play(2).earned)
+    }
+
+    @Test
+    fun `One By One brings every pawn home with no other ever out - a capture starting one again - seen from the start`() {
+        /** From the first roll: [others] on the board as the second pawn comes out, the last then 2 from home. */
+        fun game(others: Int, mode: GameMode = GameMode.CLASSIC, seen: Boolean = true): Set<Achievement> {
+            val steps = Steps(game(mode))
+            if (seen) steps.roll(1)
+            steps.skip { red { it.copy(pawns = listOf(HOME, others, Y, Y), turns = 20) }.copy(current = RED, rollingAgain = false) }.play(6, pawn = 2)
+            return steps.skip { red { it.copy(pawns = listOf(HOME, HOME, HOME, HOME - 2), turns = 60) }.copy(current = RED, rollingAgain = false, rollAgainRun = 0) }.play(2, pawn = 3).earned
+        }
+        assertTrue(ONE_BY_ONE in game(others = HOME))
+        assertTrue(ONE_BY_ONE in game(others = Y))
+        // Even one in its home column is out.
+        assertFalse(ONE_BY_ONE in game(others = 30))
+        assertFalse(ONE_BY_ONE in game(others = 53))
+        assertFalse(ONE_BY_ONE in game(others = HOME, seen = false))
+        assertTrue(ONE_BY_ONE in game(others = HOME, mode = GameMode.CHAOS))
+    }
+
+    @Test
+    fun `One By One isn't a game where Call Up brought one out`() {
+        val steps = Steps(game(GameMode.CHAOS)).roll(1)
+        steps.skip { red { it.copy(pawns = listOf(1, Y, Y, Y)) }.copy(current = RED, rollingAgain = false, powerUps = mapOf(3 to PowerUp.CALL_UP)) }.play(2)
+        steps.skip { red { it.copy(pawns = listOf(HOME, HOME, HOME, HOME - 2)) }.copy(current = RED, rollingAgain = false, rollAgainRun = 0, powerUps = emptyMap()) }.play(2, pawn = 3)
+        assertFalse(ONE_BY_ONE in steps.earned)
+    }
+
+    @Test
+    fun `The Great Escape has all four pawns out within four turns - moving some between - and not in five`() {
+        /** A pawn out on each of [turns], the first moved on after it. */
+        fun escape(vararg turns: Int, mode: GameMode = GameMode.CLASSIC): Set<Achievement> {
+            val steps = Steps(game(mode))
+            for ((pawn, turn) in turns.withIndex()) {
+                steps.skip { red { it.copy(turns = turn - 1) }.copy(current = RED, rollingAgain = false, rollAgainRun = 0) }.play(6, pawn)
+                if (pawn == 0) steps.play(3, pawn = 0)
+            }
+            return steps.earned
+        }
+        assertTrue(THE_GREAT_ESCAPE in escape(1, 2, 3, 4))
+        assertTrue(THE_GREAT_ESCAPE in escape(7, 7, 9, 10))
+        assertFalse(THE_GREAT_ESCAPE in escape(1, 2, 3, 5))
+        // One captured on the way has to come out again.
+        val captured = Steps(game(GameMode.CLASSIC)).play(6, 0).play(3, 0)
+        captured.skip { copy(players = players.mapIndexed { i, side -> if (i == GREEN) side.copy(pawns = listOf(41, Y, Y, Y)) else side }, current = GREEN, rollingAgain = false) }.play(1)
+        for (pawn in 1..3) captured.skip { red { it.copy(turns = pawn) }.copy(current = RED, rollingAgain = false, rollAgainRun = 0) }.play(6, pawn)
+        assertFalse(THE_GREAT_ESCAPE in captured.earned)
+        assertTrue(THE_GREAT_ESCAPE in captured.skip { copy(current = RED, rollingAgain = false, rollAgainRun = 0) }.play(6, 0).earned)
     }
 
     @Test

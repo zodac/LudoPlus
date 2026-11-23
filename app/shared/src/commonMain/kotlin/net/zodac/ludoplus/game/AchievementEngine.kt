@@ -30,8 +30,7 @@ data class AchievementUpdate(
 
 /**
  * What a moment of play earned player 1: [achievements] done, [counts] to add to their counters, and [streak] true for
- * a win (the win streak goes up, the losing one is broken), false for another player's (the other way round), null when
- * no one won.
+ * a win (the win streak goes up), false for another player's (it's broken), null when no one won.
  */
 data class GameFeats(
     val achievements: Set<Achievement> = emptySet(),
@@ -115,9 +114,8 @@ object AchievementEngine {
             for ((counter, count) in feats.counts) if (count != 0) put(counter, before.counter(counter) + count)
             for ((counter, level) in feats.levels) if (level > before.counter(counter)) put(counter, level)
             feats.streak?.let { won ->
-                val (up, broken) = if (won) AchievementCounter.WIN_STREAK to AchievementCounter.LOSS_STREAK else AchievementCounter.LOSS_STREAK to AchievementCounter.WIN_STREAK
-                put(up, before.counter(up) + 1)
-                if (before.counter(broken) != 0) put(broken, 0)
+                val streak = before.counter(AchievementCounter.WIN_STREAK)
+                if (won) put(AchievementCounter.WIN_STREAK, streak + 1) else if (streak != 0) put(AchievementCounter.WIN_STREAK, 0)
             }
         }
         val earned = feats.achievements + Achievement.entries.filter { achievement ->

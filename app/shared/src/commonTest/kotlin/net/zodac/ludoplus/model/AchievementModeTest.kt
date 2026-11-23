@@ -32,8 +32,10 @@ class AchievementModeTest {
     @Test
     fun `the achievements kept out of a mode they'd be free in or measure something else in`() {
         val kept = Achievement.entries.filter { it.notEarnableIn.isNotEmpty() }.associateWith { it.notEarnableIn }
-        val quick = setOf(COMEBACK_KID, DEFEAT_FROM_THE_JAWS_OF_VICTORY, FULL_HOUSE, MY_FAVOURITE_SPOT, PACIFIST, SPEED_DEMON, UNTOUCHABLE)
-        val twoDice = setOf(BOTTOM_OF_THE_BARREL, BROKEN_RECORD, COUNTING_UP, DRY_SPELL, EXPRESS_DELIVERY, FULL_SPREAD, HOT_HAND)
+        val quick = setOf(
+            COMEBACK_KID, DEFEAT_FROM_THE_JAWS_OF_VICTORY, FULL_HOUSE, MY_FAVOURITE_SPOT, ONE_BY_ONE, PACIFIST, SPEED_DEMON, THE_GREAT_ESCAPE, UNTOUCHABLE,
+        )
+        val twoDice = setOf(BOTTOM_OF_THE_BARREL, COUNTING_UP, DRY_SPELL, EXPRESS_DELIVERY, FULL_SPREAD, HOT_HAND)
         val survival = setOf(
             ALL_HANDS_ON_DECK, BUDDY_SYSTEM, CLEAN_SWEEP, HAT_TRICK, INSULT_TO_INJURY, LEAPFROG, SITTING_DUCKS, TWO_FOR_ONE, WIRE_TO_WIRE,
         )
@@ -57,13 +59,13 @@ class AchievementModeTest {
         assertEquals(
             setOf(
                 NOT_SO_FAST, TALL_POPPY, PARTING_SHOT, HOME_SWEET_HOME, HOMECOMING, EARLY_BIRD, DOUBLE_DELIVERY, EXPRESS_DELIVERY, LAP_OF_HONOUR, FULL_HOUSE,
-                FREQUENT_TRAVELLER, GLOBETROTTER, COMEBACK_KID, FRONT_RUNNER, LATE_BLOOMER, NEVER_SAY_DIE, PHOTO_FINISH, THIRD_TIMES_THE_CHARM, BACK_TO_SQUARE_ONE,
-                DEFEAT_FROM_THE_JAWS_OF_VICTORY, GROUNDHOG_DAY, LOCKED_OUT, NEVER_LEFT_HOME, PIPPED_TO_THE_POST, PUNCHING_BAG, SCENIC_ROUTE, DEJA_VU, INCH_BY_INCH,
-                SO_NEAR_YET_SO_FAR,
+                GLOBETROTTER, COMEBACK_KID, FRONT_RUNNER, LATE_BLOOMER, NEVER_SAY_DIE, PHOTO_FINISH, BACK_TO_SQUARE_ONE,
+                DEFEAT_FROM_THE_JAWS_OF_VICTORY, GROUNDHOG_DAY, LOCKED_OUT, NEVER_LEFT_HOME, PIPPED_TO_THE_POST, PUNCHING_BAG, DEJA_VU, INCH_BY_INCH,
+                SO_NEAR_YET_SO_FAR, ONE_BY_ONE, THE_GREAT_ESCAPE,
             ),
             impossible[GameMode.SURVIVAL],
         )
-        assertEquals(setOf(WHERE_WERE_GOING_WE_DONT_NEED_RULES), impossible[GameMode.CLASSIC])
+        assertEquals(setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE, WHERE_WERE_GOING_WE_DONT_NEED_RULES), impossible[GameMode.CLASSIC])
         for (mode in listOf(GameMode.QUICK, GameMode.PORTALS, GameMode.CHAOS, GameMode.HAUNTED_HOUSE)) assertEquals(emptySet(), impossible[mode], "$mode")
     }
 
@@ -80,12 +82,12 @@ class AchievementModeTest {
     @Test
     fun `with house rules on a game earns only the house rules' own - and starting another mode - and moves no counter`() {
         assertEquals(
-            setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE, WHERE_WERE_GOING_WE_DONT_NEED_RULES, ROAD_CLOSED, THIRD_TIMES_THE_CHARM),
+            setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE, WHERE_WERE_GOING_WE_DONT_NEED_RULES),
             Achievement.entries.filter { it.earnableWithHouseRules }.toSet(),
         )
-        val feats = GameFeats(setOf(FIRST_VICTORY, AGENT_OF_CHAOS, ROAD_CLOSED, UNTOUCHABLE), mapOf(AchievementCounter.GAMES_WON to 1), streak = true)
-        assertEquals(GameFeats(setOf(ROAD_CLOSED)), feats.earnableIn(game(GameMode.CHAOS, setOf(HouseRule.BLOCKADES))))
+        val feats = GameFeats(setOf(FIRST_VICTORY, AGENT_OF_CHAOS, EVERYTHING_EVERYWHERE_ALL_AT_ONCE, UNTOUCHABLE), mapOf(AchievementCounter.GAMES_WON to 1), streak = true)
+        assertEquals(GameFeats(setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE)), feats.earnableIn(game(GameMode.CHAOS, setOf(HouseRule.BLOCKADES))))
         assertEquals(feats, feats.earnableIn(game(GameMode.CHAOS)))
-        assertEquals(setOf(FIRST_VICTORY, ROAD_CLOSED), feats.earnableIn(game(GameMode.QUICK)).achievements)
+        assertEquals(setOf(FIRST_VICTORY, EVERYTHING_EVERYWHERE_ALL_AT_ONCE), feats.earnableIn(game(GameMode.QUICK)).achievements)
     }
 }

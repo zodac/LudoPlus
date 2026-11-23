@@ -24,10 +24,10 @@ For each achievement a new mode, modifier, or setting changes, decide:
 | Family | Achievements | Ask |
 | --- | --- | --- |
 | Pawn count | Wire To Wire, All Hands On Deck, Full House, Lap Of Honour, Comeback Kid, Defeat From The Jaws Of Victory, Photo Finish, Pipped To The Post, Tall Poppy, Parting Shot, So Near, Yet So Far, Buddy System, My Favourite Spot, Double Delivery | Do "all but one pawn", "every pawn", or "two pawns" mean the same with fewer or more pawns? |
-| Track length | Speed Demon, Express Delivery, Scenic Route, Locked Out, Not So Fast!, Back To Square One, Welcome Party, Leapfrog, Marathon, Ultramarathon | Are the turn and square thresholds still fast or slow, and is there still a last square before the home column? |
-| Rolls | Too Much Of A Good Thing, Inch By Inch, Locked Out, So Near, Yet So Far, Off The Mark, Full Spread, Hot Hand, Six Pack, Dry Spell, Bottom Of The Barrel, Six Shooter, Sixth Sense, Broken Record, Counting Up | Is there a roll-again limit, a 1, a 6, and a roll that leaves the yard? Two dice change all of these |
+| Track length | Speed Demon, Express Delivery, Locked Out, Not So Fast!, Back To Square One, Welcome Party, Leapfrog, Ultramarathon | Are the turn and square thresholds still fast or slow, and is there still a last square before the home column? |
+| Rolls | Too Much Of A Good Thing, Inch By Inch, Locked Out, So Near, Yet So Far, Off The Mark, Full Spread, Hot Hand, Six Pack, Dry Spell, Bottom Of The Barrel, Six Shooter, Sixth Sense, Counting Up | Is there a roll-again limit, a 1, a 6, and a roll that leaves the yard? Two dice change all of these |
 | Captures | Gotcha!, Pest, Two For One, Straight Out The Gate, Hat Trick, Payback, Picking On You, Nobody Is Safe, On The Warpath, Déjà Vu, Bouncer, Menace, Public Enemy, Sitting Ducks, Insult To Injury, Groundhog Day, Punching Bag, Pacifist, Untouchable, Conqueror, Never Say Die | Can pawns still be captured, more than one at once, and does a capture still give a roll? |
-| Table | How Do You Do, Fellow CPUs?, Training Wheels, Life Of The Party, Nobody Is Safe, We're All Friends Here | Still three opponents? (Phase 8's 2-8 players) |
+| Table | How Do You Do, Fellow CPUs?, Life Of The Party, Nobody Is Safe, We're All Friends Here | Still three opponents? (Phase 8's 2-8 players) |
 | Game end | Wooden Spoon, Spoon Collector, Never Left Home, Early Bird, Late Bloomer, Front-Runner, Homecoming, the games-played ladder, the win counts and both streaks | Is every player still placed, and does a game still take its usual time? |
 
 Punching Bag's number came from simulated games (2,000 a difficulty, 2026-11-17): a player is captured about 6 times a
@@ -66,12 +66,10 @@ off the Leaderboard (`GameRecordRepository.recordGame`).
 
 Modifiers (Phase 9, `DESIGN.md`, "Modifiers"). **A game with any house rule on earns only the house rules' own**, and
 moves no counter or streak, whatever its mode (`Achievement.earnableWithHouseRules`; the maintainer, 2026-11-24, as
-DiceFive): Road Closed (Blockades), Third Time's The Charm (Three Tries), Everything Everywhere All At Once (a win with
-every one that changes something in the mode), and Where We're Going, We Don't Need Rules, for starting another mode. So
-nothing else is free, and no house rule needs an audit of its own.
-
-How often, in 600 simulated games a setting of four Medium CPUs: Road Closed 75% of games with Blockades, Third Time's
-The Charm 64% with Three Tries, and Everything Everywhere the winner's (26% of 200 games).
+DiceFive): Everything Everywhere All At Once (a win of any mode but Classic with every one that changes something in it;
+the winner's, so 26% of 200 simulated games of four Medium CPUs), and Where We're Going, We Don't Need Rules, for starting
+another mode. So nothing else is free, and no house rule needs an audit of its own. Road Closed and Third Time's The Charm
+(one house rule's each) were removed the day they were added: too many, and 75% and 64% of games with their rule on.
 
 ## How the modes were audited (2026-11-24)
 
@@ -92,6 +90,9 @@ Grand Tour (a game finished of every mode, none with house rules) is worked out 
 games from before it count (`AchievementCounter.MODES_FINISHED`, raised, never added to). A new mode raises its target;
 anyone already holding it keeps it.
 
+One By One (an Easter Egg) is 6% of Classic games for a player set on it, and 2-9% in the other modes; a 6 that can't move
+the pawn that's out spoils it. The Great Escape is 5-8% of games for a Medium CPU, and 19% in Two Dice, left as easier.
+
 ## Quick (a mode)
 
 Two pawns each, about half as long.
@@ -105,6 +106,7 @@ Two pawns each, about half as long.
 | Pacifist | 5.5%, against 0.0% |
 | My Favourite Spot | 9.5%, against 2.0%: two pawns on a square is Buddy System |
 | Speed Demon | Half the game in the same five minutes |
+| One By One, The Great Escape | Two pawns, not the four their words say |
 
 **Easier:** Clean Sweep (2.3%, against 0.2%), Never Left Home (4.7%, against 0.7%), Pipped To The Post, All Hands On Deck,
 and the games-played and win counters (games end sooner).
@@ -115,7 +117,7 @@ Both dice count as rolls, and either may be a first-roll 6.
 
 | Kept out | Why |
 | --- | --- |
-| Broken Record, Bottom Of The Barrel, Counting Up, Dry Spell, Full Spread, Hot Hand | A run of rolls is one die's: two at once measure something else |
+| Bottom Of The Barrel, Counting Up, Dry Spell, Full Spread, Hot Hand | A run of rolls is one die's: two at once measure something else |
 | Express Delivery | 84%, against 9.3% |
 
 **Can't be earned:** Too Much Of A Good Thing (doubles roll again, not 6s). **Easier:** Off The Mark (31%, against 15%), Hat
@@ -140,8 +142,8 @@ end.
 | Sitting Ducks, Insult To Injury | The same, lost: 26% and 43%, against 2.8% and 8.3% |
 | Leapfrog | 64%, against 42%: a stack is three pawns |
 
-**Can't be earned:** everything about home, a yard, a last square, or a pawn captured twice (`AchievementModeTest` lists all
-29). **Easier:** Payback (29%, against 16%), We're All Friends Here.
+**Can't be earned:** everything about home, a yard, a last square, or a pawn captured twice (`AchievementModeTest`
+lists them). **Easier:** Payback (29%, against 16%), We're All Friends Here.
 
 ## Chaos (a mode)
 

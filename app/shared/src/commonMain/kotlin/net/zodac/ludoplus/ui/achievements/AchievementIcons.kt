@@ -18,7 +18,9 @@ import net.zodac.ludoplus.ui.icons.Symbols
 import net.zodac.ludoplus.ui.theme.AchievementDeveloperCyan
 import net.zodac.ludoplus.ui.theme.AchievementBadgeViolet
 import net.zodac.ludoplus.ui.theme.AchievementClockAmber
+import net.zodac.ludoplus.ui.theme.AchievementEscapeOrange
 import net.zodac.ludoplus.ui.theme.AchievementHeartRed
+import net.zodac.ludoplus.ui.theme.AchievementHomeGreen
 import net.zodac.ludoplus.ui.theme.AchievementPawnRed
 import net.zodac.ludoplus.ui.theme.AchievementInkBlue
 import net.zodac.ludoplus.ui.theme.AchievementSidewaysTeal
@@ -62,7 +64,6 @@ val Achievement.icon: ImageVector
         // ---- The Die ------------------------------------------------------------------------
         Achievement.OFF_THE_MARK -> Symbols.Start
         Achievement.SIX_SHOOTER -> Symbols.Filter6
-        Achievement.BROKEN_RECORD -> Symbols.Album
         Achievement.FULL_SPREAD -> Symbols.FormatListNumbered
         Achievement.HOT_HAND -> Symbols.BackHand
         Achievement.SIX_PACK -> Symbols.SportsBar
@@ -102,8 +103,6 @@ val Achievement.icon: ImageVector
         // A runner on a lap of the board.
         Achievement.LAP_OF_HONOUR -> Symbols.Sprint
         Achievement.FULL_HOUSE -> Symbols.HolidayVillage
-        Achievement.FREQUENT_TRAVELLER -> Symbols.HomeWork
-        Achievement.MARATHON -> Symbols.DirectionsRun
         Achievement.GLOBETROTTER -> Symbols.TravelExplore
         Achievement.ULTRAMARATHON -> Symbols.Hiking
 
@@ -122,13 +121,13 @@ val Achievement.icon: ImageVector
         Achievement.PACIFIST -> Symbols.ThumbUp
         Achievement.PHOTO_FINISH -> Symbols.PhotoCamera
         Achievement.SPEED_DEMON -> Symbols.Bolt
-        Achievement.TRAINING_WHEELS -> Symbols.PedalBike
         // Locked away, out of reach: never captured.
         Achievement.UNTOUCHABLE -> Symbols.Lock
         Achievement.WIRE_TO_WIRE -> Symbols.Timeline
 
         // ---- Game Modes ---------------------------------------------------------------------
-        Achievement.WHERE_WERE_GOING_WE_DONT_NEED_RULES -> Symbols.SportsEsports
+        // A wedge-shaped sports car trailing fire, as DiceFive's: a nod to the film the title quotes, drawn from scratch.
+        Achievement.WHERE_WERE_GOING_WE_DONT_NEED_RULES -> TIME_MACHINE_CAR_ICON
         Achievement.QUICK_ON_THE_DRAW -> Symbols.FastForward
         Achievement.BLINK_AND_YOULL_MISS_IT -> Symbols.Acute
         Achievement.DOUBLE_OR_NOTHING -> Symbols.Savings
@@ -140,12 +139,9 @@ val Achievement.icon: ImageVector
         Achievement.BARELY_A_SCRATCH -> Symbols.Stars
         Achievement.AGENT_OF_CHAOS -> Symbols.Psychology
         Achievement.ONE_OF_EVERYTHING -> Symbols.GridView
-        Achievement.LIVING_TO_TELL_THE_TALE -> Symbols.RecordVoiceOver
+        Achievement.LIVING_TO_TELL_THE_TALE -> GHOST_ICON
         // Gone like the wind.
         Achievement.NOT_A_GHOST_OF_A_CHANCE -> Symbols.Air
-        // Rocks across the road.
-        Achievement.ROAD_CLOSED -> Symbols.Landslide
-        Achievement.THIRD_TIMES_THE_CHARM -> Symbols.AssignmentTurnedIn
         Achievement.GRAND_TOUR -> Symbols.MyLocation
 
         // ---- Misfortune ---------------------------------------------------------------------
@@ -158,11 +154,9 @@ val Achievement.icon: ImageVector
         Achievement.I_ROBOT -> Symbols.Android
         Achievement.INSULT_TO_INJURY -> Symbols.PersonalInjury
         Achievement.LOCKED_OUT -> Symbols.HourglassEmpty
-        Achievement.LOSING_STREAK -> Symbols.ThumbDown
         Achievement.NEVER_LEFT_HOME -> Symbols.Cottage
         Achievement.PIPPED_TO_THE_POST -> Symbols.Timer
         Achievement.PUNCHING_BAG -> Symbols.SentimentDissatisfied
-        Achievement.SCENIC_ROUTE -> Symbols.Landscape
         Achievement.SITTING_DUCKS -> Symbols.Cancel
         Achievement.SPOON_COLLECTOR -> Symbols.Restaurant
         Achievement.TOO_MUCH_OF_A_GOOD_THING -> Symbols.Looks6
@@ -186,7 +180,10 @@ val Achievement.icon: ImageVector
         Achievement.CANT_WAIT_TO_GET_GOING -> Symbols.ChessPawn
         // A crescent moon and two stars, for the small hours it was earned in.
         Achievement.MIDNIGHT_RUN -> rememberMidnightIcon()
+        Achievement.ONE_BY_ONE -> Symbols.HomeWork
         Achievement.SIDEWAYS -> Symbols.ScreenRotation
+        // Making a run for it.
+        Achievement.THE_GREAT_ESCAPE -> Symbols.DirectionsRun
         Achievement.TIME_FLIES -> Symbols.Schedule
         Achievement.WHOS_LUDO -> Symbols.Badge
     }
@@ -203,7 +200,9 @@ fun Achievement.iconTintOrUnspecified(tint: Color): Color = when (this) {
     Achievement.BIG_FAN -> AchievementHeartRed
     Achievement.CANT_WAIT_TO_GET_GOING -> AchievementPawnRed
     Achievement.MIDNIGHT_RUN -> Color.Unspecified
+    Achievement.ONE_BY_ONE -> AchievementHomeGreen
     Achievement.SIDEWAYS -> AchievementSidewaysTeal
+    Achievement.THE_GREAT_ESCAPE -> AchievementEscapeOrange
     Achievement.TIME_FLIES -> AchievementClockAmber
     Achievement.WHOS_LUDO -> AchievementBadgeViolet
     else -> tint

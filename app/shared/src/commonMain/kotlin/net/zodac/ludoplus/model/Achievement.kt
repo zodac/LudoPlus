@@ -17,8 +17,6 @@ import net.zodac.ludoplus.resources.achievement_bottom_of_the_barrel_description
 import net.zodac.ludoplus.resources.achievement_bottom_of_the_barrel_title
 import net.zodac.ludoplus.resources.achievement_bouncer_description
 import net.zodac.ludoplus.resources.achievement_bouncer_title
-import net.zodac.ludoplus.resources.achievement_broken_record_description
-import net.zodac.ludoplus.resources.achievement_broken_record_title
 import net.zodac.ludoplus.resources.achievement_buddy_system_description
 import net.zodac.ludoplus.resources.achievement_buddy_system_title
 import net.zodac.ludoplus.resources.achievement_centurion_description
@@ -51,8 +49,6 @@ import net.zodac.ludoplus.resources.achievement_express_delivery_description
 import net.zodac.ludoplus.resources.achievement_express_delivery_title
 import net.zodac.ludoplus.resources.achievement_first_victory_description
 import net.zodac.ludoplus.resources.achievement_first_victory_title
-import net.zodac.ludoplus.resources.achievement_frequent_traveller_description
-import net.zodac.ludoplus.resources.achievement_frequent_traveller_title
 import net.zodac.ludoplus.resources.achievement_front_runner_description
 import net.zodac.ludoplus.resources.achievement_front_runner_title
 import net.zodac.ludoplus.resources.achievement_full_house_description
@@ -103,10 +99,6 @@ import net.zodac.ludoplus.resources.achievement_living_legend_description
 import net.zodac.ludoplus.resources.achievement_living_legend_title
 import net.zodac.ludoplus.resources.achievement_locked_out_description
 import net.zodac.ludoplus.resources.achievement_locked_out_title
-import net.zodac.ludoplus.resources.achievement_losing_streak_description
-import net.zodac.ludoplus.resources.achievement_losing_streak_title
-import net.zodac.ludoplus.resources.achievement_marathon_description
-import net.zodac.ludoplus.resources.achievement_marathon_title
 import net.zodac.ludoplus.resources.achievement_menace_description
 import net.zodac.ludoplus.resources.achievement_menace_title
 import net.zodac.ludoplus.resources.achievement_midnight_run_description
@@ -151,8 +143,6 @@ import net.zodac.ludoplus.resources.achievement_punching_bag_description
 import net.zodac.ludoplus.resources.achievement_punching_bag_title
 import net.zodac.ludoplus.resources.achievement_regular_description
 import net.zodac.ludoplus.resources.achievement_regular_title
-import net.zodac.ludoplus.resources.achievement_scenic_route_description
-import net.zodac.ludoplus.resources.achievement_scenic_route_title
 import net.zodac.ludoplus.resources.achievement_sideways_description
 import net.zodac.ludoplus.resources.achievement_sideways_title
 import net.zodac.ludoplus.resources.achievement_sitting_ducks_description
@@ -179,8 +169,6 @@ import net.zodac.ludoplus.resources.achievement_time_flies_description
 import net.zodac.ludoplus.resources.achievement_time_flies_title
 import net.zodac.ludoplus.resources.achievement_too_much_of_a_good_thing_description
 import net.zodac.ludoplus.resources.achievement_too_much_of_a_good_thing_title
-import net.zodac.ludoplus.resources.achievement_training_wheels_description
-import net.zodac.ludoplus.resources.achievement_training_wheels_title
 import net.zodac.ludoplus.resources.achievement_two_for_one_description
 import net.zodac.ludoplus.resources.achievement_two_for_one_title
 import net.zodac.ludoplus.resources.achievement_ultramarathon_description
@@ -233,12 +221,12 @@ import net.zodac.ludoplus.resources.achievement_living_to_tell_the_tale_title
 import net.zodac.ludoplus.resources.achievement_living_to_tell_the_tale_description
 import net.zodac.ludoplus.resources.achievement_not_a_ghost_of_a_chance_title
 import net.zodac.ludoplus.resources.achievement_not_a_ghost_of_a_chance_description
-import net.zodac.ludoplus.resources.achievement_road_closed_title
-import net.zodac.ludoplus.resources.achievement_road_closed_description
-import net.zodac.ludoplus.resources.achievement_third_times_the_charm_title
-import net.zodac.ludoplus.resources.achievement_third_times_the_charm_description
 import net.zodac.ludoplus.resources.achievement_grand_tour_title
 import net.zodac.ludoplus.resources.achievement_grand_tour_description
+import net.zodac.ludoplus.resources.achievement_one_by_one_description
+import net.zodac.ludoplus.resources.achievement_one_by_one_title
+import net.zodac.ludoplus.resources.achievement_the_great_escape_description
+import net.zodac.ludoplus.resources.achievement_the_great_escape_title
 import net.zodac.ludoplus.resources.category_captures
 import net.zodac.ludoplus.resources.category_easter_eggs
 import net.zodac.ludoplus.resources.category_game_modes
@@ -293,9 +281,6 @@ enum class AchievementCounter(
      */
     MODES_FINISHED("MODES_FINISHED", cloudMerge = CounterMerge.LATEST),
 
-    /** Player 1's losses in a row: up one each time another player wins, back to 0 with a win of theirs. */
-    LOSS_STREAK("LOSS_STREAK", cloudMerge = CounterMerge.LATEST),
-
     /**
      * The seconds the app has been in front of the player: Statistics' time played, counted by
      * `net.zodac.ludoplus.app.PlayTimeTracker`. No achievement is measured against it, and it stays out of
@@ -325,21 +310,27 @@ enum class CounterMerge {
 const val MAX_ACHIEVEMENT_TITLE_LENGTH = 38
 
 /**
- * The ids of achievements 1.0.0 and 1.0.1 shipped, since removed (the maintainer, 2026-11-23). A phone that earned one
+ * The ids of achievements 1.0.0 and 1.0.1 shipped, since removed (the maintainer, 2026-11-23 and 2026-11-24). A phone that earned one
  * keeps its stored key, which nothing reads any more; no new achievement may take one of these ids
  * (`AchievementEngineTest`).
  */
 val RETIRED_ACHIEVEMENT_IDS: Set<String> = setOf(
     "back_to_school",
+    "broken_record",
+    "frequent_traveller",
     "i_am_not_a_robot",
     "immortal",
     "last_human_standing",
     "lightning_fast",
+    "losing_streak",
+    "marathon",
     "musical_chairs",
     "number_cruncher",
     "part_of_the_furniture",
     "read_the_manual",
     "safety_first",
+    "scenic_route",
+    "training_wheels",
     "whats_in_a_name",
 )
 
@@ -554,12 +545,6 @@ enum class Achievement(
         Res.string.achievement_six_shooter_description,
         AchievementCategory.THE_DIE, AchievementCounter.SIXES_ROLLED, target = 100,
     ),
-    BROKEN_RECORD(
-        "broken_record",
-        Res.string.achievement_broken_record_title,
-        Res.string.achievement_broken_record_description,
-        AchievementCategory.THE_DIE, notEarnableIn = setOf(GameMode.TWO_DICE),
-    ),
     FULL_SPREAD(
         "full_spread",
         Res.string.achievement_full_spread_title,
@@ -732,18 +717,6 @@ enum class Achievement(
         Res.string.achievement_full_house_description,
         AchievementCategory.RACING, notEarnableIn = setOf(GameMode.QUICK), impossibleIn = setOf(GameMode.SURVIVAL),
     ),
-    FREQUENT_TRAVELLER(
-        "frequent_traveller",
-        Res.string.achievement_frequent_traveller_title,
-        Res.string.achievement_frequent_traveller_description,
-        AchievementCategory.RACING, AchievementCounter.PAWNS_HOME, target = 100, impossibleIn = setOf(GameMode.SURVIVAL),
-    ),
-    MARATHON(
-        "marathon",
-        Res.string.achievement_marathon_title,
-        Res.string.achievement_marathon_description,
-        AchievementCategory.RACING, AchievementCounter.SQUARES_MOVED, target = 10_000,
-    ),
     GLOBETROTTER(
         "globetrotter",
         Res.string.achievement_globetrotter_title,
@@ -780,7 +753,7 @@ enum class Achievement(
         "everything_everywhere_all_at_once",
         Res.string.achievement_everything_everywhere_all_at_once_title,
         Res.string.achievement_everything_everywhere_all_at_once_description,
-        AchievementCategory.WINNING, earnableWithHouseRules = true,
+        AchievementCategory.WINNING, impossibleIn = setOf(GameMode.CLASSIC), earnableWithHouseRules = true,
     ),
     FIRST_VICTORY(
         "first_victory",
@@ -836,12 +809,6 @@ enum class Achievement(
         Res.string.achievement_speed_demon_description,
         AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.QUICK),
     ),
-    TRAINING_WHEELS(
-        "training_wheels",
-        Res.string.achievement_training_wheels_title,
-        Res.string.achievement_training_wheels_description,
-        AchievementCategory.WINNING,
-    ),
     UNTOUCHABLE(
         "untouchable",
         Res.string.achievement_untouchable_title,
@@ -855,7 +822,7 @@ enum class Achievement(
         AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.SURVIVAL),
     ),
 
-    // ---- Game Modes: starting another mode, each mode's win and its feat, the house rules', then every mode --------
+    // ---- Game Modes: starting another mode, each mode's win and its feat, then every mode --------
     WHERE_WERE_GOING_WE_DONT_NEED_RULES(
         "where_were_going_we_dont_need_rules",
         Res.string.achievement_where_were_going_we_dont_need_rules_title,
@@ -934,18 +901,6 @@ enum class Achievement(
         Res.string.achievement_not_a_ghost_of_a_chance_description,
         AchievementCategory.GAME_MODES, mode = GameMode.HAUNTED_HOUSE,
     ),
-    ROAD_CLOSED(
-        "road_closed",
-        Res.string.achievement_road_closed_title,
-        Res.string.achievement_road_closed_description,
-        AchievementCategory.GAME_MODES, earnableWithHouseRules = true,
-    ),
-    THIRD_TIMES_THE_CHARM(
-        "third_times_the_charm",
-        Res.string.achievement_third_times_the_charm_title,
-        Res.string.achievement_third_times_the_charm_description,
-        AchievementCategory.GAME_MODES, impossibleIn = setOf(GameMode.SURVIVAL), earnableWithHouseRules = true,
-    ),
     GRAND_TOUR(
         "grand_tour",
         Res.string.achievement_grand_tour_title,
@@ -1002,12 +957,6 @@ enum class Achievement(
         Res.string.achievement_locked_out_description,
         AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
-    LOSING_STREAK(
-        "losing_streak",
-        Res.string.achievement_losing_streak_title,
-        Res.string.achievement_losing_streak_description,
-        AchievementCategory.MISFORTUNE, AchievementCounter.LOSS_STREAK, target = 5,
-    ),
     NEVER_LEFT_HOME(
         "never_left_home",
         Res.string.achievement_never_left_home_title,
@@ -1024,12 +973,6 @@ enum class Achievement(
         "punching_bag",
         Res.string.achievement_punching_bag_title,
         Res.string.achievement_punching_bag_description,
-        AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.SURVIVAL),
-    ),
-    SCENIC_ROUTE(
-        "scenic_route",
-        Res.string.achievement_scenic_route_title,
-        Res.string.achievement_scenic_route_description,
         AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     SITTING_DUCKS(
@@ -1138,11 +1081,23 @@ enum class Achievement(
         Res.string.achievement_midnight_run_description,
         AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN,
     ),
+    ONE_BY_ONE(
+        "one_by_one",
+        Res.string.achievement_one_by_one_title,
+        Res.string.achievement_one_by_one_description,
+        AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN, notEarnableIn = setOf(GameMode.QUICK), impossibleIn = setOf(GameMode.SURVIVAL),
+    ),
     SIDEWAYS(
         "sideways",
         Res.string.achievement_sideways_title,
         Res.string.achievement_sideways_description,
         AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN,
+    ),
+    THE_GREAT_ESCAPE(
+        "the_great_escape",
+        Res.string.achievement_the_great_escape_title,
+        Res.string.achievement_the_great_escape_description,
+        AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN, notEarnableIn = setOf(GameMode.QUICK), impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     TIME_FLIES(
         "time_flies",
@@ -1162,7 +1117,7 @@ enum class Achievement(
         get() = when {
             // A target of 1 is a plain unlock: a "0 of 1" bar says nothing the locked state doesn't.
             counter == null || target <= 1 -> ProgressStyle.NONE
-            counter == AchievementCounter.WIN_STREAK || counter == AchievementCounter.LOSS_STREAK -> ProgressStyle.STREAK
+            counter == AchievementCounter.WIN_STREAK -> ProgressStyle.STREAK
             else -> ProgressStyle.CUMULATIVE
         }
 
