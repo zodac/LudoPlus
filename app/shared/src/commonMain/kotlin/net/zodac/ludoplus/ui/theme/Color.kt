@@ -134,6 +134,9 @@ val LeaderboardBronze = Color(0xFFD79A6A)
 /** Big Fan's heart. */
 val AchievementHeartRed = Color(0xFFE53935)
 
+/** Can't Wait To Get Going's pawn: the red player's, as the menu's pawn is. */
+val AchievementPawnRed = Color(0xFFF2675F)
+
 /** Are You A Developer?'s icon: Android's developer cyan. */
 val AchievementDeveloperCyan = Color(0xFF3FE6FF)
 

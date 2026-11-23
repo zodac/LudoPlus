@@ -58,10 +58,10 @@ import net.zodac.ludoplus.ui.theme.color
 private const val YARD_EXIT_SWELL = 0.18f
 
 /** How high a moving pawn rises at the top of each hop from square to square, in squares. */
-private const val HOP_HEIGHT = 0.42f
+internal const val HOP_HEIGHT = 0.42f
 
 /** How much a hopping pawn swells at the top of its hop, as if nearer. */
-private const val HOP_SWELL = 0.08f
+internal const val HOP_SWELL = 0.08f
 
 /** How high a captured pawn is thrown on its way back to its yard: this, in squares, and [CAPTURE_ARC_PER_SQUARE] of the way. */
 private const val CAPTURE_ARC = 0.8f
@@ -249,7 +249,7 @@ private fun DrawScope.drawTurnYard(layout: BoardLayout, unit: Float, seat: Int) 
 }
 
 /** The shadow a pawn [radius] across casts on the ground at [centre] while it's off it, smaller and fainter the [height] (0 to 1) it is up. */
-private fun DrawScope.drawGroundShadow(centre: Offset, radius: Float, height: Float) {
+internal fun DrawScope.drawGroundShadow(centre: Offset, radius: Float, height: Float) {
     val width = 1.4f * radius * (1f - 0.35f * height)
     drawOval(
         Color.Black.copy(alpha = 0.22f * (1f - 0.5f * height)),

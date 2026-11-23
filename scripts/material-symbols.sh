@@ -48,6 +48,7 @@ Castle castle
 Celebration celebration
 Check check
 CheckCircle check_circle
+ChessPawn chess_pawn
 Close close
 ContentCut content_cut
 Cottage cottage

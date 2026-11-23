@@ -19,6 +19,7 @@ import net.zodac.ludoplus.ui.theme.AchievementDeveloperCyan
 import net.zodac.ludoplus.ui.theme.AchievementBadgeViolet
 import net.zodac.ludoplus.ui.theme.AchievementClockAmber
 import net.zodac.ludoplus.ui.theme.AchievementHeartRed
+import net.zodac.ludoplus.ui.theme.AchievementPawnRed
 import net.zodac.ludoplus.ui.theme.AchievementInkBlue
 import net.zodac.ludoplus.ui.theme.AchievementSidewaysTeal
 
@@ -159,6 +160,7 @@ val Achievement.icon: ImageVector
         Achievement.ALLITERATION -> Symbols.Abc
         Achievement.ARE_YOU_A_DEVELOPER -> Symbols.DeveloperMode
         Achievement.BIG_FAN -> Symbols.Favorite
+        Achievement.CANT_WAIT_TO_GET_GOING -> Symbols.ChessPawn
         // A crescent moon and two stars, for the small hours it was earned in.
         Achievement.MIDNIGHT_RUN -> rememberMidnightIcon()
         Achievement.SIDEWAYS -> Symbols.ScreenRotation
@@ -176,6 +178,7 @@ fun Achievement.iconTintOrUnspecified(tint: Color): Color = when (this) {
     Achievement.ALLITERATION -> AchievementInkBlue
     Achievement.ARE_YOU_A_DEVELOPER -> AchievementDeveloperCyan
     Achievement.BIG_FAN -> AchievementHeartRed
+    Achievement.CANT_WAIT_TO_GET_GOING -> AchievementPawnRed
     Achievement.MIDNIGHT_RUN -> Color.Unspecified
     Achievement.SIDEWAYS -> AchievementSidewaysTeal
     Achievement.TIME_FLIES -> AchievementClockAmber

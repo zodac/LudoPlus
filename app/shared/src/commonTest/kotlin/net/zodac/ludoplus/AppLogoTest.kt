@@ -1,23 +1,30 @@
 package net.zodac.ludoplus
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import net.zodac.ludoplus.ui.common.AppLogo
+import net.zodac.ludoplus.ui.common.LOGO_PAWN_HOP_MILLIS
+import net.zodac.ludoplus.ui.common.LocalReduceMotion
 import net.zodac.ludoplus.ui.style.BoardStyles
 import net.zodac.ludoplus.ui.style.GameVisualTheme
 import net.zodac.ludoplus.ui.style.PawnStyles
@@ -66,6 +73,55 @@ class AppLogoTest : UiTest() {
         assertEquals(waiting, wordmarkBounds())
         assertNotEquals(blank, loaded)
     }
+
+    @Test
+    fun `a tap on the pawn sets it hopping, and it's back where it stood once its three hops are done`() = uiTest {
+        var taps = 0
+        compose.setContent { LudoPlusTheme { Box(Modifier.testTag(LOGO)) { AppLogo(GameVisualTheme(), onPawnTapped = { taps++ }) } } }
+        val standing = artPixels()
+        compose.mainClock.autoAdvance = false
+        tapPawn()
+        // Half a hop in: at the top of the first.
+        compose.mainClock.advanceTimeBy(LOGO_PAWN_HOP_MILLIS / 6L)
+        assertNotEquals(standing, artPixels(), "The pawn is up in the air")
+        assertEquals(1, taps)
+        compose.mainClock.advanceTimeBy(LOGO_PAWN_HOP_MILLIS.toLong())
+        assertEquals(standing, artPixels(), "The pawn is back on its spot")
+    }
+
+    @Test
+    fun `a tap off the pawn does nothing`() = uiTest {
+        var taps = 0
+        compose.setContent { LudoPlusTheme { Box(Modifier.testTag(LOGO)) { AppLogo(GameVisualTheme(), onPawnTapped = { taps++ }) } } }
+        val standing = artPixels()
+        compose.mainClock.autoAdvance = false
+        // The board's far corner, at the art's top.
+        compose.onNodeWithTag(LOGO).performTouchInput { click(Offset(centerX, 8.dp.toPx())) }
+        compose.mainClock.advanceTimeBy(LOGO_PAWN_HOP_MILLIS / 6L)
+        assertEquals(standing, artPixels())
+        assertEquals(0, taps)
+    }
+
+    @Test
+    fun `under reduced motion a tap on the pawn still counts, but it stays still`() = uiTest {
+        var taps = 0
+        compose.setContent {
+            LudoPlusTheme {
+                CompositionLocalProvider(LocalReduceMotion provides true) {
+                    Box(Modifier.testTag(LOGO)) { AppLogo(GameVisualTheme(), onPawnTapped = { taps++ }) }
+                }
+            }
+        }
+        val standing = artPixels()
+        compose.mainClock.autoAdvance = false
+        tapPawn()
+        compose.mainClock.advanceTimeBy(LOGO_PAWN_HOP_MILLIS / 6L)
+        assertEquals(standing, artPixels())
+        assertEquals(1, taps)
+    }
+
+    /** A tap on the pawn's body: the art's middle, 62dp down (its feet 90dp down the 112dp art, its middle a third of it above). */
+    private fun tapPawn() = compose.onNodeWithTag(LOGO).performTouchInput { click(Offset(centerX, 62.dp.toPx())) }
 
     private fun wordmarkBounds() = compose.onNode(hasText("LudoPlus")).fetchSemanticsNode().boundsInRoot
 

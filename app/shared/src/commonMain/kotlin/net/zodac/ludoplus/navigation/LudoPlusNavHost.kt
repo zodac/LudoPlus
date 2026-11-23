@@ -11,6 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -20,9 +21,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 import net.zodac.ludoplus.app.AppContainer
 import net.zodac.ludoplus.app.LocalAppContainer
 import net.zodac.ludoplus.data.orNullOnFailure
+import net.zodac.ludoplus.model.Achievement
 import net.zodac.ludoplus.game.style.StyleCategory
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.common_default_player_name
@@ -98,6 +101,7 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
         // Null until the saved game's file has been read, so Play doesn't change shape under the player's finger.
         val hasInProgressGame by container.inProgressGameRepository.hasInProgressGame.collectAsStateWithLifecycle(initialValue = null)
         val savedStyles by container.savedStyles.collectAsStateWithLifecycle()
+        val scope = rememberCoroutineScope()
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             // Under the menu, which is opaque: runs the Styles page's drawing code once while the menu idles, so opening
             // Styles isn't the first time it runs - see StylesWarmUp. Never what the page cover waits on.
@@ -117,6 +121,8 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
                 onSettings = { navigate(Screen.SETTINGS) },
                 // The logo's board and pawn in the player's picks; none until they've loaded.
                 logoTheme = remember(savedStyles) { savedStyles?.visualTheme },
+                // The Easter egg in the logo: its pawn, tapped, hops.
+                onLogoPawnTapped = { scope.launch { container.achievementUnlocker.unlock(setOf(Achievement.CANT_WAIT_TO_GET_GOING)) } },
             )
         }
     }

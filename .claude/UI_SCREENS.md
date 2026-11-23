@@ -9,7 +9,7 @@
 > mode limits and missing-entry lists). A row is one TalkBack item: its title, description, and when it was earned or
 > how far along it is, then, for a style reward, the reward's sentence, with the action "Show which style this
 > unlocks", whose tap shows that sentence as a tip. The Easter Eggs' fixed colours are Big Fan's red heart, Are You A
-> Developer?'s cyan, and Midnight Run's moon; Completionist keeps its crystal trophy.
+> Developer?'s cyan, Can't Wait To Get Going's red pawn, and Midnight Run's moon; Completionist keeps its crystal trophy.
 
 Achievements, banners, Styles, Leaderboard and menu decisions. The general rules are in `UI.md`, the game screen is in
 `UI_BOARD.md`, and what the features do is in `DESIGN.md`.
@@ -26,7 +26,7 @@ Miscellaneous run in alphabetical order instead, and so do the Easter Eggs, whic
     wraps to two lines at 12sp: unlike the banner, which keeps one line down to 11sp. `AchievementsTextTest` pins it. The
     row sits under `IntrinsicSize.Min` (equal cards in landscape), so `ShrinkThenWrapText` answers intrinsic heights.
 - **The count is "earned of total", and the Easter Eggs are in earned but not in total**: a player with everything
-    reads "101 of 94 earned". This is intended, not a bug (`AchievementsTextTest`). It is not about secrecy: every
+    reads "102 of 94 earned". This is intended, not a bug (`AchievementsTextTest`). It is not about secrecy: every
     Easter Egg's row (title shown, description "???") is in the list from the start.
 - The unlocked/total count sits centred above the list. In landscape, where the list has two cards to a row, it moves
     into the app bar after the back arrow, with the Unearned switch at the bar's end (see `UI.md`, "Landscape pages").
@@ -358,5 +358,10 @@ turned so red's yard is nearest and flattened into perspective (0.56), narrower 
     defaults while a pick is locked (the maintainer, 2026-11-23). The feature graphic passes the defaults.
 - It's held invisible, still taking its space, until the picks load, so it never flashes the defaults (`AppLogoTest`).
 - The art is decoration (`clearAndSetSemantics`): TalkBack hears only "LudoPlus", as a heading.
+- **The pawn hops when tapped** (an Easter egg, 2026-11-23): three hops where it stands, each the board's hop from
+    square to square (`HOP_HEIGHT`, `HOP_SWELL`, its ground shadow, `PAWN_STEP_MILLIS` each), on a layer of its own over
+    the board's, at the Menus & pages pace. Under reduced motion it stays still. Either way the tap earns Can't Wait To Get
+    Going. A tap within 1.2 pawn radii of its middle finds it; a tap while it's hopping is ignored. It's a raw gesture
+    (`detectTapGestures`), so TalkBack doesn't reach it, as with the version's seven taps (`AppLogoTest`).
 - Keep the "LudoPlus" text: `MainActivitySmokeTest` asserts on it.
 - The feature graphic draws it too (`StoreArtGeneratorTest`), so a change to it is a store-asset change.

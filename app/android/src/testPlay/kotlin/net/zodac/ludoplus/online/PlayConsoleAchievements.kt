@@ -10,7 +10,8 @@ import net.zodac.ludoplus.model.AchievementCategory
  * and the other 93 share the rest of Play's 2,000 by tier. Published points can't change, so a new achievement needs
  * points freed up before it ships (`.claude/PLAY_GAMES.md`, "Achievements"). Proposed 2026-11-18, for the maintainer's
  * review before publishing; the Hard, Very Hard, and Extreme tiers raised 2026-11-23, when 11 achievements were removed,
- * and Very Hard lowered to 55 the same day for My Favourite Spot and We're All Friends Here.
+ * and Very Hard lowered to 55 the same day for My Favourite Spot and We're All Friends Here; Off The Mark moved to
+ * Trivial for Can't Wait To Get Going.
  */
 internal enum class PlayPointsTier(val points: Int) {
     TRIVIAL(5),
@@ -31,11 +32,11 @@ internal val playPointsTiers: Map<Achievement, PlayPointsTier> = buildMap {
     tier(
         PlayPointsTier.TRIVIAL,
         THE_JOURNEY_BEGINS, LETS_FINISH_THIS, ONE_MORE_TIME, GOTCHA, HOME_SWEET_HOME, FIRST_VICTORY, TRAINING_WHEELS,
-        WHO_MADE_THIS, I_ROBOT, WOODEN_SPOON, EARLY_BIRD,
+        WHO_MADE_THIS, I_ROBOT, WOODEN_SPOON, EARLY_BIRD, OFF_THE_MARK,
     )
     tier(
         PlayPointsTier.EASY,
-        WARMING_UP, GETTING_COMFORTABLE, ON_A_ROLL, PEST, HOMECOMING, OFF_THE_MARK, BROKEN_RECORD, WELCOME_PARTY,
+        WARMING_UP, GETTING_COMFORTABLE, ON_A_ROLL, PEST, HOMECOMING, BROKEN_RECORD, WELCOME_PARTY,
         STRAIGHT_OUT_THE_GATE, NOT_SO_FAST, PAYBACK, ALL_HANDS_ON_DECK, BACK_TO_SQUARE_ONE, BOTTOM_OF_THE_BARREL, DRY_SPELL,
         INSULT_TO_INJURY, LOCKED_OUT, TOO_MUCH_OF_A_GOOD_THING, INCH_BY_INCH, LEAPFROG, DEJA_VU, BUDDY_SYSTEM,
     )

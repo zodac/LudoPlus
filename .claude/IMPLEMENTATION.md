@@ -315,7 +315,8 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     and hidden ones. A debug build's game has a superuser mode setting the next roll, to check them. DiceFive's page,
     banners, unlocker, and store came back from `5423b6c` (2026-11-17), without style rewards (Phase 7), Play Games
     (Phase 10), or per-mode limits (Phase 9). Eleven removed (2026-11-23), leaving 99 (92 counted, 7 Easter Eggs), then
-    My Favourite Spot and We're All Friends Here added (101: 94 counted), with more to come; Speed Demon became a win
+    My Favourite Spot and We're All Friends Here added (101: 94 counted), and the Easter Egg Can't Wait To Get Going (102: 8
+    Easter Eggs), with more to come; Speed Demon became a win
     within 5 minutes on screen, Locked Out 5 turns, and Lifetime Achievement 500 games. The catalog awaits the
     maintainer's review.
 - [x] Audited against the one mode and Settings' stop at first winner (`GAME_MODES_AUDIT.md`).

@@ -11,6 +11,8 @@ import net.zodac.ludoplus.resources.achievement_back_to_square_one_description
 import net.zodac.ludoplus.resources.achievement_back_to_square_one_title
 import net.zodac.ludoplus.resources.achievement_big_fan_description
 import net.zodac.ludoplus.resources.achievement_big_fan_title
+import net.zodac.ludoplus.resources.achievement_cant_wait_to_get_going_description
+import net.zodac.ludoplus.resources.achievement_cant_wait_to_get_going_title
 import net.zodac.ludoplus.resources.achievement_bottom_of_the_barrel_description
 import net.zodac.ludoplus.resources.achievement_bottom_of_the_barrel_title
 import net.zodac.ludoplus.resources.achievement_bouncer_description
@@ -960,6 +962,12 @@ enum class Achievement(
         "big_fan",
         Res.string.achievement_big_fan_title,
         Res.string.achievement_big_fan_description,
+        AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN,
+    ),
+    CANT_WAIT_TO_GET_GOING(
+        "cant_wait_to_get_going",
+        Res.string.achievement_cant_wait_to_get_going_title,
+        Res.string.achievement_cant_wait_to_get_going_description,
         AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN,
     ),
     MIDNIGHT_RUN(

@@ -932,6 +932,8 @@
     <string name="achievement_are_you_a_developer_description">Tap the version number seven times</string>
     <string name="achievement_big_fan_title">Big Fan</string>
     <string name="achievement_big_fan_description">Play a game against the creator</string>
+    <string name="achievement_cant_wait_to_get_going_title">Can't Wait To Get Going</string>
+    <string name="achievement_cant_wait_to_get_going_description">Tap the pawn on the main menu</string>
     <string name="achievement_midnight_run_title">Midnight Run</string>
     <string name="achievement_midnight_run_description">Start a game between midnight and 6am</string>
     <string name="achievement_sideways_title">Sideways</string>

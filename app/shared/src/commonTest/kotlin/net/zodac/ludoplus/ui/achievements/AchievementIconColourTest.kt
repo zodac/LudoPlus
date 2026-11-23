@@ -18,6 +18,7 @@ class AchievementIconColourTest {
                 Achievement.ALLITERATION,
                 Achievement.ARE_YOU_A_DEVELOPER,
                 Achievement.BIG_FAN,
+                Achievement.CANT_WAIT_TO_GET_GOING,
                 Achievement.MIDNIGHT_RUN,
                 Achievement.SIDEWAYS,
                 Achievement.TIME_FLIES,

@@ -77,11 +77,12 @@ fun MenuScreen(
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
     logoTheme: GameVisualTheme? = GameVisualTheme(),
+    onLogoPawnTapped: () -> Unit = {},
 ) {
     // The menu alone has its backdrop drifting; every other screen keeps it still.
     BrandBackdrop(modifier = modifier, driftingDice = true) {
         PageColumn(horizontalPadding = 28.dp, wide = true) {
-            val logo = @Composable { AppLogo(logoTheme) }
+            val logo = @Composable { AppLogo(logoTheme, onPawnTapped = onLogoPawnTapped) }
 
             // Held invisible (still taking its space) until the saved-game check has answered, so the
             // buttons arrive together rather than Play flashing before it splits, or a gap popping in.

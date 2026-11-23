@@ -513,7 +513,7 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
 
 ## Achievements
 
-`model/Achievement.kt` (101: 94 counted, 7 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
+`model/Achievement.kt` (102: 94 counted, 8 Easter Eggs), `game/AchievementTracker.kt` and `game/AchievementEngine.kt`
 (pure), `data/achievements/`, `app/AchievementUnlocker.kt`, `ui/achievements/`. Rebuilt for Ludo in Phase 6; DiceFive's
 110 are in `5423b6c`.
 
@@ -526,7 +526,7 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
     earns nothing.
 - **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (19, Pest and Completionist among
     them, Completionist last), The Die (8), Captures (15), Racing (12), Winning (15), Misfortune (17), Miscellaneous (8,
-    hidden), and Easter Eggs (7, hidden, outside Completionist and the page's total): 94 counted. Each entry's
+    hidden), and Easter Eggs (8, hidden, outside Completionist and the page's total): 94 counted. Each entry's
     description is its rule; the thresholds are the tracker's constants (`AchievementTracker`'s companion). The maintainer asked for 100, plus 10
     Easter Eggs, on 2026-11-17 ("a variety of them in groups, like DiceFive"), removed eleven on 2026-11-23, and is
     adding new ones: My Favourite Spot (every pawn on one square, not the start square, home column included) and
@@ -536,11 +536,13 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
         maintainer, 2026-11-23). Locked Out is 5 turns, and Lifetime Achievement 500 games.
     - Punching Bag (15 captured) comes from simulated games: a player is captured about 6 times a game.
     - Easter Eggs: Alliteration (every name starting with one letter), Are You A Developer? (the version tapped seven
-        times), Big Fan (a person named "zodac", exactly), Midnight Run (a new game from midnight to 6am), Sideways (a
+        times), Big Fan (a person named "zodac", exactly), Can't Wait To Get Going (the main menu's logo pawn tapped,
+        which hops three times; added 2026-11-23), Midnight Run (a new game from midnight to 6am), Sideways (a
         game shown with the phone on its side), Time Flies (an hour of one game on screen), Who's Ludo? (anyone named
         "Ludo", any case).
     - Wire To Wire needs the whole game seen (from player 1's first roll): one continued from its save can't earn it.
-    - Opening About (Who Made This?) earns a hidden one. The tutorial earns nothing.
+    - Opening About (Who Made This?) earns a hidden one. So does tapping the menu's logo pawn (Can't Wait To Get Going,
+        `MenuScreen`'s `onLogoPawnTapped`, unlocked in `LudoPlusNavHost`). The tutorial earns nothing.
 - **Counters** (`AchievementCounter`): games played, games won, the win and losing streaks, captures, pawns home,
     rolls, 6s, squares moved, and last places. Each
     moves as its event happens, never at a game's end only, so a game left unfinished still counts what was played.
