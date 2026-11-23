@@ -26,7 +26,7 @@ For each achievement a new mode, modifier, or setting changes, decide:
 | Pawn count | Wire To Wire, All Hands On Deck, Full House, Lap Of Honour, Comeback Kid, Defeat From The Jaws Of Victory, Photo Finish, Pipped To The Post, Tall Poppy, Parting Shot, So Near, Yet So Far, Buddy System, My Favourite Spot, Double Delivery | Do "all but one pawn", "every pawn", or "two pawns" mean the same with fewer or more pawns? |
 | Track length | Speed Demon, Express Delivery, Locked Out, Not So Fast!, Back To Square One, Welcome Party, Leapfrog, Ultramarathon | Are the turn and square thresholds still fast or slow, and is there still a last square before the home column? |
 | Rolls | Too Much Of A Good Thing, Inch By Inch, Locked Out, So Near, Yet So Far, Off The Mark, Full Spread, Six Pack, Dry Spell, Bottom Of The Barrel, Six Shooter, Counting Up | Is there a roll-again limit, a 1, a 6, and a roll that leaves the yard? Two dice change all of these |
-| Captures | Gotcha!, Pest, Two For One, Straight Out The Gate, Hat Trick, Payback, Picking On You, Nobody Is Safe, On The Warpath, Déjà Vu, Bouncer, Menace, Public Enemy, Sitting Ducks, Insult To Injury, Groundhog Day, Punching Bag, Pacifist, Untouchable, Conqueror, Never Say Die | Can pawns still be captured, more than one at once, and does a capture still give a roll? |
+| Captures | Gotcha!, Pest, Two For One, Straight Out The Gate, Hat Trick, Payback, Picking On You, Nobody Is Safe, On The Warpath, Déjà Vu, Bouncer, Menace, Public Enemy, Sitting Ducks, Insult To Injury, Groundhog Day, Punching Bag, Stop Picking On Me, Pacifist, Untouchable, Conqueror, Never Say Die | Can pawns still be captured, more than one at once, and does a capture still give a roll? |
 | Table | How Do You Do, Fellow CPUs?, Life Of The Party, Nobody Is Safe, We're All Friends Here | Still three opponents? (Phase 8's 2-8 players) |
 | Game end | Wooden Spoon, Spoon Collector, Never Left Home, Early Bird, Late Bloomer, Front-Runner, Homecoming, the games-played ladder, the win counts and both streaks | Is every player still placed, and does a game still take its usual time? |
 
@@ -92,6 +92,9 @@ anyone already holding it keeps it.
 
 One By One (an Easter Egg) is 6% of Classic games for a player set on it, and 2-9% in the other modes; a 6 that can't move
 the pawn that's out spoils it. The Great Escape is 5-8% of games for a Medium CPU, and 19% in Two Dice, left as easier.
+
+Stop Picking On Me is 11% of four-player Classic games (31% with two players, 5% with six), and 0.4-14% in the other modes,
+so it's kept out of none. A ghost's catch is nobody's, and a partner isn't one of the players.
 
 ## Quick (a mode)
 

@@ -532,6 +532,36 @@ class AchievementTrackerTest {
     }
 
     @Test
+    fun `Stop Picking On Me is a win after every other player has captured a pawn of player 1's`() {
+        /** Each of [captors] takes red's pawn, a square ahead of theirs, then [winner]'s last pawn comes home. */
+        fun play(captors: List<Int>, winner: Int = RED, rules: GameRules = GameRules()): Set<Achievement> {
+            val play = Play(game(rules = rules))
+            for (captor in captors) {
+                // Red on square 5; the captor on 4: 4, 43, 30, and 17 steps from its own start.
+                val steps = listOf(4, 43, 30, 17)[captor]
+                val pawns = List(4) { if (it == RED) listOf(5, Y, Y, Y) else if (it == captor) listOf(steps, Y, Y, Y) else listOf(Y, Y, Y, Y) }
+                play.skipTo(game(*pawns.toTypedArray(), current = captor, rules = rules)).play(1, pawn = 0)
+                assertEquals(listOf(Y, Y, Y, Y), play.state.players[RED].pawns)
+            }
+            val pawns = List(4) {
+                when {
+                    it == winner -> listOf(HOME, HOME, HOME, HOME - 1)
+                    rules.arePartners(winner, it) -> List(4) { HOME }
+                    else -> listOf(10, Y, Y, Y)
+                }
+            }
+            return play.skipTo(game(*pawns.toTypedArray(), current = winner, rules = rules)).play(1, pawn = 3).earned
+        }
+        assertTrue(Achievement.STOP_PICKING_ON_ME in play(listOf(GREEN, YELLOW, BLUE)))
+        assertFalse(Achievement.STOP_PICKING_ON_ME in play(listOf(GREEN, YELLOW, GREEN, YELLOW)))
+        assertFalse(Achievement.STOP_PICKING_ON_ME in play(listOf(GREEN, YELLOW, BLUE), winner = GREEN))
+        // A partner, home already, isn't one of them; both rivals are.
+        val teams = GameRules(teams = listOf(0, 1, 0, 1))
+        assertTrue(Achievement.STOP_PICKING_ON_ME in play(listOf(GREEN, BLUE), rules = teams))
+        assertFalse(Achievement.STOP_PICKING_ON_ME in play(listOf(GREEN), rules = teams))
+    }
+
+    @Test
     fun `Never Left Home is every pawn still in the yard when another player wins`() {
         assertTrue(Achievement.NEVER_LEFT_HOME in Play(game(listOf(Y, Y, Y, Y), listOf(HOME, HOME, HOME, HOME - 1), current = GREEN)).play(1, pawn = 3).earned)
         assertFalse(Achievement.NEVER_LEFT_HOME in Play(game(listOf(Y, Y, Y, 3), listOf(HOME, HOME, HOME, HOME - 1), current = GREEN)).play(1, pawn = 3).earned)

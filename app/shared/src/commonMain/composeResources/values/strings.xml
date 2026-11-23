@@ -851,8 +851,6 @@
     <string name="achievement_living_legend_description">Win 100 games</string>
     <string name="achievement_old_hand_title">Old Hand</string>
     <string name="achievement_old_hand_description">Finish 250 games</string>
-    <string name="achievement_die_hard_title">Die Hard</string>
-    <string name="achievement_die_hard_description">Roll the die 50,000 times</string>
     <string name="achievement_everything_everywhere_all_at_once_title">Everything Everywhere All At Once</string>
     <string name="achievement_everything_everywhere_all_at_once_description">Win a game of any mode but `Classic` with every house rule on</string>
     <string name="achievement_where_were_going_we_dont_need_rules_title">Where We're Going, We Don't Need Rules</string>
@@ -971,6 +969,8 @@
     <string name="achievement_photo_finish_description">Win while an opponent's last pawn is in their home column</string>
     <string name="achievement_speed_demon_title">Speed Demon</string>
     <string name="achievement_speed_demon_description">Win in 5 minutes or less</string>
+    <string name="achievement_stop_picking_on_me_title">Stop Picking On Me</string>
+    <string name="achievement_stop_picking_on_me_description">Win after every other player has captured at least one of your pawns</string>
     <string name="achievement_untouchable_title">Untouchable</string>
     <string name="achievement_untouchable_description">Win without having a pawn captured</string>
     <string name="achievement_wire_to_wire_title">Wire To Wire</string>

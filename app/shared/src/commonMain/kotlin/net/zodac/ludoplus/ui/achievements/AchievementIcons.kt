@@ -43,7 +43,6 @@ val Achievement.icon: ImageVector
         Achievement.ONE_MORE_TIME -> Symbols.Replay
         Achievement.WARMING_UP -> Symbols.Whatshot
         Achievement.WELL_ROLLED -> Symbols.Casino
-        Achievement.DIE_HARD -> Symbols.FitnessCenter
         Achievement.GETTING_COMFORTABLE -> Symbols.Numbers
         Achievement.REGULAR -> Symbols.EventRepeat
         Achievement.CENTURION -> Symbols.MilitaryTech
@@ -106,8 +105,6 @@ val Achievement.icon: ImageVector
         Achievement.CLEAN_SWEEP -> Symbols.DeleteSweep
         Achievement.COMEBACK_KID -> Symbols.TrendingUp
         Achievement.CONQUEROR -> Symbols.Castle
-        // The sum of them all.
-        Achievement.EVERYTHING_EVERYWHERE_ALL_AT_ONCE -> Symbols.Functions
         Achievement.FIRST_VICTORY -> Symbols.Flag
         Achievement.FRONT_RUNNER -> Symbols.LooksOne
         Achievement.HOW_DO_YOU_DO_FELLOW_CPUS -> Symbols.Memory
@@ -117,6 +114,8 @@ val Achievement.icon: ImageVector
         Achievement.PACIFIST -> Symbols.ThumbUp
         Achievement.PHOTO_FINISH -> Symbols.PhotoCamera
         Achievement.SPEED_DEMON -> Symbols.Bolt
+        // Enough: a hand held up.
+        Achievement.STOP_PICKING_ON_ME -> Symbols.BackHand
         // Locked away, out of reach: never captured.
         Achievement.UNTOUCHABLE -> Symbols.Lock
         Achievement.WIRE_TO_WIRE -> Symbols.Timeline
@@ -138,6 +137,8 @@ val Achievement.icon: ImageVector
         Achievement.LIVING_TO_TELL_THE_TALE -> GHOST_ICON
         // Gone like the wind.
         Achievement.NOT_A_GHOST_OF_A_CHANCE -> Symbols.Air
+        // The sum of them all.
+        Achievement.EVERYTHING_EVERYWHERE_ALL_AT_ONCE -> Symbols.Functions
         Achievement.GRAND_TOUR -> Symbols.MyLocation
 
         // ---- Misfortune ---------------------------------------------------------------------

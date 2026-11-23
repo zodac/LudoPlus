@@ -94,6 +94,9 @@ class AchievementTracker(
     /** Whether player 1 was the last to bring a pawn out of their yard. */
     private var lastOut = false
 
+    /** The players who have captured a pawn of player 1's this game: for [Achievement.STOP_PICKING_ON_ME]. */
+    private val capturedBy = mutableSetOf<Int>()
+
     /** Whether player 1 has never brought a pawn out with another on the board: for [Achievement.ONE_BY_ONE]. */
     private var oneByOne = true
 
@@ -150,6 +153,7 @@ class AchievementTracker(
             if (event is GameEvent.Moved) {
                 val mine = event.allCaptures.filter { it.player == mySeat }
                 if (mine.isNotEmpty()) {
+                    capturedBy += event.player
                     if (mine.size >= 2) feats += Achievement.SITTING_DUCKS
                     theirTurnCaptures += mine.size
                     if (theirTurnCaptures >= 2) feats += Achievement.INSULT_TO_INJURY
@@ -396,6 +400,7 @@ class AchievementTracker(
         if (trailedBadly) add(Achievement.COMEBACK_KID)
         if (opponents.all { after.players[it].pawnsHome(board) == 0 }) add(Achievement.CLEAN_SWEEP)
         if (me.captures == 0) add(Achievement.PACIFIST)
+        if (capturedBy.containsAll(opponents)) add(Achievement.STOP_PICKING_ON_ME)
         if (me.captures >= CONQUEROR_CAPTURES) add(Achievement.CONQUEROR)
         if (me.timesCaptured == 0) add(Achievement.UNTOUCHABLE)
         if (me.timesCaptured >= NEVER_SAY_DIE_CAPTURED) add(Achievement.NEVER_SAY_DIE)

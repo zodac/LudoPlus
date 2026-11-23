@@ -184,7 +184,7 @@ internal object Scenes {
      */
     val VIDEO_LOCKED: Set<Achievement> = setOf(
         VIDEO_UNLOCK, Achievement.COMPLETIONIST, Achievement.PUBLIC_ENEMY, Achievement.LIFETIME_ACHIEVEMENT, Achievement.ULTRAMARATHON,
-        Achievement.DIE_HARD, Achievement.GLOBETROTTER,
+        Achievement.GLOBETROTTER,
     ) + Achievement.entries.filter { it.category == AchievementCategory.EASTER_EGGS }
 
     /**

@@ -581,16 +581,16 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
 - **Ids.**
     - The enum constant is the English title in snake case; the stored `id` is that in lower case
         (`GETTING_COMFORTABLE`/`"getting_comfortable"`). `AchievementEngineTest` enforces it. Permanent once released.
-    - Removed achievements' ids are kept in `RETIRED_ACHIEVEMENT_IDS`, never to be used again (eleven, 2026-11-23, and nine, 2026-11-24).
+    - Removed achievements' ids are kept in `RETIRED_ACHIEVEMENT_IDS`, never to be used again (eleven, 2026-11-23, and ten, 2026-11-24).
     - String keys follow the constant: `achievement_<constant>_title`, `_description`.
 - **Player 1 only.** The person in seat 1 earns them; every other seat, person or CPU, is an opponent. The tutorial
     earns nothing.
-- **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (18, Pest and Completionist among
-    them, Completionist last), The Die (5), Captures (15), Racing (10), Winning (15), Game Modes (14), Misfortune (15), Miscellaneous (8,
+- **The catalog** is `model/Achievement.kt` itself, in display order: Milestones (17, Pest and Completionist among
+    them, Completionist last), The Die (5), Captures (15), Racing (10), Winning (15), Game Modes (15), Misfortune (15), Miscellaneous (8,
     hidden), and Easter Eggs (10, hidden, outside Completionist and the page's total): 100 counted. Each entry's
     description is its rule; the thresholds are the tracker's constants (`AchievementTracker`'s companion). The maintainer asked for 100, plus 10
     Easter Eggs, on 2026-11-17 ("a variety of them in groups, like DiceFive"), removed eleven on 2026-11-23 and
-    eleven on 2026-11-24 (two of them never released), and is
+    twelve on 2026-11-24 (two of them never released), and is
     adding new ones: My Favourite Spot (every pawn on one square, not the start square, home column included) and
     We're All Friends Here (a pawn of every player on one track square, by anyone's move) on 2026-11-23, when Pest and
     Completionist moved to Milestones and the Collection category went.
@@ -628,8 +628,8 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
 - **Modes and house rules** (the maintainer, 2026-11-24, as DiceFive). Every mode earns the ordinary achievements, but for
     those its rules make free, rule out, or turn into something else (`Achievement.notEarnableIn`, `impossibleIn`; the audit
     is in `GAME_MODES_AUDIT.md`). The Game Modes category has one for starting any mode but Classic, each mode's win and a
-    feat of its own, and Grand Tour; Everything Everywhere All At Once, a win of any mode but Classic with every house rule
-    that changes it on, is in Winning. A game with house rules earns only those marked `earnableWithHouseRules`, and moves no counter. A limited
+    feat of its own, Everything Everywhere All At Once (a win of any mode but Classic with every house rule that changes it
+    on), and Grand Tour. A game with house rules earns only those marked `earnableWithHouseRules`, and moves no counter. A limited
     one's row has a tip naming the modes left ("Can only be earned in the 'Classic' and 'Chaos' modes"), read with the row by
     TalkBack.
 - **Display.**

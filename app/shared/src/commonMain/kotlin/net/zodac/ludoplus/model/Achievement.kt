@@ -37,8 +37,6 @@ import net.zodac.ludoplus.resources.achievement_defeat_from_the_jaws_of_victory_
 import net.zodac.ludoplus.resources.achievement_defeat_from_the_jaws_of_victory_title
 import net.zodac.ludoplus.resources.achievement_deja_vu_description
 import net.zodac.ludoplus.resources.achievement_deja_vu_title
-import net.zodac.ludoplus.resources.achievement_die_hard_description
-import net.zodac.ludoplus.resources.achievement_die_hard_title
 import net.zodac.ludoplus.resources.achievement_double_delivery_description
 import net.zodac.ludoplus.resources.achievement_double_delivery_title
 import net.zodac.ludoplus.resources.achievement_dry_spell_description
@@ -221,6 +219,8 @@ import net.zodac.ludoplus.resources.achievement_one_by_one_description
 import net.zodac.ludoplus.resources.achievement_one_by_one_title
 import net.zodac.ludoplus.resources.achievement_the_great_escape_description
 import net.zodac.ludoplus.resources.achievement_the_great_escape_title
+import net.zodac.ludoplus.resources.achievement_stop_picking_on_me_description
+import net.zodac.ludoplus.resources.achievement_stop_picking_on_me_title
 import net.zodac.ludoplus.resources.category_captures
 import net.zodac.ludoplus.resources.category_easter_eggs
 import net.zodac.ludoplus.resources.category_game_modes
@@ -311,6 +311,7 @@ const val MAX_ACHIEVEMENT_TITLE_LENGTH = 38
 val RETIRED_ACHIEVEMENT_IDS: Set<String> = setOf(
     "back_to_school",
     "broken_record",
+    "die_hard",
     "frequent_traveller",
     "hot_hand",
     "i_am_not_a_robot",
@@ -443,12 +444,6 @@ enum class Achievement(
         Res.string.achievement_well_rolled_title,
         Res.string.achievement_well_rolled_description,
         AchievementCategory.MILESTONES, AchievementCounter.DIE_ROLLS, target = 10_000,
-    ),
-    DIE_HARD(
-        "die_hard",
-        Res.string.achievement_die_hard_title,
-        Res.string.achievement_die_hard_description,
-        AchievementCategory.MILESTONES, AchievementCounter.DIE_ROLLS, target = 50_000,
     ),
     GETTING_COMFORTABLE(
         "getting_comfortable",
@@ -728,12 +723,6 @@ enum class Achievement(
         Res.string.achievement_conqueror_description,
         AchievementCategory.WINNING,
     ),
-    EVERYTHING_EVERYWHERE_ALL_AT_ONCE(
-        "everything_everywhere_all_at_once",
-        Res.string.achievement_everything_everywhere_all_at_once_title,
-        Res.string.achievement_everything_everywhere_all_at_once_description,
-        AchievementCategory.WINNING, impossibleIn = setOf(GameMode.CLASSIC), earnableWithHouseRules = true,
-    ),
     FIRST_VICTORY(
         "first_victory",
         Res.string.achievement_first_victory_title,
@@ -788,6 +777,12 @@ enum class Achievement(
         Res.string.achievement_speed_demon_description,
         AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.QUICK),
     ),
+    STOP_PICKING_ON_ME(
+        "stop_picking_on_me",
+        Res.string.achievement_stop_picking_on_me_title,
+        Res.string.achievement_stop_picking_on_me_description,
+        AchievementCategory.WINNING,
+    ),
     UNTOUCHABLE(
         "untouchable",
         Res.string.achievement_untouchable_title,
@@ -801,7 +796,7 @@ enum class Achievement(
         AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.SURVIVAL),
     ),
 
-    // ---- Game Modes: starting another mode, each mode's win and its feat, then every mode --------
+    // ---- Game Modes: starting another mode, each mode's win and its feat, every house rule, then every mode --------
     WHERE_WERE_GOING_WE_DONT_NEED_RULES(
         "where_were_going_we_dont_need_rules",
         Res.string.achievement_where_were_going_we_dont_need_rules_title,
@@ -879,6 +874,12 @@ enum class Achievement(
         Res.string.achievement_not_a_ghost_of_a_chance_title,
         Res.string.achievement_not_a_ghost_of_a_chance_description,
         AchievementCategory.GAME_MODES, mode = GameMode.HAUNTED_HOUSE,
+    ),
+    EVERYTHING_EVERYWHERE_ALL_AT_ONCE(
+        "everything_everywhere_all_at_once",
+        Res.string.achievement_everything_everywhere_all_at_once_title,
+        Res.string.achievement_everything_everywhere_all_at_once_description,
+        AchievementCategory.GAME_MODES, impossibleIn = setOf(GameMode.CLASSIC), earnableWithHouseRules = true,
     ),
     GRAND_TOUR(
         "grand_tour",

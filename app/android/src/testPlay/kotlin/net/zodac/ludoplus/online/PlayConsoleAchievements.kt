@@ -13,15 +13,15 @@ import net.zodac.ludoplus.model.AchievementCategory
  * and Very Hard lowered to 55 the same day for My Favourite Spot and We're All Friends Here; Off The Mark moved to
  * Trivial for Can't Wait To Get Going. The Hard, Very Hard, and Extreme tiers lowered, and Off The Mark back in Easy,
  * 2026-11-24, for those of the game modes and house rules; Hard back to 25 the same day, when eight were removed, and
- * Very Hard 45 and Extreme 80 when three more were.
+ * Very Hard 50 and Extreme 90, and Payback Medium, when four more were.
  */
 internal enum class PlayPointsTier(val points: Int) {
     TRIVIAL(5),
     EASY(10),
     MEDIUM(15),
     HARD(25),
-    VERY_HARD(45),
-    EXTREME(80),
+    VERY_HARD(50),
+    EXTREME(90),
 
     /** Completionist alone: every other achievement. */
     ULTIMATE(100),
@@ -39,7 +39,7 @@ internal val playPointsTiers: Map<Achievement, PlayPointsTier> = buildMap {
     tier(
         PlayPointsTier.EASY,
         WARMING_UP, GETTING_COMFORTABLE, PEST, HOMECOMING, WELCOME_PARTY,
-        STRAIGHT_OUT_THE_GATE, NOT_SO_FAST, PAYBACK, ALL_HANDS_ON_DECK, BACK_TO_SQUARE_ONE, BOTTOM_OF_THE_BARREL, DRY_SPELL,
+        STRAIGHT_OUT_THE_GATE, NOT_SO_FAST, ALL_HANDS_ON_DECK, BACK_TO_SQUARE_ONE, BOTTOM_OF_THE_BARREL, DRY_SPELL,
         INSULT_TO_INJURY, LOCKED_OUT, TOO_MUCH_OF_A_GOOD_THING, INCH_BY_INCH, LEAPFROG, DEJA_VU, BUDDY_SYSTEM, OFF_THE_MARK,
         QUICK_ON_THE_DRAW, DOUBLE_OR_NOTHING, THROUGH_THE_LOOKING_GLASS, LAST_PAWN_STANDING, AGENT_OF_CHAOS,
         LIVING_TO_TELL_THE_TALE, THERE_AND_BACK_AGAIN,
@@ -51,7 +51,7 @@ internal val playPointsTiers: Map<Achievement, PlayPointsTier> = buildMap {
         LIFE_OF_THE_PARTY, PACIFIST, PHOTO_FINISH, UNTOUCHABLE, NEVER_LEFT_HOME, GROUNDHOG_DAY,
         PIPPED_TO_THE_POST, SPOON_COLLECTOR, SO_NEAR_YET_SO_FAR, PUNCHING_BAG, SITTING_DUCKS,
         HOW_DO_YOU_DO_FELLOW_CPUS, MY_FAVOURITE_SPOT, WERE_ALL_FRIENDS_HERE, TWO_BIRDS_TWO_STONES, ONE_OF_EVERYTHING,
-        BARELY_A_SCRATCH, EVERYTHING_EVERYWHERE_ALL_AT_ONCE, GRAND_TOUR,
+        STOP_PICKING_ON_ME, PAYBACK, BARELY_A_SCRATCH, EVERYTHING_EVERYWHERE_ALL_AT_ONCE, GRAND_TOUR,
     )
     tier(
         PlayPointsTier.HARD,
@@ -60,7 +60,7 @@ internal val playPointsTiers: Map<Achievement, PlayPointsTier> = buildMap {
         SPEED_DEMON, BLINK_AND_YOULL_MISS_IT, NOT_A_GHOST_OF_A_CHANCE,
     )
     tier(PlayPointsTier.VERY_HARD, UNSTOPPABLE, LIVING_LEGEND, OLD_HAND, MENACE, GLOBETROTTER, CONQUEROR)
-    tier(PlayPointsTier.EXTREME, DIE_HARD, LIFETIME_ACHIEVEMENT, PUBLIC_ENEMY, ULTRAMARATHON)
+    tier(PlayPointsTier.EXTREME, LIFETIME_ACHIEVEMENT, PUBLIC_ENEMY, ULTRAMARATHON)
     tier(PlayPointsTier.ULTIMATE, COMPLETIONIST)
     Achievement.entries.filter { it.category == AchievementCategory.EASTER_EGGS }.forEach { put(it, PlayPointsTier.EASTER_EGG) }
 }
