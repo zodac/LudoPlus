@@ -1,5 +1,7 @@
 package net.zodac.ludoplus
 
+import net.zodac.ludoplus.model.GameMode
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -169,6 +171,25 @@ class SetupTextTest : UiTest() {
         compose.waitForIdle()
         compose.onNodeWithText("1 enabled").assertExists()
         compose.onNodeWithText("Off the Leaderboard and Statistics, and no achievements").assertExists()
+    }
+
+    @Test
+    fun `a house rule that changes nothing in the mode picked is locked - saying so - and its pick kept for another mode`() = uiTest(SCREEN) {
+        val viewModel = gameViewModel(records = GameRecordRepository(InMemoryGameResultDao(finishedGame = true)))
+        viewModel.setupForm.setHouseRule(HouseRule.FREE_START, on = true)
+        viewModel.setupForm.setHouseRule(HouseRule.BLOCKADES, on = true)
+        viewModel.setupForm.setGameMode(GameMode.SURVIVAL)
+        assertEquals(setOf(HouseRule.BLOCKADES), viewModel.setupForm.setup.value.playedHouseRules)
+        show(viewModel)
+        // The one locked isn't counted.
+        compose.onNodeWithText("1 enabled").assertExists()
+        compose.onNodeWithText("House Rules").performScrollTo()
+        compose.onNode(hasContentDescription("House Rules") and hasClickAction()).performClick()
+        compose.waitForIdle()
+        compose.onNode(hasText("Free Start") and hasText("Changes nothing in Survival") and isToggleable()).assertIsOff().assertIsNotEnabled()
+        compose.onNode(hasText("Blockades") and isToggleable()).assertIsOn()
+        viewModel.setupForm.setGameMode(GameMode.CLASSIC)
+        assertEquals(setOf(HouseRule.FREE_START, HouseRule.BLOCKADES), viewModel.setupForm.setup.value.playedHouseRules)
     }
 
     @Test

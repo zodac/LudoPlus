@@ -74,6 +74,7 @@ import net.zodac.ludoplus.resources.setup_difficulty_easy
 import net.zodac.ludoplus.resources.setup_difficulty_hard
 import net.zodac.ludoplus.resources.setup_difficulty_medium
 import net.zodac.ludoplus.resources.setup_game_mode
+import net.zodac.ludoplus.resources.setup_house_rule_idle
 import net.zodac.ludoplus.resources.setup_house_rules
 import net.zodac.ludoplus.resources.setup_house_rules_active_note
 import net.zodac.ludoplus.resources.setup_house_rules_custom
@@ -319,17 +320,23 @@ private fun HouseRulesPicker(setup: GameSetupState, form: GameSetupForm) {
         title = stringResource(Res.string.setup_house_rules),
         description = stringResource(Res.string.setup_house_rules_description),
         activeNote = stringResource(Res.string.setup_house_rules_active_note),
-        // Only those that change anything in the mode picked.
-        modifiers = HouseRule.entries.filter { it.appliesTo(setup.playedMode.rules) }.map { rule ->
+        modifiers = HouseRule.entries.map { rule ->
+            val applies = rule.appliesTo(setup.playedMode.rules)
             ModifierSetting(
                 title = stringResource(rule.title),
                 description = stringResource(rule.description),
-                enabled = rule in setup.houseRules,
+                // One that changes nothing in the mode picked isn't played there; the pick is kept for another mode.
+                enabled = applies && rule in setup.houseRules,
                 onEnabledChange = { on -> form.setHouseRule(rule, on) },
+                lockedNote = if (applies) null else idleHouseRuleNote(setup.playedMode),
             )
         },
     )
 }
+
+/** Why a house rule that changes nothing in [mode] is locked there: "Changes nothing in Survival". */
+@Composable
+internal fun idleHouseRuleNote(mode: GameMode): String = stringResource(Res.string.setup_house_rule_idle, stringResource(mode.displayName))
 
 /** The most space between a [SetupCard]'s rows on a landscape page. */
 private val LANDSCAPE_ROW_SPACING = 2.dp

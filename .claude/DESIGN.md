@@ -207,7 +207,7 @@ everyone still in (`roundsPlayed`). Sudden death (`suddenDeathStage`) makes the 
 player, and the stars too after half as many again, so safety is asked of the state (`GameState.isSafe`,
 `isSafeFor`), never the board alone. A 6 needn't move a pawn off the start stack (the maintainer's choice): a stack left
 there as sudden death comes can be captured whole. No Home Roll, Out on a 1, Free Start, and Three Tries change nothing
-here, so aren't offered (`HouseRule.appliesTo`). The board is drawn with no home, and as sudden death comes without its
+here, so are locked, saying so (`HouseRule.appliesTo`), and not played. The board is drawn with no home, and as sudden death comes without its
 start colours, then its stars (`BoardParts`), under `SurvivalArt.kt`'s arena: crossed swords, then flames, then a skull,
 with cracks on the squares no longer safe. Yards tally the fallen; cards' dots are the pawns left. The Leaderboard ranks
 the most pawns left (`LeaderboardRanking`, from `timesCaptured`), then captures; its wins set no fewest turns, and it has

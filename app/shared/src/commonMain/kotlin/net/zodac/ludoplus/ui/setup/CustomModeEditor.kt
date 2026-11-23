@@ -99,21 +99,22 @@ internal fun CustomModeEditor(editing: CustomMode?, existing: List<CustomMode>, 
                     )
                 }
                 EditorCard(stringResource(Res.string.setup_house_rules)) {
-                    HouseRule.entries.filter { it.appliesTo(base.rules) }.forEach { rule ->
+                    HouseRule.entries.forEach { rule ->
+                        val applies = rule.appliesTo(base.rules)
                         val on = rule in houseRules
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(min = 48.dp)
-                                .toggleable(value = on, role = Role.Switch) { pickedRules = if (it) pickedRules + rule else pickedRules - rule },
+                                .toggleable(value = on, enabled = applies, role = Role.Switch) { pickedRules = if (it) pickedRules + rule else pickedRules - rule },
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(stringResource(rule.title), style = MaterialTheme.typography.bodyLarge)
-                                Text(stringResource(rule.description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(if (applies) stringResource(rule.description) else idleHouseRuleNote(base), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Switch(checked = on, onCheckedChange = null)
+                            Switch(checked = on, onCheckedChange = null, enabled = applies)
                         }
                     }
                 }

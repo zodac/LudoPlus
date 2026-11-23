@@ -27,7 +27,7 @@ with the house rules on.
 - `GameMode` fields: `id` (stored, permanent once released), `displayName`, `description` (New Game's one line: say
     what's different), `rules`, `earnsAchievements` (only Classic, until modes get their own achievements), `ranking` (what
     its Leaderboard ranks wins by), and `onlineLeaderboardKey` (null for a mode not ranked by turns).
-- A house rule that changes nothing in a mode's rules says so (`HouseRule.appliesTo`), and isn't offered or played there.
+- A house rule that changes nothing in a mode's rules says so (`HouseRule.appliesTo`): it's locked there, and not played.
 - `GameRules` fields: the board (`forPlayers` swaps it by count), `pawnsPerPlayer`, `dieFaces`, `dice`, the yard-exit and
     roll-again rolls, the roll-again limit, the capture and home rolls, the house rules' fields, the teams' fields, and
     `stopAtFirstWinner`. Each is a doc comment stating its rule.
