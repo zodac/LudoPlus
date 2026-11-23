@@ -42,20 +42,20 @@ val Achievement.icon: ImageVector
         Achievement.LETS_FINISH_THIS -> Symbols.History
         Achievement.ONE_MORE_TIME -> Symbols.Replay
         Achievement.WARMING_UP -> Symbols.Whatshot
-        Achievement.GETTING_COMFORTABLE -> Symbols.Numbers
-        Achievement.PEST -> Symbols.PestControl
-        Achievement.CHAMPION -> Symbols.SocialLeaderboard
-        Achievement.HOT_STREAK -> Symbols.LocalFireDepartment
-        Achievement.REGULAR -> Symbols.EventRepeat
-        Achievement.HALL_OF_FAMER -> Symbols.EmojiEvents
-        Achievement.CENTURION -> Symbols.MilitaryTech
         Achievement.WELL_ROLLED -> Symbols.Casino
+        Achievement.DIE_HARD -> Symbols.FitnessCenter
+        Achievement.GETTING_COMFORTABLE -> Symbols.Numbers
+        Achievement.REGULAR -> Symbols.EventRepeat
+        Achievement.CENTURION -> Symbols.MilitaryTech
+        Achievement.OLD_HAND -> Symbols.Elderly
+        Achievement.LIFETIME_ACHIEVEMENT -> Symbols.HistoryEdu
+        Achievement.CHAMPION -> Symbols.SocialLeaderboard
+        Achievement.HALL_OF_FAMER -> Symbols.EmojiEvents
+        Achievement.LIVING_LEGEND -> Symbols.WorkspacePremium
+        Achievement.HOT_STREAK -> Symbols.LocalFireDepartment
         // A crown for ten wins in a row: a flame would be too close to Hot Streak's.
         Achievement.UNSTOPPABLE -> Symbols.Crown
-        Achievement.LIVING_LEGEND -> Symbols.WorkspacePremium
-        Achievement.OLD_HAND -> Symbols.Elderly
-        Achievement.DIE_HARD -> Symbols.FitnessCenter
-        Achievement.LIFETIME_ACHIEVEMENT -> Symbols.HistoryEdu
+        Achievement.PEST -> Symbols.PestControl
         // Drawn for this app: the trophy in crystal, for the last of them all.
         Achievement.COMPLETIONIST -> CRYSTAL_TROPHY_ICON
 

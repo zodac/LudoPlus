@@ -44,6 +44,25 @@ class AchievementEngineTest {
     }
 
     @Test
+    fun `Milestones are the firsts - then a ladder at a time - rolls, games played, wins, win streaks, and captures - then Completionist`() {
+        val counters = Achievement.entries.filter { it.category == AchievementCategory.MILESTONES }.map { it.counter }
+        val runs = counters.fold(listOf<AchievementCounter?>()) { runs, counter -> if (runs.isNotEmpty() && runs.last() == counter) runs else runs + counter }
+        assertEquals(
+            listOf(
+                null,
+                AchievementCounter.DIE_ROLLS,
+                AchievementCounter.GAMES_PLAYED,
+                AchievementCounter.GAMES_WON,
+                AchievementCounter.WIN_STREAK,
+                AchievementCounter.CAPTURES,
+                null,
+            ),
+            runs,
+        )
+        assertEquals(Achievement.COMPLETIONIST, Achievement.entries.last { it.category == AchievementCategory.MILESTONES })
+    }
+
+    @Test
     fun `only Miscellaneous and Easter Eggs are hidden - and every one of them is`() {
         val hiddenCategories = setOf(AchievementCategory.MISCELLANEOUS, AchievementCategory.EASTER_EGGS)
         Achievement.entries.forEach {

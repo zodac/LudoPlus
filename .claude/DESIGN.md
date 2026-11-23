@@ -633,7 +633,8 @@ mode, Standard's first and the one they opened on, then **Combined**, every mode
     one's row has a tip naming the modes left ("Can only be earned in the 'Classic' and 'Chaos' modes"), read with the row by
     TalkBack.
 - **Display.**
-    - Declaration order is display order: grouped by `AchievementCategory`, easiest first. `AchievementEngineTest`
+    - Declaration order is display order: grouped by `AchievementCategory`, easiest first; Milestones is the firsts, then a
+        ladder at a time (rolls, games played, wins, win streaks, and captures; the maintainer, 2026-11-24), Completionist last. `AchievementEngineTest`
         fails if a category is split, or a counter's ladder is out of order; `AchievementTextTest` holds Winning,
         Misfortune, Miscellaneous, and Easter Eggs alphabetical.
     - Every Miscellaneous and Easter Egg achievement is `HIDDEN` (the title is shown, the description is "???" until

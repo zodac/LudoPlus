@@ -380,7 +380,7 @@ enum class AchievementVisibility {
  * both alone.
  *
  * **Declaration order is display order**: grouped by [category] and, within one, easiest first, so a ladder's rungs sit
- * together. [AchievementCategory.WINNING], [AchievementCategory.MISFORTUNE], [AchievementCategory.MISCELLANEOUS], and
+ * together ([AchievementCategory.MILESTONES] is firsts, then a ladder at a time). [AchievementCategory.WINNING], [AchievementCategory.MISFORTUNE], [AchievementCategory.MISCELLANEOUS], and
  * [AchievementCategory.EASTER_EGGS] are alphabetical by English title instead. `AchievementEngineTest` holds both.
  * Every Miscellaneous and Easter Egg achievement is [AchievementVisibility.HIDDEN], and only those are.
  */
@@ -413,7 +413,7 @@ enum class Achievement(
      */
     val earnableWithHouseRules: Boolean = false,
 ) : StoredId {
-    // ---- Milestones: games, wins, rolls, and captures, easiest first, then Completionist --------------------------
+    // ---- Milestones: firsts, then a ladder a count (rolls, games played, wins, win streaks, and captures), then Completionist
     THE_JOURNEY_BEGINS(
         "the_journey_begins",
         Res.string.achievement_the_journey_begins_title,
@@ -438,71 +438,11 @@ enum class Achievement(
         Res.string.achievement_warming_up_description,
         AchievementCategory.MILESTONES, AchievementCounter.DIE_ROLLS, target = 1_000,
     ),
-    GETTING_COMFORTABLE(
-        "getting_comfortable",
-        Res.string.achievement_getting_comfortable_title,
-        Res.string.achievement_getting_comfortable_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 10,
-    ),
-    PEST(
-        "pest",
-        Res.string.achievement_pest_title,
-        Res.string.achievement_pest_description,
-        AchievementCategory.MILESTONES, AchievementCounter.CAPTURES, target = 10,
-    ),
-    CHAMPION(
-        "champion",
-        Res.string.achievement_champion_title,
-        Res.string.achievement_champion_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 10,
-    ),
-    HOT_STREAK(
-        "hot_streak",
-        Res.string.achievement_hot_streak_title,
-        Res.string.achievement_hot_streak_description,
-        AchievementCategory.MILESTONES, AchievementCounter.WIN_STREAK, target = 5,
-    ),
-    REGULAR(
-        "regular",
-        Res.string.achievement_regular_title,
-        Res.string.achievement_regular_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 50,
-    ),
-    HALL_OF_FAMER(
-        "hall_of_famer",
-        Res.string.achievement_hall_of_famer_title,
-        Res.string.achievement_hall_of_famer_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 25,
-    ),
     WELL_ROLLED(
         "well_rolled",
         Res.string.achievement_well_rolled_title,
         Res.string.achievement_well_rolled_description,
         AchievementCategory.MILESTONES, AchievementCounter.DIE_ROLLS, target = 10_000,
-    ),
-    CENTURION(
-        "centurion",
-        Res.string.achievement_centurion_title,
-        Res.string.achievement_centurion_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 100,
-    ),
-    UNSTOPPABLE(
-        "unstoppable",
-        Res.string.achievement_unstoppable_title,
-        Res.string.achievement_unstoppable_description,
-        AchievementCategory.MILESTONES, AchievementCounter.WIN_STREAK, target = 10,
-    ),
-    LIVING_LEGEND(
-        "living_legend",
-        Res.string.achievement_living_legend_title,
-        Res.string.achievement_living_legend_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 100,
-    ),
-    OLD_HAND(
-        "old_hand",
-        Res.string.achievement_old_hand_title,
-        Res.string.achievement_old_hand_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 250,
     ),
     DIE_HARD(
         "die_hard",
@@ -510,11 +450,71 @@ enum class Achievement(
         Res.string.achievement_die_hard_description,
         AchievementCategory.MILESTONES, AchievementCounter.DIE_ROLLS, target = 50_000,
     ),
+    GETTING_COMFORTABLE(
+        "getting_comfortable",
+        Res.string.achievement_getting_comfortable_title,
+        Res.string.achievement_getting_comfortable_description,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 10,
+    ),
+    REGULAR(
+        "regular",
+        Res.string.achievement_regular_title,
+        Res.string.achievement_regular_description,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 50,
+    ),
+    CENTURION(
+        "centurion",
+        Res.string.achievement_centurion_title,
+        Res.string.achievement_centurion_description,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 100,
+    ),
+    OLD_HAND(
+        "old_hand",
+        Res.string.achievement_old_hand_title,
+        Res.string.achievement_old_hand_description,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 250,
+    ),
     LIFETIME_ACHIEVEMENT(
         "lifetime_achievement",
         Res.string.achievement_lifetime_achievement_title,
         Res.string.achievement_lifetime_achievement_description,
         AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 500,
+    ),
+    CHAMPION(
+        "champion",
+        Res.string.achievement_champion_title,
+        Res.string.achievement_champion_description,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 10,
+    ),
+    HALL_OF_FAMER(
+        "hall_of_famer",
+        Res.string.achievement_hall_of_famer_title,
+        Res.string.achievement_hall_of_famer_description,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 25,
+    ),
+    LIVING_LEGEND(
+        "living_legend",
+        Res.string.achievement_living_legend_title,
+        Res.string.achievement_living_legend_description,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 100,
+    ),
+    HOT_STREAK(
+        "hot_streak",
+        Res.string.achievement_hot_streak_title,
+        Res.string.achievement_hot_streak_description,
+        AchievementCategory.MILESTONES, AchievementCounter.WIN_STREAK, target = 5,
+    ),
+    UNSTOPPABLE(
+        "unstoppable",
+        Res.string.achievement_unstoppable_title,
+        Res.string.achievement_unstoppable_description,
+        AchievementCategory.MILESTONES, AchievementCounter.WIN_STREAK, target = 10,
+    ),
+    PEST(
+        "pest",
+        Res.string.achievement_pest_title,
+        Res.string.achievement_pest_description,
+        AchievementCategory.MILESTONES, AchievementCounter.CAPTURES, target = 10,
     ),
     COMPLETIONIST(
         "completionist",
