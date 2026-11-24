@@ -33,7 +33,9 @@ The board, the player cards, the die, and the move log. The general rules are in
 - **A movable pawn is ringed** in violet. A tap on its square makes the move; where a square holds more than one, a tap
     asks which. The player whose turn it is has a white ring, edged in ink, inside their yard.
 - **A mode's own tiles** (`BoardTiles.kt`, `BoardTilesTest`; the maintainer, 2026-11-24). While a portal is pressed, it and
-    its pair are bigger and ringed in gold, and everything else on the board fades to a fifth.
+    its pair are bigger and ringed in gold, and everything else on the board fades to a fifth (`BOARD_FADE`). While a Swap's
+    other pawn is picked, everything fades as far but the pawn that moves, unringed, and the pawns it can be with, ringed
+    (the maintainer, 2026-11-25).
     A tap on a power-up shows its name in a tooltip, and a long
     press what it does too, up until a tap anywhere (never timed out), or until it's taken. A tap on a tile is the tile's,
     not a move, unless a movable pawn stands on it or is nearer (`pawnTakesTap`); a portal held is never a move. TalkBack: a

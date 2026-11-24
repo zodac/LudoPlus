@@ -190,8 +190,9 @@ move, at once: a pawn moved onto another leaves it there.
 
 A swap is part of the move (`Move.swap`: `LudoEngine` offers the move with each pawn it can swap with, `PowerUps.swapTargets`,
 and with none), so the CPU weighs it, and a Nearby guest sends it, as any move. A person makes it in two picks: the pawn, then
-the other's, ringed, or Don't swap (the first is made already where there's only one move). The prompt is "Alex, pick a pawn
-to swap with."; TalkBack's actions, there and on each pawn's square, are "Swap places with Green pawn 2".
+the other's, ringed, with the rest of the board faded (`UI_BOARD.md`), or Don't swap (the first is made already where there's
+only one move). The prompt is "Alex, pick a pawn to swap with."; TalkBack's actions, there and on each pawn's square, are
+"Swap places with Green pawn 2".
 
 Every chance is drawn from `GameState.seed`, which each draw moves on, so a saved game and a Nearby one play on the same;
 the CPU weighs a move with its power-up left alone (`LudoEngine.moveWithoutChances`), so it never sees what a chance will

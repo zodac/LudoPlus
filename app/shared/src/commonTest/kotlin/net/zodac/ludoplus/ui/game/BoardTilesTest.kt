@@ -30,10 +30,12 @@ import net.zodac.ludoplus.UiTest
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
+import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PowerUp
+import net.zodac.ludoplus.ui.style.MovableRing
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
 
 private const val BOARD = "board"
@@ -46,12 +48,14 @@ class BoardTilesTest : UiTest() {
 
     private val made = mutableListOf<Move>()
     private var state by mutableStateOf(GameState.new(GameMode.CLASSIC, 4))
+    private var swapping by mutableStateOf(false)
 
     private fun show(shown: GameState) {
         state = shown
         compose.setContent {
             LudoPlusTheme {
-                LudoBoard(state, List(4) { PlayerColour.defaultFor(it) }, (state.phase as? TurnPhase.AwaitingMove)?.moves.orEmpty(), { made += it }, Modifier.size(SIDE.dp).testTag(BOARD))
+                val moves = (state.phase as? TurnPhase.AwaitingMove)?.moves.orEmpty().filter { (it.swap != null) == swapping }
+                LudoBoard(state, List(4) { PlayerColour.defaultFor(it) }, moves, { made += it }, Modifier.size(SIDE.dp).testTag(BOARD), swapping)
             }
         }
         compose.waitForIdle()
@@ -92,6 +96,38 @@ class BoardTilesTest : UiTest() {
         compose.waitForIdle()
         assertEquals(before, rest.map(::at) to pair.map(::edge))
         assertEquals(emptyList(), made)
+    }
+
+    @Test
+    fun `while a Swap is picked, only the pawn that moves and those it can be with stay bright - until it's made or declined`() = uiTest(TestScreen(700, 900)) {
+        // Red's pawn on 1 rolls a 2, onto the Swap on 3. Green has a pawn on the track's 22 and yellow one on 35; green's two on 23 can't be swapped with.
+        val new = game(GameMode.CHAOS, 1, 30, powerUps = mapOf(3 to PowerUp.SWAP, 40 to PowerUp.SHIELD))
+        val others = mapOf(1 to listOf(9, 10, 10, Y), 2 to listOf(9, Y, Y, Y))
+        val rolled = LudoEngine.applyRoll(new.copy(players = new.players.mapIndexed { i, it -> others[i]?.let { pawns -> it.copy(pawns = pawns) } ?: it }), 2)
+        show(rolled)
+        fun at(square: Offset): Color = board().captureToImage().toPixelMap()[square.x.toInt(), square.y.toInt()]
+        val bright = listOf(1, 22, 35).map(::square)
+        // Another pawn of the mover's, two it can't swap with, the two power-ups, a yard, home, and a pawn in its yard.
+        val rest = listOf(square(30), square(23), square(3), square(40), Offset(UNIT * 0.5f, UNIT * 0.5f), Offset(UNIT * 7.5f, UNIT * 6.7f)) +
+            ClassicBoardLayout.yardSpotOf(1, 3, 4) * UNIT
+        val before = rest.map(::at) to bright.map(::at)
+        swapping = true
+        compose.waitForIdle()
+        rest.forEachIndexed { i, point -> assertTrue(difference(at(point), Color.White) < difference(before.first[i], Color.White) * 0.3f + 0.02f, "Point $i didn't fade: ${at(point)}") }
+        bright.forEachIndexed { i, point -> assertTrue(difference(at(point), before.second[i]) < 0.05f, "Pawn $i isn't as bright: ${at(point)}, not ${before.second[i]}") }
+        // Those to swap with are ringed, as movable pawns are; the one that moves, no longer.
+        fun ring(square: Int): Color = at(square(square) + Offset(UNIT * 0.49f, 0f))
+        val rings = listOf(1, 22, 35).map(::ring)
+        assertTrue(rings.drop(1).all { difference(it, MovableRing) < 0.1f }, "Not ringed: $rings")
+        assertTrue(difference(rings[0], MovableRing) > 0.2f, "The pawn that moves is ringed: $rings")
+        // Nor can it be picked; one to swap with can.
+        board().performTouchInput { click(square(1)) }
+        assertEquals(emptyList(), made)
+        board().performTouchInput { click(square(22)) }
+        assertEquals(listOf(Move(0, 1, 3, swap = PawnRef(1, 0))), made)
+        swapping = false
+        compose.waitForIdle()
+        assertEquals(before, rest.map(::at) to bright.map(::at))
     }
 
     @Test

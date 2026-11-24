@@ -24,8 +24,8 @@ import net.zodac.ludoplus.ui.common.stringResource
 /** How near a tile's middle a tap on it lands, in squares: all of its square, and no further than its neighbours' middles. */
 private const val TILE_REACH = 0.6f
 
-/** How faint the whole board is, but for its pair, while a portal is pressed. */
-internal const val PORTAL_PRESSED_FADE = 0.2f
+/** How faint the whole board is, but for what's picked out on it: a pressed portal's pair, or a Swap's pawn and those it can be with. */
+internal const val BOARD_FADE = 0.2f
 
 /** The one of [squares] (absolute track squares) that a tap at [point] (board units) is on, or null. */
 internal fun tileAt(point: Offset, layout: BoardLayout, squares: Collection<Int>): Int? =

@@ -113,7 +113,8 @@ private const val HOME_SPARKS = 10
  * in a burst on its square and thrown back to its yard; a pawn that reaches home pops in a ring of sparks. None of it
  * plays while the Pawn moves motion is off ([MotionGroup.PAWN_MOVE]).
  *
- * While a portal is pressed, it and its pair are picked out, and everything else on the board fades. A tap on a power-up shows its name, and a
+ * While a portal is pressed, it and its pair are picked out, and everything else on the board fades; as all but the pawn
+ * that moves and those it can swap with does while [swapping]. A tap on a power-up shows its name, and a
  * long press what it does too, until a tap puts it away.
  */
 @Composable
@@ -149,8 +150,22 @@ fun LudoBoard(
     val pawns = state.rules.pawnsPerPlayer
     val pawnColours = remember(state.players, colours) { state.players.map { colours.getOrNull(it.seat) ?: BoardEmptySeat } }
     Box(modifier = modifier.aspectRatio(1f)) {
-        // All that's drawn, faded together while a portal is pressed: read by the layer alone, so a press redraws none of it.
-        Box(modifier = Modifier.matchParentSize().graphicsLayer { alpha = if (pressedPortal == null) 1f else PORTAL_PRESSED_FADE }) {
+        fun DrawScope.drawMark(mark: PawnMark, unit: Float, ringed: Boolean) {
+            val shielded = mark.pawns.any { state.isShielded(mark.player, it) || PawnRef(mark.player, it) in motion.moving?.brokenShields.orEmpty() }
+            if (shielded) drawShieldBubble(mark.centre * unit, mark.radius * unit)
+            if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
+            with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, pawnColours[mark.player], ringed) }
+            if (mark.pawns.size > 1) drawCount(textMeasurer, mark.pawns.size, mark, unit)
+        }
+        // A Swap's pawn and those it can be with, once no move is playing out: drawn over the rest, not with it.
+        val pickedOut = if (swapping && motion.moving == null) {
+            val swappers = moves.mapNotNull { it.picked(state, swapping = false) }
+            marks.filter { mark -> mark.pawns.any { pawn -> PawnRef(mark.player, pawn).let { it in movable || it in swappers } } }
+        } else {
+            emptyList()
+        }
+        // All that's drawn but what's picked out, faded together: a press is read by the layer alone, so it redraws none of it.
+        Box(modifier = Modifier.matchParentSize().graphicsLayer { alpha = if (pressedPortal == null && pickedOut.isEmpty()) 1f else BOARD_FADE }) {
             // The board, painted once (off the main thread) into an image for its style, seats' colours, pawn count, squares claimed, and size,
             // on a layer of its own: a frame of a move or a turn's ring never draws it again.
             val lastStanding = state.rules.lastStanding
@@ -179,13 +194,6 @@ fun LudoBoard(
             val turnSeat = if (state.isFinished) null else state.currentPlayer.seat
             if (turnSeat != null) {
                 Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawTurnYard(layout, size.minDimension / layout.size, turnSeat) }
-            }
-            fun DrawScope.drawMark(mark: PawnMark, unit: Float, ringed: Boolean) {
-                val shielded = mark.pawns.any { state.isShielded(mark.player, it) || PawnRef(mark.player, it) in motion.moving?.brokenShields.orEmpty() }
-                if (shielded) drawShieldBubble(mark.centre * unit, mark.radius * unit)
-                if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
-                with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, pawnColours[mark.player], ringed) }
-                if (mark.pawns.size > 1) drawCount(textMeasurer, mark.pawns.size, mark, unit)
             }
             // The pawns standing still, on a layer of their own: drawn again as a move starts and ends, not on its frames.
             val animating = motion.moving
@@ -232,7 +240,7 @@ fun LudoBoard(
             ) {
                 val unit = size.minDimension / layout.size
                 if (lastStanding) drawFallen(state, layout, unit, { pawnColours[it] }, theme.pawns) { player, pawn -> animating != null && motion.isAnimated(player, pawn) }
-                for (mark in marks) {
+                for (mark in marks - pickedOut.toSet()) {
                     // The moving pawn and any it captured are drawn on their way, below; the rest of their mark stays.
                     // So are those making room for it.
                     val pawns = mark.pawns.filterNot { motion.isAnimated(mark.player, it) || motion.isShifting(mark.player, it) || ghostMotion.isCaught(PawnRef(mark.player, it)) }
@@ -259,6 +267,12 @@ fun LudoBoard(
                         drawMotion(unit, theme.pawns) { pawnColours[it] }
                     }
                 }
+            }
+        }
+        // The pawns of a Swap, bright over the rest: ringed, but for the one that moves.
+        if (pickedOut.isNotEmpty()) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                for (mark in pickedOut) drawMark(mark, size.minDimension / layout.size, ringed = mark.pawns.any { PawnRef(mark.player, it) in movable })
             }
         }
         // The pair pressed, bright over the rest.
