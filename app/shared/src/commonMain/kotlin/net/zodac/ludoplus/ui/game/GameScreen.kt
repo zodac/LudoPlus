@@ -126,6 +126,8 @@ import net.zodac.ludoplus.resources.game_overtime_came
 import net.zodac.ludoplus.resources.game_overtime_coming
 import net.zodac.ludoplus.resources.game_sudden_death_came
 import net.zodac.ludoplus.resources.game_sudden_death_coming
+import net.zodac.ludoplus.resources.game_prompt_swap
+import net.zodac.ludoplus.resources.game_swap_decline
 import net.zodac.ludoplus.resources.game_tutorial_coach_name
 import net.zodac.ludoplus.resources.game_tutorial_cpu_turn
 import net.zodac.ludoplus.resources.game_tutorial_next
@@ -414,7 +416,16 @@ fun GameContent(
     val selectedDie = pickedDie?.takeIf { it in dieValues } ?: dieValues.firstOrNull()
     val pick: (Int) -> Unit = { pickedDie = it }
     val dice = DiceChoice(selectedDie, onSelect = pick.takeIf { dieValues.size > 1 })
-    val moves = allMoves.filter { it.roll == null || it.roll == selectedDie }
+    // A move that ends on a Swap with pawns to swap with is made in two picks: its pawn, then the other's (or none). The
+    // first is made already where there's only the one move.
+    val swapsOf = { move: Move -> allMoves.filter { it.swap != null && it.copy(swap = null) == move } }
+    val plainMoves = allMoves.filter { it.swap == null }
+    var swapFor by remember(phase) { mutableStateOf<Move?>(null) }
+    val swapMove = swapFor ?: plainMoves.singleOrNull()?.takeIf { swapsOf(it).isNotEmpty() }
+    val offered = swapMove?.let(swapsOf) ?: plainMoves
+    val moves = offered.filter { it.roll == null || it.roll == selectedDie }
+    val makeMove: (Move) -> Unit = { move -> if (swapMove == null && swapsOf(move).isNotEmpty()) swapFor = move else onMove(move) }
+    val declineSwap: (() -> Unit)? = swapMove?.let { move -> { onMove(move) } }
     val rollStep = tutorial?.step is TutorialStep.Roll
     val players = @Composable { compact: Boolean ->
         if (notice != null) NetplayNotice(notice)
@@ -436,8 +447,9 @@ fun GameContent(
                     state = started.state,
                     seatColours = seatColours,
                     moves = moves,
-                    onMove = onMove,
+                    onMove = makeMove,
                     modifier = modifier.clip(RoundedCornerShape(8.dp)),
+                    swapping = swapMove != null,
                 )
             }
             if (width > height) {
@@ -445,7 +457,7 @@ fun GameContent(
                     board(Modifier.size(minOf(height, width - SIDE_PANEL_WIDTH)))
                     Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         players(false)
-                        TurnPanel(started, allMoves, seatColours, onRoll, onMove, onResults, settled = settled, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
+                        TurnPanel(started, offered, seatColours, onRoll, makeMove, onResults, settled = settled, onDeclineSwap = declineSwap, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
                         MoveLogPanel(started, seatColours, tutorial = tutorial != null, modifier = Modifier.weight(1f))
                     }
                 }
@@ -461,7 +473,7 @@ fun GameContent(
                     board = { board(Modifier) },
                     turn = {
                         TurnPanel(
-                            started, allMoves, seatColours, onRoll, onMove, onResults, settled = settled, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
+                            started, offered, seatColours, onRoll, makeMove, onResults, settled = settled, onDeclineSwap = declineSwap, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
                         )
                     },
                     log = { MoveLogPanel(started, seatColours, tutorial = tutorial != null) },
@@ -818,7 +830,7 @@ private fun PawnDots(counted: Int, total: Int, colour: Color, modifier: Modifier
     }
 }
 
-/** The die, and the line saying what to do now; once the game is over, the winner and the way back to the results. */
+/** The die, and the line saying what to do now, with a button not to swap while a swap is picked ([onDeclineSwap]); once the game is over, the winner and the way back to the results. */
 @Composable
 private fun TurnPanel(
     game: StartedGame,
@@ -829,6 +841,7 @@ private fun TurnPanel(
     onResults: () -> Unit,
     dieSize: Dp,
     settled: Boolean,
+    onDeclineSwap: (() -> Unit)? = null,
     tutorial: TutorialView? = null,
     rollStep: Boolean = false,
     dice: DiceChoice = DiceChoice(),
@@ -873,7 +886,9 @@ private fun TurnPanel(
             )
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            StatusLines(game, moves, seatColours, onMove, tutorial = tutorial != null, selectedDie = dice.selected)
+            StatusLines(game, moves, seatColours, onMove, tutorial = tutorial != null, selectedDie = dice.selected, swapping = onDeclineSwap != null)
+            // Under the prompt, not beside it: a large font has room for only one of them across.
+            if (onDeclineSwap != null) FilledTonalButton(onClick = onDeclineSwap) { Text(stringResource(Res.string.game_swap_decline)) }
         }
         // Kept, but off, while the action it asked for plays out, so a screen reader's focus stays on it.
         if (tutorial?.step?.waitsForNext == true) {
@@ -894,6 +909,7 @@ private fun ColumnScope.StatusLines(
     onMove: (Move) -> Unit,
     tutorial: Boolean = false,
     selectedDie: Int? = null,
+    swapping: Boolean = false,
 ) {
     val state = game.state
     val name = { index: Int -> game.players[index].name }
@@ -903,6 +919,7 @@ private fun ColumnScope.StatusLines(
     // A move that makes itself is told as the computer's is: no pick asked for.
     val movesItself = game.currentIsCpu || (!tutorial && game.automaticMove != null)
     val prompt = when {
+        swapping -> stringResource(Res.string.game_prompt_swap, current)
         // Two dice: the roll, or the die left, and the die a pawn moves by.
         twoDice && phase.dice.size > 1 && movesItself -> stringResource(Res.string.game_prompt_cpu_move_dice, current, phase.rolled[0], phase.rolled[1])
         twoDice && movesItself -> stringResource(Res.string.game_prompt_cpu_move_die_left, current, phase.roll)
@@ -921,7 +938,7 @@ private fun ColumnScope.StatusLines(
     }
     val colourOf = { player: Int -> seatColours[state.players[player].seat] ?: PlayerColour.defaultFor(state.players[player].seat) }
     // A screen reader can make any move from here as well as from its pawn's square.
-    val actions = moves.map { move -> CustomAccessibilityAction(moveLabel(state, move, colourOf)) { onMove(move); true } }
+    val actions = moves.map { move -> CustomAccessibilityAction(if (swapping) swapLabel(move, colourOf) else moveLabel(state, move, colourOf)) { onMove(move); true } }
     Text(
         text = withNamesInColour(prompt, listOf(name(state.current) to colourOf(state.current).color), bold = true),
         style = MaterialTheme.typography.titleMedium,

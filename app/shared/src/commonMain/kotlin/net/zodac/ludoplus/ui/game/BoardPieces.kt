@@ -5,6 +5,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import net.zodac.ludoplus.game.GameState
+import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.model.PawnPosition
 
@@ -87,6 +88,9 @@ fun pawnAt(point: Offset, marks: List<PawnMark>, movable: Set<PawnRef>): PawnRef
         .filter { it.second <= PAWN_TAP_REACH }
         .minByOrNull { it.second }
         ?.first?.let { mark -> PawnRef(mark.player, mark.pawns.first { PawnRef(mark.player, it) in movable }) }
+
+/** The pawn a tap picks this move by: the one it moves, or while [swapping], the one it swaps with. */
+internal fun Move.picked(state: GameState, swapping: Boolean): PawnRef? = if (swapping) swap else PawnRef(ownerIn(state), pawn)
 
 /** [pawnAt] for [player]'s own [movable] pawns, by index. */
 fun pawnAt(point: Offset, marks: List<PawnMark>, player: Int, movable: Set<Int>): Int? =

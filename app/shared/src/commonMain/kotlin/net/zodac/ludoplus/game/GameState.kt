@@ -270,6 +270,8 @@ data class Move(
     val via: Int? = null,
     /** The progress of the shielded pawn it lands on and bounces off, settling at [to]; null for a move that meets none. */
     val bouncedFrom: Int? = null,
+    /** Where it ends on a Swap ([PowerUp.SWAP]), the pawn it then swaps places with: null to leave every pawn where it is. */
+    val swap: PawnRef? = null,
     /** The progress of each lost square it steps over ([GameState.lostSquares]), in order. */
     val skipped: List<Int> = emptyList(),
     /** The pawns whose shields it breaks, bouncing off each. */
@@ -286,7 +288,7 @@ data class Move(
 }
 
 /**
- * What a [powerUp] did for the pawn that ended its move on it: [movedTo] is where it took the pawn (Teleport, Swap), as
+ * What a [powerUp] did for the pawn that ended its move on it: [movedTo] is where it took the pawn (Swap), as
  * progress; [captures] and [brokenShields] what that landing did; [swapped] the opponent's pawn swapped with; and [calledUp]
  * the pawn brought out of the yard. Each null or empty where it did none.
  */

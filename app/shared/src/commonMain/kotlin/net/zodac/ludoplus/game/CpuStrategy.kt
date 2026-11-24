@@ -41,6 +41,7 @@ object HeuristicStrategy : CpuStrategy {
     private const val ADVANCE = 0.3
     private const val PORTAL = 1.0
     private const val POWER_UP = 25.0
+    private const val SWAP = 1.0
 
     override fun choose(state: GameState, moves: List<Move>, random: Random): Move =
         moves.shuffled(random).maxBy { score(state, it) }
@@ -62,7 +63,20 @@ object HeuristicStrategy : CpuStrategy {
         // What a portal gains or costs, on top of the roll, which every move has.
         if (move.via != null) score += PORTAL * (move.to - move.via)
         if (takesPowerUp(state, owner, move)) score += POWER_UP
+        score += SWAP * swapGain(state, owner, move)
         return score
+    }
+
+    /** What [move]'s swap gains [owner]'s pawn, and costs the rival it swaps with (or gives a partner), in squares. */
+    private fun swapGain(state: GameState, owner: Int, move: Move): Int {
+        val swap = move.swap ?: return 0
+        val board = state.board
+        val (mine, theirs) = state.players[owner] to state.players[swap.player]
+        val at = theirs.pawns[swap.pawn]
+        val to = board.progressAt(mine.seat, board.trackSquare(theirs.seat, at)) ?: return 0
+        val back = board.progressAt(theirs.seat, board.trackSquare(mine.seat, move.to)) ?: return 0
+        val cost = if (state.rules.arePartners(state.current, swap.player)) back - at else at - back
+        return to - move.to + cost
     }
 }
 

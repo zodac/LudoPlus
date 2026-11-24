@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.uuid.Uuid
 import net.zodac.ludoplus.data.game.SavedGameJson
+import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.sanitizePlayerName
@@ -20,7 +21,7 @@ sealed interface GuestAction {
 
     data class Roll(override val seat: Int) : GuestAction
 
-    data class Move(override val seat: Int, val pawn: Int, val owner: Int?, val die: Int?) : GuestAction
+    data class Move(override val seat: Int, val pawn: Int, val owner: Int?, val die: Int?, val swap: PawnRef? = null) : GuestAction
 
     /** The guest at [seat] left a game under way: the CPU plays its seat from now on. */
     data class Left(override val seat: Int) : GuestAction
@@ -94,7 +95,7 @@ class HostSession(
             is NetMessage.Hello -> hello(endpoint, message)
             NetMessage.Roll -> guests[endpoint]?.takeIf { started }?.let { mutableActions.tryEmit(GuestAction.Roll(it)) }
             is NetMessage.Move -> guests[endpoint]?.takeIf { started }?.let {
-                mutableActions.tryEmit(GuestAction.Move(it, message.pawn, message.owner, message.die))
+                mutableActions.tryEmit(GuestAction.Move(it, message.pawn, message.owner, message.die, message.swap))
             }
             NetMessage.Leave -> left(endpoint)
             // A host's message, sent to a host: nothing to do.
@@ -341,10 +342,10 @@ class GuestSession(private val onRejoinRefused: () -> Unit = {}, private val sen
         if (playing.game.state.current == playing.seat && playing.game.state.phase == TurnPhase.AwaitingRoll) send(NetMessage.Roll)
     }
 
-    /** Moves [pawn] (of [owner], a partner's) with [die], while it's this guest's player's turn to. */
-    fun move(pawn: Int, owner: Int? = null, die: Int? = null) {
+    /** Moves [pawn] (of [owner], a partner's) with [die], swapping with [swap], while it's this guest's player's turn to. */
+    fun move(pawn: Int, owner: Int? = null, die: Int? = null, swap: PawnRef? = null) {
         val playing = mutableState.value as? GuestState.Playing ?: return
-        if (playing.game.state.current == playing.seat && playing.game.state.phase is TurnPhase.AwaitingMove) send(NetMessage.Move(pawn, owner, die))
+        if (playing.game.state.current == playing.seat && playing.game.state.phase is TurnPhase.AwaitingMove) send(NetMessage.Move(pawn, owner, die, swap))
     }
 
     /** Leaves the session. */

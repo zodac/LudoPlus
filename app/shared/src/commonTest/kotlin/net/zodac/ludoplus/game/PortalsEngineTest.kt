@@ -60,12 +60,12 @@ class PortalsEngineTest {
     }
 
     @Test
-    fun `a long portal shut to a colour is an ordinary square to it - captures and all`() {
+    fun `a long portal past a pawn's own start takes it most of the way round - or back - capturing where it comes out`() {
         // Green's start is between squares 6 and 22: at square 22 it's 9 steps on, and square 6 is 45 steps on.
-        val back = game(listOf(Y, Y, Y, Y), listOf(8, Y, Y, Y)).copy(current = GREEN)
-        assertEquals(listOf(Move(0, 8, 9)), back.movesFor(1))
-        val onwards = game(listOf(6, Y, Y, Y), listOf(44, Y, Y, Y)).copy(current = GREEN)
-        assertEquals(listOf(Move(0, 44, 45, listOf(PawnRef(RED, 0)))), onwards.movesFor(1))
+        val onwards = game(listOf(6, Y, Y, Y), listOf(8, Y, Y, Y)).copy(current = GREEN)
+        assertEquals(listOf(Move(0, 8, 45, listOf(PawnRef(RED, 0)), via = 9)), onwards.movesFor(1))
+        val back = game(listOf(Y, Y, Y, Y), listOf(44, Y, Y, Y)).copy(current = GREEN)
+        assertEquals(listOf(Move(0, 44, 9, via = 45)), back.movesFor(1))
     }
 
     @Test

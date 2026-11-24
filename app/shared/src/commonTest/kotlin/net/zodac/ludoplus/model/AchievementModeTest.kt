@@ -33,7 +33,7 @@ class AchievementModeTest {
     fun `the achievements kept out of a mode they'd be free in or measure something else in`() {
         val kept = Achievement.entries.filter { it.notEarnableIn.isNotEmpty() }.associateWith { it.notEarnableIn }
         val quick = setOf(
-            COMEBACK_KID, DEFEAT_FROM_THE_JAWS_OF_VICTORY, FULL_HOUSE, MY_FAVOURITE_SPOT, ONE_BY_ONE, PACIFIST, SPEED_DEMON, THE_GREAT_ESCAPE, UNTOUCHABLE,
+            COMEBACK_KID, DEFEAT_FROM_THE_JAWS_OF_VICTORY, EXPRESS_DELIVERY, FULL_HOUSE, MY_FAVOURITE_SPOT, ONE_BY_ONE, PACIFIST, SPEED_DEMON, THE_GREAT_ESCAPE, UNTOUCHABLE,
         )
         val twoDice = setOf(BOTTOM_OF_THE_BARREL, COUNTING_UP, DRY_SPELL, EXPRESS_DELIVERY, FULL_SPREAD)
         val survival = setOf(
@@ -45,8 +45,8 @@ class AchievementModeTest {
             GameMode.TWO_DICE to twoDice,
             GameMode.PORTALS to setOf(EXPRESS_DELIVERY),
             GameMode.SURVIVAL to survival,
-            GameMode.CHAOS to emptySet(),
-            GameMode.HAUNTED_HOUSE to emptySet(),
+            GameMode.CHAOS to setOf(EXPRESS_DELIVERY),
+            GameMode.HAUNTED_HOUSE to setOf(EXPRESS_DELIVERY),
         )
         for (mode in GameMode.entries) assertEquals(guards.getValue(mode), kept.filterValues { mode in it }.keys, "$mode")
     }
@@ -72,7 +72,7 @@ class AchievementModeTest {
     @Test
     fun `a limited achievement lists the modes left - neither those it's kept out of nor the impossible ones - and one only ruled out lists none`() {
         assertEquals(GameMode.entries - GameMode.QUICK, UNTOUCHABLE.limitedModes)
-        assertEquals(listOf(GameMode.CLASSIC, GameMode.QUICK, GameMode.CHAOS, GameMode.HAUNTED_HOUSE), EXPRESS_DELIVERY.limitedModes)
+        assertEquals(listOf(GameMode.CLASSIC), EXPRESS_DELIVERY.limitedModes)
         assertEquals(listOf(GameMode.CHAOS), AGENT_OF_CHAOS.limitedModes)
         assertEquals(emptyList(), HOME_SWEET_HOME.limitedModes)
         assertFalse(HOME_SWEET_HOME.isEarnableIn(GameMode.SURVIVAL))

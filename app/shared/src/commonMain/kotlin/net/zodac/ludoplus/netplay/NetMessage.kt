@@ -10,6 +10,7 @@ import net.zodac.ludoplus.data.parseJson
 import net.zodac.ludoplus.data.string
 import net.zodac.ludoplus.data.stringOrNull
 import net.zodac.ludoplus.data.toJson
+import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.storedIdOf
 
@@ -34,8 +35,8 @@ sealed interface NetMessage {
     /** The guest's player rolls, on their turn. */
     data object Roll : NetMessage
 
-    /** The guest's player moves [pawn] (of seat [owner], a partner's; null: their own) with [die] (null: the only one). */
-    data class Move(val pawn: Int, val owner: Int?, val die: Int?) : NetMessage
+    /** The guest's player moves [pawn] (of seat [owner], a partner's; null: their own) with [die] (null: the only one), swapping with [swap], if it can (null: with nobody). */
+    data class Move(val pawn: Int, val owner: Int?, val die: Int?, val swap: PawnRef? = null) : NetMessage
 
     /** The guest is leaving: its seat opens again, or (once the game has started) is played by the CPU. */
     data object Leave : NetMessage
@@ -110,6 +111,10 @@ object NetCodec {
             put("pawn", message.pawn)
             message.owner?.let { put("owner", it) }
             message.die?.let { put("die", it) }
+            message.swap?.let {
+                put("swapPlayer", it.player)
+                put("swapPawn", it.pawn)
+            }
         }
         NetMessage.Leave -> buildJsonObject { put("type", "leave") }
         is NetMessage.Welcome -> buildJsonObject {
@@ -156,7 +161,7 @@ object NetCodec {
                 obj.stringOrNull("token"),
             )
             "roll" -> NetMessage.Roll
-            "move" -> NetMessage.Move(obj.int("pawn"), obj.intOrNull("owner"), obj.intOrNull("die"))
+            "move" -> NetMessage.Move(obj.int("pawn"), obj.intOrNull("owner"), obj.intOrNull("die"), obj.intOrNull("swapPlayer")?.let { PawnRef(it, obj.int("swapPawn")) })
             "leave" -> NetMessage.Leave
             "welcome" -> NetMessage.Welcome(obj.int("seat"), obj.string("token"))
             "refused" -> NetMessage.Refused(RefusedReason.entries.first { it.id == obj.string("reason") })

@@ -62,7 +62,6 @@ import net.zodac.ludoplus.resources.game_event_portal
 import net.zodac.ludoplus.resources.game_event_power_up
 import net.zodac.ludoplus.resources.game_event_swap
 import net.zodac.ludoplus.resources.game_event_team_finished
-import net.zodac.ludoplus.resources.game_event_teleport
 import net.zodac.ludoplus.resources.game_event_three_doubles
 import net.zodac.ludoplus.resources.game_event_vanished
 import net.zodac.ludoplus.resources.game_event_three_sixes
@@ -262,14 +261,12 @@ private fun movedLine(game: StartedGame, entry: LogEntry, event: GameEvent.Moved
 private fun captureLine(game: StartedGame, player: Int, captures: List<PawnRef>): String =
     pluralStringResource(Res.plurals.game_event_capture, captures.size, game.players[player].name, game.players[captures.first().player].name, captures.size)
 
-/** What the power-up [event]'s move ended on did, as [effect] says: "Alex teleported 4 squares.", and a capture it made. */
+/** What the power-up [event]'s move ended on did, as [effect] says: "Alex swapped places with Sam.", and a capture it made. */
 @Composable
 private fun effectLine(game: StartedGame, event: GameEvent.Moved, effect: PowerUpEffect): String {
     val name = game.players[event.player].name
-    val movedTo = effect.movedTo
     val swapped = effect.swapped
     val line = when {
-        effect.powerUp == PowerUp.TELEPORT && movedTo != null -> (movedTo - event.move.to).let { pluralStringResource(Res.plurals.game_event_teleport, it, name, it) }
         effect.powerUp == PowerUp.DOUBLE -> pluralStringResource(Res.plurals.game_event_double, PowerUp.DOUBLED_ROLLS, name, PowerUp.DOUBLED_ROLLS)
         effect.powerUp == PowerUp.CALL_UP && effect.calledUp != null -> stringResource(Res.string.game_event_call_up, name)
         swapped != null -> stringResource(Res.string.game_event_swap, name, game.players[swapped.player].name)

@@ -126,7 +126,6 @@ val PowerUp.color: Color
     get() = when (this) {
         PowerUp.DOUBLE -> Color(0xFFC2490A)
         PowerUp.SHIELD -> Color(0xFF1864AB)
-        PowerUp.TELEPORT -> Color(0xFF862E9C)
         PowerUp.ROLL_AGAIN -> Color(0xFF2B7A3A)
         PowerUp.CALL_UP -> Color(0xFFA61E4D)
         PowerUp.SWAP -> Color(0xFF0B7285)

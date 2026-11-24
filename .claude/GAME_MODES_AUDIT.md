@@ -81,9 +81,9 @@ and reported to the maintainer. Counters (games, wins, streaks, captures, rolls)
 | --- | --- |
 | Quick | Quick On The Draw (the win), Blink And You'll Miss It 1.8% (25 turns or fewer; a win's median is 34) |
 | Two Dice | Double Or Nothing, Two Birds, Two Stones 12% |
-| Portals | Through The Looking Glass, There And Back Again 41% (Easy 59%, Hard 27%) |
+| Portals | Through The Looking Glass, There And Back Again 45% |
 | Survival | Last Pawn Standing, Barely A Scratch 3.3% (a sixth of wins) |
-| Chaos | Agent Of Chaos, One Of Everything 12% |
+| Chaos | Agent Of Chaos, One Of Everything 24% |
 | Haunted House | Living To Tell The Tale, Not A Ghost Of A Chance 3.7% (harder with more players: never, in eight-player simulations) |
 
 Grand Tour (a game finished of every mode, none with house rules) is worked out from the records each time a game ends, so
@@ -95,6 +95,9 @@ the pawn that's out spoils it. The Great Escape is 5-8% of games for a Medium CP
 
 Stop Picking On Me is 11% of four-player Classic games (31% with two players, 5% with six), and 0.4-14% in the other modes,
 so it's kept out of none. A ghost's catch is nobody's, and a partner isn't one of the players.
+
+Express Delivery is Classic's alone (the maintainer, 2026-11-24): Chaos's Swap had made it 28% there, after Portals' 40% and
+Two Dice's 84%. Its description says so.
 
 ## Quick (a mode)
 
@@ -129,7 +132,8 @@ roll and 6 counters.
 
 ## Portals (a mode)
 
-**Kept out:** Express Delivery (40%, against 9.3%). **Easier:** Double Delivery (11%, against 4.0%). Squares moved are those
+**Kept out:** Express Delivery (40%, against 9.3%). **Easier:** Double Delivery (11%, against 4.0%), and with every
+portal open (2026-11-24), Untouchable (5.3%, against 1.3%). Squares moved are those
 walked, not those a portal skips.
 
 ## Survival (a mode)
@@ -150,8 +154,7 @@ lists them). **Easier:** Payback (29%, against 16%), We're All Friends Here.
 
 ## Chaos (a mode)
 
-Nothing is free: the closest, Express Delivery, is 14%, against 9.3%. A power-up's captures and pawns home count
-(`GameEvent.Moved.allCaptures`, `endedAt`). Untouchable is easier (shields).
+**Kept out:** Express Delivery (28%, against 8.5%). A power-up's captures count (`GameEvent.Moved.allCaptures`, `endedAt`). Untouchable is easier (shields).
 
 ## Haunted House (a mode)
 

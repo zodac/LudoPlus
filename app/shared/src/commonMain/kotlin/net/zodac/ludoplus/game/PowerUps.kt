@@ -35,9 +35,9 @@ internal object PowerUps {
 
     /**
      * [state] with the power-up that [owner]'s pawn [pawn] has ended a move on taken, and what it did; as it is, and null,
-     * with none there. One a move: a pawn a power-up moves onto another leaves it there.
+     * with none there. One a move: a pawn a power-up moves onto another leaves it there. A Swap is with [swap].
      */
-    fun take(state: GameState, owner: Int, pawn: Int): Pair<GameState, PowerUpEffect?> {
+    fun take(state: GameState, owner: Int, pawn: Int, swap: PawnRef? = null): Pair<GameState, PowerUpEffect?> {
         val progress = state.players[owner].pawns[pawn]
         if (progress !in 0..<state.board.trackSteps) return state to null
         val square = state.board.trackSquare(state.players[owner].seat, progress)
@@ -47,18 +47,9 @@ internal object PowerUps {
             // The roller's: the one whose rolls are counted.
             PowerUp.DOUBLE -> taken.copy(players = taken.players.replace(state.current) { it.copy(doubledRolls = PowerUp.DOUBLED_ROLLS) }) to PowerUpEffect(powerUp)
             PowerUp.SHIELD -> taken.copy(players = taken.players.replace(owner) { it.copy(shielded = it.shielded + pawn) }) to PowerUpEffect(powerUp)
-            PowerUp.TELEPORT -> {
-                val (random, drawn) = draw(taken)
-                // Never past home: the last track square is a die's highest from it.
-                val to = progress + random.nextInt(1, state.rules.dieFaces + 1)
-                // A blockade can't be landed on: the pawn stays where it is.
-                if (LudoEngine.isBlocked(drawn, LudoEngine.blockades(drawn), owner, to - 1, to)) return drawn to PowerUpEffect(powerUp)
-                val landing = LudoEngine.land(drawn, owner, to, floor = progress)
-                LudoEngine.place(drawn, owner, pawn, landing) to PowerUpEffect(powerUp, movedTo = landing.at, captures = landing.captures, brokenShields = landing.brokenShields)
-            }
             PowerUp.ROLL_AGAIN -> taken to PowerUpEffect(powerUp)
             PowerUp.CALL_UP -> callUp(taken, owner)
-            PowerUp.SWAP -> swap(taken, owner, pawn)
+            PowerUp.SWAP -> swap(taken, owner, pawn, swap)
         }
     }
 
@@ -71,28 +62,42 @@ internal object PowerUps {
         return LudoEngine.place(state, owner, waiting, landing) to PowerUpEffect(PowerUp.CALL_UP, captures = landing.captures, calledUp = waiting)
     }
 
-    private fun swap(state: GameState, owner: Int, pawn: Int): Pair<GameState, PowerUpEffect> {
+    /**
+     * The pawns [owner]'s pawn [pawn], on the track, can swap places with: any other player's on the track, one for each
+     * square, but where either's way never takes it over the other's square, or where the two would come to share a square
+     * that isn't safe with a rival's.
+     */
+    fun swapTargets(state: GameState, owner: Int, pawn: Int): List<PawnRef> {
         val board = state.board
-        val mine = state.players[owner]
-        val from = mine.pawns[pawn]
+        val from = board.trackSquare(state.players[owner].seat, state.players[owner].pawns[pawn])
         val onTrack = state.players.flatMapIndexed { player, side ->
             side.pawns.mapIndexedNotNull { index, progress ->
                 if (progress in 0..<board.trackSteps) PawnRef(player, index) to board.trackSquare(side.seat, progress) else null
             }
         }
-        val square = board.trackSquare(mine.seat, from)
-        val (other, steps) = onTrack
-            .filter { (ref, at) ->
-                ref.player != owner && !state.rules.arePartners(owner, ref.player) && !state.isShielded(ref.player, ref.pawn) &&
-                    !state.isSafeFor(state.players[ref.player].seat, at) && onTrack.count { it.second == at } == 1
+        // Whether [player]'s pawn can stand on [square] with everyone there but [leaving].
+        fun fits(player: Int, square: Int, leaving: PawnRef): Boolean =
+            board.progressAt(state.players[player].seat, square) != null && onTrack.all { (ref, at) ->
+                at != square || ref == leaving || ref.player == player || state.isSafeFor(state.players[ref.player].seat, square) ||
+                    (state.rules.arePartners(player, ref.player) && !state.rules.partnerCaptures)
             }
-            .map { (ref, at) -> ref to (at - square).mod(board.trackLength) }
-            .filter { (ref, steps) -> steps > 0 && from + steps < board.trackSteps && state.players[ref.player].pawns[ref.pawn] - steps >= 0 }
-            .minByOrNull { it.second } ?: return state to PowerUpEffect(PowerUp.SWAP)
+        return onTrack
+            .filter { (ref, at) -> ref.player != owner && fits(owner, at, leaving = ref) && fits(ref.player, from, leaving = PawnRef(owner, pawn)) }
+            .distinctBy { (ref, at) -> ref.player to at }
+            .map { it.first }
+    }
+
+    /** [state] with [owner]'s pawn [pawn] and [other] in each other's places, any shields with them; as it is with none. */
+    private fun swap(state: GameState, owner: Int, pawn: Int, other: PawnRef?): Pair<GameState, PowerUpEffect> {
+        if (other == null) return state to PowerUpEffect(PowerUp.SWAP)
+        val board = state.board
+        val (mine, theirs) = state.players[owner] to state.players[other.player]
+        val to = checkNotNull(board.progressAt(mine.seat, board.trackSquare(theirs.seat, theirs.pawns[other.pawn])))
+        val back = checkNotNull(board.progressAt(theirs.seat, board.trackSquare(mine.seat, mine.pawns[pawn])))
         val players = state.players
-            .replace(owner) { side -> side.copy(pawns = side.pawns.replace(pawn) { it + steps }) }
-            .replace(other.player) { side -> side.copy(pawns = side.pawns.replace(other.pawn) { it - steps }) }
-        return state.copy(players = players) to PowerUpEffect(PowerUp.SWAP, movedTo = from + steps, swapped = other)
+            .replace(owner) { side -> side.copy(pawns = side.pawns.replace(pawn) { to }) }
+            .replace(other.player) { side -> side.copy(pawns = side.pawns.replace(other.pawn) { back }) }
+        return state.copy(players = players) to PowerUpEffect(PowerUp.SWAP, movedTo = to, swapped = other)
     }
 
     /** [state] with a power-up of any kind on [seat]'s stretch of the track: never a safe square, a pawn's, or another's. */

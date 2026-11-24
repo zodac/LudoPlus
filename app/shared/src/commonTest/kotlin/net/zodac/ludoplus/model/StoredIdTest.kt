@@ -33,7 +33,7 @@ class StoredIdTest {
             ids(HouseRule.entries),
         )
         assertEquals(listOf("off", "two_teams", "pairs"), ids(TeamMode.entries))
-        assertEquals(listOf("double", "shield", "teleport", "roll_again", "call_up", "swap"), ids(PowerUp.entries))
+        assertEquals(listOf("double", "shield", "roll_again", "call_up", "swap"), ids(PowerUp.entries))
         assertEquals(listOf("HIGH", "MEDIUM", "LOW", "OFF"), ids(AnimationLevel.entries))
         assertEquals(listOf("DEVICE", "PORTRAIT", "LANDSCAPE"), ids(ScreenOrientation.entries))
         assertEquals(listOf("OFF", "30", "60", "MAX"), ids(FrameRate.entries))

@@ -665,7 +665,10 @@ enum class Achievement(
         "express_delivery",
         Res.string.achievement_express_delivery_title,
         Res.string.achievement_express_delivery_description,
-        AchievementCategory.RACING, notEarnableIn = setOf(GameMode.TWO_DICE, GameMode.PORTALS), impossibleIn = setOf(GameMode.SURVIVAL),
+        AchievementCategory.RACING,
+        // Classic's alone.
+        notEarnableIn = setOf(GameMode.QUICK, GameMode.TWO_DICE, GameMode.PORTALS, GameMode.CHAOS, GameMode.HAUNTED_HOUSE),
+        impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     LAP_OF_HONOUR(
         "lap_of_honour",

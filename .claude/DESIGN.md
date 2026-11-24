@@ -119,14 +119,15 @@ Capture across both dice; Endless 6s makes doubles endless).
 
 **Portals** (`GameRules.portals`, `model/Portal.kt`; the maintainer, 2026-11-24, in place of snakes and ladders). Every
 seat has a short pair on its own stretch of the track (7 apart) and a long one into the next seat's (16 apart, or 19
-with three players), the same for each so none is favoured: long pairs at some seats only won those they're shut to
-about 20% of four-player games. None is on a safe square. A move that ends on a portal comes out at its pair (`Move.via` is where
-it went in) and captures only there, so a pawn on a portal is only captured by one coming out, or by one the portal is
-shut to. Going through never takes a pawn past its own start square, into its home column early or round again: a long
-pair is shut both ways to the one seat whose start lies between its ends, for which each is an ordinary square, and has
-a lock in its colour. With Blockades, one at either end stops the move. A pair is told by its symbol and colour, and a
-long pair by a split ring (past four seats, a long pair shares a short one's symbol). TalkBack: "Square 7, portal to
-square 23, shut to Green, empty", "Move Red pawn 1 2 squares, through a portal to square 11".
+with three players), the same for each so none is favoured, and **every one is open to every colour** (the maintainer,
+2026-11-24: long pairs were shut to the colour whose start lies between their ends). None is on a safe square. A move that
+ends on a portal comes out at its pair (`Move.via` is where it went in) and captures only there, so a pawn on a portal is
+only captured by one coming out. A pawn's progress is counted from its own start wherever it comes out
+(`BoardGeometry.progressAt`), so the long pair either side of its own start takes it most of the way round (9 to 45 on the
+classic board), or most of the way back. With Blockades, one at either end stops the move. A pair is told by its symbol and
+colour, and a long pair by a split ring (past four seats, a long pair shares a short one's symbol). Four Medium CPUs' winner
+takes 52 turns, against Classic's 84. TalkBack: "Square 7, portal to square 23, empty", "Move Red pawn 1 2 squares, through a
+portal to square 11".
 
 **Survival** (`GameRules.startsOut`, `lastStanding`, `suddenDeath`; the maintainer, 2026-11-24). Every pawn starts on
 its start square, and the board is endless (`BoardGeometry.endless`): no home column, every square of the track walked,
@@ -166,17 +167,22 @@ another leaves it there.
     there (a capture, or another shield to bounce off), never further back than where it came from, and the shield breaks
     (`LudoEngine.land`, `Move.bouncedFrom`). Only a capture where it settles earns a roll. A shield goes as its pawn leaves
     the track, and doesn't stop a pawn leaving the yard (Guarded Starts), which has nowhere to bounce to.
-- **Teleport**: 1 to 6 squares on, landing as any move does; from the last track square, 6 is exactly home. It won't land
-    on a blockade.
 - **Roll Again**, and **Call Up** (a pawn out of the yard, if one can come).
-- **Swap**: with the nearest rival ahead that is alone on a square that isn't safe, unshielded, where neither pawn would
-    pass its own start; nothing with none.
+- **Swap** (the maintainer, 2026-11-24, in place of Teleport and of an automatic swap with the nearest rival ahead): with
+    any other player's pawn on the track, safe, shielded, or a partner's, or with nobody. Not where the two would leave rivals
+    sharing a square that isn't safe, nor where either would stand on the one square its way never takes it over. Each
+    counts its place from its own start, as through a portal; a shield goes with its pawn; nothing is captured.
+
+A swap is part of the move (`Move.swap`: `LudoEngine` offers the move with each pawn it can swap with, `PowerUps.swapTargets`,
+and with none), so the CPU weighs it, and a Nearby guest sends it, as any move. A person makes it in two picks: the pawn, then
+the other's, ringed, or Don't swap (the first is made already where there's only one move). The prompt is "Alex, pick a pawn
+to swap with."; TalkBack's actions, there and on each pawn's square, are "Swap places with Green pawn 2".
 
 Every chance is drawn from `GameState.seed`, which each draw moves on, so a saved game and a Nearby one play on the same;
 the CPU weighs a move with its power-up left alone (`LudoEngine.moveWithoutChances`), so it never sees what a chance will
-be. What a power-up did is the move's `GameEvent.Moved.effect`. TalkBack: "Square 4, Teleport power-up, empty", "Green pawn
-1, 47 squares from home, shielded", "Move Red pawn 1 2 squares, taking Teleport", "1 doubled roll left"; the log adds a
-sentence ("Alex teleported 4 squares.").
+be. What a power-up did is the move's `GameEvent.Moved.effect`. TalkBack: "Square 4, Shield power-up, empty", "Green pawn
+1, 47 squares from home, shielded", "Move Red pawn 1 2 squares, taking Shield", "1 doubled roll left"; the log adds a
+sentence ("Alex swapped places with Sam.").
 
 **Haunted House** (`GameRules.ghosts`, `game/Ghosts.kt`; the maintainer, 2026-11-24). A ghost for every two players,
 nobody's. After every second turn a random one moves a die's roll of squares, either way, never onto another, and what it

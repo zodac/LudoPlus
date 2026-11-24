@@ -165,9 +165,8 @@
     <string name="game_square_safe_for_spoken">safe for %1$s</string>
     <!-- With the Blockades house rule, two or more of one player's pawns on a square. %1$s is their colour. -->
     <string name="game_square_blockade_spoken">%1$s blockade</string>
-    <!-- The Portals mode: a square with a portal, and the square it leads to; then, on a portal one colour's pawns can't use, %1$s that colour (player_colour_*). -->
+    <!-- The Portals mode: a square with a portal, and the square it leads to. -->
     <string name="game_square_portal_spoken">portal to square %1$d</string>
-    <string name="game_square_portal_shut_spoken">shut to %1$s</string>
     <!-- Chaos: a power-up on a square. %1$s is its name (power_up_*). Then, after a pawn with a shield round it. -->
     <string name="game_square_power_up_spoken">%1$s power-up</string>
     <string name="game_pawn_shielded_spoken">shielded</string>
@@ -258,6 +257,10 @@
     <!-- While a player is still playing: their rank as the game stands (%1$s is "1st", "2nd"...), alone in it or level with another. Shown on their card as the number, on their colour. -->
     <string name="game_player_rank_spoken">currently %1$s</string>
     <string name="game_player_rank_tied_spoken">currently joint %1$s</string>
+    <!-- Chaos: while the player picks whose pawn to swap with; what a screen reader offers on each (%1$s a colour, %2$d its number); and the button to swap with nobody. -->
+    <string name="game_prompt_swap">%1$s, pick a pawn to swap with.</string>
+    <string name="game_swap_action">Swap places with %1$s pawn %2$d</string>
+    <string name="game_swap_decline">Don't swap</string>
     <!-- The line under the die saying what to do now. %1$s is the player's name, %2$d the roll. -->
     <string name="game_prompt_roll">%1$s, tap the die to roll.</string>
     <string name="game_prompt_cpu_roll">%1$s is rolling.</string>
@@ -331,10 +334,6 @@
     <plurals name="game_event_double">
         <item quantity="one">%1$s's next %2$d roll counts double.</item>
         <item quantity="other">%1$s's next %2$d rolls count double.</item>
-    </plurals>
-    <plurals name="game_event_teleport">
-        <item quantity="one">%1$s teleported %2$d square.</item>
-        <item quantity="other">%1$s teleported %2$d squares.</item>
     </plurals>
     <string name="game_event_call_up">%1$s called up a pawn.</string>
     <string name="game_event_swap">%1$s swapped places with %2$s.</string>
@@ -896,7 +895,7 @@
     <string name="achievement_agent_of_chaos_title">Agent Of Chaos</string>
     <string name="achievement_agent_of_chaos_description">Win a game of `Chaos` mode</string>
     <string name="achievement_one_of_everything_title">One Of Everything</string>
-    <string name="achievement_one_of_everything_description">In `Chaos` mode, take all six power-ups in one game</string>
+    <string name="achievement_one_of_everything_description">In `Chaos` mode, take all five power-ups in one game</string>
     <string name="achievement_living_to_tell_the_tale_title">Living To Tell The Tale</string>
     <string name="achievement_living_to_tell_the_tale_description">Win a game of `Haunted House` mode</string>
     <string name="achievement_not_a_ghost_of_a_chance_title">Not A Ghost Of A Chance</string>
@@ -958,7 +957,7 @@
     <string name="achievement_double_delivery_title">Double Delivery</string>
     <string name="achievement_double_delivery_description">Bring two pawns home in one turn</string>
     <string name="achievement_express_delivery_title">Express Delivery</string>
-    <string name="achievement_express_delivery_description">Take a pawn from your yard to home within 12 of your turns</string>
+    <string name="achievement_express_delivery_description">In `Classic` mode, take a pawn from your yard to home within 12 of your turns</string>
     <string name="achievement_lap_of_honour_title">Lap Of Honour</string>
     <string name="achievement_lap_of_honour_description">Take a pawn from your yard all the way home without moving any other pawn</string>
     <string name="achievement_full_house_title">Full House</string>
@@ -1114,20 +1113,18 @@
     <string name="mode_survival">Survival</string>
     <string name="mode_survival_description">Six pawns each, no home, and no way back for a captured pawn: the last player with a pawn wins</string>
     <string name="mode_chaos">Chaos</string>
-    <string name="mode_chaos_description">The classic rules with power-ups on the track: land on one to shield a pawn, double your rolls, teleport, and more</string>
+    <string name="mode_chaos_description">The classic rules with power-ups on the track: land on one to shield a pawn, double your rolls, swap places, and more</string>
     <!-- Chaos's power-ups: each one's name, and what it does, as a sentence. -->
     <string name="power_up_double">Double</string>
     <string name="power_up_double_description">Your next 3 rolls move a pawn twice as far. A roll that would take it past home counts once.</string>
     <string name="power_up_shield">Shield</string>
     <string name="power_up_shield_description">The next pawn to land on yours bounces off to the square before it, and the shield breaks.</string>
-    <string name="power_up_teleport">Teleport</string>
-    <string name="power_up_teleport_description">Your pawn jumps 1 to 6 squares further on, capturing where it lands.</string>
     <string name="power_up_roll_again">Roll Again</string>
     <string name="power_up_roll_again_description">You get another roll.</string>
     <string name="power_up_call_up">Call Up</string>
     <string name="power_up_call_up_description">One of your pawns comes out of the yard.</string>
     <string name="power_up_swap">Swap</string>
-    <string name="power_up_swap_description">Your pawn swaps places with the nearest rival ahead that's alone on a square, unless it's safe or shielded, or either pawn would pass its own start.</string>
+    <string name="power_up_swap_description">Your pawn swaps places with any other player's pawn on the track, if you like. You pick which.</string>
     <string name="mode_haunted_house">Haunted House</string>
     <string name="mode_haunted_house_description">The classic rules with ghosts on the track, which send any pawn they land on back to its yard</string>
     <string name="player_colour_yellow">Yellow</string>
@@ -1163,7 +1160,7 @@
     <string name="rules_two_dice_3">Roll a double and you roll again once both dice are moved, but three doubles in a row end your turn. A capture, or a pawn brought home, still earns another roll.</string>
     <string name="rules_portals_1">Portals come in pairs, told by their colour and symbol. If your move ends on one, your pawn comes out at the other, whether that's further on or further back. Passing over a portal does nothing.</string>
     <string name="rules_portals_2">Your pawn only captures where it comes out. While it waits on a portal, rivals who land there go through without capturing it, but one coming out there captures it.</string>
-    <string name="rules_portals_3">Short portals are open to everyone. Long portals, with a split ring, are shut to the colour on their lock, whose start square they would take a pawn past.</string>
+    <string name="rules_portals_3">Long portals, with a split ring, reach into the next player's stretch of the track. One reaches past your own start square: going through it takes your pawn most of the way home, or most of the way back.</string>
     <string name="rules_survival_1">In Survival there's no home to reach. Each player's six pawns start out on their start square and go round the track until one player is left.</string>
     <string name="rules_survival_2">A captured pawn is out of the game. Lose all six and you're out: the last player with a pawn left wins, and everyone else is placed by how long they lasted.</string>
     <string name="rules_survival_3">Start squares and star squares are safe at first. In Overtime the start squares stop being safe, and in Sudden Death the star squares do too. The line above the board counts the rounds, and with more players it takes longer.</string>

@@ -2,7 +2,6 @@ package net.zodac.ludoplus.model
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -57,21 +56,27 @@ class PortalTest {
     }
 
     @Test
-    fun `a long portal is shut - both ways - to the one seat whose start it would take a pawn past`() {
+    fun `every portal is open to every colour - the pawn's progress counted from its own start wherever it comes out`() {
         for (board in boards) {
             for (portal in board.portals) {
                 for (seat in 0..<board.seats) {
-                    val shut = portal.long && seat == (portal.seat + 1) % board.seats
                     for (square in listOf(portal.first, portal.second)) {
                         val progress = (square - board.startSquare(seat)).mod(board.trackLength)
                         val out = board.throughPortal(seat, progress)
-                        assertEquals(shut, out == progress, "seat $seat at $square of $board")
-                        if (!shut) assertEquals(if (square == portal.first) portal.second else portal.first, board.trackSquare(seat, out))
+                        assertEquals(portal.otherEnd(square), board.trackSquare(seat, out), "seat $seat at $square of $board")
+                        assertEquals(progress, board.throughPortal(seat, out))
                     }
                 }
             }
         }
-        // No short pair is ever shut.
-        assertFalse(BoardGeometry.CLASSIC.portals.any { !it.long && BoardGeometry.CLASSIC.throughPortal(0, it.first) == it.first })
+        // Green's own start is between squares 6 and 22: 9 steps on is most of the way round, and back.
+        assertEquals(45, BoardGeometry.CLASSIC.throughPortal(seat = 1, progress = 9))
+        assertEquals(9, BoardGeometry.CLASSIC.throughPortal(seat = 1, progress = 45))
+    }
+
+    @Test
+    fun `progress on a square is counted from a seat's own start - and there is one square its way never takes it over`() {
+        val board = BoardGeometry.CLASSIC
+        assertEquals(listOf(0, 9, 45, 50, null), listOf(13, 22, 6, 11, 12).map { board.progressAt(1, it) })
     }
 }

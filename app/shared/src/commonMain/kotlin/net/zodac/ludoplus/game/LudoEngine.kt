@@ -97,13 +97,13 @@ object LudoEngine {
 
     /**
      * The move made for the current player while they await a move with only one choice: the first of its moves. Moves of
-     * one owner's pawns from one square by one die are one choice. Null with more than one choice, and when the one
+     * one owner's pawns from one square by one die are one choice, unless it ends on a Swap with a pawn to swap with. Null with more than one choice, and when the one
      * brings a pawn out of the yard with none of its owner's on the board, or brings its owner's last pawn home: the
      * player makes those.
      */
     fun automaticMove(state: GameState): Move? {
         val phase = state.phase as? TurnPhase.AwaitingMove ?: return null
-        val move = phase.moves.distinctBy { Triple(it.ownerIn(state), it.from, it.roll) }.singleOrNull() ?: return null
+        val move = phase.moves.distinctBy { listOf(it.ownerIn(state), it.from, it.roll, it.swap) }.singleOrNull() ?: return null
         val pawns = state.players[move.ownerIn(state)].pawns
         if (move.from == PawnPosition.YARD_PROGRESS && pawns.none { it.isOnBoard(state) }) return null
         if (move.to == state.board.homeProgress && pawns.count { it != state.board.homeProgress } == 1) return null
@@ -123,7 +123,7 @@ object LudoEngine {
                 if (to != rolledTo && isBlocked(state, blockades, owner, to - 1, to)) return@mapIndexedNotNull null
                 val via = rolledTo.takeIf { it != to }
                 val landing = land(state, owner, to, floor = from)
-                Move(
+                val move = Move(
                     pawn = pawn,
                     from = from,
                     to = landing.at,
@@ -134,8 +134,17 @@ object LudoEngine {
                     bouncedFrom = to.takeIf { landing.brokenShields.isNotEmpty() },
                     brokenShields = landing.brokenShields,
                 )
-            }
+                // A Swap is a choice: the move with each pawn it can swap with, and with none.
+                listOf(move) + swaps(state, move, owner, landing).map { move.copy(swap = it) }
+            }.flatten()
         }
+    }
+
+    /** The pawns [move], of [owner]'s pawn coming to rest by [landing], can swap with, where it ends on a Swap. */
+    private fun swaps(state: GameState, move: Move, owner: Int, landing: Landing): List<PawnRef> {
+        if (landing.at !in 0..<state.board.trackSteps) return emptyList()
+        if (state.powerUps[state.board.trackSquare(state.players[owner].seat, landing.at)] != PowerUp.SWAP) return emptyList()
+        return PowerUps.swapTargets(place(state, owner, move.pawn, landing), owner, move.pawn)
     }
 
     /**
@@ -242,7 +251,7 @@ object LudoEngine {
     }
 
     /** The current player makes [move], one of the moves awaited ([move] by pawn, owner, and die). */
-    fun move(state: GameState, move: Move): GameState = move(state, move.pawn, move.owner, move.roll)
+    fun move(state: GameState, move: Move): GameState = move(state, move.pawn, move.owner, move.roll, move.swap)
 
     /**
      * The current player moves pawn [pawn] (of [owner], a partner they roll for, or their own for null) by the roll
@@ -252,17 +261,18 @@ object LudoEngine {
      * the game; otherwise play passes on. A run of roll-again rolls carries on through a roll earned another way.
      *
      * A player with every pawn home is placed then, or in a team game with their team once every partner's are too. Where
-     * the last standing wins, the game ends with one team left. A power-up the pawn ends on is taken ([PowerUps.take]).
+     * the last standing wins, the game ends with one team left. A power-up the pawn ends on is taken ([PowerUps.take]); a Swap's
+     * is with [swap], or nobody.
      */
-    fun move(state: GameState, pawn: Int, owner: Int? = null, die: Int? = null): GameState = move(state, pawn, owner, die, chances = true)
+    fun move(state: GameState, pawn: Int, owner: Int? = null, die: Int? = null, swap: PawnRef? = null): GameState = move(state, pawn, owner, die, swap, chances = true)
 
-    /** [move], with a power-up it ends on left alone, and no ghost moving after it: for weighing a move by, whose chances nobody knows. */
-    internal fun moveWithoutChances(state: GameState, move: Move): GameState = move(state, move.pawn, move.owner, move.roll, chances = false)
+    /** [move], with a power-up it ends on left alone (but for a swap, which is no chance), and no ghost moving after it: for weighing a move by, whose chances nobody knows. */
+    internal fun moveWithoutChances(state: GameState, move: Move): GameState = move(state, move.pawn, move.owner, move.roll, move.swap, chances = false)
 
-    private fun move(state: GameState, pawn: Int, owner: Int?, die: Int?, chances: Boolean): GameState {
+    private fun move(state: GameState, pawn: Int, owner: Int?, die: Int?, swap: PawnRef?, chances: Boolean): GameState {
         val phase = state.phase
         check(phase is TurnPhase.AwaitingMove) { "Not waiting for a move: $phase" }
-        val move = requireNotNull(phase.moves.firstOrNull { it.pawn == pawn && it.owner == owner && (die == null || it.roll == die) }) {
+        val move = requireNotNull(phase.moves.firstOrNull { it.pawn == pawn && it.owner == owner && (die == null || it.roll == die) && it.swap == swap }) {
             "Pawn $pawn has no legal move for ${phase.dice}"
         }
         val used = move.roll ?: phase.roll
@@ -271,7 +281,7 @@ object LudoEngine {
         val rules = state.rules
         val board = state.board
         val moved = place(PowerUps.spendDouble(state.copy(ghostMove = null, justLost = emptyList())), whose, pawn, Landing(move.to, move.captures, move.brokenShields))
-        val (taken, effect) = if (chances) PowerUps.take(moved, whose, pawn) else moved to null
+        val (taken, effect) = if (chances || swap != null) PowerUps.take(moved, whose, pawn, swap) else moved to null
         val players = taken.players
         val captures = move.captures + effect?.captures.orEmpty()
         val endedAt = players[whose].pawns[pawn]

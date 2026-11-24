@@ -239,22 +239,6 @@ class ModeAchievementsTest {
     }
 
     @Test
-    fun `a pawn teleported home is brought home - and one captured by a teleport is a capture`() {
-        val home = (0L..80L).map { seed ->
-            Steps(game(GameMode.CHAOS, listOf(49, Y, Y, Y)).copy(powerUps = mapOf(50 to PowerUp.TELEPORT), seed = seed)).play(1)
-        }.first { it.state.players[RED].pawns[0] == HOME }
-        assertTrue(HOME_SWEET_HOME in home.earned)
-        assertEquals(1, home.counts[AchievementCounter.PAWNS_HOME])
-        // By the power-up, not a roll of 1.
-        assertFalse(INCH_BY_INCH in home.earned)
-        val capture = (0L..80L).map { seed ->
-            Steps(game(GameMode.CHAOS, listOf(1, Y, Y, Y), listOf(44, Y, Y, Y)).copy(powerUps = mapOf(3 to PowerUp.TELEPORT), seed = seed)).play(2)
-        }.first { it.state.players[RED].pawns[0] == 5 }
-        assertTrue(GOTCHA in capture.earned)
-        assertEquals(1, capture.counts[AchievementCounter.CAPTURES])
-    }
-
-    @Test
     fun `squares moved are those walked - not those a portal skips`() {
         val steps = Steps(game(GameMode.PORTALS, listOf(8, Y, Y, Y))).play(2)
         assertEquals(3, steps.state.players[RED].pawns[0])

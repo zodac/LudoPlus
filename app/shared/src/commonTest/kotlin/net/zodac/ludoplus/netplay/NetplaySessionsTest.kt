@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.data.game.SavedGameJson
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.LudoEngine
@@ -61,6 +62,7 @@ class NetplaySessionsTest {
             NetMessage.Roll,
             NetMessage.Move(2, owner = 3, die = 5),
             NetMessage.Move(0, owner = null, die = null),
+            NetMessage.Move(0, owner = null, die = null, swap = PawnRef(2, 1)),
             NetMessage.Leave,
             NetMessage.Welcome(3, "t1"),
             NetMessage.Refused(RefusedReason.FULL),

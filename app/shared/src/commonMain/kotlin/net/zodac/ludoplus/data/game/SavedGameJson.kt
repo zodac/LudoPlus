@@ -395,6 +395,7 @@ object SavedGameJson {
             event.move.owner?.let { put("owner", it) }
             event.move.roll?.let { put("die", it) }
             event.move.via?.let { put("via", it) }
+            event.move.swap?.let { put("swap", encodePawns(listOf(it))) }
             if (event.move.skipped.isNotEmpty()) put("skipped", jsonInts(event.move.skipped))
             event.move.bouncedFrom?.let { put("bouncedFrom", it) }
             if (event.move.brokenShields.isNotEmpty()) put("brokenShields", encodePawns(event.move.brokenShields))
@@ -433,6 +434,7 @@ object SavedGameJson {
                     owner = obj.intOrNull("owner")?.also { require(it in 0..<playerCount) { "No player $it owns the pawn" } },
                     roll = obj.intOrNull("die"),
                     via = obj.intOrNull("via"),
+                    swap = decodePawnsIn(obj, "swap").firstOrNull()?.also { require(it.player in 0..<playerCount) { "No player ${it.player} to swap with" } },
                     skipped = if ("skipped" in obj) obj.array("skipped").ints() else emptyList(),
                     bouncedFrom = obj.intOrNull("bouncedFrom"),
                     brokenShields = decodePawnsIn(obj, "brokenShields"),

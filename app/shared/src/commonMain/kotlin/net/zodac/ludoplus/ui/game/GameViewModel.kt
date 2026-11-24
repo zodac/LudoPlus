@@ -39,6 +39,7 @@ import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.MoveLog
+import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.game.TutorialScript
 import net.zodac.ludoplus.game.TutorialStep
@@ -390,15 +391,15 @@ class GameViewModel(
     }
 
     /**
-     * The current player moves [pawn] (a partner's, [owner]'s, when they roll for one; with two dice, by [die]), if it's a
+     * The current player moves [pawn] (a partner's, [owner]'s, when they roll for one; with two dice, by [die]; ending on a Swap, with [swap]), if it's a
      * person's turn and that pawn has a legal move. In the tutorial, only the move step's own pawn, once the step is shown.
      */
-    fun move(pawn: Int, owner: Int? = null, die: Int? = null) {
+    fun move(pawn: Int, owner: Int? = null, die: Int? = null, swap: PawnRef? = null) {
         val game = _game.value ?: return
         val phase = game.state.phase
-        if (phase !is TurnPhase.AwaitingMove || game.currentIsCpu || phase.moves.none { it.pawn == pawn && it.owner == owner && (die == null || it.roll == die) }) return
+        if (phase !is TurnPhase.AwaitingMove || game.currentIsCpu || phase.moves.none { it.pawn == pawn && it.owner == owner && (die == null || it.roll == die) && it.swap == swap }) return
         guestSession?.let {
-            it.move(pawn, owner, die)
+            it.move(pawn, owner, die, swap)
             return
         }
         val progress = tutorialProgress
@@ -406,11 +407,11 @@ class GameViewModel(
             val step = progress.current as? TutorialStep.Move ?: return
             if (step.pawn != pawn || progress.shown.value != step) return
         }
-        update(LudoEngine.move(game.state, pawn, owner, die))
+        update(LudoEngine.move(game.state, pawn, owner, die, swap))
     }
 
-    /** The current player makes [move] ([move] by pawn, owner, and die). */
-    fun move(move: Move) = move(move.pawn, move.owner, move.roll)
+    /** The current player makes [move] ([move] by pawn, owner, die, and swap). */
+    fun move(move: Move) = move(move.pawn, move.owner, move.roll, move.swap)
 
     private fun update(state: GameState) {
         val game = _game.value ?: return
@@ -805,9 +806,9 @@ class GameViewModel(
             }
             is GuestAction.Move -> {
                 val phase = game.state.phase as? TurnPhase.AwaitingMove ?: return
-                if (!theirTurn || phase.moves.none { it.pawn == action.pawn && it.owner == action.owner && (action.die == null || it.roll == action.die) }) return
+                if (!theirTurn || phase.moves.none { it.pawn == action.pawn && it.owner == action.owner && (action.die == null || it.roll == action.die) && it.swap == action.swap }) return
                 takeBackTurn(game)
-                update(LudoEngine.move(game.state, action.pawn, action.owner, action.die))
+                update(LudoEngine.move(game.state, action.pawn, action.owner, action.die, action.swap))
             }
         }
     }

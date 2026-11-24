@@ -155,55 +155,6 @@ class ChaosEngineTest {
     }
 
     @Test
-    fun `Teleport takes the pawn 1 to 6 squares on - by the seed - capturing where it lands`() {
-        val jumps = (0L..60L).map { seed -> game(listOf(1, Y, Y, Y), powerUps = mapOf(3 to PowerUp.TELEPORT), seed = seed).play(2) }
-        assertEquals((4..9).toSet(), jumps.map { it.players[RED].pawns[0] }.toSet())
-        for (state in jumps) {
-            assertEquals(state.players[RED].pawns[0], state.effect.movedTo)
-            assertEquals(Move(0, 1, 3), state.moved.move)
-        }
-        // Green's on square 5 (progress 44) is captured by a jump of 2, which earns a roll, and by no other.
-        val captures = (0L..60L).map { seed -> game(listOf(1, Y, Y, Y), listOf(44, Y, Y, Y), powerUps = mapOf(3 to PowerUp.TELEPORT), seed = seed).play(2) }
-        for (state in captures) {
-            val landed = state.players[RED].pawns[0] == 5
-            assertEquals(if (landed) listOf(PawnRef(GREEN, 0)) else emptyList(), state.effect.captures)
-            assertEquals(landed, state.rollingAgain)
-            assertEquals(if (landed) 1 else 0, state.players[RED].captures)
-        }
-        assertTrue(captures.any { it.rollingAgain })
-    }
-
-    @Test
-    fun `Teleport from the last track square goes into the home column - or home - never past it`() {
-        val states = (0L..60L).map { seed -> game(listOf(49, HOME, HOME, HOME), powerUps = mapOf(50 to PowerUp.TELEPORT), seed = seed).play(1) }
-        assertEquals((51..HOME).toSet(), states.map { it.players[RED].pawns[0] }.toSet())
-        // Home with the last pawn: finished, and placed.
-        for (state in states) assertEquals(state.players[RED].pawns[0] == HOME, state.moved.finished && state.finishingOrder == listOf(RED))
-    }
-
-    @Test
-    fun `Teleport bounces off a shield - and won't land on a blockade`() {
-        val states = (0L..60L).map { seed -> game(listOf(1, Y, Y, Y), listOf(44, Y, Y, Y), powerUps = mapOf(3 to PowerUp.TELEPORT), seed = seed).shielding(GREEN, 0).play(2) }
-        assertFalse(states.any { it.players[RED].pawns[0] == 5 })
-        assertTrue(states.any { it.effect.brokenShields == listOf(PawnRef(GREEN, 0)) && it.players[RED].pawns[0] == 4 })
-        val blocked = (0L..60L).map { seed ->
-            game(listOf(1, Y, Y, Y), listOf(44, 44, Y, Y), powerUps = mapOf(3 to PowerUp.TELEPORT), houseRules = setOf(HouseRule.BLOCKADES), seed = seed).play(2)
-        }
-        assertFalse(blocked.any { it.players[RED].pawns[0] == 5 })
-        assertTrue(blocked.any { it.players[RED].pawns[0] == 3 && it.effect.movedTo == null })
-    }
-
-    @Test
-    fun `one power-up a move - a pawn teleported onto another leaves it there - to be taken by the next to land on it`() {
-        val on = (4..9).filter { it != 8 }.associateWith { PowerUp.DOUBLE }
-        val states = (0L..20L).map { seed -> game(listOf(1, Y, Y, Y), powerUps = on + (3 to PowerUp.TELEPORT), seed = seed).play(2) }
-        for (state in states) {
-            assertEquals(on, state.powerUps)
-            assertEquals(0, state.players[RED].doubledRolls)
-        }
-    }
-
-    @Test
     fun `Roll Again rolls again`() {
         val state = game(listOf(1, Y, Y, Y), powerUps = mapOf(3 to PowerUp.ROLL_AGAIN)).play(2)
         assertTrue(state.rollingAgain)
@@ -225,35 +176,79 @@ class ChaosEngineTest {
         assertTrue(guarded.rollingAgain)
     }
 
+    private fun emptyYard() = listOf(Y, Y, Y, Y)
+
+    /** The pawns red's, moved 2 to the Swap on square 3, can swap with. */
+    private fun GameState.swaps(): List<PawnRef> = copy(powerUps = mapOf(3 to PowerUp.SWAP)).movesFor(2).filter { it.pawn == 0 }.mapNotNull { it.swap }
+
     @Test
-    fun `Swap trades places with the nearest rival ahead`() {
-        // Green on square 30 (progress 17), yellow on 28 (progress 2).
-        val state = game(listOf(1, Y, Y, Y), listOf(17, Y, Y, Y), listOf(2, Y, Y, Y), powerUps = mapOf(3 to PowerUp.SWAP))
-        // Yellow's nearest, but 25 back would take it past its start: green's it is, 27 back, for which it's 10 too far.
-        assertNull(state.play(2).effect.swapped)
-        val swapped = game(listOf(1, Y, Y, Y), listOf(5, Y, Y, Y), listOf(40, Y, Y, Y), listOf(28, Y, Y, Y), powerUps = mapOf(3 to PowerUp.SWAP)).play(2)
-        // Yellow on 14, blue on 15, and green on 18 (its start is between): yellow's is the nearest.
-        assertEquals(PawnRef(2, 0), swapped.effect.swapped)
+    fun `Swap is with any other player's pawn on the track - or with nobody`() {
+        // Green on squares 18 and 30; yellow on 14, and one home; blue's on its start, safe, and one shielded on 45.
+        val state = game(listOf(1, 20, Y, Y), listOf(5, 17, Y, Y), listOf(40, HOME, Y, Y), listOf(0, 6, Y, Y)).shielding(3, 1).copy(powerUps = mapOf(3 to PowerUp.SWAP))
+        assertEquals(listOf(null, PawnRef(1, 0), PawnRef(1, 1), PawnRef(2, 0), PawnRef(3, 0), PawnRef(3, 1)), state.movesFor(2).filter { it.pawn == 0 }.map { it.swap })
+        // The pawn that doesn't land on it has no swap.
+        assertEquals(listOf(null), state.movesFor(2).filter { it.pawn == 1 }.map { it.swap })
+        // Nobody's: the power-up is gone, and every pawn stays.
+        val kept = state.play(2)
+        assertEquals(3, kept.players[RED].pawns[0])
+        assertEquals(PowerUpEffect(PowerUp.SWAP), kept.effect)
+        assertEquals(emptyMap(), kept.powerUps)
+        // Yellow's on 14: each counts its place from its own start.
+        val swapped = LudoEngine.move(LudoEngine.applyRoll(state, 2), 0, swap = PawnRef(2, 0))
+        assertEquals(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)), swapped.effect)
         assertEquals(14, swapped.players[RED].pawns[0])
         assertEquals(29, swapped.players[2].pawns[0])
         assertEquals(3, swapped.board.trackSquare(2, 29))
         assertEquals(0, swapped.players[RED].captures)
+        assertEquals(GREEN, swapped.current)
+        // Past a start, either way: green's on 18 goes to 3, most of its way round.
+        val round = LudoEngine.move(LudoEngine.applyRoll(state, 2), 0, swap = PawnRef(1, 0))
+        assertEquals(18 to 42, round.players[RED].pawns[0] to round.players[GREEN].pawns[0])
+        // Its shield goes with it.
+        val shield = LudoEngine.move(LudoEngine.applyRoll(state, 2), 0, swap = PawnRef(3, 1))
+        assertTrue(shield.isShielded(3, 1))
+        assertEquals(45, shield.players[RED].pawns[0])
     }
 
     @Test
-    fun `Swap passes over a rival who is safe - shielded - or not alone`() {
-        fun swap(yellow: List<Int>, shield: Boolean = false) =
-            game(listOf(1, Y, Y, Y), emptyYard(), yellow, powerUps = mapOf(3 to PowerUp.SWAP)).let { if (shield) it.shielding(2, 0) else it }.play(2).effect.swapped
-        assertEquals(PawnRef(2, 0), swap(listOf(40, Y, Y, Y)))
-        assertNull(swap(listOf(40, Y, Y, Y), shield = true))
-        assertNull(swap(listOf(40, 40, Y, Y)))
-        // Square 8's star.
-        assertNull(swap(listOf(34, Y, Y, Y)))
-        // Nobody ahead.
-        assertNull(swap(emptyYard()))
+    fun `Swap leaves no rivals sharing a square that isn't safe - nor a pawn where its way never goes`() {
+        // Two of yellow's on square 14: one would be left with red's. On a safe square, the star on 8, it's no matter.
+        assertEquals(emptyList(), game(listOf(1, Y, Y, Y), emptyYard(), listOf(40, 40, Y, Y)).swaps())
+        assertEquals(listOf(PawnRef(2, 0)), game(listOf(1, Y, Y, Y), emptyYard(), listOf(34, 34, Y, Y)).swaps())
+        // Another of red's on square 3 would be left with whoever came.
+        assertEquals(emptyList(), game(listOf(1, 3, Y, Y), emptyYard(), listOf(40, Y, Y, Y)).swaps())
+        // Red's way never takes it over square 51, the one before its start.
+        assertEquals(emptyList(), game(listOf(1, Y, Y, Y), listOf(38, Y, Y, Y)).swaps())
+        // Nobody on the track.
+        assertEquals(emptyList(), game(listOf(1, Y, Y, Y), listOf(52, HOME, Y, Y)).swaps())
     }
 
-    private fun emptyYard() = listOf(Y, Y, Y, Y)
+    @Test
+    fun `a pawn captured on the Swap's square isn't there to swap with - and a partner's pawn is another player's`() {
+        val captured = game(listOf(1, Y, Y, Y), listOf(42, Y, Y, Y), listOf(40, Y, Y, Y))
+        assertEquals(listOf(PawnRef(2, 0)), captured.swaps())
+        val teams = captured.copy(rules = captured.rules.copy(teams = listOf(0, 1, 0, 1)))
+        assertEquals(listOf(PawnRef(2, 0)), teams.swaps())
+    }
+
+    @Test
+    fun `a move with a swap to pick isn't made for its player - and with none it is`() {
+        fun automatic(yellow: List<Int>) = LudoEngine.automaticMove(LudoEngine.applyRoll(game(listOf(1, Y, Y, Y), emptyYard(), yellow, powerUps = mapOf(3 to PowerUp.SWAP)), 2))
+        assertNull(automatic(listOf(40, Y, Y, Y)))
+        assertEquals(Move(0, 1, 3), automatic(emptyYard()))
+    }
+
+    @Test
+    fun `Medium and Hard swap when they gain by it - and with nobody when they would lose`() {
+        for (difficulty in listOf(Difficulty.MEDIUM, Difficulty.HARD)) {
+            val strategy = CpuStrategy.of(difficulty)
+            fun choice(state: GameState, square: Int) = LudoEngine.applyRoll(state.copy(powerUps = mapOf(square to PowerUp.SWAP)), 2).let { strategy.choose(it, (it.phase as TurnPhase.AwaitingMove).moves, Random(1)).swap }
+            // Yellow's on square 48, 22 on from its start: 45 on for red, and back to 3 is 29 on for yellow. Still a gain of 38.
+            assertEquals(PawnRef(2, 0), choice(game(listOf(1, Y, Y, Y), emptyYard(), listOf(22, Y, Y, Y)), square = 3), "$difficulty")
+            // Yellow's on square 2, 28 on: from square 40, a swap would cost red 38, and yellow only 14.
+            assertNull(choice(game(listOf(38, Y, Y, Y), emptyYard(), listOf(28, Y, Y, Y)), square = 40), "$difficulty")
+        }
+    }
 
     @Test
     fun `Medium and Hard go for a power-up - and Hard doesn't see what its chances will be`() {
@@ -263,7 +258,7 @@ class ChaosEngineTest {
             assertEquals(1, strategy.choose(state, (state.phase as TurnPhase.AwaitingMove).moves, Random(1)).pawn, "$difficulty")
         }
         val values = (0L..30L).map { seed ->
-            val state = LudoEngine.applyRoll(game(listOf(1, Y, Y, Y), listOf(44, Y, Y, Y), powerUps = mapOf(3 to PowerUp.TELEPORT), seed = seed), 2)
+            val state = LudoEngine.applyRoll(game(listOf(1, Y, Y, Y), listOf(44, Y, Y, Y), powerUps = mapOf(3 to PowerUp.CALL_UP), seed = seed), 2)
             ExpectimaxStrategy().value(state, (state.phase as TurnPhase.AwaitingMove).moves.single())
         }
         assertEquals(1, values.distinct().size)

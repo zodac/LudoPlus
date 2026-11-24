@@ -55,10 +55,6 @@ internal fun DrawScope.drawPowerUp(powerUp: PowerUp, centre: Offset, radius: Flo
             lines(0.06f to -0.22f, 0.18f to -0.42f, 0.42f to -0.42f, 0.54f to -0.2f, 0.46f to 0f, 0.06f to 0.4f, 0.58f to 0.4f)
         }
         PowerUp.SHIELD -> drawShieldShape(centre, radius)
-        PowerUp.TELEPORT -> {
-            drawOval(Color.White, at(-0.42f, -0.55f), Size(radius * 0.84f, radius * 1.1f), style = Stroke(radius * 0.15f))
-            drawCircle(Color.White, radius * 0.16f, centre)
-        }
         PowerUp.ROLL_AGAIN -> {
             drawArc(Color.White, -50f, 290f, false, at(-0.42f, -0.42f), Size(radius * 0.84f, radius * 0.84f), style = Stroke(radius * 0.15f, cap = StrokeCap.Round))
             lines(0.02f to -0.62f, 0.3f to -0.36f, 0f to -0.12f)

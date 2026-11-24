@@ -98,7 +98,8 @@ private const val HOME_SPARKS = 10
  * seat's yard, start square, home column, and pawns (null for a seat nobody sits at). Until the game is over, the yard of
  * the player whose turn it is has a ring round its inside edge. The pawns that [moves] can move
  * are ringed (a partner's too, when the player rolls for one), and a tap near one, or a screen reader's action on its
- * square ([BoardSemantics]), makes its move ([onMove]).
+ * square ([BoardSemantics]), makes its move ([onMove]). While [swapping], the pawns ringed and tapped are those the move
+ * ([Move.swap]) can swap with.
  *
  * A move hops square by square (out of the yard, it glides to the start square). A pawn it captures is knocked out
  * in a burst on its square and thrown back to its yard; a pawn that reaches home pops in a ring of sparks. None of it
@@ -111,9 +112,10 @@ fun LudoBoard(
     moves: List<Move>,
     onMove: (Move) -> Unit,
     modifier: Modifier = Modifier,
+    swapping: Boolean = false,
 ) {
     val colours = remember(seatColours) { seatColours.map { it?.color } }
-    val movable = remember(moves, state) { moves.map { PawnRef(it.ownerIn(state), it.pawn) }.toSet() }
+    val movable = remember(moves, state, swapping) { moves.mapNotNull { it.picked(state, swapping) }.toSet() }
     val marks = remember(state.players) { pawnMarks(state) }
     val textMeasurer = rememberTextMeasurer()
     val currentMarks by rememberUpdatedState(marks)
@@ -121,6 +123,7 @@ fun LudoBoard(
     val currentMoves by rememberUpdatedState(moves)
     val currentState by rememberUpdatedState(state)
     val currentOnMove by rememberUpdatedState(onMove)
+    val currentSwapping by rememberUpdatedState(swapping)
     val motion = rememberMoveMotion(state)
     val ghostMotion = rememberGhostMotion(state)
     val vanish = rememberVanishMotion(state)
@@ -148,7 +151,7 @@ fun LudoBoard(
             if (vanish.squares.isNotEmpty()) BoundedArt(modifier = Modifier.fillMaxSize()) { with(vanish) { drawVanishing(layout, size.minDimension / layout.size, stage) } }
         }
         // The portals, under the pawns: drawn once.
-        if (state.rules.portals) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPortals(layout, size.minDimension / layout.size, colours) }
+        if (state.rules.portals) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPortals(layout, size.minDimension / layout.size) }
         // The power-ups, under the pawns: drawn again as one comes or goes.
         if (state.rules.powerUps) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPowerUps(layout, size.minDimension / layout.size, state.powerUps) }
         // On a layer of its own too, drawn again only as the turn passes.
@@ -166,7 +169,7 @@ fun LudoBoard(
                     detectTapGestures { tap ->
                         val unit = size.width.toFloat() / layout.size
                         val picked = pawnAt(tap / unit, currentMarks, currentMovable)
-                        currentMoves.firstOrNull { picked != null && it.pawn == picked.pawn && it.ownerIn(currentState) == picked.player }?.let(currentOnMove)
+                        currentMoves.firstOrNull { picked != null && it.picked(currentState, currentSwapping) == picked }?.let(currentOnMove)
                     }
                 },
         ) {
@@ -200,7 +203,7 @@ fun LudoBoard(
                 with(motion) { drawMotion(size.minDimension / layout.size, theme.pawns) { pawnColours[it] } }
             }
         }
-        BoardSemantics(state, seatColours, moves, onMove, Modifier.fillMaxSize())
+        BoardSemantics(state, seatColours, moves, onMove, Modifier.fillMaxSize(), swapping)
     }
 }
 

@@ -46,6 +46,9 @@ data class BoardGeometry(
         return (startSquare(seat) + progress) % trackLength
     }
 
+    /** The progress a pawn of [seat] on the absolute track [square] has, counted from its own start square, or null on the square its way never takes it over. */
+    fun progressAt(seat: Int, square: Int): Int? = (square - startSquare(seat)).mod(trackLength).takeIf { it < trackSteps }
+
     /** Whether the absolute track [square] is safe: a start square or a star square. */
     fun isSafe(square: Int): Boolean = square % seatSpacing == 0 || square % seatSpacing == starOffset
 

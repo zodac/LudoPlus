@@ -35,7 +35,6 @@ import net.zodac.ludoplus.resources.game_square_column_spoken
 import net.zodac.ludoplus.resources.game_square_empty_spoken
 import net.zodac.ludoplus.resources.game_square_ghost_spoken
 import net.zodac.ludoplus.resources.game_square_home_spoken
-import net.zodac.ludoplus.resources.game_square_portal_shut_spoken
 import net.zodac.ludoplus.resources.game_square_portal_spoken
 import net.zodac.ludoplus.resources.game_square_power_up_spoken
 import net.zodac.ludoplus.resources.game_square_safe_for_spoken
@@ -45,6 +44,7 @@ import net.zodac.ludoplus.resources.game_square_track_spoken
 import net.zodac.ludoplus.resources.game_square_yard_lost_spoken
 import net.zodac.ludoplus.resources.game_square_yard_pawns_spoken
 import net.zodac.ludoplus.resources.game_square_yard_spoken
+import net.zodac.ludoplus.resources.game_swap_action
 import net.zodac.ludoplus.ui.common.joinClauses
 import net.zodac.ludoplus.ui.common.pluralStringResource
 import net.zodac.ludoplus.ui.common.stringResource
@@ -61,11 +61,11 @@ private fun List<Offset>.bounds(): Rect = Rect(minOf { it.x }, minOf { it.y }, m
  * The board for a screen reader, laid over the drawn one: a node for each yard, each track square (numbered from red's
  * start), each home-column square, and home (none on an endless board), saying what's on it ("Square 14, Red pawn 2, 43 squares from home"). A
  * square holding a pawn the current player can move (theirs, or a partner's they roll for) is a button whose action
- * moves it ([moves], [onMove]).
+ * moves it ([moves], [onMove]), or while [swapping], one holding a pawn the move can swap with, whose action swaps them.
  */
 @Composable
-fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>, onMove: (Move) -> Unit, modifier: Modifier = Modifier) {
-    val spots = boardSpots(state, seatColours, moves)
+fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>, onMove: (Move) -> Unit, modifier: Modifier = Modifier, swapping: Boolean = false) {
+    val spots = boardSpots(state, seatColours, moves, swapping)
     BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
         val unit: Dp = maxWidth / BoardLayout.of(state.board).size
         spots.forEachIndexed { index, spot ->
@@ -85,7 +85,7 @@ fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: Li
 }
 
 @Composable
-private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>): List<Spot> {
+private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>, swapping: Boolean): List<Spot> {
     val board = state.board
     val layout = BoardLayout.of(board)
     val colourOf = { player: Int -> seatColours[state.players[player].seat] ?: PlayerColour.defaultFor(state.players[player].seat) }
@@ -97,9 +97,9 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
             Triple(player, pawn, position) to pawnSpoken(colourOf(player), pawn + 1, position, board).let { if (state.isShielded(player, pawn)) joinClauses(listOf(it, shielded)) else it }
         }
     }
-    val moveLabels = moves.associateWith { moveLabel(state, it, colourOf) }
+    val moveLabels = moves.associateWith { if (swapping) swapLabel(it, colourOf) else moveLabel(state, it, colourOf) }
     val movableAt = { player: Int, pawnsHere: List<Int> ->
-        moves.firstOrNull { it.ownerIn(state) == player && it.pawn in pawnsHere }
+        moves.firstOrNull { move -> move.picked(state, swapping).let { it?.player == player && it.pawn in pawnsHere } }
     }
     val empty = stringResource(Res.string.game_square_empty_spoken)
     val spots = mutableListOf<Spot>()
@@ -143,7 +143,7 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
             startOf?.let { stringResource(Res.string.game_square_start_spoken, stringResource(colourOf(it).label)) },
             safety,
             blockade,
-        ) + portalClauses(state, square, colourOf) + powerUpClauses(state, square) + ghostClauses(state, square) + here.map { it.second }.ifEmpty { listOf(empty) }
+        ) + portalClauses(state, square) + powerUpClauses(state, square) + ghostClauses(state, square) + here.map { it.second }.ifEmpty { listOf(empty) }
         val move = state.players.indices.firstNotNullOfOrNull { player -> movableAt(player, here.filter { it.first.first == player }.map { it.first.second }) }
         spots += Spot(layout.trackSquare(square).spotBounds(), joinClauses(clauses), move, move?.let(moveLabels::get))
     }
@@ -164,16 +164,11 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
     return spots
 }
 
-/** What's said of the portal on track [square], where it's one of an open pair: the square it leads to, and whose colour it's shut to. */
+/** What's said of the portal on track [square], where there's one: the square it leads to. */
 @Composable
-private fun portalClauses(state: GameState, square: Int, colourOf: (Int) -> PlayerColour): List<String> {
+private fun portalClauses(state: GameState, square: Int): List<String> {
     val portal = state.board.portalAt(square)?.takeIf { state.rules.portals } ?: return emptyList()
-    val other = if (square == portal.first) portal.second else portal.first
-    val shutTo = portalShutTo(state.board, portal)?.let { seat -> state.players.indexOfFirst { it.seat == seat } }?.takeIf { it >= 0 }
-    return listOfNotNull(
-        stringResource(Res.string.game_square_portal_spoken, other + 1),
-        shutTo?.let { stringResource(Res.string.game_square_portal_shut_spoken, stringResource(colourOf(it).label)) },
-    )
+    return listOf(stringResource(Res.string.game_square_portal_spoken, portal.otherEnd(square) + 1))
 }
 
 /** What's said of the power-up on track [square], if there's one: "Shield power-up". */
@@ -185,6 +180,13 @@ private fun powerUpClauses(state: GameState, square: Int): List<String> =
 @Composable
 private fun ghostClauses(state: GameState, square: Int): List<String> =
     if (square in state.ghosts) listOf(stringResource(Res.string.game_square_ghost_spoken)) else emptyList()
+
+/** What TalkBack offers for [move] while its swap is picked: "Swap places with Green pawn 2". */
+@Composable
+internal fun swapLabel(move: Move, colourOf: (Int) -> PlayerColour): String {
+    val swap = checkNotNull(move.swap)
+    return stringResource(Res.string.game_swap_action, stringResource(colourOf(swap.player).label), swap.pawn + 1)
+}
 
 /**
  * What TalkBack offers for [move]: "Move Red pawn 2 4 squares, capturing Green pawn 1", or "Bring Red pawn 1 out of the

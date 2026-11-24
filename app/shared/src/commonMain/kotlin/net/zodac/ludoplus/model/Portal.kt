@@ -7,13 +7,13 @@ package net.zodac.ludoplus.model
  * the next seat's, so past its start square.
  */
 data class Portal(val seat: Int, val long: Boolean, val first: Int, val second: Int, val steps: Int) {
-    /** How far a pawn going in at the absolute track [square], one of the pair's, is taken: forwards, or back. */
-    fun stepsFrom(square: Int): Int = if (square == first) steps else -steps
+    /** The other end from the absolute track [square], one of the pair's. */
+    fun otherEnd(square: Int): Int = if (square == first) second else first
 }
 
 /**
  * The board's portals: for each seat, a short pair within its own stretch of the track and a long one into the next
- * seat's, the same for every seat so none is favoured. None is on a safe square.
+ * seat's, the same for every seat so none is favoured, and open to all. None is on a safe square.
  */
 val BoardGeometry.portals: List<Portal>
     get() = (0..<seats).flatMap { listOf(shortPortal(it), longPortal(it)) }
@@ -37,15 +37,14 @@ fun BoardGeometry.portalAt(square: Int): Portal? {
 }
 
 /**
- * Where a pawn of [seat] comes out, as progress, after a move that ends at [progress]: its portal's other end, or
- * [progress] itself where there's none, or where going through would take it past its own start square, so into its home
- * column early or round for another lap.
+ * Where a pawn of [seat] comes out, as progress, after a move that ends at [progress]: its portal's other end, counted
+ * from its own start square as any square is, or [progress] itself where there's none. So the long pair either side of its
+ * own start takes a pawn most of the way round, or most of the way back.
  */
 fun BoardGeometry.throughPortal(seat: Int, progress: Int): Int {
     if (progress !in 0..<trackSteps) return progress
     val square = trackSquare(seat, progress)
-    val out = progress + (portalAt(square)?.stepsFrom(square) ?: 0)
-    return if (out in 0..<trackSteps) out else progress
+    return portalAt(square)?.let { progressAt(seat, it.otherEnd(square)) } ?: progress
 }
 
 /** A short pair's squares, and a long one's, from the seat's start square (the long one's second from the next seat's). */

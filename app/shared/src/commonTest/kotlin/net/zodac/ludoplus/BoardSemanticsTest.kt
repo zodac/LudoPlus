@@ -118,15 +118,15 @@ class BoardSemanticsTest : UiTest() {
     }
 
     @Test
-    fun `portals - each says where it leads and whose colour it's shut to - and a move through one says so`() = uiTest(TestScreen(411, 891)) {
+    fun `portals - each says where it leads - and a move through one says so`() = uiTest(TestScreen(411, 891)) {
         val new = GameState.new(GameMode.PORTALS, 4)
         val pawns = listOf(listOf(1, 12, Y, Y), listOf(49, Y, Y, Y))
         show(LudoEngine.applyRoll(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }) }), 2))
         listOf(
             "Square 4, portal to square 11, empty",
             "Square 11, portal to square 4, Green pawn 1, 7 squares from home",
-            "Square 7, portal to square 23, shut to Green, empty",
-            "Square 23, portal to square 7, shut to Green, empty",
+            "Square 7, portal to square 23, empty",
+            "Square 23, portal to square 7, empty",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
         compose.onNodeWithContentDescription("Square 2, Red pawn 1, 55 squares from home")
             .assert(onClickLabel("Move Red pawn 1 2 squares, through a portal to square 11, capturing Green pawn 1"))
@@ -211,17 +211,50 @@ class BoardSemanticsTest : UiTest() {
             players = new.players.mapIndexed { i, p ->
                 p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }, shielded = if (i == 1) setOf(0) else emptySet(), doubledRolls = if (i == 2) 1 else 0)
             },
-            powerUps = mapOf(3 to PowerUp.TELEPORT, 40 to PowerUp.SHIELD),
+            powerUps = mapOf(3 to PowerUp.ROLL_AGAIN, 40 to PowerUp.SHIELD),
         )
         show(LudoEngine.applyRoll(state, 2))
         listOf(
-            "Square 4, Teleport power-up, empty",
+            "Square 4, Roll Again power-up, empty",
             "Square 41, Shield power-up, empty",
             "Square 23, Green pawn 1, 47 squares from home, shielded",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
-        compose.onNodeWithContentDescription("Square 2, Red pawn 1, 55 squares from home").assert(onClickLabel("Move Red pawn 1 2 squares, taking Teleport"))
+        compose.onNodeWithContentDescription("Square 2, Red pawn 1, 55 squares from home").assert(onClickLabel("Move Red pawn 1 2 squares, taking Roll Again"))
         compose.onNodeWithContentDescription("Square 21, Red pawn 2, 36 squares from home").assert(onClickLabel("Move Red pawn 2 2 squares, bouncing off Green pawn 1's shield"))
         compose.onNode(hasText("Sam") and stateSays("0 pawns home, 1 doubled roll left, currently joint 3rd")).assertExists()
+    }
+
+    @Test
+    fun `a Swap is made in two picks - the pawn that moves - then whose to swap with - or nobody's`() = uiTest(TestScreen(411, 891)) {
+        val new = GameState.new(GameMode.CHAOS, 4)
+        val pawns = listOf(listOf(1, 40, Y, Y), listOf(9, Y, Y, Y), listOf(Y, 35, Y, Y))
+        val state = new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }) }, powerUps = mapOf(3 to PowerUp.SWAP))
+        val made = mutableListOf<Move>()
+        fun show() = showcase.show {
+            val rolled = LudoEngine.applyRoll(state, 2)
+            CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
+                LudoPlusTheme { GameContent(StartedGame(GameMode.CHAOS, players, rolled, first = 0), onRoll = {}, onMove = { made += it }, onBack = {}, onResults = {}) }
+            }
+        }
+        show()
+        // A pawn that doesn't land on it moves at once.
+        compose.onNode(onClickLabel("Move Red pawn 2 2 squares")).performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(listOf(Move(1, 40, 42)), made)
+        made.clear()
+        compose.onNode(onClickLabel("Move Red pawn 1 2 squares, taking Swap")).performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        assertEquals(emptyList(), made)
+        val prompt = compose.onNodeWithContentDescription("Alex, pick a pawn to swap with.").fetchSemanticsNode()
+        assertEquals(listOf("Swap places with Green pawn 1", "Swap places with Yellow pawn 2"), prompt.config[SemanticsActions.CustomActions].map { it.label })
+        assertEquals(LiveRegionMode.Polite, prompt.config[SemanticsProperties.LiveRegion])
+        compose.onNodeWithContentDescription("Square 23, Green pawn 1, 47 squares from home").assert(onClickLabel("Swap places with Green pawn 1")).performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(listOf(Move(0, 1, 3, swap = PawnRef(1, 0))), made)
+        made.clear()
+        show()
+        compose.onNode(onClickLabel("Move Red pawn 1 2 squares, taking Swap")).performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        compose.onNodeWithText("Don't swap").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(listOf(Move(0, 1, 3)), made)
     }
 
     @Test
@@ -231,9 +264,6 @@ class BoardSemanticsTest : UiTest() {
         for ((entry, line) in listOf(
             moved(PowerUpEffect(PowerUp.DOUBLE)) to "Alex moved a pawn 2 squares. Alex's next 3 rolls count double.",
             moved(PowerUpEffect(PowerUp.SHIELD)) to "Alex moved a pawn 2 squares. Alex took Shield.",
-            moved(PowerUpEffect(PowerUp.TELEPORT, movedTo = 4)) to "Alex moved a pawn 2 squares. Alex teleported 1 square.",
-            moved(PowerUpEffect(PowerUp.TELEPORT, movedTo = 7, captures = listOf(PawnRef(1, 0)))) to
-                "Alex moved a pawn 2 squares. Alex teleported 4 squares. Alex captured 1 of Gambit's pawns.",
             moved(PowerUpEffect(PowerUp.CALL_UP, calledUp = 2)) to "Alex moved a pawn 2 squares. Alex called up a pawn.",
             moved(PowerUpEffect(PowerUp.CALL_UP)) to "Alex moved a pawn 2 squares. Alex took Call Up.",
             moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0))) to "Alex moved a pawn 2 squares. Alex swapped places with Sam.",
