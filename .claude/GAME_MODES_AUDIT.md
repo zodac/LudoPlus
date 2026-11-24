@@ -27,7 +27,7 @@ For each achievement a new mode, modifier, or setting changes, decide:
 | Track length | Speed Demon, Express Delivery, Locked Out, Not So Fast!, Back To Square One, Welcome Party, Leapfrog, Ultramarathon | Are the turn and square thresholds still fast or slow, and is there still a last square before the home column? |
 | Rolls | Too Much Of A Good Thing, Inch By Inch, Locked Out, So Near, Yet So Far, Off The Mark, Full Spread, Six Pack, Dry Spell, Bottom Of The Barrel, Six Shooter, Counting Up | Is there a roll-again limit, a 1, a 6, and a roll that leaves the yard? Two dice change all of these |
 | Captures | Gotcha!, Pest, Two For One, Straight Out The Gate, Hat Trick, Payback, Picking On You, Nobody Is Safe, On The Warpath, Déjà Vu, Bouncer, Menace, Public Enemy, Sitting Ducks, Insult To Injury, Groundhog Day, Punching Bag, Stop Picking On Me, Pacifist, Untouchable, Conqueror, Never Say Die | Can pawns still be captured, more than one at once, and does a capture still give a roll? |
-| Table | How Do You Do, Fellow CPUs?, Life Of The Party, Nobody Is Safe, We're All Friends Here | Still three opponents? (Phase 8's 2-8 players) |
+| Table | How Do You Do, Fellow CPUs?, Life Of The Party, Nobody Is Safe, We're All Friends Here | Still three opponents (Fellow CPUs), or eight players (Life Of The Party)? |
 | Game end | Wooden Spoon, Spoon Collector, Never Left Home, Early Bird, Late Bloomer, Front-Runner, Homecoming, the games-played ladder, the win counts and both streaks | Is every player still placed, and does a game still take its usual time? |
 
 Punching Bag's number came from simulated games (2,000 a difficulty, 2026-11-17): a player is captured about 6 times a

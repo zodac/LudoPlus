@@ -2,6 +2,7 @@ package net.zodac.ludoplus.game
 
 import net.zodac.ludoplus.model.Achievement
 import net.zodac.ludoplus.model.AchievementCounter
+import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.PlayerConfig
@@ -410,11 +411,12 @@ class AchievementTracker(
         if (opponents.any { after.players[it].isOneFromFinishing(after) }) add(Achievement.PHOTO_FINISH)
         if (opponents.size == FULL_TABLE_OPPONENTS) {
             val table = opponents.map { players[it] }
-            if (table.all { it.type == PlayerType.HUMAN }) add(Achievement.LIFE_OF_THE_PARTY)
             if (table.all { it.type == PlayerType.AI }) {
                 if (table.all { it.difficulty == Difficulty.HARD }) add(Achievement.HOW_DO_YOU_DO_FELLOW_CPUS)
             }
         }
+        // Whoever they are, people or CPUs, and in teams or not.
+        if (after.players.size == BoardGeometry.MAX_PLAYERS) add(Achievement.LIFE_OF_THE_PARTY)
     }
 
     /** What another player's win of [after] cost player 1. */

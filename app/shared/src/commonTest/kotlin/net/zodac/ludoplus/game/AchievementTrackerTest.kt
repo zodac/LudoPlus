@@ -527,8 +527,31 @@ class AchievementTrackerTest {
         assertFalse(Achievement.CONQUEROR in win(captures = 9))
         assertTrue(Achievement.NEVER_SAY_DIE in win(timesCaptured = 10))
         assertFalse(Achievement.NEVER_SAY_DIE in win(timesCaptured = 9))
-        assertTrue(Achievement.LIFE_OF_THE_PARTY in win(configs(cpus = false)))
-        assertFalse(Achievement.LIFE_OF_THE_PARTY in win())
+    }
+
+    @Test
+    fun `Life Of The Party is a win with eight players - people or CPUs, in teams or not`() {
+        /** [winner]'s last pawn comes home in a game of [count], their partners' home already. */
+        fun win(count: Int, cpus: Boolean = true, winner: Int = RED, rules: GameRules = GameRules()): Set<Achievement> {
+            val new = GameState.new(GameMode.CLASSIC, playerCount = count, first = winner, rules = rules.forPlayers(count))
+            val home = new.board.homeProgress
+            val state = new.copy(
+                players = new.players.mapIndexed { i, player ->
+                    when {
+                        i == winner -> player.copy(pawns = listOf(home, home, home, home - 1))
+                        rules.arePartners(winner, i) -> player.copy(pawns = List(4) { home })
+                        else -> player
+                    }
+                },
+            )
+            val players = listOf(PlayerConfig(1, PlayerType.HUMAN, "Me")) + (2..count).map { PlayerConfig(it, if (cpus) PlayerType.AI else PlayerType.HUMAN, "P$it") }
+            return Play(state, players).play(1, pawn = 3).earned
+        }
+        assertTrue(Achievement.LIFE_OF_THE_PARTY in win(8))
+        assertTrue(Achievement.LIFE_OF_THE_PARTY in win(8, cpus = false))
+        assertTrue(Achievement.LIFE_OF_THE_PARTY in win(8, rules = GameRules(teams = List(8) { it % 2 })))
+        for (count in 2..7) assertFalse(Achievement.LIFE_OF_THE_PARTY in win(count, cpus = false), "$count players")
+        assertFalse(Achievement.LIFE_OF_THE_PARTY in win(8, winner = GREEN), "another player's win")
     }
 
     @Test

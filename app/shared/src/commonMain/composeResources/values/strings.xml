@@ -966,7 +966,7 @@
     <string name="achievement_late_bloomer_title">Late Bloomer</string>
     <string name="achievement_late_bloomer_description">Win after being the last player to bring a pawn out of their yard</string>
     <string name="achievement_life_of_the_party_title">Life Of The Party</string>
-    <string name="achievement_life_of_the_party_description">Win against three people</string>
+    <string name="achievement_life_of_the_party_description">Win a game with 8 players</string>
     <string name="achievement_never_say_die_title">Never Say Die</string>
     <string name="achievement_never_say_die_description">Win after having your pawns captured 10 times in the game</string>
     <string name="achievement_pacifist_title">Pacifist</string>
