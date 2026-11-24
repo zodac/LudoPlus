@@ -164,7 +164,6 @@ import net.zodac.ludoplus.ui.style.StyleFamily
 import net.zodac.ludoplus.ui.style.TableArt
 import net.zodac.ludoplus.ui.style.TableBackgrounds
 import net.zodac.ludoplus.ui.style.catalog
-import net.zodac.ludoplus.ui.style.visualTheme
 import net.zodac.ludoplus.ui.theme.GoldAccent
 
 // Each category's tile size on its page, and the shape its pick's preview is scaled from on the Styles page.
@@ -189,7 +188,7 @@ private const val LOCKED_PADLOCK_ALPHA = 0.8f
 private const val STYLE_FLASH_HOLD_MILLIS = 900L
 private const val STYLE_FLASH_TRANSITION_MILLIS = 400
 
-// How strongly the gold washes over a mat or background tile, whose art would otherwise hide it.
+// How strongly the gold washes over a background tile, whose art would otherwise hide it.
 private const val FLASH_OVER_ART_ALPHA = 0.55f
 
 // ScreenScaffold's side margin, which the page's scrollbar sits in.
@@ -466,11 +465,11 @@ private fun Modifier.rolling(roll: DicePickRoll?): Modifier =
     }
 
 /**
- * A dice tile's die - rolling, while it's the one just picked ([roll], see [DicePickRoll]). One with something loose on its faces (googly eyes - see
- * [DiceStyle.pupilTravel]) is moved by the page, as the tray moves it in a game: wherever its tile
- * goes on screen - the page scrolled up or down - the die goes with it, and
- * its pupils are thrown about and settle. Not under reduced motion, where they sit where they settled. With [followDevice]
- * they also follow the phone's tilt and movement, as the menu logo's do.
+ * A dice tile's die - rolling, while it's the one just picked ([roll], see [DicePickRoll]). One with something loose on
+ * its faces (googly eyes - see [DiceStyle.pupilTravel]) is moved by the page, as it scrolls: wherever its tile goes on
+ * screen - the page scrolled up or down - the die goes with it, and its pupils are thrown about and settle. Not under
+ * reduced motion, where they sit where they settled. With [followDevice] they also follow the phone's tilt and
+ * movement, as the menu logo's do.
  */
 @Composable
 private fun DicePreview(style: DiceStyle, roll: DicePickRoll? = null, followDevice: Boolean = false) {
@@ -478,7 +477,7 @@ private fun DicePreview(style: DiceStyle, roll: DicePickRoll? = null, followDevi
     val face by remember(roll) { derivedStateOf { roll?.face() ?: DICE_TILE_FACE } }
     val travel = style.pupilTravel?.takeIf { ambientMotion(MotionGroup.DICE) }
     if (travel == null) {
-        style.Die(value = face, held = false, modifier = Modifier.size(DIE_ART_SIZE).rolling(roll))
+        style.Die(value = face, modifier = Modifier.size(DIE_ART_SIZE).rolling(roll))
         return
     }
     // Seeded as LocalDieIndex (0 here), so the pupils start where the die would draw them unmoved.
@@ -495,7 +494,6 @@ private fun DicePreview(style: DiceStyle, roll: DicePickRoll? = null, followDevi
     CompositionLocalProvider(LocalDieMotion provides motion) {
         style.Die(
             value = face,
-            held = false,
             // Where the die is, in its own sizes, as DieMotion measures it.
             modifier = Modifier.size(DIE_ART_SIZE).onGloballyPositioned { motion.moveTo(it.positionInRoot() / dieSizePx, 0f) }.rolling(roll),
         )
@@ -696,13 +694,12 @@ private fun GalleryGrid(slotWidth: Dp, spacing: TileSpacing, modifier: Modifier 
     }
 }
 
-// The least room between tiles side by side in a gallery, when closing up gains a column: four dice or
-// cups across a 360dp phone need 4 x 72dp in the ~304dp its card leaves inside TILES_SIDE_PADDING - gaps of 5dp.
+// The least room between tiles side by side in a gallery, when closing up gains a column: four dice
+// across a 360dp phone need 4 x 72dp in the ~304dp its card leaves inside TILES_SIDE_PADDING - gaps of 5dp.
 private val GALLERY_MIN_TILE_SPACING = 4.dp
 
-// The room either side of a card's tiles: what lets
-// four dice or cups fit across a 360dp phone's gallery (20dp page padding each side), and still wide
-// enough for the longest name to spill into.
+// The room either side of a card's tiles: what lets four dice fit across a 360dp phone's gallery (20dp page padding
+// each side), and still wide enough for the longest name to spill into.
 private val TILES_SIDE_PADDING = 8.dp
 
 // The room above a category's first line of tiles and below its last.
@@ -774,7 +771,7 @@ private fun TileSlot(tile: @Composable () -> Unit) {
  * current pick. Tapping it picks the colour it's showing; long-pressing it, when it has more than
  * one colour, pops up a scrollable row of that style's colours, each as its own preview, to pick
  * one. [previewSize] is the preview's own size, which differs by category (a die's is square, a
- * cup's is tall, the mat's is wide).
+ * background's is tall).
  */
 @Composable
 private fun <T : TableArt> StyleFamilyTile(
@@ -1088,8 +1085,8 @@ private fun <T : TableArt> StylePreview(
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val shape = RoundedCornerShape(16.dp)
-    // The gold flash of a tile a banner brought you to, like an achievement row's: behind the art (the
-    // die sits on it), or - for a mat or background, which is the whole tile - washed over it.
+    // The gold flash of a tile a banner brought you to, like an achievement row's: behind the art (the die sits on it),
+    // or - for a background, which is the whole tile - washed over it.
     val flash by animateFloatAsState(
         targetValue = if (flashing) 1f else 0f,
         animationSpec = if (LocalReduceMotion.current) snap() else tween(STYLE_FLASH_TRANSITION_MILLIS),

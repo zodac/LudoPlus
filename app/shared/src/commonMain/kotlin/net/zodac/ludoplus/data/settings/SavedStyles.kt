@@ -17,7 +17,7 @@ data class SavedStyles(
     val diceStyleId: String,
     val tableBackgroundId: String,
     val achievements: AchievementsState,
-    /** Whether the "Unlock all styles" purchase unlocks every style (Phase 11; false until then). */
+    /** Whether the "Unlock all styles" purchase unlocks every style. */
     val ownsAllStyles: Boolean = false,
 )
 

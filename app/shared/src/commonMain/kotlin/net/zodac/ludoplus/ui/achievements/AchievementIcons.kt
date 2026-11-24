@@ -118,7 +118,7 @@ val Achievement.icon: ImageVector
         Achievement.WIRE_TO_WIRE -> Symbols.Timeline
 
         // ---- Game Modes ---------------------------------------------------------------------
-        // A wedge-shaped sports car trailing fire, as DiceFive's: a nod to the film the title quotes, drawn from scratch.
+        // A wedge-shaped sports car trailing fire: a nod to the film the title quotes, drawn from scratch.
         Achievement.WHERE_WERE_GOING_WE_DONT_NEED_RULES -> TIME_MACHINE_CAR_ICON
         Achievement.QUICK_ON_THE_DRAW -> Symbols.FastForward
         Achievement.BLINK_AND_YOULL_MISS_IT -> Symbols.Acute

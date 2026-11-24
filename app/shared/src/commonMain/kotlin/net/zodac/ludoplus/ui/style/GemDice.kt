@@ -16,7 +16,6 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 /** How a stone is cut, seen from above. */
 enum class GemCut {
@@ -63,17 +62,14 @@ val GemsByValue: List<Gem> = listOf(
 private const val GEM_RADIUS_FRACTION = 0.14f
 
 /**
- * Gem dice: a standard die face whose pips are cut gemstones, a different stone for every
- * value - see [GemsByValue]. Each stone is a little different from every other of its kind, the way
- * natural stones are. On a coloured roll every gem is cut from the roll's pip colour instead, so the
- * colour still reads.
+ * Gem dice: a standard die face whose pips are cut gemstones, a different stone for every value - see [GemsByValue].
+ * Each stone is a little different from every other of its kind, the way natural stones are.
  */
 class GemDiceStyle(
     override val id: String,
     private val light: Color,
     private val dark: Color,
     private val gems: List<Gem> = GemsByValue,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     init {
         require(gems.size == 6) { "A gem die needs a gem for each of its six values" }
@@ -81,29 +77,21 @@ class GemDiceStyle(
 
     override val swatch: Color = light
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle {
-        val pip = palette.pip
-        val gem = Gem(GemCut.ROUND, deep = lerp(pip, Color.Black, 0.6f), base = pip, light = lerp(pip, Color.White, 0.55f))
-        return GemDiceStyle(id, palette.diceTop, palette.diceBottom, List(6) { gem }, palette.heldRing)
-    }
-
     override val cornerPercent: Int = STYLED_DIE_CORNER_PERCENT
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val gem = gems[value - 1]
         // Every face of every die cut differently - they're meant to be natural stones.
         val seed = naturalPatternSeed(value)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(light, dark)),
             edge = dark,
             pipColor = gem.base,
             pipShape = PipShape.CUSTOM,
-            heldRingColor = heldRing,
-            // Both painted once per face and size, then stamped: a toss redraws two faces of every die each frame.
+            // Both painted once per face and size, then stamped: a roll redraws two faces of every die each frame.
             customPips = { drawCachedSurface(GemFace(value, gem, dark, seed)) { drawGems(value, gem, dark, seed) } },
         ) {
             drawCachedSurface(GemFaceSurface(light, dark, seed)) { paintGemFace(light, dark, seed) }

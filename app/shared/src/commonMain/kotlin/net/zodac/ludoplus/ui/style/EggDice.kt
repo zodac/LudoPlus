@@ -33,7 +33,6 @@ import net.zodac.ludoplus.data.settings.MotionGroup
 import net.zodac.ludoplus.ui.common.LocalFramePaces
 import net.zodac.ludoplus.ui.common.ambientMotion
 import net.zodac.ludoplus.ui.common.rememberPacedLoop
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 // The egg's size within the die's square, as fractions of it: a little taller than wide, and fatter
 // below its middle than above, like a real egg standing on its broad end.
@@ -50,7 +49,7 @@ private const val EGG_PIP_RADIUS = 0.068f
 private const val SPARKLE_MIN_SCALE = 0.75f
 private const val SPARKLE_MILLIS = 1300
 
-// How many whole turns an egg rolls end over end in a toss, before it rocks to a stop upright.
+// How many whole turns an egg rolls end over end in a roll, before it rocks to a stop upright.
 private const val EGG_TOSS_TURNS = 2f
 private const val EGG_ROCK_DEGREES = 16f
 
@@ -78,8 +77,8 @@ private fun eggPath(size: Size): Path = Path().apply {
 }
 
 /**
- * How far an egg [tumbleMillis] into a toss is turned, in degrees: rolling end over end, slowing,
- * then rocking on its broad end before it settles upright - as eggs do. Upright (0) at rest (null).
+ * How far an egg [tumbleMillis] into a roll is turned, in degrees: rolling end over end, slowing, then rocking on its
+ * broad end before it settles upright - as eggs do. Upright (0) at rest (null).
  */
 internal fun eggTilt(dieIndex: Int, tumbleMillis: Float?): Float {
     if (tumbleMillis == null) return 0f
@@ -91,18 +90,16 @@ internal fun eggTilt(dieIndex: Int, tumbleMillis: Float?): Float {
 }
 
 /**
- * Egg dice: not cubes at all but eggs, each standing upright on its broad end, speckled all over,
- * with a die's pips painted on its front - in the other egg's shell colour (brown pips on the white
- * egg, cream on the brown). Every face of every die is speckled differently. A toss
- * rolls an egg end over end, slowing, and it rocks on its base before settling upright; at rest it
- * always stands straight up ([standsUpright]), never lying at an angle like a die.
+ * Egg dice: not cubes at all but eggs, each standing upright on its broad end, speckled all over, with a die's pips
+ * painted on its front - in the other egg's shell colour (brown pips on the white egg, cream on the brown). Every face
+ * of every die is speckled differently. A roll rolls an egg end over end, slowing, and it rocks on its base before
+ * settling upright; at rest it always stands straight up, never lying at an angle like a die.
  */
 class EggDiceStyle(
     override val id: String,
     private val shell: Color,
     private val shade: Color,
     private val pip: Color,
-    private val heldRing: Color = GoldAccent,
     private val speckled: Boolean = true,
     private val metallic: Boolean = false,
     private val speckleColour: Color? = null,
@@ -110,10 +107,6 @@ class EggDiceStyle(
 ) : DiceStyle, Swatched {
     override val swatch: Color = shell
     override val tumblesItself: Boolean = true
-    override val standsUpright: Boolean = true
-
-    override fun recoloured(palette: DieColourPalette): DiceStyle =
-        EggDiceStyle(id, palette.diceTop, palette.diceBottom, palette.pip, palette.heldRing, speckled, metallic = false, speckleColour, sparkle)
 
     override fun shadowShape(value: Int, dieIndex: Int, tumbleMillis: Float?): Shape {
         val tilt = eggTilt(dieIndex, tumbleMillis)
@@ -132,7 +125,7 @@ class EggDiceStyle(
     }
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val dieIndex = LocalDieIndex.current
         val tilt = eggTilt(dieIndex, LocalDieTumbleMillis.current)
         val seed = naturalPatternSeed(value)
@@ -233,8 +226,8 @@ class EggDiceStyle(
                 }
                 drawPath(
                     egg,
-                    if (held) heldRing else shade.copy(alpha = 0.9f),
-                    style = dieEdgeStroke(held, edgeWidth = 0.8.dp),
+                    shade.copy(alpha = 0.9f),
+                    style = dieEdgeStroke(edgeWidth = 0.8.dp),
                 )
             }
         }
@@ -243,8 +236,6 @@ class EggDiceStyle(
 
 /**
  * The golden egg: a polished 24-carat shell, speckled in dark gold, with black pips, in the same shape as the other eggs.
- * The Egg style's secret colour once Eggcellent Discovery is earned - and the rare die
- * that rolls golden, one in 500, while the Egg dice (any other colour) and the Chicken cup are both picked.
  */
 val GoldenEggDiceStyle = EggDiceStyle("egg_gold", Color(0xFFD9A420), Color(0xFF6E4400), Color(0xFF111111), metallic = true, speckleColour = Color(0xFF8A5A00))
 

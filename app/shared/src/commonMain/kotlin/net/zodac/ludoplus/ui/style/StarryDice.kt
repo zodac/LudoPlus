@@ -15,7 +15,6 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 /** How many faint specks of sky each face of a Starry die has, between its pips. */
 private const val STARRY_SPECKS = 7
@@ -33,15 +32,12 @@ class StarryDiceStyle(
     private val top: Color,
     private val bottom: Color,
     private val star: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = top
     override val bodyColor: Color = bottom
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle = StarryDiceStyle(id, palette.diceTop, palette.diceBottom, palette.pip, palette.heldRing)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val seed = naturalPatternSeed(value)
         Canvas(modifier = modifier.dieShadow(RoundedCornerShape(BEVELED_DIE_CORNER_PERCENT))) {
             val corner = CornerRadius(size.minDimension * BEVELED_DIE_CORNER_PERCENT / 100f)
@@ -55,9 +51,9 @@ class StarryDiceStyle(
             for (pip in pips) drawStarPip(pip, radius)
 
             drawRoundRect(
-                if (held) heldRing else bottom.copy(alpha = 0.8f),
+                bottom.copy(alpha = 0.8f),
                 cornerRadius = corner,
-                style = dieEdgeStroke(held),
+                style = dieEdgeStroke(),
             )
         }
     }

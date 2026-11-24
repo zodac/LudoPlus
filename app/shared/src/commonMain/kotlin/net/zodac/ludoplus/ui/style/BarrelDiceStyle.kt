@@ -13,9 +13,7 @@ object BarrelDiceStyle : DiceStyle {
     override val id: String = "classic_oak"
     override val bodyColor: Color = lerp(BarrelDiceTop, BarrelDiceBottom, 0.5f)
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle = ColouredClassicDiceStyle(id, palette)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) =
-        BeveledDie(value, held, BarrelDiceTop, BarrelDiceBottom, BarrelDicePipColor, modifier)
+    override fun Die(value: Int, modifier: Modifier) =
+        BeveledDie(value, BarrelDiceTop, BarrelDiceBottom, BarrelDicePipColor, modifier)
 }

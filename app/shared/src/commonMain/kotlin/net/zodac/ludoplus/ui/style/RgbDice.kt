@@ -16,7 +16,6 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 import net.zodac.ludoplus.data.settings.MotionGroup
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 private const val RGB_CORNER_PERCENT = 14
 
@@ -31,28 +30,25 @@ private val SCATTER: List<List<Scatter>> = List(6) { face ->
     }
 }
 
-// The colours: a full trip round the hues every RGB_CYCLE_SECONDS - the same clock for the RGB cup, mat and
-// background, so a whole RGB table changes together. Each face starts RGB_FACE_OFFSET of a
-// cycle after the one before it - so every die showing a number matches, and different numbers differ.
-// A wave die also has each lamp RGB_WAVE_SPREAD of a cycle behind the one to its left, like a keyboard's.
+// The colours: a full trip round the hues every RGB_CYCLE_SECONDS - the same clock for the RGB background, so a whole
+// RGB table changes together. Each face starts RGB_FACE_OFFSET of a cycle after the one before it - so every die
+// showing a number matches, and different numbers differ. A wave die also has each lamp RGB_WAVE_SPREAD of a cycle
+// behind the one to its left, like a keyboard's.
 internal const val RGB_CYCLE_SECONDS = 6f
 private const val RGB_WAVE_SPREAD = 0.35f
 private const val RGB_FACE_OFFSET = 1f / 6f
 
 /**
- * RGB dice: a black panel with every pip a small LED in a recessed socket - a domed lens, a white-hot
- * core and a bloom on the panel round it - cycling through the colours of the rainbow like the lighting
- * on a gaming keyboard. By default the whole face changes together, with a strong glow lighting the
- * panel; with [wave], a wave of colour sweeps across the lamps instead. Each number starts its cycle
- * at its own point, the same on every die. Recoloured (Tricolour) it takes the roll's face colours, its lamps
- * still cycling; still under reduced motion (see [rememberArtSeconds]).
+ * RGB dice: a black panel with every pip a small LED in a recessed socket - a domed lens, a white-hot core and a bloom
+ * on the panel round it - cycling through the colours of the rainbow like the lighting on a gaming keyboard. By default
+ * the whole face changes together, with a strong glow lighting the panel; with [wave], a wave of colour sweeps across
+ * the lamps instead. Each number starts its cycle at its own point, the same on every die.
  */
 class RgbDiceStyle(
     override val id: String,
     private val panel: Color,
     private val panelShade: Color = panel,
     private val wave: Boolean = false,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = Color(0xFFFF3B6B)
     override val bodyColor: Color = panel
@@ -61,15 +57,11 @@ class RgbDiceStyle(
     // A pale panel (the white dice) can't be lit by its lamps the way a dark one is, so their light is turned up to show.
     private val light = panel.luminance() > 0.5f
 
-    /** Recoloured (Tricolour), the face takes the roll's colours; the lamps keep cycling through theirs. */
-    override fun recoloured(palette: DieColourPalette): DiceStyle = RgbDiceStyle(id, palette.diceTop, palette.diceBottom, wave, palette.heldRing)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val seconds = rememberArtSeconds(MotionGroup.DICE)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(if (light) panel else lerp(panel, Color.White, 0.07f), panelShade)),
             edge = if (light) lerp(panelShade, Color.Black, 0.2f) else lerp(panel, Color.White, 0.2f),
@@ -78,7 +70,6 @@ class RgbDiceStyle(
             pipShape = PipShape.CUSTOM,
             pipPadding = 0.dp,
             customPips = { drawLeds(it, seconds.value / RGB_CYCLE_SECONDS + value * RGB_FACE_OFFSET) },
-            heldRingColor = heldRing,
         )
     }
 

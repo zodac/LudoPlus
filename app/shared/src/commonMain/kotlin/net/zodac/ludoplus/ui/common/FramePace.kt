@@ -91,14 +91,15 @@ class FramePaces(motion: MotionSettings) {
 val LocalFramePaces = staticCompositionLocalOf { FramePaces(AnimationLevel.default.motion) }
 
 /**
- * The [FramePace] of whatever animates here, for [PacedEffect] and [rememberPacedLoop]: the Menus & pages
- * group's everywhere (provided at the root), a group's own where it's provided ([GroupMotion]), the Dice roll's round the dice, and the Cup shake's round the cup.
+ * The [FramePace] of whatever animates here, for [PacedEffect] and [rememberPacedLoop]: the Menus & pages group's
+ * everywhere (provided at the root), a group's own where it's provided ([GroupMotion]), the Die roll's round the die,
+ * and the Pawn moves' round the pawns.
  */
 val LocalFramePace = compositionLocalOf { FramePace.Unpaced }
 
 /**
- * A [LaunchedEffect] whose animations run at [LocalFramePace] - for whatever it animates (a cup's lid, a banner's
- * slide) to keep its group's rate. Restarted when [keys] change, as a [LaunchedEffect] is.
+ * A [LaunchedEffect] whose animations run at [LocalFramePace] - for whatever it animates (a banner's slide) to keep its
+ * group's rate. Restarted when [keys] change, as a [LaunchedEffect] is.
  */
 @Composable
 @NonRestartableComposable

@@ -17,7 +17,6 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 // A lava pip's molten opening, as a fraction of the pip area, and how far off its pip's spot it can burst through.
 // Vents are laid out VENT_SPREAD times wider than a plain die's pips, so each one - its glow, cracks and spatter - reads on its own.
@@ -34,47 +33,32 @@ private val PIP_AREA_INSET = 6.dp
 class Lava(val crust: Color, val deep: Color, val glow: Color, val core: Color)
 
 /**
- * Black volcanic glass, polished: a deep, glossy face with the curved ripples obsidian breaks along,
- * a sharp sheen across it - and every pip a vent where [lava] bursts through, glowing out of a
- * crusted opening, with fine cracks of light running out from it into the glass and a few spatters
- * thrown clear. Every vent and crack is different on every face of every die. On a coloured roll
- * the glass takes the roll's face colours and the lava its pip colour.
+ * Black volcanic glass, polished: a deep, glossy face with the curved ripples obsidian breaks along, a sharp sheen
+ * across it - and every pip a vent where [lava] bursts through, glowing out of a crusted opening, with fine cracks of
+ * light running out from it into the glass and a few spatters thrown clear. Every vent and crack is different on every
+ * face of every die.
  */
 class ObsidianDiceStyle(
     override val id: String,
     private val glass: Color,
     private val glassDark: Color,
     private val lava: Lava,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = lava.glow
-
-    override fun recoloured(palette: DieColourPalette): DiceStyle {
-        val pip = palette.pip
-        return ObsidianDiceStyle(
-            id,
-            palette.diceTop,
-            palette.diceBottom,
-            Lava(lerp(pip, Color.Black, 0.75f), lerp(pip, Color.Black, 0.35f), pip, lerp(pip, Color.White, 0.7f)),
-            palette.heldRing,
-        )
-    }
 
     override val cornerPercent: Int = STYLED_DIE_CORNER_PERCENT
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         // Seeded by the colour too, so the Lava and Blue dice burst through in different places and shapes.
         val pattern = naturalPatternSeed(value, styleSeed = id.hashCode())
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(glass, glassDark)),
             edge = lerp(glass, Color.White, 0.15f),
             pipColor = lava.glow,
             pipShape = PipShape.CUSTOM,
-            heldRingColor = heldRing,
             // Laid out over the whole face, inset to the usual pip area: a vent pushed towards the edge
             // still has room for its glow, rather than being cut off square at the pip area's edge.
             pipPadding = 0.dp,

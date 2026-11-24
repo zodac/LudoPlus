@@ -19,21 +19,12 @@ class D20Test {
             assertEquals(21, face.number + opposite.number, "${face.number} is opposite ${opposite.number}")
         }
 
-        // Every roll of one to twenty (D20 mode's) faces the viewer.
+        // Every number, one to twenty, faces the viewer.
         for (value in 1..20) {
             val view = D20_VIEWS.getValue(value)
             val front = D20.faces.maxBy { view.cameraSpace(it.normal).z }
             assertEquals(value, front.number)
             assertTrue(view.cameraSpace(front.normal).z > 0.99f)
         }
-    }
-
-    @Test
-    fun d20ModeDrawsAnyOtherStyleAsTheWhiteD20ButKeepsAPickedD20Variant() {
-        assertEquals(D20WhiteDiceStyle, d20Like(DiceStyles.default))
-        assertEquals("d20_white", d20Like(DiceStyles.default).id)
-        val blue = D20DiceStyle("d20_blue", androidx.compose.ui.graphics.Color.Blue, androidx.compose.ui.graphics.Color.Black, androidx.compose.ui.graphics.Color.White)
-        assertEquals(blue, d20Like(blue))
-        assertEquals(D20WhiteDiceStyle, d20Like(D20WhiteDiceStyle))
     }
 }

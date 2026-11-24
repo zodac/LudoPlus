@@ -26,79 +26,42 @@ interface TableArt {
  */
 interface DiceStyle : TableArt {
     /**
-     * Whether this style draws its own tumble mid-roll (the D20, a solid it can turn itself) rather
-     * than being rolled as a cube of its own faces by the tray. See [LocalDieTumbleMillis].
+     * Whether this style draws its own tumble mid-roll (the D20, a solid it can turn itself) rather than being rolled
+     * as a cube of its own faces by the game. See [LocalDieTumbleMillis].
      */
     val tumblesItself: Boolean get() = false
 
     /**
-     * Whether this die comes to rest standing straight up (the Egg) rather than lying at its own
-     * angle on the mat, as a cube does - the tray then lands it unturned.
-     */
-    val standsUpright: Boolean get() = false
-
-
-    /**
-     * For a style with loose pupils on its faces that the die's movement throws about (googly eyes),
-     * how far each can roll from its socket's centre, as a fraction of the die's size - the tray then
-     * keeps each die a [DieMotion] to move them, handed down as [LocalDieMotion]. Null for a style
-     * with nothing loose, which needs no such tracking at all.
+     * For a style with loose pupils on its faces that the die's movement throws about (googly eyes), how far each can
+     * roll from its socket's centre, as a fraction of the die's size - the page then keeps each die a [DieMotion] to
+     * move them, handed down as [LocalDieMotion]. Null for a style with nothing loose, which needs no such tracking at
+     * all.
      */
     val pupilTravel: Float? get() = null
 
     /**
-     * The colour of the die's material itself - what shows along the rounded edge between two faces
-     * as [TossedCube] tumbles it. Its swatch, for a style that has one.
+     * The colour of the die's material itself - what shows along the rounded edge between two faces as it tumbles. Its
+     * swatch, for a style that has one.
      */
     val bodyColor: Color get() = (this as? Swatched)?.swatch ?: Color.LightGray
 
     /**
-     * The outline this die casts its ground shadow with when lying on the mat - its own shape, not a
-     * generic one. [dieIndex] is which die it is and [tumbleMillis] how long it's been tumbling
-     * (null at rest - see [LocalDieTumbleMillis]), for a die whose outline changes with either (the
-     * D20). A rounded square by default, like [BeveledDie].
+     * The outline this die casts its ground shadow with when lying on the table - its own shape, not a generic one.
+     * [dieIndex] is which die it is and [tumbleMillis] how long it's been tumbling (null at rest - see
+     * [LocalDieTumbleMillis]), for a die whose outline changes with either (the D20). A rounded square by default, like
+     * [BeveledDie].
      */
     fun shadowShape(value: Int, dieIndex: Int, tumbleMillis: Float?): Shape = RoundedCornerShape(cornerPercent)
 
 
     /**
-     * How rounded the die's corners are, as a percentage of its size - the one figure its face, its
-     * shadow and its tumble ([TossedCube]) all round to, so a square-cornered die doesn't tumble
-     * rounded and then snap square as it lands.
+     * How rounded the die's corners are, as a percentage of its size - the one figure its face, its shadow and its
+     * tumble all round to, so a square-cornered die doesn't tumble rounded and then snap square as it lands.
      */
     val cornerPercent: Int get() = BEVELED_DIE_CORNER_PERCENT
 
-    /**
-     * The face this style's art shows above [value] on the die, for a style drawn as a solid with
-     * more than one face in view (the Cube), or null when only [value] shows. A toss lands with this
-     * face on top, so the tossed die settles into exactly what [Die] then draws.
-     */
-    fun topFace(value: Int): Int? = null
-
-    /**
-     * The die tumbling mid-toss, [roll] quarter-turns along its way through [ring] - see
-     * [TossedCube], which by default rolls this style's own [Die] faces as a cube. A style whose
-     * faces already draw a whole solid (the Cube) draws its tumble itself instead, since rolling
-     * those as cards would show every card's painted sides at once.
-     */
     @Composable
-    fun TossedDie(roll: Float, finalTurns: Int, ring: List<Int>, modifier: Modifier) {
-        TossedCube(roll = roll, finalTurns = finalTurns, ring = ring, body = bodyColor, cornerPercent = cornerPercent, modifier = modifier) { value, faceModifier ->
-            Die(value = value, held = false, modifier = faceModifier)
-        }
-    }
-
-    /**
-     * This style's shape and finish in [palette]'s colours instead of its own - how a die whose
-     * colour is part of the roll (Tricolour) is drawn, so the player's style still shows while the
-     * colour still reads. Its pips, numbers or digits always take [DieColourPalette.pip], picked to
-     * read on that colour, never the style's own, which could vanish against it (the blue D20's gold
-     * numbers on a yellow die), and its held ring [DieColourPalette.heldRing], for the same reason.
-     */
-    fun recoloured(palette: DieColourPalette): DiceStyle
-
-    @Composable
-    fun Die(value: Int, held: Boolean, modifier: Modifier)
+    fun Die(value: Int, modifier: Modifier)
 }
 
 /**
@@ -109,8 +72,8 @@ interface TableBackground : TableArt {
     val scoreAreaBrush: Brush
 
     /**
-     * An optional pattern drawn over [scoreAreaBrush], behind the scorecard. Most backgrounds are a
-     * plain brush and don't need one, so it's a no-op by default.
+     * An optional pattern drawn over [scoreAreaBrush], behind the board. Most backgrounds are a plain brush and don't
+     * need one, so it's a no-op by default.
      */
     fun DrawScope.drawScoreAreaDecoration() {}
 

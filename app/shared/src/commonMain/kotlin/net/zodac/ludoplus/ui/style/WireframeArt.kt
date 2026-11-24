@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 private const val WIREFRAME_CORNER_PERCENT = 10
 
@@ -25,10 +24,6 @@ private const val WIREFRAME_MESH_CELLS = 4
 
 /** How many sides a Wireframe pip has - a low-poly circle. */
 private const val WIREFRAME_PIP_SIDES = 8
-
-// The editor's axis colours on the Wireframe mat's gizmo: X red, Y green.
-private val WireframeAxisX = Color(0xFFFF5A5A)
-private val WireframeAxisY = Color(0xFF5AFF7A)
 
 /**
  * Wireframe dice: a model in a 3D editor, before it's textured. A dark [face] meshed into triangles in
@@ -39,20 +34,15 @@ class WireframeDiceStyle(
     override val id: String,
     private val face: Color,
     private val line: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = line
     override val bodyColor: Color = face
     override val cornerPercent: Int = WIREFRAME_CORNER_PERCENT
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle = WireframeDiceStyle(id, palette.diceTop, palette.pip, palette.heldRing)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         Canvas(modifier = modifier.dieShadow(RoundedCornerShape(WIREFRAME_CORNER_PERCENT))) {
             drawWireframeFace(value)
-            val corner = CornerRadius(size.minDimension * WIREFRAME_CORNER_PERCENT / 100f)
-            if (held) drawRoundRect(heldRing, cornerRadius = corner, style = Stroke(width = 2.dp.toPx()))
         }
     }
 

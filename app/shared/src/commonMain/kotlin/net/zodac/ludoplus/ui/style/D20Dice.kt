@@ -35,7 +35,6 @@ import kotlin.math.sqrt
 import kotlin.random.Random
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.ludo_d20
-import net.zodac.ludoplus.ui.theme.GoldAccent
 import org.jetbrains.compose.resources.Font
 
 /** A point or direction in the D20's own 3D space. */
@@ -136,13 +135,12 @@ private const val D20_OTHER_NUMBER_ALPHA = 0.4f
 // Room for all twenty numbers' layouts (the 6 and 9 are underlined, so differ), so none is ever measured twice.
 private const val D20_TEXT_CACHE = 32
 
-// Mid-roll, the die starts out tumbling through a full turn this often about each of two axes,
-// slowing to a stop as the toss ends; at rest it lies on its rolled face, twisted up to this far
-// either way so no two landings look alike.
+// Mid-roll, the die starts out tumbling through a full turn this often about each of two axes, slowing to a stop as the
+// roll ends; at rest it lies on its rolled face, twisted up to this far either way so no two landings look alike.
 private const val D20_TUMBLE_MILLIS = 420
 private const val D20_REST_TWIST_DEGREES = 30f
 
-// The rolled number fades up between these fractions of the toss.
+// The rolled number fades up between these fractions of the roll.
 private const val D20_EMPHASIS_START = 0.35f
 private const val D20_EMPHASIS_END = 0.8f
 
@@ -166,9 +164,8 @@ private fun silhouette(view: D20View): List<Offset> =
     convexHull(D20.vertices.map { view.cameraSpace(it) }.map { Offset(it.x, -it.y) })
 
 /**
- * How much the rolled number stands out, 0-1: it's known before the toss starts, so it fades up as
- * the tumble slows ([tumbleMillis] into the toss) rather than only once the die has stopped. Full at
- * rest (null).
+ * How much the rolled number stands out, 0-1: it's known before the roll starts, so it fades up as the tumble slows
+ * ([tumbleMillis] into the roll) rather than only once the die has stopped. Full at rest (null).
  */
 private fun rollEmphasis(tumbleMillis: Float?): Float {
     if (tumbleMillis == null) return 1f
@@ -196,8 +193,8 @@ private fun view(value: Int, dieIndex: Int, tumbleMillis: Float?): D20View {
     fun axis() = Vec3(random.nextFloat() - 0.5f, random.nextFloat() - 0.5f, random.nextFloat() - 0.5f).normalised()
     val first = axis()
     val second = axis()
-    // The spin left to do eases to nothing as the toss ends, so the die settles onto its resting
-    // view rather than snapping to it.
+    // The spin left to do eases to nothing as the roll ends, so the die settles onto its resting view rather than
+    // snapping to it.
     val remaining = (1f - (tumbleMillis / DIE_TUMBLE_MILLIS).coerceIn(0f, 1f)).let { it * it }
     val spin = DIE_TUMBLE_MILLIS / D20_TUMBLE_MILLIS * 360f * remaining
     return restingView(value, dieIndex).turned(first, spin).turned(second, spin * 1.7f)
@@ -227,13 +224,9 @@ class D20DiceStyle(
     private val light: Color,
     private val dark: Color,
     private val numberColour: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = light
     override val tumblesItself: Boolean = true
-
-    override fun recoloured(palette: DieColourPalette): DiceStyle =
-        D20DiceStyle(id, palette.diceTop, palette.diceBottom, palette.pip, palette.heldRing)
 
     // The measurer every die of this style draws its numbers with, rebuilt only if the font, density or direction change.
     private var measurer: TextMeasurer? = null
@@ -256,7 +249,7 @@ class D20DiceStyle(
         silhouetteShape(silhouette(view(value, dieIndex, tumbleMillis)))
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val dieIndex = LocalDieIndex.current
         val tumbleMillis = LocalDieTumbleMillis.current
         val view = view(value, dieIndex, tumbleMillis)
@@ -300,8 +293,8 @@ class D20DiceStyle(
                 // up, pressed flat onto the face, so every number is as upright as it can be) and
                 // squashed by however far the face has turned away.
                 val decoration = if (face.number == 6 || face.number == 9) TextDecoration.Underline else null
-                // Only the rolled number at full strength; every other face's is faded back, so the
-                // roll reads at a glance even at game size, tumbled across the mat.
+                // Only the rolled number at full strength; every other face's is faded back, so the roll reads at a
+                // glance even at game size, tumbled across the table.
                 val colour = numberColour.copy(alpha = lerpFloat(D20_OTHER_NUMBER_ALPHA, 1f, emphasis))
                 val text = measurer.measure(face.number.toString(), if (decoration != null) style.copy(textDecoration = decoration) else style)
                 val faceUp = (Vec3(0f, 1f, 0f) - normal * normal.y).normalised()
@@ -332,7 +325,7 @@ class D20DiceStyle(
                 }
                 close()
             }
-            drawPath(ring, if (held) heldRing else dark, style = dieEdgeStroke(held))
+            drawPath(ring, dark, style = dieEdgeStroke())
         }
     }
 }

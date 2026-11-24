@@ -14,7 +14,6 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 // How rounded a Misprint die's corners are, as a percentage of its size - for drawing it and its shadow alike.
 private const val MISPRINT_CORNER_PERCENT = 16
@@ -30,18 +29,14 @@ class MisprintDiceStyle(
     private val paper: Color,
     private val ink: Color,
     private val seed: Int,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = paper
-
-    override fun recoloured(palette: DieColourPalette): DiceStyle = MisprintDiceStyle(id, palette.diceTop, palette.pip, seed, palette.heldRing)
 
     override val cornerPercent: Int = MISPRINT_CORNER_PERCENT
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) = StyledDie(
+    override fun Die(value: Int, modifier: Modifier) = StyledDie(
         value = value,
-        held = held,
         modifier = modifier,
         face = Brush.linearGradient(listOf(paper, paper)),
         edge = Color.Transparent,
@@ -49,7 +44,6 @@ class MisprintDiceStyle(
         cornerPercent = MISPRINT_CORNER_PERCENT,
         pipShape = PipShape.CUSTOM,
         customPips = { face -> drawMisprintedPips(face) },
-        heldRingColor = heldRing,
     ) {
         val line = Stroke(width = 1.4.dp.toPx())
         val inset = 2.dp.toPx()

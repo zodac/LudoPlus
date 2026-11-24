@@ -17,7 +17,6 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 // A strawberry's size, as a fraction of the pip area, and how far apart they sit (see drawPipPositions).
 private const val STRAWBERRY_RADIUS_FRACTION = 0.14f
@@ -35,9 +34,8 @@ private val LeafGreen = Shades(Color(0xFF1F5A12), Color(0xFF3E9A26), Color(0xFF8
 private val SeedGold = Color(0xFFFFE08A)
 
 /**
- * A cake, seen from above: its top smoothed with [frosting] (falling to [shade] where it's thinner),
- * a ring of piped rosettes round the edge, and fresh strawberries for pips. On a coloured roll the
- * frosting takes the roll's face colours and every strawberry its pip colour.
+ * A cake, seen from above: its top smoothed with [frosting] (falling to [shade] where it's thinner), a ring of piped
+ * rosettes round the edge, and fresh strawberries for pips.
  */
 class CakeDiceStyle(
     override val id: String,
@@ -46,32 +44,25 @@ class CakeDiceStyle(
     private val berry: Shades = StrawberryRed,
     private val leaf: Shades = LeafGreen,
     private val seed: Color = SeedGold,
-    private val heldRing: Color = GoldAccent,
     private val dollop: Color? = null,
 ) : DiceStyle, Swatched {
     override val swatch: Color = frosting
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle {
-        val pip = Shades.of(palette.pip)
-        return CakeDiceStyle(id, palette.diceTop, palette.diceBottom, pip, pip, pip.light, palette.heldRing, dollop?.let { lerp(palette.diceTop, Color.White, 0.6f) })
-    }
-
     override val cornerPercent: Int = STYLED_DIE_CORNER_PERCENT
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val pattern = naturalPatternSeed(value)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(frosting, shade)),
             edge = shade,
             pipColor = berry.base,
             pipShape = PipShape.CUSTOM,
-            heldRingColor = heldRing,
         ) {
-            // The frosting and the berries on it, painted together once: one image to draw (and to turn, through a toss), not two.
+            // The frosting and the berries on it, painted together once: one image to draw (and to turn, through a
+            // roll), not two.
             drawCachedSurface(CakeFace(value, frosting, shade, berry, leaf, seed, dollop, pattern)) {
                 paintFrosting(frosting, shade, pattern)
                 // Laid out in StyledDie's usual pip area, as its own pips would be.

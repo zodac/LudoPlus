@@ -9,11 +9,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
 import kotlin.math.sqrt
 import kotlin.random.Random
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 /** A way of keeping a tally, from somewhere in the world. Each counts in fives. */
 enum class TallySystem {
@@ -49,9 +47,8 @@ enum class TallyPen {
 enum class TallySurface { SLATE, RICE_PAPER, NOTEBOOK, FIELD_BOOK }
 
 /**
- * Tally-mark dice: every face counts its value the way [system] keeps a tally, written by hand with
- * [pen] on [surface] - so each stroke wobbles a little and no two dice are written quite alike. On
- * a coloured roll the surface takes the roll's face colours and the marks its pip colour.
+ * Tally-mark dice: every face counts its value the way [system] keeps a tally, written by hand with [pen] on [surface]
+ * - so each stroke wobbles a little and no two dice are written quite alike.
  */
 class TallyDiceStyle(
     override val id: String,
@@ -62,22 +59,16 @@ class TallyDiceStyle(
     private val paperShade: Color,
     private val ink: Color,
     private val rule: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = paper
-
-    override fun recoloured(palette: DieColourPalette): DiceStyle = TallyDiceStyle(
-        id, system, pen, surface, palette.diceTop, palette.diceBottom, palette.pip, lerp(palette.diceBottom, palette.pip, 0.3f), palette.heldRing,
-    )
 
     override val cornerPercent: Int = 12
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val pattern = naturalPatternSeed(value)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(paper, paperShade)),
             edge = paperShade,
@@ -85,7 +76,6 @@ class TallyDiceStyle(
             cornerPercent = cornerPercent,
             pipShape = PipShape.CUSTOM,
             pipPadding = 0.dp,
-            heldRingColor = heldRing,
             customPips = { drawCachedSurface(Tally(value, ink, pattern)) { drawTally(value, pattern) } },
         ) {
             drawCachedSurface(TallyPaper(paper, paperShade, rule, pattern)) { paintSurface(pattern) }

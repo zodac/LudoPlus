@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 // A googly die's pupil - its pip - and the socket round it that it rolls about in, well over twice its
 // radius so it has room to roll, as fractions of the face its pips are laid out across; and how thick
@@ -25,17 +24,16 @@ private const val GOOGLY_PUPIL_REACH = GOOGLY_SOCKET_RADIUS - GOOGLY_RIM_WIDTH /
 // The pips spread further apart than a plain die's, so a six's sockets don't touch.
 private const val GOOGLY_SPREAD = 1.12f
 
-// The face the pips are laid out across is the die less this much all round - less than a plain
-// die's, to leave the sockets room - which is roughly this much of a die on the mat.
+// The face the pips are laid out across is the die less this much all round - less than a plain die's, to leave the
+// sockets room - which is roughly this much of a die on the table.
 private val GOOGLY_PIP_PADDING = 4.dp
 private const val GOOGLY_FACE_SHARE = 0.82f
 
 /**
- * A plain die with googly eyes: an ordinary face and pips, except every pip is a loose pupil in a
- * clear socket well over twice its size, rolling about in it as the die is swept off the mat, thrown,
- * tumbles, bounces and spins - see [DieMotion], which the tray keeps for each die and hands down as
- * [LocalDieMotion]. Anywhere a die isn't moved about (the Styles screen, say) its pupils sit where
- * they settled.
+ * A plain die with googly eyes: an ordinary face and pips, except every pip is a loose pupil in a clear socket well
+ * over twice its size, rolling about in it as the die is moved - see
+ * [DieMotion], which the page keeps for each die and hands down as [LocalDieMotion]. Anywhere a die isn't moved about
+ * (the Styles screen, say) its pupils sit where they settled.
  */
 class GooglyDiceStyle(
     override val id: String,
@@ -43,24 +41,18 @@ class GooglyDiceStyle(
     private val bottom: Color,
     private val pip: Color,
     private val socket: Color = Color.White,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = top
     override val bodyColor: Color = lerp(top, bottom, 0.5f)
     override val pupilTravel: Float = GOOGLY_PUPIL_REACH * GOOGLY_FACE_SHARE
 
-    // White sockets whatever the style's own, so the black pupils read on every colour.
-    override fun recoloured(palette: DieColourPalette): DiceStyle =
-        GooglyDiceStyle(id, palette.diceTop, palette.diceBottom, palette.pip, heldRing = palette.heldRing)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val motion = LocalDieMotion.current
         val dieIndex = LocalDieIndex.current
         val settled = remember(dieIndex) { restingPupils(dieIndex) }
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(top, bottom)),
             edge = bottom.copy(alpha = 0.6f),
@@ -69,7 +61,6 @@ class GooglyDiceStyle(
             pipPadding = GOOGLY_PIP_PADDING,
             // Read while drawing, so the pupils move without the die recomposing.
             customPips = { drawGooglyEyes(it, motion?.pupils ?: settled) },
-            heldRingColor = heldRing,
         )
     }
 

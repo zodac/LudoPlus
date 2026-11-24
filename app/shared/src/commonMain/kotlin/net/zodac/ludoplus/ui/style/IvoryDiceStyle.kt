@@ -14,9 +14,7 @@ object IvoryDiceStyle : DiceStyle {
     override val id: String = DefaultStyleIds.DICE
     override val bodyColor: Color = lerp(IvoryDiceTop, IvoryDiceBottom, 0.5f)
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle = ColouredClassicDiceStyle(id, palette)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) =
-        BeveledDie(value, held, IvoryDiceTop, IvoryDiceBottom, DicePipColor, modifier)
+    override fun Die(value: Int, modifier: Modifier) =
+        BeveledDie(value, IvoryDiceTop, IvoryDiceBottom, DicePipColor, modifier)
 }

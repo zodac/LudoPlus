@@ -15,7 +15,6 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 /** A kind of stone, and so how its face is textured - see [paintStone]. */
 enum class StoneKind {
@@ -40,10 +39,9 @@ private const val STONE_PIP_FRACTION = 0.105f
 private const val STONE_CORNER_PERCENT = 16
 
 /**
- * Dice cut from stone: a face of [kind]'s own texture in [light] to [dark] - different on every face
- * of every die, as real stone never repeats - with pips carved into it, each a hollow in shadow at
- * its top left and catching the light at its bottom right, its floor in [pip]. On a coloured roll the
- * stone takes the roll's face colours and the pips its pip colour.
+ * Dice cut from stone: a face of [kind]'s own texture in [light] to [dark] - different on every face of every die, as
+ * real stone never repeats - with pips carved into it, each a hollow in shadow at its top left and catching the light
+ * at its bottom right, its floor in [pip].
  */
 class StoneDiceStyle(
     override val id: String,
@@ -51,28 +49,22 @@ class StoneDiceStyle(
     private val light: Color,
     private val dark: Color,
     private val pip: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = light
-
-    override fun recoloured(palette: DieColourPalette): DiceStyle =
-        StoneDiceStyle(id, kind, palette.diceTop, palette.diceBottom, palette.pip, palette.heldRing)
 
     override val cornerPercent: Int = STONE_CORNER_PERCENT
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val pattern = naturalPatternSeed(value, styleSeed = kind.ordinal * 7)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(light, dark)),
             edge = lerp(dark, Color.Black, 0.25f),
             pipColor = pip,
             cornerPercent = STONE_CORNER_PERCENT,
             pipShape = PipShape.CUSTOM,
-            heldRingColor = heldRing,
             customPips = { drawCachedSurface(StonePips(value, light, dark, pip, pattern)) { drawCarvedPips(value, light, dark, pip, pattern) } },
         ) {
             drawCachedSurface(StoneFace(kind, light, dark, pattern)) { paintStone(kind, light, dark, pattern) }

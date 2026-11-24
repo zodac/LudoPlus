@@ -11,12 +11,11 @@ import net.zodac.ludoplus.data.settings.MotionSettings
 
 /**
  * Whether to show as little motion as possible: the system asks apps for less (Android's "Remove animations" -
- * [net.zodac.ludoplus.platform.PlatformServices.reduceMotion]) or the player has set the app's Menus & pages motion to Off
- * (the "Animations" level Off, or the Advanced settings). Provided once at the root, and again round the dice and the
- * cup for their own ([RollMotion], [CupMotion]). When it's true, decoration
- * stops moving (looping glows, the cup's sway, fireworks, page fades), the cup doesn't shake but snaps tipped as the
- * roll lands, and the dice snap straight to their result, so neither scoring nor a CPU waits for a toss. What the game
- * does doesn't change - see `cupShakeMillis` for the one delay that can.
+ * [net.zodac.ludoplus.platform.PlatformServices.reduceMotion]) or the player has set the app's Menus & pages motion to
+ * Off (the "Animations" level Off, or the Advanced settings). Provided once at the root, and again round the die and
+ * the pawns for their own ([MotionGroup.DIE_ROLL], [MotionGroup.PAWN_MOVE]). When it's true, decoration stops moving
+ * (looping glows, fireworks, page fades), the die lands straight on its result, and a pawn jumps to its square. What the
+ * game does doesn't change.
  */
 val LocalReduceMotion = compositionLocalOf { false }
 
@@ -53,9 +52,9 @@ object LastMotionSettings {
 
 /**
  * Whether [group]'s decoration that moves on its own while nothing is happening may move - one of
- * [MotionGroup.decoration]: drifting and floating dice, twinkles, sparkles, a cup's steam or bubbles, the Neon, RGB and
- * Glitch art, the googly dice's pupils. Only while its group moves, and nothing here asks for less (a [LocalHoldStill],
- * or a [LocalReduceMotion] but for the Menus & pages group's own Off). Otherwise each holds the still pose it has under
+ * [MotionGroup.decoration]: drifting and floating dice, twinkles, sparkles, the Neon, RGB and Glitch art, the googly
+ * dice's pupils. Only while its group moves, and nothing here asks for less (a [LocalHoldStill], or a
+ * [LocalReduceMotion] but for the Menus & pages group's own Off). Otherwise each holds the still pose it has under
  * [LocalReduceMotion]. Run its frames at its [FramePace] (`LocalFramePaces.current.of(group)`).
  */
 @Composable
@@ -66,16 +65,6 @@ fun ambientMotion(group: MotionGroup): Boolean = LocalMotionSettings.current.mov
 @Composable
 @ReadOnlyComposable
 fun groupReduceMotion(group: MotionGroup): Boolean = !LocalMotionSettings.current.moves(group) || stilledHere
-
-/** Whether the die shows as little motion as possible - see [groupReduceMotion]. */
-val rollReduceMotion: Boolean
-    @Composable @ReadOnlyComposable
-    get() = groupReduceMotion(MotionGroup.DIE_ROLL)
-
-/** Whether the pawns show as little motion as possible - see [groupReduceMotion]. */
-val pawnReduceMotion: Boolean
-    @Composable @ReadOnlyComposable
-    get() = groupReduceMotion(MotionGroup.PAWN_MOVE)
 
 /**
  * [content] as [group] moves it, not as Menus & pages does: under its own reduced motion ([groupReduceMotion]) as

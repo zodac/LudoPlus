@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.ludo_maths_italic
 import net.zodac.ludoplus.resources.ludo_maths_regular
-import net.zodac.ludoplus.ui.theme.GoldAccent
 import org.jetbrains.compose.resources.Font
 
 /**
@@ -150,28 +149,23 @@ class MathsDiceStyle(
     private val light: Color,
     private val dark: Color,
     private val ink: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = light
-
-    override fun recoloured(palette: DieColourPalette): DiceStyle = MathsDiceStyle(id, palette.diceTop, palette.diceBottom, palette.pip, palette.heldRing)
 
     override val cornerPercent: Int = STYLED_DIE_CORNER_PERCENT
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val formula = Formulas[value - 1]
         val layouts = rememberFormulaLayouts(formula)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(light, dark)),
             edge = dark,
             pipColor = ink,
             pipShape = PipShape.CUSTOM,
             pipPadding = 0.dp,
-            heldRingColor = heldRing,
             customPips = { drawFormula(formula, layouts, ink) },
         )
     }

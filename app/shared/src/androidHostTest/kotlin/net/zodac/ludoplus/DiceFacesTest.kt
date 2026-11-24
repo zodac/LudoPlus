@@ -23,8 +23,8 @@ import net.zodac.ludoplus.ui.style.DiceStyles
 import org.robolectric.annotation.Config
 
 /**
- * Every dice style draws every face it can land on, each one telling its value apart from the others, and a held die
- * apart from the same face loose. Faces 1 to 6, and to 20 for a D20 style.
+ * Every dice style draws every face it can land on, each one telling its value apart from the others. Faces 1 to 6, and
+ * to 20 for a D20 style.
  */
 @Config(qualifiers = "w1000dp-h400dp")
 class DiceFacesTest : UiTest() {
@@ -32,15 +32,14 @@ class DiceFacesTest : UiTest() {
     private fun faces(style: DiceStyle) = if (style is D20DiceStyle) 1..20 else 1..6
 
     @Test
-    fun `every dice style draws each face its own way - and a held die apart from a loose one`() = uiTest {
+    fun `every dice style draws each face its own way`() = uiTest {
         var style by mutableStateOf(DiceStyles.default)
-        var held by mutableStateOf(false)
         compose.mainClock.autoAdvance = false
         compose.setContent {
             // Each face in a row, every die with room round it for its shadow.
             Row(Modifier.testTag("dice")) {
                 for (value in faces(style)) {
-                    Box(Modifier.padding(GAP_DP.dp).size(FACE_DP.dp)) { style.Die(value = value, held = held, modifier = Modifier.fillMaxSize()) }
+                    Box(Modifier.padding(GAP_DP.dp).size(FACE_DP.dp)) { style.Die(value = value, modifier = Modifier.fillMaxSize()) }
                 }
             }
         }
@@ -56,19 +55,12 @@ class DiceFacesTest : UiTest() {
         val faceInset = ((GAP_DP + EDGE_DP) * compose.density.density).toInt()
         val failures = mutableListOf<String>()
         for (dice in DiceStyles.all) {
-            Snapshot.withMutableSnapshot {
-                style = dice
-                held = false
-            }
+            Snapshot.withMutableSnapshot { style = dice }
             val values = faces(dice).toList()
             val faces = shoot(values.size, faceInset)
-            val loose = shoot(values.size, inset = 0)
-            Snapshot.withMutableSnapshot { held = true }
-            val heldDice = shoot(values.size, inset = 0)
             for (i in values.indices) {
                 for (j in i + 1 until values.size) if (faces[i].contentEquals(faces[j])) failures += "${dice.id}: ${values[i]} and ${values[j]} look the same"
                 if (faces[i].distinct().size < 2) failures += "${dice.id}: ${values[i]} is blank"
-                if (loose[i].contentEquals(heldDice[i])) failures += "${dice.id}: a held ${values[i]} looks loose"
             }
         }
         assertTrue(failures.isEmpty(), failures.joinToString("\n"))

@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 /** The three numbered suits of mahjong tiles, which a [MahjongDiceStyle] draws its faces as. */
 enum class MahjongSuit {
@@ -50,9 +49,8 @@ private val ChineseNumerals = listOf("一", "二", "三", "四", "五", "六")
 private const val WAN = "萬"
 
 /**
- * Mahjong-tile dice in one [suit]: an ivory tile face with a jade back showing at its edge, and the
- * tile of the die's number engraved on it in the tiles' own blue, green and red. On a coloured roll
- * everything is engraved in the roll's pip colour instead.
+ * Mahjong-tile dice in one [suit]: an ivory tile face with a jade back showing at its edge, and the tile of the die's
+ * number engraved on it in the tiles' own blue, green and red.
  */
 class MahjongDiceStyle(
     override val id: String,
@@ -61,7 +59,6 @@ class MahjongDiceStyle(
     private val faceShade: Color,
     private val back: Color,
     private val inks: List<Color>? = null,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = when (suit) {
         MahjongSuit.MANZU -> MahjongRed
@@ -69,23 +66,19 @@ class MahjongDiceStyle(
         MahjongSuit.SOZU -> MahjongGreen
     }
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle =
-        MahjongDiceStyle(id, suit, palette.diceTop, palette.diceBottom, palette.diceBottom, List(4) { palette.pip }, palette.heldRing)
-
     override val cornerPercent: Int = 14
 
-    // The tiles' colours: blue, green, red and the black ink - or the one colour of a recoloured die.
+    // The tiles' colours: blue, green, red and the black ink - or the one colour of a one-colour die.
     private val blue get() = inks?.get(0) ?: MahjongBlue
     private val green get() = inks?.get(1) ?: MahjongGreen
     private val red get() = inks?.get(2) ?: MahjongRed
     private val ink get() = inks?.get(3) ?: MahjongInk
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val text = if (suit == MahjongSuit.MANZU) rememberManzuLayouts(value) else null
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(face, faceShade)),
             edge = back,
@@ -94,7 +87,6 @@ class MahjongDiceStyle(
             cornerPercent = cornerPercent,
             pipShape = PipShape.CUSTOM,
             pipPadding = 0.dp,
-            heldRingColor = heldRing,
             customPips = {
                 drawCachedSurface(TileFace(suit, value, inks, face)) {
                     drawTileBevel()

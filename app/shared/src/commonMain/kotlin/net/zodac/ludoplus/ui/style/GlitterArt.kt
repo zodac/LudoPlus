@@ -17,7 +17,6 @@ import kotlin.math.floor
 import kotlin.math.sin
 import kotlin.random.Random
 import net.zodac.ludoplus.data.settings.MotionGroup
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 /**
  * Glitter in [base]: a flake about every [pitch] pixels, each a tiny tilted square at its own shade -
@@ -105,22 +104,18 @@ class GlitterDiceStyle(
     override val id: String,
     private val colours: FaceColours,
     private val pip: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = colours[1]
     override val bodyColor: Color = colours[3]
     override val cornerPercent: Int = GLITTER_CORNER_PERCENT
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle = GlitterDiceStyle(id, FaceColours.all(palette.diceTop), palette.pip, palette.heldRing)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val seed = naturalPatternSeed(value)
         val seconds = rememberArtSeconds(MotionGroup.DICE)
         val colour = colours[value]
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(colour, lerp(colour, Color.Black, 0.3f))),
             edge = lerp(colour, Color.Black, 0.45f),
@@ -139,7 +134,6 @@ class GlitterDiceStyle(
                     drawSparkle(Offset(at.x * size.width, at.y * size.height), size.minDimension * 0.2f * grow)
                 }
             },
-            heldRingColor = heldRing,
         ) {
             drawCachedSurface(GlitterSurface(seed, colour)) { paintGlitter(seed, colour, pitch = 1.5.dp.toPx()) }
             // The clear coat's gloss, a soft band across the top left.

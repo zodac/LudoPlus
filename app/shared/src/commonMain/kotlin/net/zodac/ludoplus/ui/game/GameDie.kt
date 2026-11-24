@@ -156,7 +156,7 @@ fun GameDie(
                 LocalDieTumbleMillis provides if (tumbling && style.tumblesItself) tumble.value * DIE_TUMBLE_MILLIS else null,
                 LocalArtFrozen provides tumbling,
             ) {
-                style.Die(value = face, held = false, modifier = dieModifier)
+                style.Die(value = face, modifier = dieModifier)
             }
         }
     }

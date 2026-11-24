@@ -13,17 +13,15 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 // An inlaid pip's size, as a fraction of the pip area, and how rounded the die's sanded corners are.
 private const val WOOD_PIP_FRACTION = 0.105f
 private const val WOOD_CORNER_PERCENT = 18
 
 /**
- * Dice cut from a block of wood, [light] to [dark], with its [grain]: the long grain runs across four
- * faces, and the two opposite ends (1 and 6) show the end grain's growth rings, as a real wooden cube
- * does - different on every face of every die. The pips are plugs of a contrasting [pip] wood, sanded
- * flush. On a coloured roll the wood takes the roll's face colours and the pips its pip colour.
+ * Dice cut from a block of wood, [light] to [dark], with its [grain]: the long grain runs across four faces, and the
+ * two opposite ends (1 and 6) show the end grain's growth rings, as a real wooden cube does - different on every face
+ * of every die. The pips are plugs of a contrasting [pip] wood, sanded flush.
  */
 class WoodDiceStyle(
     override val id: String,
@@ -31,28 +29,22 @@ class WoodDiceStyle(
     private val dark: Color,
     private val grain: Color,
     private val pip: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = light
-
-    override fun recoloured(palette: DieColourPalette): DiceStyle =
-        WoodDiceStyle(id, palette.diceTop, palette.diceBottom, lerp(palette.diceBottom, Color.Black, 0.3f), palette.pip, palette.heldRing)
 
     override val cornerPercent: Int = WOOD_CORNER_PERCENT
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val pattern = naturalPatternSeed(value, styleSeed = 31)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(light, dark)),
             edge = lerp(dark, Color.Black, 0.3f),
             pipColor = pip,
             cornerPercent = WOOD_CORNER_PERCENT,
             pipShape = PipShape.CUSTOM,
-            heldRingColor = heldRing,
             customPips = { drawCachedSurface(WoodPips(value, pip, pattern)) { drawInlaidPips(value, pip, pattern) } },
         ) {
             drawCachedSurface(WoodFace(light, grain, value == 1 || value == 6, pattern)) { paintWood(light, grain, value == 1 || value == 6, pattern) }

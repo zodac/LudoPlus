@@ -16,12 +16,12 @@ import net.zodac.ludoplus.game.style.access
 import net.zodac.ludoplus.ui.common.OffscreenWarmUp
 
 /**
- * Draws the Styles page once, out of sight, so its code - the app bar, the fields, each pick's preview - has already run
- * by the time a player opens it: the first time any of it runs after a launch it's slow (loading a mat's texture, painting
- * a marble die, compiling a D20's drawing), slow enough to hold the page's opening for several frames. Placed on the menu
- * (under its opaque backdrop, in a 1dp clipped box, so nothing shows), it waits for the menu to settle, then draws the
- * page's empty frame and then the whole page, a pass at a time. Compose doesn't cull what a clip hides, so the art is
- * really drawn, not just composed. Runs once per launch. [width] keeps the box as wide as the page.
+ * Draws the Styles page once, out of sight, so its code - the app bar, the fields, each pick's preview - has already
+ * run by the time a player opens it: the first time any of it runs after a launch it's slow (loading a texture,
+ * painting a marble die, compiling a D20's drawing), slow enough to hold the page's opening for several frames. Placed
+ * on the menu (under its opaque backdrop, in a 1dp clipped box, so nothing shows), it waits for the menu to settle,
+ * then draws the page's empty frame and then the whole page, a pass at a time. Compose doesn't cull what a clip hides,
+ * so the art is really drawn, not just composed. Runs once per launch. [width] keeps the box as wide as the page.
  *
  * The category pages aren't drawn here, but on the Styles page once it's open ([StyleCategoriesWarmUp]).
  */

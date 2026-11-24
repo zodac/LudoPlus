@@ -22,13 +22,12 @@ import kotlin.math.sin
 import kotlin.random.Random
 import net.zodac.ludoplus.data.settings.MotionGroup
 
-// Backgrounds that go with a dice, cup or mat style of the same name, and are unlocked with it. Each is kept faint - the
-// scorecard sits on top and has to stay the thing that reads - and painted once, unless it moves.
+// Backgrounds that go with a die or board style of the same name, and are unlocked with it. Each is kept faint - the
+// board and cards sit on top and have to stay the thing that reads - and painted once, unless it moves.
 
 /**
- * Stone flags laid in running bond - to go with the Stone mat - cut from [kind]'s stone (or, with no [kind], marble
- * veined in [vein]), set in [BackgroundPalette.detail] grout, and veiled in the background's own dark so they sit back.
- * The flags are bigger than the mat's, which they'd otherwise match. Painted once.
+ * Stone flags laid in running bond - cut from [kind]'s stone (or, with no [kind], marble veined in [vein]), set in
+ * [BackgroundPalette.detail] grout, and veiled in the background's own dark so they sit back. Painted once.
  */
 class StoneBackground(
     override val id: String,
@@ -44,13 +43,13 @@ class StoneBackground(
     }
 }
 
-/** How much of the background's own dark is laid over the flagstones: enough that a scorecard box stands clear of them. */
+/** How much of the background's own dark is laid over the flagstones: enough that the cards stand clear of them. */
 private const val STONE_VEIL = 0.55f
 
-/** The strength a circuit board's traces are drawn at behind a scorecard, against 1 under dice. */
+/** The strength a circuit board's traces are drawn at behind a game, against 1 under dice. */
 private const val CIRCUIT_BACKGROUND_STRENGTH = 0.35f
 
-/** A printed circuit board - to go with the Circuit mat: traces in [BackgroundPalette.detail] running out from a couple of chips. Painted once. */
+/** A printed circuit board: traces in [BackgroundPalette.detail] running out from a couple of chips. Painted once. */
 class CircuitBackground(override val id: String, private val palette: BackgroundPalette) : TableBackground {
     override val scoreAreaBrush: Brush = Brush.verticalGradient(listOf(palette.top, palette.bottom))
 
@@ -72,9 +71,9 @@ private const val NEON_GRID_ACROSS = 11
 private const val NEON_GRID_AWAY = 13
 
 /**
- * A neon grid running off to a glowing horizon - to go with the Neon dice, cup and mat: [BackgroundPalette.detail] is
- * the grid and the glow, [inner] the thin tube along the horizon. The grid is painted once; only the horizon's glow
- * swells and fades, in step with the Neon mat's pulse, and holds steady under reduced motion.
+ * A neon grid running off to a glowing horizon - to go with the Neon dice: [BackgroundPalette.detail] is the grid and
+ * the glow, [inner] the thin tube along the horizon. The grid is painted once; only the horizon's glow swells and fades
+ * and holds steady under reduced motion.
  */
 class NeonGridBackground(override val id: String, private val palette: BackgroundPalette, private val inner: Color) : TableBackground {
     override val scoreAreaBrush: Brush = Brush.verticalGradient(listOf(palette.top, palette.bottom))
@@ -205,7 +204,7 @@ class MeadowBackground(override val id: String, private val palette: BackgroundP
             }
             drawCircle(Color(0xFFFFD54F), petal * 0.8f, at)
         }
-        // Laid back a little, so the scorecard on top stays the thing that reads.
+        // Laid back a little, so what lies on top stays the thing that reads.
         drawRect(grassDark.copy(alpha = MEADOW_VEIL))
     }
 }

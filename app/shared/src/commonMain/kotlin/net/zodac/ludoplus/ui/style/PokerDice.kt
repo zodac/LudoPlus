@@ -21,7 +21,6 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.ludo_maths_regular
-import net.zodac.ludoplus.ui.theme.GoldAccent
 import org.jetbrains.compose.resources.Font
 
 /** A playing card's suit, and the shape of its pip in a unit space two units tall round its centre. */
@@ -48,10 +47,9 @@ private const val PIP_SUIT_RADIUS = 0.095f
 private const val ACE_SUIT_RADIUS = 0.24f
 
 /**
- * Playing-card dice: every face a card - an Ace for 1, then 2 to 6 - each in a different suit from
- * the one before (see [PokerSuits]), with its rank and suit in two opposite corners in a formal serif
- * (the bundled LudoPlus Maths font, MathJax's Computer Modern) and its suit pips laid out the way a
- * card's are, the lower ones upside down. On a coloured roll every suit takes the roll's pip colour.
+ * Playing-card dice: every face a card - an Ace for 1, then 2 to 6 - each in a different suit from the one before (see
+ * [PokerSuits]), with its rank and suit in two opposite corners in a formal serif (the bundled LudoPlus Maths font,
+ * MathJax's Computer Modern) and its suit pips laid out the way a card's are, the lower ones upside down.
  */
 class PokerDiceStyle(
     override val id: String,
@@ -59,30 +57,24 @@ class PokerDiceStyle(
     private val cardShade: Color,
     private val red: Color = CardRed,
     private val black: Color = CardBlack,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = card
-
-    override fun recoloured(palette: DieColourPalette): DiceStyle =
-        PokerDiceStyle(id, palette.diceTop, palette.diceBottom, palette.pip, palette.pip, palette.heldRing)
 
     override val cornerPercent: Int = STYLED_DIE_CORNER_PERCENT
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val rank = rememberRankLayout(PokerRanks[value - 1])
         val suit = PokerSuits[value - 1]
         val ink = if (suit.red) red else black
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(card, cardShade)),
             edge = cardShade,
             pipColor = ink,
             pipShape = PipShape.CUSTOM,
             pipPadding = 0.dp,
-            heldRingColor = heldRing,
             customPips = { drawCachedSurface(CardFace(value, ink, card)) { drawCard(value, suit, ink, rank) } },
         )
     }

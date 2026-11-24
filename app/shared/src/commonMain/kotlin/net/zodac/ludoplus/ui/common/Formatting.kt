@@ -6,7 +6,6 @@ import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.common_clauses_join
 import net.zodac.ludoplus.resources.common_list_locale
 import net.zodac.ludoplus.resources.common_locale
-import net.zodac.ludoplus.resources.common_sentences_join
 import net.zodac.ludoplus.resources.common_timestamp_pattern
 import org.jetbrains.compose.resources.stringResource
 
@@ -97,10 +96,6 @@ internal expect fun formatList(items: List<String>, languageTag: String): String
  */
 @Composable
 internal fun joinClauses(parts: List<String>): String = joinWith(parts, stringResource(Res.string.common_clauses_join))
-
-/** [parts] joined into running text, one sentence after another ("`common_sentences_join`"). */
-@Composable
-internal fun joinSentences(parts: List<String>): String = joinWith(parts, stringResource(Res.string.common_sentences_join))
 
 /** Folds [parts] together with a two-argument [template] ("%1$s, %2$s"). */
 private fun joinWith(parts: List<String>, template: String): String =

@@ -76,7 +76,7 @@ private fun DrawScope.buildStarField(seed: Int): List<Star> {
 // Only ever drawn (and released) on the main thread, so never shared between threads.
 private val starFields = LinkedHashMap<StarFieldKey, List<Star>>()
 
-// A board and a mat, each upright and turned, and the Styles page's tiles of each.
+// A board, upright and turned, and the Styles page's tiles of each.
 private const val STAR_FIELD_CACHE_SIZE = 8
 
 // How many star fields have been built, not reused from starFields, since the process started.
@@ -138,21 +138,20 @@ internal fun TwinkleClock(group: MotionGroup, onTick: (Float) -> Unit) {
 }
 
 /**
- * Polished marble, like a kitchen countertop: soft cloudy mottling in [vein]'s colour, then a few
- * long veins wandering across the surface - each one gently irregular rather than smooth, mostly
- * soft haze with a faint crisp line through it, throwing off thinner branches as it goes. Widths scale with the surface's
- * shorter side, so a die and a whole mat get veins in proportion. */
+ * Polished marble, like a kitchen countertop: soft cloudy mottling in [vein]'s colour, then a few long veins wandering
+ * across the surface - each one gently irregular rather than smooth, mostly soft haze with a faint crisp line through
+ * it, throwing off thinner branches as it goes. Widths scale with the surface's shorter side, so a die and a whole
+ * background get veins in proportion.
+ */
 internal fun DrawScope.drawMarble(seed: Int, vein: Color) = drawCachedSurface(MarbleSurface(seed, vein)) { paintMarble(seed, vein) }
 
 private data class MarbleSurface(val seed: Int, val vein: Color)
 
 /**
- * A die's patterned surface, [paint]ed once for [key] at this size and then just stamped on every
- * later draw. For a pattern that's costly to paint but never changes - marble veins are dozens of
- * soft, layered strokes along long random walks; frost is hundreds of grains - which a toss would
- * otherwise repaint every frame, on both faces of all five dice in view, slowing the whole table (the
- * cup's shake and tip with it) several times over any other dice. [key] must say everything [paint]
- * depends on besides the size.
+ * A die's patterned surface, [paint]ed once for [key] at this size and then just stamped on every later draw. For a
+ * pattern that's costly to paint but never changes - marble veins are dozens of soft, layered strokes along long random
+ * walks; frost is hundreds of grains - which a roll would otherwise repaint every frame, slowing the tumble several
+ * times over any other dice. [key] must say everything [paint] depends on besides the size.
  */
 internal fun DrawScope.drawCachedSurface(key: Any, paint: DrawScope.() -> Unit) {
     cachedSurface(key, paint)?.let { drawImage(it) }
@@ -211,12 +210,12 @@ private var surfacesPainted = 0
 /** For tests only: how many surfaces [drawCachedSurface] has painted so far, rather than stamped from its cache. */
 fun surfacesPaintedForTest(): Int = surfacesPainted
 
-// Every face of five dice in a couple of patterned styles, with room for another size (a held die, the
-// Styles previews) - about 90KB apiece at a phone's usual die size.
+// Every face of a die in several patterned styles, with room for another size (the Styles previews) - about 90KB apiece
+// at a phone's usual die size.
 private const val SURFACE_CACHE_SIZE = 128
 
-// And at most this much pixel memory: a whole background or mat is many dice faces' worth (a phone-sized background
-// ~8MB), and each size it's drawn at (portrait, landscape, a Styles preview) is kept as its own surface.
+// And at most this much pixel memory: a whole background is many dice faces' worth (a phone-sized background ~8MB), and
+// each size it's drawn at (portrait, landscape, a Styles preview) is kept as its own surface.
 private const val SURFACE_CACHE_BYTES = 48L * 1024 * 1024
 
 internal fun DrawScope.paintMarble(seed: Int, vein: Color) {

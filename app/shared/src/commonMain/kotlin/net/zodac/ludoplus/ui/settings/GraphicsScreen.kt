@@ -223,8 +223,7 @@ private fun MotionGroup.title(): String = stringResource(
 
 /**
  * The Graphics page, opened from Settings: the Orientation and the Animations level, each under its title, then the
- * Advanced graphics settings, closed until opened - a frame rate for each [MotionGroup] (Off, 30fps, 60fps or Max; the dice's
- * roll's without Off), the dice's roll (Off, In place or Tossed), and Pause when idle (30s, 60s, 90s or Off). They start
+ * Advanced graphics settings, closed until opened - a frame rate for each [MotionGroup] (Off, 30fps, 60fps, or Max), and Pause when idle (30s, 60s, 90s or Off). They start
  * as the level's preset; changing one leaves no level picked, and picking a level puts them all back to its preset.
  */
 @Composable

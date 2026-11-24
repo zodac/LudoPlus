@@ -16,18 +16,16 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 import net.zodac.ludoplus.ui.style.MeadowDiceStyle.Companion.RIVERS
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 // How wide the river runs, its banks and its water, as fractions of the face.
 private const val BANK_WIDTH = 0.2f
 private const val WATER_WIDTH = 0.135f
 
 /**
- * A green meadow seen from above, with a river winding across it in the shape of the die's number -
- * every river rising at one edge of the face and running out at another (see [RIVERS]). The grass is
- * tufted and dotted with wildflowers, the river has sandy banks, deeper water down its middle and
- * ripples running along it, and every face of every die is a little different. On a coloured roll
- * the meadow takes the roll's face colours and the river its pip colour.
+ * A green meadow seen from above, with a river winding across it in the shape of the die's number - every river rising
+ * at one edge of the face and running out at another (see [RIVERS]). The grass is tufted and dotted with wildflowers,
+ * the river has sandy banks, deeper water down its middle and ripples running along it, and every face of every die is
+ * a little different.
  */
 class MeadowDiceStyle(
     override val id: String,
@@ -36,34 +34,21 @@ class MeadowDiceStyle(
     private val water: Shades = RiverWater,
     private val bank: Color = RiverBank,
     private val flowers: List<Color> = Wildflowers,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = grass
-
-    override fun recoloured(palette: DieColourPalette): DiceStyle = MeadowDiceStyle(
-        id,
-        palette.diceTop,
-        palette.diceBottom,
-        Shades.of(palette.pip),
-        lerp(palette.diceBottom, palette.pip, 0.3f),
-        listOf(lerp(palette.diceTop, Color.White, 0.6f)),
-        palette.heldRing,
-    )
 
     override val cornerPercent: Int = STYLED_DIE_CORNER_PERCENT
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val pattern = naturalPatternSeed(value)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(grass, grassDark)),
             edge = grassDark,
             pipColor = water.base,
             pipShape = PipShape.CUSTOM,
-            heldRingColor = heldRing,
         ) {
             // All of it on the face itself, edge to edge - the rivers run off its sides.
             drawCachedSurface(Meadow(value, grass, grassDark, water, bank, flowers, pattern)) { paintMeadow(value, pattern) }

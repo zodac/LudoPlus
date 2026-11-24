@@ -70,8 +70,7 @@ val WIDE_CONTENT_MAX_WIDTH = CONTENT_MAX_WIDTH * 2 + PANE_GAP
 
 /**
  * A [wide][ScreenScaffold] landscape page's column, its side [padding] included: [WIDE_CONTENT_MAX_WIDTH] and the
- * padding. In DiceFive it widened to the game screen's content, so the two took the same width; the board brings that
- * back in Phase 2 of `.claude/IMPLEMENTATION.md`.
+ * padding.
  */
 fun wideColumnMaxWidth(padding: Dp): Dp = WIDE_CONTENT_MAX_WIDTH + padding * 2
 
@@ -125,7 +124,7 @@ fun TwoPanes(
  * warm-up): the drift is the app's one shared one, which a second copy would move along too.
  *
  * [horizontalPadding] is a [scrollable] page's side margin - narrower only where the page shows
- * the game board's own pieces (the scorecard review), which are sized for the game screen's margin.
+ * pieces sized for a narrower margin.
  *
  * [wide] lets the content take up to [wideColumnMaxWidth] in landscape, for a page that splits into [TwoPanes] there;
  * any other keeps [CONTENT_MAX_WIDTH], a readable line, either way.
@@ -243,7 +242,7 @@ fun LandscapePage(content: @Composable () -> Unit) {
 }
 
 /**
- * The back arrow on every page: the app bar's, and the game screen's beside its player tabs. Placed so the arrow itself
+ * The back arrow on every page: the app bar's, and the game screen's. Placed so the arrow itself
  * lines up with the content's start edge, its 48dp target reaching [BACK_ARROW_OUTSET] past it.
  */
 @Composable

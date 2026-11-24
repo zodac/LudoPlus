@@ -18,11 +18,10 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 /**
- * The colours a garden die's vegetables are drawn in - each its own natural colours, or all of them
- * in one colour's shades on a recoloured die.
+ * The colours a garden die's vegetables are drawn in - each its own natural colours, or all of them in one colour's
+ * shades on a one-colour die.
  */
 class GardenColours(
     val squash: Shades,
@@ -51,10 +50,9 @@ class GardenColours(
 }
 
 /**
- * Garden dice: each value a different crop, as many as the number - 1 butternut squash, 2 carrots,
- * 3 tomatoes, 4 artichokes, 5 eggplants, 6 onions - drawn as a seed packet's illustrations, each
- * piece turned and sized a little differently, on [face]. On a coloured roll the face takes the
- * roll's face colours and every vegetable its pip colour.
+ * Garden dice: each value a different crop, as many as the number - 1 butternut squash, 2 carrots, 3 tomatoes, 4
+ * artichokes, 5 eggplants, 6 onions - drawn as a seed packet's illustrations, each piece turned and sized a little
+ * differently, on [face].
  */
 class GardenDiceStyle(
     override val id: String,
@@ -62,28 +60,22 @@ class GardenDiceStyle(
     private val faceShade: Color,
     private val soil: Boolean,
     private val crops: GardenColours = GardenColours.Natural,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = face
-
-    override fun recoloured(palette: DieColourPalette): DiceStyle =
-        GardenDiceStyle(id, palette.diceTop, palette.diceBottom, soil = false, crops = GardenColours.allIn(palette.pip), heldRing = palette.heldRing)
 
     override val cornerPercent: Int = STYLED_DIE_CORNER_PERCENT
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val pattern = naturalPatternSeed(value)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(face, faceShade)),
             edge = faceShade,
             pipColor = crops.tomato.base,
             pipShape = PipShape.CUSTOM,
             pipPadding = 5.dp,
-            heldRingColor = heldRing,
             customPips = { drawCachedSurface(Crops(value, crops, pattern)) { drawCrops(value, pattern) } },
         ) {
             drawCachedSurface(GardenFace(face, faceShade, soil, pattern)) { paintGardenFace(pattern) }

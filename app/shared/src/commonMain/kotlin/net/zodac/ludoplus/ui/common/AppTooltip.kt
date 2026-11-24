@@ -1,8 +1,6 @@
 package net.zodac.ludoplus.ui.common
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
@@ -12,24 +10,14 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TooltipState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.semantics.onLongClick
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
-import net.zodac.ludoplus.resources.Res
-import net.zodac.ludoplus.resources.common_show_details
 
 /** What [AppTooltip] shows on request - see [rememberAppTooltipState]; wraps Material's experimental state. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -138,36 +126,3 @@ fun tooltipMarkup(text: String): AnnotatedString {
     }
 }
 
-/**
- * [AppTooltip] for content that's pressed rarely - a row among hundreds, shown by a tap or a long press - so the tooltip is built only
- * when it's asked for. Until then [content] is drawn bare, with the long press picked up by a plain gesture
- * (a `TooltipBox` per row was a real share of a list's first frame); the first tap or long press arms the real
- * tooltip around it and shows it, and from then on it behaves as [AppTooltip] does. [message] is read only
- * then, or when a screen reader asks - the `stateDescription` carries the same words, since a tooltip isn't
- * announced - so nothing is formatted for rows nobody touches.
- */
-@Composable
-fun OnDemandTooltip(message: () -> String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    var armed by remember { mutableStateOf(false) }
-    val showDetailsLabel = stringResource(Res.string.common_show_details)
-    // Spoken whether or not it's armed. Read lazily: the block runs when semantics are collected.
-    val spoken = Modifier.semantics(mergeDescendants = true) { stateDescription = message().replace("\n", ", ") }
-    if (armed) {
-        val state = rememberAppTooltipState()
-        LaunchedEffect(Unit) { state.show() }
-        val scope = rememberCoroutineScope()
-        AppTooltip(
-            message = message(),
-            modifier = modifier.then(spoken).pointerInput(Unit) { detectTapGestures(onTap = { scope.launch { state.show() } }) },
-            state = state,
-            content = content,
-        )
-    } else {
-        Box(
-            modifier = modifier
-                .then(spoken)
-                .semantics { onLongClick(label = showDetailsLabel) { armed = true; true } }
-                .pointerInput(Unit) { detectTapGestures(onTap = { armed = true }, onLongPress = { armed = true }) },
-        ) { content() }
-    }
-}

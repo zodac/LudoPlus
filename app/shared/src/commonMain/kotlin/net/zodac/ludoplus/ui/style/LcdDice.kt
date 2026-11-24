@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 /** The seven segments of an LCD digit: top, upper right, lower right, bottom, lower left, upper left, middle. */
 private enum class Segment { A, B, C, D, E, F, G }
@@ -39,27 +38,15 @@ class LcdDiceStyle(
     private val screen: Color,
     private val lit: Color,
     private val glow: Boolean,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = if (glow) lit else body
     override val bodyColor: Color = body
 
-    /**
-     * A backlit one keeps its dark body and screen, and lights its digit in the colour - its colour
-     * is its glow. An unlit one takes the colour as its body, with its digit in the pip colour.
-     */
-    override fun recoloured(palette: DieColourPalette): DiceStyle = if (glow) {
-        LcdDiceStyle(id, body, screen, palette.swatch, glow = true, heldRing = palette.heldRing)
-    } else {
-        LcdDiceStyle(id, palette.diceTop, palette.diceBottom, palette.pip, glow = false, heldRing = palette.heldRing)
-    }
-
     override val cornerPercent: Int = LCD_CORNER_PERCENT
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) = StyledDie(
+    override fun Die(value: Int, modifier: Modifier) = StyledDie(
         value = value,
-        held = held,
         modifier = modifier,
         face = Brush.linearGradient(listOf(body, body)),
         edge = screen,
@@ -67,7 +54,6 @@ class LcdDiceStyle(
         cornerPercent = LCD_CORNER_PERCENT,
         pipShape = PipShape.CUSTOM,
         customPips = { face -> drawDigit(face) },
-        heldRingColor = heldRing,
     ) {
         // The screen: a slightly different panel inset into the body.
         val inset = size.minDimension * 0.1f

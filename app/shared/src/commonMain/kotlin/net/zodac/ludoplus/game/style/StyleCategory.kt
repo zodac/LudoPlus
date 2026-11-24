@@ -23,7 +23,3 @@ enum class StyleCategory(
     DICE(DiceStyleRegistry, SettingsRepository::diceStyleId, SettingsRepository::setDiceStyleId, SavedStyles::diceStyleId),
     BACKGROUND(TableBackgroundRegistry, SettingsRepository::tableBackgroundId, SettingsRepository::setTableBackgroundId, SavedStyles::tableBackgroundId),
 }
-
-/** Whether any of [this] picks draws something other than its category's default - a locked one draws the default. */
-val SavedStyles.hasNonDefaultStyle: Boolean
-    get() = StyleCategory.entries.any { it.registry.unlockedId(it.pickIn(this), access) != it.registry.defaultId }

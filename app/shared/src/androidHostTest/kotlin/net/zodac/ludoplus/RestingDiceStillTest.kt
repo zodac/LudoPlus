@@ -28,7 +28,7 @@ import net.zodac.ludoplus.ui.style.GoldenEggDiceStyle
 import org.robolectric.annotation.Config
 
 /**
- * Dice lying on the mat move on their own only at the High animation level: below it, every dice style holds still, so
+ * Resting dice move on their own only at the High animation level: below it, every dice style holds still, so
  * a turn spent thinking redraws nothing. The golden egg's sparkle used to keep going at Medium.
  */
 @Config(qualifiers = "w1000dp-h400dp")
@@ -43,7 +43,7 @@ class RestingDiceStillTest : UiTest() {
             CompositionLocalProvider(LocalMotionSettings provides level.motion) {
                 Row(Modifier.testTag("dice")) {
                     for (value in 1..6) {
-                        Box(Modifier.padding(GAP_DP.dp).size(FACE_DP.dp)) { style.Die(value = value, held = false, modifier = Modifier.fillMaxSize()) }
+                        Box(Modifier.padding(GAP_DP.dp).size(FACE_DP.dp)) { style.Die(value = value, modifier = Modifier.fillMaxSize()) }
                     }
                 }
             }
@@ -72,7 +72,7 @@ class RestingDiceStillTest : UiTest() {
     }
 
     @Test
-    fun `every dice style holds still on the mat below the high animation level`() = uiTest {
+    fun `every dice style holds still below the high animation level`() = uiTest {
         setUp()
         val moving = DiceStyles.all.filter { dice ->
             AnimationLevel.entries.filter { !it.motion.moves(MotionGroup.DICE) }.any { at ->

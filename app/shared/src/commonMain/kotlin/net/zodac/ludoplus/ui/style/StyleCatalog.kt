@@ -156,13 +156,11 @@ object DiceStyles : StyleCatalog<DiceStyle>(
             colour(OceanDiceStyle("ocean_deep", Color(0xFF235EA8), Color(0xFF0B2350), Color(0xFFB8DCFF), Color(0xFFF7F3EA))),
         ),
         listOf(
-            // Gold and bronze dice would swallow the usual gold held ring, so theirs is white.
             colour(
                 MetalDiceStyle(
                     "metal_gold",
                     listOf(Color(0xFFFFE9A3), Color(0xFFD4A437), Color(0xFFFFE08A), Color(0xFF9C7219)),
                     Color(0xFF5C420B),
-                    heldRing = Color.White,
                 ),
             ),
             colour(
@@ -177,7 +175,6 @@ object DiceStyles : StyleCatalog<DiceStyle>(
                     "metal_bronze",
                     listOf(Color(0xFFF0B884), Color(0xFFB06A34), Color(0xFFE3A56C), Color(0xFF7A4418)),
                     Color(0xFF3F2008),
-                    heldRing = Color.White,
                 ),
             ),
         ),
@@ -274,7 +271,7 @@ object DiceStyles : StyleCatalog<DiceStyle>(
         listOf(
             colour(RetroDiceStyle("retro_green", Color(0xFF9BBC0F), Color(0xFF306230), Color(0xFF0F380F))),
             colour(
-                RetroDiceStyle("retro_amber", Color(0xFFFFB000), Color(0xFF9A5B00), Color(0xFF3A2400), heldRing = Color.White),
+                RetroDiceStyle("retro_amber", Color(0xFFFFB000), Color(0xFF9A5B00), Color(0xFF3A2400)),
             ),
             colour(RetroDiceStyle("retro_blue", Color(0xFF9CC8F5), Color(0xFF2E5C99), Color(0xFF0D2547))),
             colour(RetroDiceStyle("retro_red", Color(0xFFF29C94), Color(0xFF9E2A24), Color(0xFF3D0B08))),
@@ -309,7 +306,6 @@ object DiceStyles : StyleCatalog<DiceStyle>(
             // Each egg's pips are the other's shell colour.
             colour(EggDiceStyle("egg_white", EggWhiteShell, Color(0xFFD9D2C3), EggBrownShell)),
             colour(EggDiceStyle("egg_brown", EggBrownShell, Color(0xFFA8683F), EggWhiteShell)),
-            // The golden egg that rolls one time in 500 with the Chicken cup, kept for good.
             colour(GoldenEggDiceStyle),
         ),
         listOf(
@@ -367,9 +363,8 @@ object DiceStyles : StyleCatalog<DiceStyle>(
         listOf(
             colour(D20WhiteDiceStyle),
             colour(D20BlackDiceStyle),
-            // The brand's own pairing: the felt blue with the gold the board uses for "press this" -
-            // so the held ring is white instead, not lost against gold numbers.
-            colour(D20DiceStyle("d20_blue", Color(0xFF3A6BB0), Color(0xFF14315C), GoldAccent, heldRing = Color.White)),
+            // The felt blue with gold numbers.
+            colour(D20DiceStyle("d20_blue", Color(0xFF3A6BB0), Color(0xFF14315C), GoldAccent)),
         ),
         listOf(
             colour(GooglyDiceStyle("googly_ivory", IvoryDiceTop, IvoryDiceBottom, DicePipColor)),
@@ -491,7 +486,7 @@ object TableBackgrounds : StyleCatalog<TableBackground>(
             circuitBackground("circuit_black", 0xFF16181B, 0xFF08090B, 0xFF3FE6FF),
         ),
         listOf(
-            // Real comb, wax and honey, dimmed well back - to go with the Bestagon dice and the Honeycomb mat.
+            // Real comb, wax and honey, dimmed well back - to go with the Bestagon dice.
             StyleArt(
                 Color(0xFFD9A040),
                 HoneycombCombBackground("bestagons_honey", BackgroundPalette(Color(0xFF3A2406), Color(0xFF1E1203), Color(0xFFD9A040))),
@@ -534,7 +529,7 @@ private val MahjongFace = Color(0xFFFBF7EC)
 private val MahjongFaceShade = Color(0xFFE6DFCB)
 private val MahjongBack = Color(0xFF2E7D4F)
 
-// The Christmas cup's red paper and gold ribbon, which the Gift dice are wrapped in too.
+// The red paper and gold ribbon the Gift dice are wrapped in.
 private val ChristmasRedPaper = GiftPalette(Color(0xFF7A1418), Color(0xFFE85A5E), Color(0xFFC8282E), Color(0xFFFFFFFF))
 private val ChristmasGoldRibbon = Color(0xFFF2C14E)
 

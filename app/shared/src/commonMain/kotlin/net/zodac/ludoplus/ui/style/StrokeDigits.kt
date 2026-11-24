@@ -136,8 +136,8 @@ internal class StrokeDigitPath(
 )
 
 /**
- * Whether the art below should hold still: [rememberArtSeconds] stops updating, so nothing that reads it is
- * redrawn. For dice faces tumbling through a toss, where nobody can see them move - see [TossedCube].
+ * Whether the art below should hold still: [rememberArtSeconds] stops updating, so nothing that reads it is redrawn.
+ * For dice faces tumbling through a roll, where nobody can see them move.
  */
 internal val LocalArtFrozen = compositionLocalOf { false }
 

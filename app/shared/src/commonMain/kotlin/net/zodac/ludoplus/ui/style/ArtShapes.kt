@@ -51,26 +51,12 @@ internal fun smoothPath(points: List<Offset>, closed: Boolean = false): Path = P
 
 /**
  * Three shades of one colour - [deep] for shadow and outline, [base], [light] for the lit side -
- * which the illustrated dice draw each object in, so a recoloured die ([DiceStyle.recoloured]) can
- * draw every object in shades of its one pip colour instead.
+ * which the illustrated dice draw each object in.
  */
 class Shades(val deep: Color, val base: Color, val light: Color) {
     companion object {
-        /** Shades of [colour] alone, for a recoloured die. */
+        /** Shades of [colour] alone, for a one-colour die. */
         fun of(colour: Color): Shades = Shades(lerp(colour, Color.Black, 0.5f), colour, lerp(colour, Color.White, 0.45f))
     }
 }
 
-/**
- * Draws [block] [scale] times as large about [pivot] - how a 3D cup drawn on its grid is enlarged
- * as a whole, strokes and all.
- */
-internal inline fun DrawScope.scaledAbout(scale: Float, pivot: Offset, crossinline block: DrawScope.() -> Unit) =
-    withTransform({ scale(scale, scale, pivot) }) { block() }
-
-/**
- * Draws [block] with a [scaledAbout] of [scale] about [pivot] undone - for stamping an image that
- * was already painted at that scale (see [drawCachedSurface]), so it isn't enlarged twice.
- */
-internal inline fun DrawScope.unscaledAbout(scale: Float, pivot: Offset, crossinline block: DrawScope.() -> Unit) =
-    withTransform({ scale(1f / scale, 1f / scale, pivot) }) { block() }

@@ -51,8 +51,8 @@ private const val FELT_WAKE_GEES = 0.03f
 private const val RESTING_FRAMES = 2f
 
 /**
- * The die being drawn's [DieMotion], for a style whose faces its movement shakes about (see
- * [DiceStyle.pupilTravel]) - or null, where a die isn't on the mat or its style has nothing loose.
+ * The die being drawn's [DieMotion], for a style whose faces its movement shakes about (see [DiceStyle.pupilTravel]) -
+ * or null, where a die isn't on the table or its style has nothing loose.
  */
 val LocalDieMotion = compositionLocalOf<DieMotion?> { null }
 
@@ -71,21 +71,18 @@ internal fun restingPupils(seed: Int): List<Offset> {
 }
 
 /**
- * One die's movement across the mat, and the loose pupils of its googly eyes that the movement throws
- * about. The tray tells it where the die is each time it's drawn ([moveTo]) - its centre, in the
- * die's own sizes, and how far it's turned - and, while anything is moving, [follow] moves the pupils
- * on every frame: each slides freely in its socket, flung the opposite way to however the die speeds
- * up, slows or changes direction, sliding downhill as it tumbles, left behind a little as it spins, slowing by friction and bouncing
- * softly off the socket's rim. Once the die and every pupil have come to rest it stops asking for
- * frames, until the die next moves.
+ * One die's movement across the table, and the loose pupils of its googly eyes that the movement throws about. The page
+ * tells it where the die is each time it's drawn ([moveTo]) - its centre, in the die's own sizes, and how far it's
+ * turned - and, while anything is moving, [follow] moves the pupils on every frame: each slides freely in its socket,
+ * flung the opposite way to however the die speeds up, slows or changes direction, sliding downhill as it tumbles, left
+ * behind a little as it spins, slowing by friction and bouncing softly off the socket's rim. Once the die and every
+ * pupil have come to rest it stops asking for frames, until the die next moves.
  *
- * The device itself can pull on them too ([feel]) - only the main menu's logo does that, turning
- * the phone's tilt and shake into the same slide. Without it, pupils behave exactly as they always
- * have on the mat.
+ * The device itself can pull on them too ([feel]) - only the main menu's logo does that, turning the phone's tilt and
+ * shake into the same slide. Without it, pupils behave exactly as they always have on the table.
  *
- * [travel] is how far a pupil can roll from its socket's centre, as a fraction of the die's size -
- * how hard the die's movement throws it depends on how far it has to go. [seed] picks where the
- * pupils start ([restingPupils]).
+ * [travel] is how far a pupil can roll from its socket's centre, as a fraction of the die's size - how hard the die's
+ * movement throws it depends on how far it has to go. [seed] picks where the pupils start ([restingPupils]).
  */
 @Stable
 class DieMotion(seed: Int, private val travel: Float) {

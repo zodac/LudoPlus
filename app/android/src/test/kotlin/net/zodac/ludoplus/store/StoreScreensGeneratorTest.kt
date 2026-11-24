@@ -31,7 +31,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
- * Renders the README's (and, from Phase 10, the store listing's) screenshots, phone and 10-inch tablet, from the real
+ * Renders the README's and the store listing's screenshots, phone and 10-inch tablet, from the real
  * app driven through its own screens. A generator, not a check - see [StoreAssets.onlyWhenAsked] and
  * `.claude/STORE_ASSETS.md`.
  */

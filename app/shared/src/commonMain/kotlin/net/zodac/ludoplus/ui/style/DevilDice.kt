@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 /**
  * Devil dice: a [top]-to-[bottom] body lit from below by an ember glow, a pair of [horn]s curling out of
@@ -30,24 +29,12 @@ class DevilDiceStyle(
     private val flameCore: Color,
     private val horn: Color,
     private val hornLight: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = top
     override val bodyColor: Color = lerp(top, bottom, 0.5f)
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle = DevilDiceStyle(
-        id,
-        palette.diceTop,
-        palette.diceBottom,
-        palette.pip,
-        lerp(palette.pip, Color.White, 0.5f),
-        lerp(palette.diceBottom, Color.Black, 0.6f),
-        palette.diceBottom,
-        palette.heldRing,
-    )
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         Canvas(modifier = modifier.dieShadow(RoundedCornerShape(BEVELED_DIE_CORNER_PERCENT))) {
             val corner = CornerRadius(size.minDimension * BEVELED_DIE_CORNER_PERCENT / 100f)
             // Drawn first, so the body covers their roots and they grow out of the corners.
@@ -64,9 +51,9 @@ class DevilDiceStyle(
                 cornerRadius = corner,
             )
             drawRoundRect(
-                if (held) heldRing else bottom.copy(alpha = 0.8f),
+                bottom.copy(alpha = 0.8f),
                 cornerRadius = corner,
-                style = dieEdgeStroke(held),
+                style = dieEdgeStroke(),
             )
 
             val inset = size.minDimension * 0.13f

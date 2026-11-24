@@ -15,7 +15,7 @@ import org.jetbrains.compose.resources.stringResource as resourcesStringResource
  * Every file under ui/ imports these instead of the library's, so no number reaches the screen unformatted.
  *
  * A text argument written the other way from the strings ("علي", a player's name typed in Arabic, in an English
- * sentence - or the game's "5x" in a right-to-left one) is set apart with Unicode's first-strong isolates, so the
+ * sentence - or a Latin word in a right-to-left one) is set apart with Unicode's first-strong isolates, so the
  * numbers and punctuation beside it stay where the sentence put them instead of joining its run.
  */
 

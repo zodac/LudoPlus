@@ -18,9 +18,6 @@ private const val DISABLED_ARROW_ALPHA = 0.38f
 
 private val ARROW_SIZE = 20.dp
 
-/** How wide [UpDownButtons] is: two stock icon buttons. */
-internal val UP_DOWN_BUTTONS_WIDTH = 96.dp
-
 /**
  * A pair of arrows that move a long list up or down: Achievements' category headers and the Leaderboard's pages that scroll, each
  * in its own [color]. An arrow with nowhere to go is faded and disabled, not removed, so the pair always sits in the same

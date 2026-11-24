@@ -175,7 +175,7 @@ object DiceStyleRegistry : StyleRegistry(
                 StyleVariant("classic_oak", Res.string.style_colour_oak),
             ),
         ),
-        // Leather and Wood, like the cups, mats and backgrounds of the same names, open with them.
+        // Leather and Wood, like the board and backgrounds of the same names, open with them.
         StyleGroup(
             Res.string.style_family_leather,
             listOf(
@@ -194,7 +194,7 @@ object DiceStyleRegistry : StyleRegistry(
             ),
             unlock = AchievementCount(10),
         ),
-        // The water set, with the Fishbowl cup, the Ocean mat and backgrounds and the Nautical frame.
+        // The water set, with the Ocean boards and backgrounds.
         StyleGroup(
             Res.string.style_family_ocean,
             listOf(
@@ -354,7 +354,7 @@ object DiceStyleRegistry : StyleRegistry(
             ),
             unlock = AchievementCount(70),
         ),
-        // Opens with the Christmas cup, mat and background.
+        // Opens with the Christmas background.
         StyleGroup(
             Res.string.style_family_christmas,
             listOf(
@@ -469,7 +469,7 @@ object DiceStyleRegistry : StyleRegistry(
             ),
             unlock = StyleUnlock.SpecificAchievement(Achievement.TOO_MUCH_OF_A_GOOD_THING),
         ),
-        // To go with the Starry mat and background, and earned with them.
+        // To go with the Starry board and background, and earned with them.
         StyleGroup(
             Res.string.style_family_starry,
             listOf(

@@ -19,9 +19,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 import net.zodac.ludoplus.data.settings.MotionGroup
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
-// The water set: the Ocean dice, mat and backgrounds, which share their waves and caustics.
+// The water set: the Ocean dice, boards, and backgrounds, which share their waves and caustics.
 
 /**
  * [rows] lines of wave crests in [colour] across the surface, each a gentle swell [wavelength] long
@@ -108,24 +107,18 @@ class OceanDiceStyle(
     private val dark: Color,
     private val foam: Color,
     private val pip: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = light
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle =
-        OceanDiceStyle(id, palette.diceTop, palette.diceBottom, lerp(palette.diceTop, Color.White, 0.6f), palette.pip, palette.heldRing)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val seed = naturalPatternSeed(value, styleSeed = 41)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.verticalGradient(listOf(light, dark)),
             edge = lerp(light, Color.White, 0.35f),
             pipColor = pip,
-            heldRingColor = heldRing,
         ) {
             drawCachedSurface(OceanSurface(seed, foam)) {
                 drawWaveCrests(
@@ -174,7 +167,9 @@ class OceanWavesBackground(override val id: String, private val palette: Backgro
     }
 }
 
-/** A sunlit lagoon - to go with the Ocean mat: caustics in [BackgroundPalette.detail] over its floor. Painted once. */
+/**
+ * A sunlit lagoon - to go with the Ocean board: caustics in [BackgroundPalette.detail] over its floor. Painted once.
+ */
 class OceanLagoonBackground(override val id: String, private val palette: BackgroundPalette) : TableBackground {
     override val scoreAreaBrush: Brush = Brush.verticalGradient(listOf(palette.top, palette.bottom))
 

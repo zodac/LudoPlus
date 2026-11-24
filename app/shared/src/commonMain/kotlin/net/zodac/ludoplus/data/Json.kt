@@ -87,12 +87,6 @@ internal fun JsonObject.objectList(key: String): List<JsonObject> =
 /** The number at [key], or null if there's none - absent, or not a number. */
 internal fun JsonObject.intOrNull(key: String): Int? = (this[key] as? JsonNumber)?.toInt()
 
-/** The number at [key], or null if there's none - absent, or not a number. */
-internal fun JsonObject.longOrNull(key: String): Long? = (this[key] as? JsonNumber)?.toLong()
-
-/** The boolean at [key], or null if there's none - absent, or not a boolean. */
-internal fun JsonObject.booleanOrNull(key: String): Boolean? = (this[key] as? JsonBoolean)?.value
-
 /** The string at [key], or null if there's none - absent, or not a string. */
 internal fun JsonObject.stringOrNull(key: String): String? = (this[key] as? JsonString)?.value
 

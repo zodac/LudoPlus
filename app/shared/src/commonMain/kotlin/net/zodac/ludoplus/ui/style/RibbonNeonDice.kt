@@ -16,7 +16,6 @@ import kotlin.math.PI
 import kotlin.math.pow
 import kotlin.math.sin
 import net.zodac.ludoplus.data.settings.MotionGroup
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 /** Each number's own colour, 1 to 6, for a style that gives every face a different one. */
 class FaceColours(val colours: List<Color>) {
@@ -27,7 +26,7 @@ class FaceColours(val colours: List<Color>) {
     operator fun get(value: Int): Color = colours[(value - 1).coerceIn(0, 5)]
 
     companion object {
-        /** Every face the same [colour] - a recoloured die, whose colour is the roll's. */
+        /** Every face the same [colour] - a one-colour die, whose colour is the roll's. */
         fun all(colour: Color) = FaceColours(List(6) { colour })
     }
 }
@@ -53,25 +52,19 @@ class RibbonDiceStyle(
     private val face: Color,
     private val shade: Color,
     private val colours: FaceColours,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = face
     override val cornerPercent: Int = RIBBON_CORNER_PERCENT
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle =
-        RibbonDiceStyle(id, palette.diceTop, palette.diceBottom, FaceColours.all(palette.pip), palette.heldRing)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) = StyledDie(
+    override fun Die(value: Int, modifier: Modifier) = StyledDie(
         value = value,
-        held = held,
         modifier = modifier,
         face = Brush.linearGradient(listOf(face, shade)),
         edge = lerp(shade, Color.Black, 0.2f),
         pipColor = colours[value],
         cornerPercent = RIBBON_CORNER_PERCENT,
         pipShape = PipShape.CUSTOM,
-        heldRingColor = heldRing,
     ) {
         drawCachedSurface(RibbonSurface(value, colours[value])) { paintRibbonDigit(value, colours[value]) }
     }
@@ -97,21 +90,17 @@ class NeonDiceStyle(
     override val id: String,
     private val panel: Color,
     private val colours: FaceColours,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = colours[1]
     override val bodyColor: Color = panel
     override val cornerPercent: Int = NEON_CORNER_PERCENT
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle = NeonDiceStyle(id, panel, FaceColours.all(palette.swatch), palette.heldRing)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val seconds = rememberArtSeconds(MotionGroup.DICE)
         val phase = LocalDieIndex.current * 1.7f
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(lerp(panel, Color.White, 0.06f), panel)),
             edge = lerp(panel, Color.White, 0.18f),
@@ -125,7 +114,6 @@ class NeonDiceStyle(
                 val tube = cachedSurface(NeonTube(it, colours[it])) { drawNeonDigit(it, colours[it], glow = 1f) }
                 tube?.let { image -> drawImage(image, alpha = NEON_PULSE_FLOOR + (1f - NEON_PULSE_FLOOR) * swell) }
             },
-            heldRingColor = heldRing,
         ) {
             // The panel's mounting screws, one in each corner.
             val inset = size.minDimension * 0.11f

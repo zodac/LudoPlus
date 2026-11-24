@@ -28,7 +28,6 @@ import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.ui.style.DiceStyle
-import net.zodac.ludoplus.ui.style.DieColourPalette
 import net.zodac.ludoplus.ui.style.GameVisualTheme
 import net.zodac.ludoplus.ui.style.LocalArtFrozen
 import net.zodac.ludoplus.ui.style.LocalGameVisualTheme
@@ -125,10 +124,8 @@ private class CountingDice : DiceStyle {
     override val id: String = "counting"
     val shown = mutableListOf<Pair<Int, Boolean>>()
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle = this
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         shown += value to LocalArtFrozen.current
         Box(modifier)
     }

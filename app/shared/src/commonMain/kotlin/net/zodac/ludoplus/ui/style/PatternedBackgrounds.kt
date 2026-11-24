@@ -24,9 +24,9 @@ import kotlin.random.Random
 import net.zodac.ludoplus.data.settings.MotionGroup
 
 /**
- * A background's colours: [top] and [bottom] of its gradient (the centre and edge, for a radial
- * one) and [detail] for any pattern over it. Every pattern is kept faint - the scorecard sits on top
- * and has to stay the thing that reads.
+ * A background's colours: [top] and [bottom] of its gradient (the centre and edge, for a radial one) and [detail] for
+ * any pattern over it. Every pattern is kept faint - the board and cards sit on top and have to stay the thing that
+ * reads.
  */
 data class BackgroundPalette(val top: Color, val bottom: Color, val detail: Color = Color.White)
 
@@ -80,8 +80,8 @@ class PlanksBackground(override val id: String, private val palette: BackgroundP
 }
 
 /**
- * Leather - to go with the Leather dice, cup and mat: a faint pebbled hide over the gradient, stitched
- * round just inside the edge in [BackgroundPalette.detail]. Painted once.
+ * Leather - to go with the Leather dice: a faint pebbled hide over the gradient, stitched round just inside the edge in
+ * [BackgroundPalette.detail]. Painted once.
  */
 class LeatherBackground(override val id: String, private val palette: BackgroundPalette) : TableBackground {
     override val scoreAreaBrush: Brush = Brush.verticalGradient(listOf(palette.top, palette.bottom))
@@ -99,7 +99,7 @@ class LeatherBackground(override val id: String, private val palette: Background
     }
 }
 
-/** A gingham tablecloth, to go with the Gingham mat. */
+/** A gingham tablecloth. */
 class GinghamBackground(override val id: String, private val palette: BackgroundPalette) : TableBackground {
     override val scoreAreaBrush: Brush = Brush.verticalGradient(listOf(palette.top, palette.bottom))
 

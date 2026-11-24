@@ -302,7 +302,7 @@ class SettingsRepository(
         /** Where the seconds played were kept until they moved to the achievements' counters: retired. */
         val PLAY_SECONDS_KEY = intPreferencesKey("play_seconds")
 
-        // Stored ids: permanent once released. The die's and background's keys are DiceFive's.
+        // Stored ids: permanent once released. The die's and background's keys came with their art.
         val BOARD_STYLE_ID_KEY = stringPreferencesKey("board_style_id")
         val PAWN_STYLE_ID_KEY = stringPreferencesKey("pawn_style_id")
         val DICE_STYLE_ID_KEY = stringPreferencesKey("dice_style_id")

@@ -56,16 +56,16 @@ private const val RGB_TWINKLES = 22
 private const val RGB_TWINKLE_SECONDS = 1.4f
 private const val RGB_TWINKLE_PERIOD = 3.2f
 
-// Faint enough to read the scorecard's numbers over.
+// Faint enough to read the words on it over.
 private const val RGB_MATRIX_STRENGTH = 0.5f
 
 /**
  * An RGB light panel - to go with the RGB dice: a dark smoked panel over a grid of LEDs, each a soft point of light
  * with a faint glow spread between them, lit with one of a gaming keyboard's lighting [effect]s (see [RgbEffect]).
- * Dark, as every background is, for the scorecard's numbers to read over. Still under reduced motion.
+ * Dark, as every background is, for the words on it to read over. Still under reduced motion.
  *
- * Live per frame: the grid's light, painted once in white, stamped and coloured - by a tint (Rainbow, Starlight) or
- * a gradient laid over it in an offscreen layer (Wave, Ripple, Swirl) - and Starlight's few twinkles.
+ * Live per frame: the grid's light, painted once in white, stamped and coloured - by a tint (Rainbow, Starlight) or a
+ * gradient laid over it in an offscreen layer (Wave, Ripple, Swirl) - and Starlight's few twinkles.
  */
 class RgbLightBackground(override val id: String, private val palette: BackgroundPalette, private val effect: RgbEffect) : TableBackground {
     override val scoreAreaBrush: Brush = Brush.verticalGradient(listOf(palette.top, palette.bottom))

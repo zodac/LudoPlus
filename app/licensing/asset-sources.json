@@ -18,7 +18,7 @@
     ]
   },
   "app/audio/mat_landing.ogg": {
-    "description": "Dice landing on the mat: a modified recording of a single die",
+    "description": "The die landing: a modified recording of a single die",
     "source": "https://freesound.org/s/596051/",
     "license": "CC0-1.0",
     "libraries": [

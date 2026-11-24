@@ -17,7 +17,7 @@ private const val FELT_LIGHT_HEIGHT = 0.08f
 private const val FELT_LIGHT_REACH = 0.95f
 private const val FELT_MIDDLE_STOP = 0.55f
 
-/** Default [TableBackground]: the launcher icon's navy felt behind the scorecard, lit from above its middle. */
+/** Default [TableBackground]: the launcher icon's navy felt behind the board, lit from above its middle. */
 object MidnightFeltBackground : TableBackground {
     override val id: String = DefaultStyleIds.TABLE_BACKGROUND
 
@@ -31,7 +31,7 @@ object MidnightFeltBackground : TableBackground {
     }
 }
 
-/** The Classic background in Brown [TableBackground]: dark stained wood behind the scorecard. */
+/** The Classic background in Brown [TableBackground]: dark stained wood behind the board. */
 object BarrelTableBackground : TableBackground {
     override val id: String = "classic_brown"
 

@@ -54,20 +54,16 @@ import org.jetbrains.compose.resources.Font
 
 /**
  * The brand typeface: Sora (`composeResources/font/sora.ttf`), used on the logo wordmark here, on
- * [ScreenScaffold]'s page titles and every dialog title, and on the game's own marks: the scorecard
- * tiles' labels and Hit List targets, the corner badges (see `SegmentBadge`), the rolls left by the
- * cup, the scores on the player tabs and Game Over, the Leaderboard's mode-card titles, an
- * unlock banner's title, the labels (not the numbers) in the board's totals tooltip, and the
- * game mode and modifier names and values - on their picker pages and in the New Game fields that
- * open them - and the New Game screen's player count and You / User / CPU labels. This is a deliberate, narrow departure from stock M3 type ([UI.md]'s "no
+ * [ScreenScaffold]'s page titles and every dialog title, and on the game's own marks: an unlock banner's title, and
+ * the game mode and house rule names on their picker pages and in the New Game fields that open them, and the New Game
+ * screen's player count and You / User / CPU labels. This is a deliberate, narrow departure from stock M3 type ([UI.md]'s "no
  * typography overrides" rule is about the type *scale*, not a call site): these are brand marks,
  * not body text, so they earn their own face the same way the game board earns its own palette.
  *
  * Never for a player's name or anything else a player types: the font only covers ASCII and
  * Latin-1, so a name in any other script (or with an emoji) would come out in two faces.
  *
- * Not for a column of numbers either (the Leaderboard's scores, Statistics, the totals tooltip's
- * values): Sora's default digits are proportional - a "1" is narrower than a "0" - so right-aligned
+ * Not for a column of numbers either (the Leaderboard's turns, Statistics): Sora's default digits are proportional - a "1" is narrower than a "0" - so right-aligned
  * numbers in it don't line up digit for digit. The system font's digits are all one width. Sora
  * does carry tabular digits (`fontFeatureSettings = "tnum"`) if a column ever has to be in it.
  *

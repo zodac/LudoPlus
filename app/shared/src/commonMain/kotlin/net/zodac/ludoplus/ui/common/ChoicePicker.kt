@@ -143,7 +143,7 @@ private fun PickerField(
                 )
                 Text(text = supporting, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
             }
-            // Pointing onward, not down as a DropdownChoiceField's does: tapped, this opens a page, not a menu. Mirrored right to left.
+            // Pointing onward, not down: tapped, this opens a page, not a menu. Mirrored right to left.
             Icon(imageVector = Symbols.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }
     }

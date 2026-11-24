@@ -45,7 +45,7 @@ class DieMotionTest {
         drive(jerky, frames = 60) { frame -> Offset(if (frame % 10 < 5) frame * 0.2f else 0f, frame * 0.1f) }
         assertTrue(jerky.pupils.all { it.getDistance() <= 1.0001f }, "${jerky.pupils}")
 
-        // They're thrown in the die's own frame: turned a quarter clockwise, its own "down" points left across the mat - so
+        // They're thrown in the die's own frame: turned a quarter clockwise, its own "down" points left - so
         // speeding up to the right throws its pupils down its own face.
         val turned = startedAt(Offset.Zero, yawDegrees = 90f)
         drive(turned, frames = 30, yawDegrees = 90f) { frame -> Offset(10f * (frame * 0.016f) * (frame * 0.016f), 0f) }

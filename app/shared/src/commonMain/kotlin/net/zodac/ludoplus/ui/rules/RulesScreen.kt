@@ -145,8 +145,7 @@ fun resetRulesPageMemory() {
 
 /**
  * The Rules page: two rows of tabs over a [HorizontalPager] of every [RulesPage]. The top row picks
- * one of [RULES_GROUPS] (only the gameplay for now: the game modes and the modifiers join it in Phase 9, and until there
- * are two groups the row isn't shown), and the row under it has a tab per page of that group, so any group is a tap away from any page (Material's primary
+ * one of [RULES_GROUPS] (the gameplay, the game modes, and the house rules), and the row under it has a tab per page of that group, so any group is a tap away from any page (Material's primary
  * and secondary tabs). The pager runs through every page, group after group: a swipe past a group's
  * last page carries on into the next group, and the top row follows. A tab snaps straight to its page
  * rather than animating there: an animated jump slides through, and so builds, every page between

@@ -19,12 +19,11 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 // Light falls from the top left, in screen space - so a die's lit edges stay lit whichever way it lies.
 private val POLYGON_LIGHT = Offset(-0.6f, -0.8f)
 
-// How many whole turns a flat die spins through in a toss, slowing to a stop on its resting twist.
+// How many whole turns a flat die spins through in a roll, slowing to a stop on its resting twist.
 private const val POLYGON_TOSS_TURNS = 1.6f
 
 /**
@@ -40,7 +39,7 @@ internal class PolygonShape(
     val firstCorner: Float,
     val restTwist: Float,
 ) {
-    /** How it lies, in degrees: spinning through a toss [tumbleMillis] in, or at its resting twist (null). */
+    /** How it lies, in degrees: spinning through a roll [tumbleMillis] in, or at its resting twist (null). */
     fun angle(value: Int, dieIndex: Int, tumbleMillis: Float?): Float {
         val rest = firstCorner + (Random(dieIndex * 31 + value).nextFloat() * 2f - 1f) * restTwist
         if (tumbleMillis == null) return rest
@@ -104,17 +103,16 @@ private fun hexPips(value: Int): List<Offset> {
 }
 
 /**
- * Bestagon dice: flat hexagonal tiles with a bevelled edge, each of its six edge facets catching the
- * light by which way it faces, and pips laid out to suit the shape - a 6 is a ring of pips, one
- * pointing into each corner, 3 a triangle of them, 4 a rectangle, 5 the rectangle round a centre pip.
- * A toss spins it flat across the mat, slowing onto a resting twist of its own.
+ * Bestagon dice: flat hexagonal tiles with a bevelled edge, each of its six edge facets catching the light by which way
+ * it faces, and pips laid out to suit the shape - a 6 is a ring of pips, one pointing into each corner, 3 a triangle of
+ * them, 4 a rectangle, 5 the rectangle round a centre pip. A roll spins it flat across the table, slowing onto a
+ * resting twist of its own.
  */
 class BestagonDiceStyle(
     override val id: String,
     private val light: Color,
     private val dark: Color,
     private val pip: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = light
     override val bodyColor: Color = dark
@@ -122,12 +120,10 @@ class BestagonDiceStyle(
 
     private val hexagon = PolygonShape(sides = 6, radius = 0.49f, drop = 0f, firstCorner = 0f, restTwist = 14f)
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle = BestagonDiceStyle(id, palette.diceTop, palette.diceBottom, palette.pip, palette.heldRing)
-
     override fun shadowShape(value: Int, dieIndex: Int, tumbleMillis: Float?): Shape = hexagon.outline(hexagon.angle(value, dieIndex, tumbleMillis))
 
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val dieIndex = LocalDieIndex.current
         val tumbleMillis = LocalDieTumbleMillis.current
         val angle = hexagon.angle(value, dieIndex, tumbleMillis)
@@ -138,15 +134,15 @@ class BestagonDiceStyle(
                 val at = hexagon.place(size, angle, spot)
                 drawSunkenPip(at, HEX_PIP_RADIUS * r, pip)
             }
-            drawPolygonEdge(hexagon, angle, held)
+            drawPolygonEdge(hexagon, angle)
         }
     }
 
-    private fun DrawScope.drawPolygonEdge(shape: PolygonShape, angle: Float, held: Boolean) {
+    private fun DrawScope.drawPolygonEdge(shape: PolygonShape, angle: Float) {
         drawPath(
             polygonPath(shape.corners(size, angle)),
-            if (held) heldRing else lerp(dark, Color.Black, 0.35f),
-            style = dieEdgeStroke(held, edgeWidth = 0.8.dp, join = StrokeJoin.Round),
+            lerp(dark, Color.Black, 0.35f),
+            style = dieEdgeStroke(edgeWidth = 0.8.dp, join = StrokeJoin.Round),
         )
     }
 }

@@ -2,7 +2,7 @@
 # Builds the app's sound effects from their sources in app/audio/: each clip is peak-normalised to the same level
 # and written as Ogg Vorbis. app/android's NormalizeOggAudioTask calls it.
 #
-# The clips (dice cup, pawn steps, capture, and pawn home, the win fanfare) come from different sources and were never mixed
+# The clips (the die landing, pawn steps, capture, and pawn home, the win fanfare) come from different sources and were never mixed
 # against each other, so they land at wildly different loudnesses - e.g. hold.ogg peaks 16dB quieter than
 # celebration.ogg, which reads as "some sounds are broken" rather than "some sounds are naturally quieter." Rather
 # than hand-normalising each file (which would need re-doing by hand every time one is re-recorded or swapped), the

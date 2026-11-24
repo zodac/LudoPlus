@@ -20,7 +20,6 @@ import kotlin.math.floor
 import kotlin.random.Random
 import net.zodac.ludoplus.data.settings.MotionGroup
 import net.zodac.ludoplus.ui.common.BoundedArt
-import net.zodac.ludoplus.ui.theme.GoldAccent
 
 private const val GLITCH_CORNER_PERCENT = 14
 
@@ -88,15 +87,12 @@ class GlitchDiceStyle(
     private val face: Color,
     private val pip: Color,
     private val scanline: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = face
     override val cornerPercent: Int = GLITCH_CORNER_PERCENT
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle = GlitchDiceStyle(id, palette.diceTop, palette.pip, palette.diceBottom, palette.heldRing)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val dieIndex = LocalDieIndex.current
         val seconds = rememberArtSeconds(MotionGroup.DICE)
         // Frozen (tumbling), it's held at its clean face - never stuck mid-burst.
@@ -136,9 +132,9 @@ class GlitchDiceStyle(
             }
             val corner = CornerRadius(size.minDimension * GLITCH_CORNER_PERCENT / 100f)
             drawRoundRect(
-                if (held) heldRing else scanline.copy(alpha = 0.9f),
+                scanline.copy(alpha = 0.9f),
                 cornerRadius = corner,
-                style = dieEdgeStroke(held),
+                style = dieEdgeStroke(),
             )
         }
     }

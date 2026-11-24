@@ -32,9 +32,9 @@ fun stylesUnlockedTitle(event: AchievementEvent.StylesUnlocked): String {
 }
 
 /**
- * A styles banner's description, written to fit its two lines: what unlocked them (the count, or the achievement),
- * then the styles - "the 'Frosted' dice style", "the hidden 'Irish' dice colour", "'Frosted' dice and 'Velvet' mat",
- * "'Starry' dice, mat and background" (one achievement's, of one name), or the first two "and 3 more".
+ * A styles banner's description, written to fit its two lines: what unlocked them (the count, or the achievement), then
+ * the styles - "the 'Frosted' dice style", "the hidden 'Irish' dice colour", "'Frosted' die and 'Wood' board",
+ * "'Starry' die, board and background" (one achievement's, of one name), or the first two "and 3 more".
  */
 @Composable
 fun stylesUnlockedDescription(event: AchievementEvent.StylesUnlocked): String {
@@ -49,7 +49,7 @@ fun stylesUnlockedDescription(event: AchievementEvent.StylesUnlocked): String {
             pluralStringResource(Res.plurals.styles_reward_hidden_colours, it.hiddenColours, stringResource(it.name), stringResource(it.categoryNoun))
         }
         styles.size == 1 -> stringResource(Res.string.achievements_styles_unlocked_one, named.single())
-        // One achievement's styles of one name are named once: "'Starry' dice, mat and background".
+        // One achievement's styles of one name are named once: "'Starry' die, board and background".
         event.earnedBy is StylesEarnedBy.OneAchievement && styles.all { it.name == styles[0].name && it.hiddenColours == 0 } ->
             stringResource(Res.string.achievements_styles_unlocked_named, stringResource(styles[0].name), spokenList(styles.map { stringResource(it.categoryNoun) }))
         styles.size <= STYLES_NAMED_ON_BANNER -> spokenList(named)
@@ -62,9 +62,8 @@ fun stylesUnlockedDescription(event: AchievementEvent.StylesUnlocked): String {
 }
 
 /**
- * What TalkBack says for a styles banner: every style, not just the two the banner has room for, and
- * without the quote marks it draws round each name - "Styles unlocked: Frosted dice, Velvet mat.
- * Earned 23 achievements".
+ * What TalkBack says for a styles banner: every style, not just the two the banner has room for, and without the quote
+ * marks it draws round each name - "Styles unlocked: Frosted dice, Wood board. Earned 23 achievements".
  */
 @Composable
 fun stylesUnlockedAnnouncement(event: AchievementEvent.StylesUnlocked): String {

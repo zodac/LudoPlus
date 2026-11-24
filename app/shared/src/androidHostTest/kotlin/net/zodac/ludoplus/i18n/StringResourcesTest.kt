@@ -12,7 +12,7 @@ class StringResourcesTest {
     @Test
     fun `every locale's strings pass - no banned word, translations matching the base, and every base plural with a one and an other`() {
         assertTrue("values" in locales, "No values/strings.xml found - is the working directory the module?")
-        // The wording the rules ban from anything a player sees: the trademark, and "three/four/five of a kind" (use 3x, 4x, 5x).
+        // The wording the rules ban from anything a player sees: other companies' trademarks (CLAUDE.md).
         for ((locale, strings) in locales) {
             assertEquals(emptyList(), StringChecks.bannedWords(strings), "$locale uses a banned word - see CLAUDE.md")
         }

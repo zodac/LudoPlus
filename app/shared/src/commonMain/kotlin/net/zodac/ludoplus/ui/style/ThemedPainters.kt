@@ -32,9 +32,9 @@ internal fun hexagonPoints(centre: Offset, radius: Float): List<Offset> = (0..5)
 }
 
 /**
- * A printed circuit board's traces and chips, in [detail]: traces wander the board in straight runs and 45-degree turns,
- * each ending in a pad with a [hole] drilled through it, and a couple of chips sit among them, pins down both sides. A
- * [strength] under 1 draws the traces and pins fainter, for a board behind a scorecard rather than under dice; the
+ * A printed circuit board's traces and chips, in [detail]: traces wander the board in straight runs and 45-degree
+ * turns, each ending in a pad with a [hole] drilled through it, and a couple of chips sit among them, pins down both
+ * sides. A [strength] under 1 draws the traces and pins fainter, for a board behind a game rather than under dice; the
  * chips' own colours, [chip] and the dot [chipMark] on it, are as given.
  */
 internal fun DrawScope.paintCircuitBoard(
@@ -88,7 +88,7 @@ internal fun DrawScope.paintCircuitBoard(
     }
 }
 
-// The Neon mat's pulse - see NEON_PULSE_SECONDS on the dice.
+// The Neon pulse - see NEON_PULSE_SECONDS on the dice.
 internal const val NEON_MAT_PULSE_SECONDS = 2.4f
 
 /**
@@ -176,9 +176,6 @@ internal fun DrawScope.drawBow(centre: Offset, size: Float, colour: Color) {
     drawCircle(colour, size * 0.2f, centre)
     drawCircle(sheen.copy(alpha = 0.6f), size * 0.07f, centre - Offset(size * 0.06f, size * 0.06f))
 }
-
-// How many sparkles the Glitter mat can show at once.
-private const val GLITTER_MAT_SPARKLES = 6
 
 /** How many differently textured flags [paintFlagstones] paints: the rest are copies of them. */
 private const val STONE_MAT_FLAG_VARIANTS = 3

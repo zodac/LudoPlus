@@ -1,4 +1,4 @@
-# The headline over each screenshot (the README's, and from Phase 10 the store listing's), by the screen's name (the part
+# The headline over each screenshot (the README's and the store listing's), by the screen's name (the part
 # of its file name after the number - see StoreScreensGeneratorTest). One line each; keep them short (about 30
 # characters reads well at thumbnail size) and true of the app as it ships.
 #

@@ -50,7 +50,7 @@ private fun cutOutIcon(name: String, path: String): ImageVector =
         .build()
 
 /**
- * A side-profile sports car and the trail of fire it leaves, as DiceFive drew it: an original, generic silhouette of a low
+ * A side-profile sports car and the trail of fire it leaves: an original, generic silhouette of a low
  * wedge with a fastback rear, no badge or logo, for the film the title Where We're Going, We Don't Need Rules quotes. Its
  * subpaths: the body (both wheel arches cut into its underside), the window, the wheels, then the fire.
  */

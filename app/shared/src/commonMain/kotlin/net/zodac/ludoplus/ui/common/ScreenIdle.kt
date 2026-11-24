@@ -100,7 +100,7 @@ internal fun Modifier.wakesScreen(screen: ScreenIdle): Modifier = pointerInput(s
     }
 }
 
-/** While composed, nothing is frozen ([ScreenIdle.hold]): for a loop the game needs, such as a CPU's cup shaking. */
+/** While composed, nothing is frozen ([ScreenIdle.hold]): for a loop the game needs, such as a die mid-roll. */
 @Composable
 internal fun HoldScreenAwake() {
     val screen = LocalScreenIdle.current ?: return

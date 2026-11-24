@@ -25,34 +25,28 @@ private const val BAUBLE_FRACTION = 0.11f
 data class GiftPalette(val dark: Color, val light: Color, val mid: Color, val accent: Color)
 
 /**
- * Snowcapped dice - the Christmas dice's first colour: a [light] to [dark] face with snow drifted
- * over its top edge (a soft wavy hem and an icicle, between the pip columns so it never runs into a
- * pip), a few flakes falling below, and snowball pips in [pip]. On a coloured roll the face takes the
- * roll's colours and the snowballs its pip colour; the snow stays white.
+ * Snowcapped dice - the Christmas dice's first colour: a [light] to [dark] face with snow drifted over its top edge (a
+ * soft wavy hem and an icicle, between the pip columns so it never runs into a pip), a few flakes falling below, and
+ * snowball pips in [pip].
  */
 class SnowcapDiceStyle(
     override val id: String,
     private val light: Color,
     private val dark: Color,
     private val pip: Color = Color.White,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = light
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle = SnowcapDiceStyle(id, palette.diceTop, palette.diceBottom, palette.pip, palette.heldRing)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val pattern = naturalPatternSeed(value, styleSeed = 73)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(light, dark)),
             edge = lerp(dark, Color.Black, 0.3f),
             pipColor = pip,
             pipShape = PipShape.CUSTOM,
-            heldRingColor = heldRing,
             customPips = { drawCachedSurface(Snowballs(value, pip)) { drawSnowballs(value, pip) } },
         ) {
             drawCachedSurface(SnowcapFace(pattern)) { paintSnowcap(pattern) }
@@ -98,9 +92,8 @@ private fun DrawScope.drawSnowballs(value: Int, pip: Color) {
 private val SnowShade = Color(0xFFE3EEF7)
 
 /**
- * Bauble dice: a pine-green face lightly dusted with snowflakes, its pips Christmas baubles hanging
- * from little gold caps - alternately [bauble] and [baubleAlt], each with a shine at its top left. On
- * a coloured roll the face takes the roll's colours and every bauble its pip colour.
+ * Bauble dice: a pine-green face lightly dusted with snowflakes, its pips Christmas baubles hanging from little gold
+ * caps - alternately [bauble] and [baubleAlt], each with a shine at its top left.
  */
 class BaubleDiceStyle(
     override val id: String,
@@ -108,25 +101,19 @@ class BaubleDiceStyle(
     private val dark: Color,
     private val bauble: Color,
     private val baubleAlt: Color,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = light
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle =
-        BaubleDiceStyle(id, palette.diceTop, palette.diceBottom, palette.pip, palette.pip, palette.heldRing)
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         val pattern = naturalPatternSeed(value, styleSeed = 71)
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(light, dark)),
             edge = lerp(dark, Color.Black, 0.3f),
             pipColor = bauble,
             pipShape = PipShape.CUSTOM,
-            heldRingColor = heldRing,
             customPips = { drawCachedSurface(Baubles(value, bauble, baubleAlt)) { drawBaubles(value, bauble, baubleAlt) } },
         ) {
             drawCachedSurface(Snowflakes(pattern)) { paintSnowflakes(pattern) }
@@ -183,40 +170,27 @@ private fun DrawScope.drawBaubles(value: Int, bauble: Color, alt: Color) {
 }
 
 /**
- * Gift-wrapped dice - to go with the Christmas cup's red: each a present in polka-dotted [paper] (its
- * accent for the dots), a [ribbon] running down the middle of the face to a bow at the top, and white
- * pips ringed in the paper's own dark, so they read on the paper and the ribbon alike. On a coloured
- * roll the paper takes the roll's colours, and the pips and ribbon its pip colour.
+ * Gift-wrapped dice: each a present in polka-dotted [paper] (its accent for the dots), a [ribbon] running down the
+ * middle of the face to a bow at the top, and white pips ringed in the paper's own dark, so they read on the paper and
+ * the ribbon alike.
  */
 class GiftDiceStyle(
     override val id: String,
     private val paper: GiftPalette,
     private val ribbon: Color,
     private val pip: Color = Color.White,
-    private val heldRing: Color = GoldAccent,
 ) : DiceStyle, Swatched {
     override val swatch: Color = paper.mid
 
-    override fun recoloured(palette: DieColourPalette): DiceStyle {
-        val coloured = GiftPalette(
-            dark = lerp(palette.diceBottom, Color.Black, 0.4f), light = palette.diceTop, mid = palette.diceBottom,
-            accent = lerp(palette.diceTop, Color.White, 0.6f),
-        )
-        // The ribbon in a shade of the pip colour - picked to stand out on that colour, as gold wouldn't on yellow.
-        return GiftDiceStyle(id, coloured, lerp(palette.pip, palette.diceBottom, 0.25f), palette.pip, palette.heldRing)
-    }
-
     @Composable
-    override fun Die(value: Int, held: Boolean, modifier: Modifier) {
+    override fun Die(value: Int, modifier: Modifier) {
         StyledDie(
             value = value,
-            held = held,
             modifier = modifier,
             face = Brush.linearGradient(listOf(paper.light, paper.mid)),
             edge = paper.dark,
             pipColor = pip,
             pipShape = PipShape.CUSTOM,
-            heldRingColor = heldRing,
             customPips = { drawCachedSurface(GiftPips(value, pip, paper.dark)) { drawGiftPips(value, pip, paper.dark) } },
         ) {
             drawCachedSurface(GiftFace(paper, ribbon)) { paintGiftWrap(paper, ribbon) }

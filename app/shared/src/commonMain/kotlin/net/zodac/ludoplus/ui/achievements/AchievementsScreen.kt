@@ -215,18 +215,6 @@ private val ESTIMATED_ROW_HEIGHT_DP = 88.dp
 /** How far into the page's margin the list's scrollbar sits, past the cards' edge. */
 private val LIST_SCROLLBAR_OFFSET = 12.dp
 
-/** The missing-numbers list's scrollbar, at its end edge; the list keeps as much clear at each side. */
-private val MISSING_SCROLLBAR_WIDTH = 8.dp
-
-/**
- * The missing list's height before it scrolls: all 30 Full Houses, three to a line, in a 360dp-wide phone's dialog at
- * 100% font.
- */
-private val MISSING_LIST_MAX_HEIGHT = 280.dp
-
-/** The most Full Houses on one line of the missing list: the five that share the number of their three. */
-private const val HANDS_PER_THREE = 5
-
 /** The pinned category header's height (48dp arrows plus card padding), until it's measured. */
 private val ESTIMATED_HEADER_HEIGHT_DP = 56.dp
 
