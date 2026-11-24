@@ -32,16 +32,13 @@ class AchievementModeTest {
     @Test
     fun `the achievements kept out of a mode they'd be free in or measure something else in`() {
         val kept = Achievement.entries.filter { it.notEarnableIn.isNotEmpty() }.associateWith { it.notEarnableIn }
-        val quick = setOf(
-            COMEBACK_KID, DEFEAT_FROM_THE_JAWS_OF_VICTORY, EXPRESS_DELIVERY, FULL_HOUSE, MY_FAVOURITE_SPOT, ONE_BY_ONE, PACIFIST, SPEED_DEMON, THE_GREAT_ESCAPE, UNTOUCHABLE,
-        )
         val twoDice = setOf(BOTTOM_OF_THE_BARREL, COUNTING_UP, DRY_SPELL, EXPRESS_DELIVERY, FULL_SPREAD)
         val survival = setOf(
             ALL_HANDS_ON_DECK, BUDDY_SYSTEM, CLEAN_SWEEP, HAT_TRICK, INSULT_TO_INJURY, LEAPFROG, SITTING_DUCKS, TWO_FOR_ONE, WIRE_TO_WIRE,
         )
         val guards = mapOf(
             GameMode.CLASSIC to emptySet(),
-            GameMode.QUICK to quick,
+            GameMode.COLOUR_RUSH to setOf(CLEAN_SWEEP, EXPRESS_DELIVERY, SPEED_DEMON),
             GameMode.TWO_DICE to twoDice,
             GameMode.PORTALS to setOf(EXPRESS_DELIVERY),
             GameMode.SURVIVAL to survival,
@@ -66,12 +63,12 @@ class AchievementModeTest {
             impossible[GameMode.SURVIVAL],
         )
         assertEquals(setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE, WHERE_WERE_GOING_WE_DONT_NEED_RULES), impossible[GameMode.CLASSIC])
-        for (mode in listOf(GameMode.QUICK, GameMode.PORTALS, GameMode.CHAOS, GameMode.HAUNTED_HOUSE)) assertEquals(emptySet(), impossible[mode], "$mode")
+        for (mode in listOf(GameMode.COLOUR_RUSH, GameMode.PORTALS, GameMode.CHAOS, GameMode.HAUNTED_HOUSE)) assertEquals(emptySet(), impossible[mode], "$mode")
     }
 
     @Test
     fun `a limited achievement lists the modes left - neither those it's kept out of nor the impossible ones - and one only ruled out lists none`() {
-        assertEquals(GameMode.entries - GameMode.QUICK, UNTOUCHABLE.limitedModes)
+        assertEquals(GameMode.entries - GameMode.SURVIVAL, HAT_TRICK.limitedModes)
         assertEquals(listOf(GameMode.CLASSIC), EXPRESS_DELIVERY.limitedModes)
         assertEquals(listOf(GameMode.CHAOS), AGENT_OF_CHAOS.limitedModes)
         assertEquals(emptyList(), HOME_SWEET_HOME.limitedModes)
@@ -85,9 +82,9 @@ class AchievementModeTest {
             setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE, WHERE_WERE_GOING_WE_DONT_NEED_RULES),
             Achievement.entries.filter { it.earnableWithHouseRules }.toSet(),
         )
-        val feats = GameFeats(setOf(FIRST_VICTORY, AGENT_OF_CHAOS, EVERYTHING_EVERYWHERE_ALL_AT_ONCE, UNTOUCHABLE), mapOf(AchievementCounter.GAMES_WON to 1), streak = true)
+        val feats = GameFeats(setOf(FIRST_VICTORY, AGENT_OF_CHAOS, EVERYTHING_EVERYWHERE_ALL_AT_ONCE, CLEAN_SWEEP), mapOf(AchievementCounter.GAMES_WON to 1), streak = true)
         assertEquals(GameFeats(setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE)), feats.earnableIn(game(GameMode.CHAOS, setOf(HouseRule.BLOCKADES))))
         assertEquals(feats, feats.earnableIn(game(GameMode.CHAOS)))
-        assertEquals(setOf(FIRST_VICTORY, EVERYTHING_EVERYWHERE_ALL_AT_ONCE), feats.earnableIn(game(GameMode.QUICK)).achievements)
+        assertEquals(setOf(FIRST_VICTORY, EVERYTHING_EVERYWHERE_ALL_AT_ONCE), feats.earnableIn(game(GameMode.SURVIVAL)).achievements)
     }
 }

@@ -63,6 +63,12 @@ class GameResultDaoTest {
             row("Jo", won = true, turns = 50 - i, captures = captures, endedAt = 20L + i, mode = "survival").copy(timesCaptured = lost)
         })
         assertEquals(listOf(22L, 23L, 21L, 20L), dao.leaderboardByPawnsLeft("survival", playerCount = 4, limit = 10, offset = 0).map { it.endedAtEpochMillis })
+
+        // By squares: the most, then most captures, then the earliest.
+        dao.insertGame(listOf(20 to 1, 31 to 2, 31 to 4, 31 to 4).mapIndexed { i, (squares, captures) ->
+            row("Jo", won = true, turns = 50 - i, captures = captures, endedAt = 30L + i, mode = "colour_rush").copy(squares = squares)
+        })
+        assertEquals(listOf(32L, 33L, 31L, 30L), dao.leaderboardBySquares("colour_rush", playerCount = 4, limit = 10, offset = 0).map { it.endedAtEpochMillis })
         dao.clearAll()
         dao.insertGame(rows)
 

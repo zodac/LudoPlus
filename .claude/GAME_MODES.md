@@ -7,7 +7,7 @@ achievement audit (what each mode or house rule blocks or guards) is in `GAME_MO
 | Mode | `id` | Different from Classic | Achievements |
 | --- | --- | --- | --- |
 | `CLASSIC` | `classic` | The classic rules (`IMPLEMENTATION.md`, "The classic rules"). The default | All |
-| `QUICK` | `quick` | Two pawns each (`pawnsPerPlayer = 2`) | Its own, and all but a few |
+| `COLOUR_RUSH` | `colour_rush` | The track's squares are claimed (`claims = true`), and the most wins | Its own, and all but a few |
 | `TWO_DICE` | `two_dice` | Two dice, each moved on its own (`dice = 2`); doubles roll again, not 6s (`rollAgainOnDoubles`, `rollAgainRolls` empty) | Its own, and all but a few |
 | `PORTALS` | `portals` | Portals on the track (`portals = true`): a move ending on one comes out at its pair | Its own, and all but a few |
 | `SURVIVAL` | `survival` | Six pawns, starting out (`startsOut`), on an endless board: a captured pawn is out, and the last player with one wins (`lastStanding`), with sudden death (`suddenDeath`: Overtime, Sudden Death, and the Cataclysm, `game/Cataclysm.kt`) | Its own, and all but a few |

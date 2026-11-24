@@ -15,6 +15,7 @@ import net.zodac.ludoplus.game.MoveLog
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
+import net.zodac.ludoplus.model.GameRules
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PlayerColour
@@ -137,20 +138,27 @@ class SavedGameJsonTest {
     }
 
     @Test
-    fun `every state of random Quick games comes back as it was saved - two pawns each`() {
+    fun `every state of random Colour Rush games comes back as it was saved - squares claimed - and with any number of pawns`() {
         val random = Random(13)
-        repeat(20) {
-            var state = GameState.new(GameMode.QUICK, 4, first = 2)
-            assertTrue(state.players.all { it.pawns.size == 2 })
+        for (pawns in GameRules.PAWN_CHOICES) {
+            var state = GameState.new(GameMode.COLOUR_RUSH, 4, first = 2, rules = GameMode.COLOUR_RUSH.rules.withPawns(pawns))
+            assertTrue(state.players.all { it.pawns.size == pawns })
+            assertEquals(pawns != 4, state.rules.hasHouseRules)
             while (!state.isFinished) {
-                val saved = game(state).copy(mode = GameMode.QUICK)
+                val saved = game(state).copy(mode = GameMode.COLOUR_RUSH)
                 assertEquals(saved, SavedGameJson.decode(SavedGameJson.encode(saved)))
                 state = when (val phase = state.phase) {
-                    is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random).pawn)
+                    is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random))
                     else -> LudoEngine.roll(state, random)
                 }
             }
+            assertTrue(state.claimed.isNotEmpty())
+            val ended = game(state).copy(mode = GameMode.COLOUR_RUSH)
+            assertEquals(ended, SavedGameJson.decode(SavedGameJson.encode(ended)))
         }
+        // Survival's six are the mode's own.
+        assertEquals(false, GameMode.SURVIVAL.rules.withPawns(6).hasHouseRules)
+        assertFailsWith<IllegalArgumentException> { SavedGameJson.decode(SavedGameJson.encode(game(GameState.new(GameMode.CLASSIC, 4, rules = GameMode.CLASSIC.rules.withPawns(2)))).replace("\"pawns\":2", "\"pawns\":7")) }
     }
 
     @Test

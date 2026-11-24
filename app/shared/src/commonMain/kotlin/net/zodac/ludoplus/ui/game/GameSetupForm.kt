@@ -46,6 +46,8 @@ data class GameSetupState(
     val rollForPartners: Boolean = true,
     /** The house rules switched on ([HouseRule]): none by default. Kept while locked, but not played ([playedHouseRules]). */
     val houseRules: Set<HouseRule> = emptySet(),
+    /** How many pawns each, by the Pawns house rule, or null while it's off. Kept while locked, but not played ([playedPawns]). */
+    val pawns: Int? = null,
     /** Whether the House Rules card is open to the player: once a first game is finished (`GameRecordRepository.hasFinishedGame`). */
     val houseRulesUnlocked: Boolean = false,
     /** The player's custom modes ([CustomMode]), in the order they were made. */
@@ -62,6 +64,9 @@ data class GameSetupState(
     /** The house rules a game started now plays: the custom mode's, or those switched on, and none while they're locked. */
     val playedHouseRules: Set<HouseRule>
         get() = (customMode?.houseRules ?: if (houseRulesUnlocked) houseRules else emptySet()).filter { it.appliesTo(playedMode.rules) }.toSet()
+
+    /** How many pawns each a game started now has by the house rule, or null for the mode's own: none while locked, or with a custom mode. */
+    val playedPawns: Int? get() = pawns?.takeIf { houseRulesUnlocked && customMode == null && it != playedMode.rules.pawnsPerPlayer }
 
     /** Each player's team for the game this would start, or null for none ([TeamMode.teamsFor]). */
     val teams: List<Int>? get() = teamMode.teamsFor(playerCount)
@@ -85,6 +90,7 @@ data class GameSetupState(
             setPlayerCount(playerCount)
             setTeams(teamMode, partnerCaptures, rollForPartners)
             setHouseRules(houseRules)
+            setPawns(pawns)
             setCustomModeChoice(customModeId)
             for (slot in allSlots) {
                 setPlayerName(slot.slot, slot.name)
@@ -131,6 +137,7 @@ class GameSetupForm {
             partnerCaptures = saved.partnerCaptures,
             rollForPartners = saved.rollForPartners,
             houseRules = saved.houseRules,
+            pawns = saved.pawns,
             houseRulesUnlocked = houseRulesUnlocked,
             customModes = saved.customModes,
             customModeId = saved.customModeId?.takeIf { id -> saved.customModes.any { it.id == id } },
@@ -163,6 +170,11 @@ class GameSetupForm {
     /** Switches [rule] on or off. */
     fun setHouseRule(rule: HouseRule, on: Boolean) {
         _setup.update { it.copy(houseRules = if (on) it.houseRules + rule else it.houseRules - rule) }
+    }
+
+    /** Sets the Pawns house rule to [pawns] each, or off for null. */
+    fun setPawns(pawns: Int?) {
+        _setup.update { it.copy(pawns = pawns) }
     }
 
     /** How many players the game has: the first [count] slots play. */

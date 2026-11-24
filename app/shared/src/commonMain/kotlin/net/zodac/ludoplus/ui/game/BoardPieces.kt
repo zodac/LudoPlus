@@ -43,7 +43,7 @@ fun pawnMarks(state: GameState): List<PawnMark> {
                 PawnPosition.Yard -> marks += PawnMark(player, listOf(pawn), layout.yardSpotOf(side.seat, pawn, side.pawns.size), layout.yardPawnRadiusOf(side.pawns.size))
                 // Drawn in its yard's tally ([drawFallen]), not as a pawn.
                 PawnPosition.Out -> Unit
-                PawnPosition.Home -> marks += PawnMark(player, listOf(pawn), layout.homeSpot(side.seat, pawn), HOME_PAWN_RADIUS, home = true)
+                PawnPosition.Home -> marks += PawnMark(player, listOf(pawn), layout.homeSpot(side.seat, pawn, side.pawns.size), layout.homePawnRadiusOf(side.pawns.size), home = true)
                 is PawnPosition.Track -> onSquares.square(layout.trackSquare(state.board.trackSquare(side.seat, position.steps)), player) += pawn
                 is PawnPosition.HomeColumn -> onSquares.square(layout.homeColumnSquare(side.seat, position.index), player) += pawn
             }

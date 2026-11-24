@@ -53,7 +53,7 @@ import net.zodac.ludoplus.ui.game.StartedGame
  * The saved form of a game in progress ([StartedGame]), as JSON. Hand-written over the app's own [JsonObject] tree.
  *
  * The rules aren't written whole: a game follows its mode's ([GameMode.rules]), changed by what is written: the house
- * rules on, by id ([GameRules.houseRules], from [VERSION] 2), the teams, and [GameRules.stopAtFirstWinner] when on. A
+ * rules on, by id ([GameRules.houseRules], from [VERSION] 2), the pawns each where a house rule says, the teams, and [GameRules.stopAtFirstWinner] when on. A
  * roll waiting for a move is written as the roll alone; its moves are worked out again.
  * Anything that doesn't make a playable game fails [decode] with an [IllegalArgumentException] (a [JsonParseException]
  * for JSON that can't be read). Its move log ([StartedGame.log]) isn't needed to play: one that can't be read is dropped.
@@ -83,7 +83,8 @@ object SavedGameJson {
         put("steps", game.steps)
         if (game.state.rules.stopAtFirstWinner) put("stopAtFirstWinner", true)
         // The house rules on, in their own order; absent for none.
-        if (game.state.rules.hasHouseRules) put("houseRules", JsonArray(HouseRule.entries.filter { it in game.state.rules.houseRules }.map { JsonString(it.id) }))
+        if (game.state.rules.houseRules.isNotEmpty()) put("houseRules", JsonArray(HouseRule.entries.filter { it in game.state.rules.houseRules }.map { JsonString(it.id) }))
+        if (game.state.rules.pawnsChanged) put("pawns", game.state.rules.pawnsPerPlayer)
         // A team game's teams and their two options; absent for a game without teams.
         game.state.rules.teams?.let { teams ->
             put("teams", jsonInts(teams))
@@ -111,6 +112,7 @@ object SavedGameJson {
             partnerCaptures = teams != null && obj.boolean("partnerCaptures"),
             rollForPartners = teams == null || obj.boolean("rollForPartners"),
         ).withHouseRules((if ("houseRules" in obj) obj.stringList("houseRules").map { storedId<HouseRule>(it) }.toSet() else emptySet()))
+            .withPawns(obj.intOrNull("pawns")?.also { require(it in GameRules.PAWN_CHOICES) { "$it pawns each" } })
         val state = decodeState(obj.obj("state"), mode, rules, players.size)
         val playMillis = obj.long("playMillis")
         require(playMillis >= 0) { "Negative play time" }
@@ -198,6 +200,8 @@ object SavedGameJson {
             put("powerUps", JsonArray(state.powerUps.map { (square, powerUp) -> buildJsonObject { put("square", square); put("kind", powerUp.id) } }))
             put("turnsToPowerUp", state.turnsToPowerUp)
         }
+        // The squares claimed, as (square, player) pairs.
+        if (state.claimed.isNotEmpty()) put("claimed", JsonArray(state.claimed.entries.sortedBy { it.key }.map { (square, player) -> jsonInts(listOf(square, player)) }))
         // The ghosts, and the move one has just made, for a Nearby guest to see it made.
         if (state.rules.ghosts) {
             put("ghosts", jsonInts(state.ghosts))
@@ -270,6 +274,17 @@ object SavedGameJson {
         require(powerUps.keys.all { it in 0..<board.trackLength && !board.isSafe(it) }) { "A power-up is off the track or on a safe square" }
         val turnsToPowerUp = if (rules.powerUps) obj.intOrNull("turnsToPowerUp") ?: PowerUp.MOST_TURNS else 0
         require(!rules.powerUps || turnsToPowerUp in 1..PowerUp.MOST_TURNS) { "A power-up is due at a time that doesn't fit" }
+        val claimed = if ("claimed" in obj) {
+            obj.array("claimed").items.associate { item ->
+                val (square, player) = (item as? JsonArray)?.ints()?.takeIf { it.size == 2 } ?: throw JsonParseException("A claimed square isn't a pair")
+                square to player
+            }
+        } else {
+            emptyMap()
+        }
+        require(claimed.isEmpty() || rules.claims && claimed.all { (square, player) -> square in 0..<board.trackLength && !board.isSafe(square) && player in players.indices }) {
+            "A square is claimed off the track, on a safe square, or by nobody"
+        }
         val ghosts = if (rules.ghosts) obj.array("ghosts").ints() else emptyList()
         require(ghosts.size == (if (rules.ghosts) Ghosts.count(playerCount) else 0) && ghosts.all { it in 0..<board.trackLength }) { "The ghosts aren't on the track" }
         val turnsSinceGhost = if (rules.ghosts) obj.int("turnsSinceGhost") else 0
@@ -294,6 +309,7 @@ object SavedGameJson {
                 knockedOut = knockedOut,
                 powerUps = powerUps,
                 turnsToPowerUp = turnsToPowerUp,
+                claimed = claimed,
                 ghosts = ghosts,
                 turnsSinceGhost = turnsSinceGhost,
                 ghostMove = ghostMove,
@@ -330,6 +346,7 @@ object SavedGameJson {
             knockedOut = knockedOut,
             powerUps = powerUps,
             turnsToPowerUp = turnsToPowerUp,
+                claimed = claimed,
             ghosts = ghosts,
             turnsSinceGhost = turnsSinceGhost,
             ghostMove = ghostMove,

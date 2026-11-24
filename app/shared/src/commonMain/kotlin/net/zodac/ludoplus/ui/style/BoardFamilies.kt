@@ -103,7 +103,8 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
         for (square in 0..<board.trackLength) {
             val startOf = if (parts.starts && square % board.seatSpacing == 0) square / board.seatSpacing else null
             val unowned = if (parts.stars && square % board.seatSpacing == board.starOffset) safeFill else plain
-            drawBoardSquare(layout.trackSquare(square), unit) { drawSquare(it, unit, startOf?.let(::seat) ?: unowned, seat = startOf != null) }
+            val owned = startOf?.let(::seat) ?: parts.claims[square]?.let(::seatTone)
+            drawBoardSquare(layout.trackSquare(square), unit) { drawSquare(it, unit, owned ?: unowned, seat = owned != null) }
         }
         for (s in 0..<board.seats) {
             if (parts.homes) for (index in 0..<board.homeColumnLength) {
@@ -113,7 +114,7 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
             if (layout is ClassicBoardLayout) {
                 drawYard(layout.yardOrigin(s).let { Offset(it.column * unit, it.row * unit) }, unit, seat(s), spots)
             } else {
-                drawYardShape(layout.yard(s).map { it * unit }, layout.yardCourt(s).map { it * unit }, spots, layout.yardSpotRadius * unit, unit, seat(s))
+                drawYardShape(layout.yard(s).map { it * unit }, layout.yardCourt(s).map { it * unit }, spots, layout.yardSpotRadiusOf(pawns) * unit, unit, seat(s))
             }
             if (parts.homes) drawHomeTriangle(layout.homeArea(s).map { it * unit }, unit, seat(s))
         }

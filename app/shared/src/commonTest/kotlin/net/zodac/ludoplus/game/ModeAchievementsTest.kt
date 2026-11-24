@@ -70,7 +70,7 @@ class ModeAchievementsTest {
             AchievementEngine.atGameStart(table, previousGame = null, localHour = 14, game = game(mode, houseRules = houseRules)).achievements
         for (mode in GameMode.entries - GameMode.CLASSIC) assertEquals(setOf(THE_JOURNEY_BEGINS, WHERE_WERE_GOING_WE_DONT_NEED_RULES), start(mode), "$mode")
         assertEquals(setOf(THE_JOURNEY_BEGINS), start(GameMode.CLASSIC))
-        assertEquals(setOf(WHERE_WERE_GOING_WE_DONT_NEED_RULES), start(GameMode.QUICK, setOf(HouseRule.BLOCKADES)))
+        assertEquals(setOf(WHERE_WERE_GOING_WE_DONT_NEED_RULES), start(GameMode.PORTALS, setOf(HouseRule.BLOCKADES)))
         assertEquals(emptySet(), start(GameMode.CLASSIC, setOf(HouseRule.BLOCKADES)))
     }
 
@@ -83,16 +83,34 @@ class ModeAchievementsTest {
             assertEquals(setOfNotNull(wins[mode]), earned.filter { it.isModeWin }.toSet(), "$mode")
         }
         // A rival's win is no one's here.
-        val lost = Steps(game(GameMode.QUICK, listOf(1, Y), listOf(HOME - 2, HOME), current = GREEN)).play(2)
-        assertFalse(QUICK_ON_THE_DRAW in lost.earned)
+        val lost = Steps(game(GameMode.PORTALS, listOf(1, Y, Y, Y), listOf(HOME - 2, HOME, HOME, HOME), current = GREEN)).play(2)
+        assertFalse(THROUGH_THE_LOOKING_GLASS in lost.earned)
     }
 
     @Test
-    fun `Blink And You'll Miss It is a Quick win in 25 turns`() {
-        // The winning roll starts the last of them.
-        assertTrue(BLINK_AND_YOULL_MISS_IT in win(GameMode.QUICK, turns = 24).earned)
-        assertFalse(BLINK_AND_YOULL_MISS_IT in win(GameMode.QUICK, turns = 25).earned)
-        assertFalse(BLINK_AND_YOULL_MISS_IT in win(GameMode.CLASSIC, turns = 10).earned)
+    fun `Colour Coordinated holds eight squares in a row - start and star squares passed over - as the game goes on`() {
+        // Red lands on 5, or wherever its roll from 2 takes it.
+        fun landing(claimed: Set<Int>, roll: Int = 3, from: Int = 2): Set<Achievement> =
+            Steps(game(GameMode.COLOUR_RUSH, listOf(from, Y, Y, Y)).copy(claimed = claimed.associateWith { RED })).play(roll).earned
+        assertTrue(COLOUR_COORDINATED in landing(setOf(1, 2, 3, 4, 6, 7, 9)), "over the star on 8")
+        assertFalse(COLOUR_COORDINATED in landing(setOf(1, 2, 3, 4, 6, 7, 10)), "9 is nobody's")
+        assertFalse(COLOUR_COORDINATED in landing(setOf(1, 2, 3, 4, 6, 7)))
+        assertTrue(COLOUR_COORDINATED in landing(setOf(48, 49, 50, 51, 1, 2, 3), roll = 2), "over red's start, at the end of the numbering")
+        // Nobody else's run is player 1's, nor one with another's square in it.
+        val green = game(GameMode.COLOUR_RUSH, listOf(2, Y, Y, Y)).copy(claimed = setOf(1, 2, 3, 4, 6, 7, 9, 10).associateWith { GREEN })
+        assertFalse(COLOUR_COORDINATED in Steps(green).play(3).earned)
+        assertFalse(COLOUR_COORDINATED in Steps(green.copy(claimed = setOf(1, 2, 3, 4, 7, 9, 10).associateWith { RED } + (6 to GREEN))).play(3).earned)
+    }
+
+    @Test
+    fun `second by squares isn't a Colour Rush win - home or not`() {
+        fun home(mine: Int, theirs: Int): Set<Achievement> {
+            val start = game(GameMode.COLOUR_RUSH, listOf(HOME - 2, HOME, HOME, HOME))
+            val squares = (0..<start.board.trackLength).filterNot(start.board::isSafe)
+            return Steps(start.copy(claimed = squares.take(mine).associateWith { RED } + squares.drop(mine).take(theirs).associateWith { GREEN })).play(2).earned
+        }
+        assertFalse(PAINT_THE_TOWN_RED in home(4, 5))
+        assertTrue(PAINT_THE_TOWN_RED in home(5, 4))
     }
 
     @Test
@@ -156,10 +174,10 @@ class ModeAchievementsTest {
     @Test
     fun `Everything Everywhere All At Once is a win of any mode but Classic with every house rule that changes it`() {
         val all = HouseRule.entries.toSet()
-        assertEquals(setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE), win(GameMode.QUICK, houseRules = all).earned)
+        assertEquals(setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE), win(GameMode.PORTALS, houseRules = all).earned)
         assertEquals(emptySet(), win(GameMode.CLASSIC, houseRules = all).earned)
         assertEquals(setOf(EVERYTHING_EVERYWHERE_ALL_AT_ONCE), win(GameMode.CHAOS, houseRules = all).earned)
-        assertEquals(emptySet(), win(GameMode.QUICK, houseRules = all - HouseRule.FREE_START).earned)
+        assertEquals(emptySet(), win(GameMode.PORTALS, houseRules = all - HouseRule.FREE_START).earned)
         val survival = HouseRule.entries.filter { it.appliesTo(GameMode.SURVIVAL.rules) }.toSet()
         val gone = List(6) { X }
         val state = game(GameMode.SURVIVAL, listOf(1, 20, X, X, X, X), listOf(42, X, X, X, X, X), gone, gone, houseRules = survival).copy(knockedOut = listOf(3, 2))
@@ -264,11 +282,7 @@ class ModeAchievementsTest {
         val stack = Steps(game(GameMode.SURVIVAL, listOf(1, 0, 0, 0, 0, 0), listOf(42, 42, 42, 0, 0, 0))).play(2)
         assertTrue(GOTCHA in stack.earned)
         for (free in listOf(BUDDY_SYSTEM, ALL_HANDS_ON_DECK, TWO_FOR_ONE, HAT_TRICK)) assertFalse(free in stack.earned, "$free")
-        // Quick's whole column is two pawns.
-        val column = Steps(game(GameMode.QUICK, listOf(50, 52))).play(1)
-        assertFalse(FULL_HOUSE in column.earned)
         assertTrue(FULL_HOUSE in Steps(game(GameMode.CLASSIC, listOf(50, 52, 53, 54))).play(1).earned)
-        assertFalse(UNTOUCHABLE in win(GameMode.QUICK).earned)
         assertTrue(UNTOUCHABLE in win(GameMode.CHAOS).earned)
     }
 }

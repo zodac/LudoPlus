@@ -48,15 +48,18 @@ import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.LeaderboardRanking
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.gameover_captures
+import net.zodac.ludoplus.resources.gameover_squares
 import net.zodac.ludoplus.resources.gameover_turns
 import net.zodac.ludoplus.resources.leaderboard_captures
 import net.zodac.ludoplus.resources.leaderboard_empty_players
 import net.zodac.ludoplus.resources.leaderboard_heading
 import net.zodac.ludoplus.resources.game_player_pawns_left_spoken
 import net.zodac.ludoplus.resources.leaderboard_heading_pawns
+import net.zodac.ludoplus.resources.leaderboard_heading_squares
 import net.zodac.ludoplus.resources.leaderboard_pawns
 import net.zodac.ludoplus.resources.leaderboard_player
 import net.zodac.ludoplus.resources.leaderboard_title
+import net.zodac.ludoplus.resources.leaderboard_squares
 import net.zodac.ludoplus.resources.leaderboard_turns
 import net.zodac.ludoplus.ui.common.EmptyStateCard
 import net.zodac.ludoplus.ui.common.HoldPageCover
@@ -148,7 +151,11 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit, drift
 /** What [mode]'s board ranks, a heading: "Classic: fastest wins". */
 @Composable
 private fun BoardHeading(mode: GameMode, modifier: Modifier) {
-    val heading = if (mode.ranking == LeaderboardRanking.MOST_PAWNS_LEFT) Res.string.leaderboard_heading_pawns else Res.string.leaderboard_heading
+    val heading = when (mode.ranking) {
+        LeaderboardRanking.FEWEST_TURNS -> Res.string.leaderboard_heading
+        LeaderboardRanking.MOST_PAWNS_LEFT -> Res.string.leaderboard_heading_pawns
+        LeaderboardRanking.MOST_SQUARES -> Res.string.leaderboard_heading_squares
+    }
     Text(
         text = stringResource(heading, stringResource(mode.displayName)),
         style = MaterialTheme.typography.titleMedium,
@@ -205,25 +212,30 @@ private fun GlobalLeaderboardButton(mode: GameMode, playerCount: Int, services: 
 private fun HeaderRow(mode: GameMode) {
     val style = MaterialTheme.typography.labelMedium
     val colour = MaterialTheme.colorScheme.onSurfaceVariant
+    val column = when (mode.ranking) {
+        LeaderboardRanking.FEWEST_TURNS -> Res.string.leaderboard_turns
+        LeaderboardRanking.MOST_PAWNS_LEFT -> Res.string.leaderboard_pawns
+        LeaderboardRanking.MOST_SQUARES -> Res.string.leaderboard_squares
+    }
     // The rows say what each number is; the headings are for the eye.
     TableRow(
         modifier = Modifier.clearAndSetSemantics { },
         rank = { },
         name = { Text(stringResource(Res.string.leaderboard_player), style = style, color = colour) },
-        turns = { Text(stringResource(if (mode.ranking == LeaderboardRanking.MOST_PAWNS_LEFT) Res.string.leaderboard_pawns else Res.string.leaderboard_turns), style = style, color = colour, textAlign = TextAlign.End) },
+        turns = { Text(stringResource(column), style = style, color = colour, textAlign = TextAlign.End) },
         captures = { Text(stringResource(Res.string.leaderboard_captures), style = style, color = colour, textAlign = TextAlign.End) },
     )
 }
 
 @Composable
 private fun LeaderboardRow(rank: Int, row: GameResult, mode: GameMode, compact: Boolean) {
-    // What the mode ranks by: the turns, or the pawns the winner had left (every capture of theirs took one for good).
-    val pawnsLeft = (mode.rules.pawnsPerPlayer - row.timesCaptured).takeIf { mode.ranking == LeaderboardRanking.MOST_PAWNS_LEFT }
-    val ranked = if (pawnsLeft != null) {
-        pluralStringResource(Res.plurals.game_player_pawns_left_spoken, pawnsLeft, pawnsLeft)
-    } else {
-        pluralStringResource(Res.plurals.gameover_turns, row.turns, row.turns)
+    // What the mode ranks by: the turns, the pawns the winner had left (every capture of theirs took one for good), or the squares.
+    val (number, words) = when (mode.ranking) {
+        LeaderboardRanking.FEWEST_TURNS -> row.turns to Res.plurals.gameover_turns
+        LeaderboardRanking.MOST_PAWNS_LEFT -> mode.rules.pawnsPerPlayer - row.timesCaptured to Res.plurals.game_player_pawns_left_spoken
+        LeaderboardRanking.MOST_SQUARES -> row.squares to Res.plurals.gameover_squares
     }
+    val ranked = pluralStringResource(words, number, number)
     val spoken = joinClauses(
         listOf(
             ordinal(rank),
@@ -260,7 +272,7 @@ private fun LeaderboardRow(rank: Int, row: GameResult, mode: GameMode, compact: 
         modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
         rank = { RankText(rank) },
         name = { Text(row.playerName, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-        turns = { Text((pawnsLeft ?: row.turns).toString(), style = numberStyle, fontWeight = FontWeight.Bold, textAlign = TextAlign.End) },
+        turns = { Text(number.toString(), style = numberStyle, fontWeight = FontWeight.Bold, textAlign = TextAlign.End) },
         captures = { Text(row.captures.toString(), style = numberStyle, textAlign = TextAlign.End) },
     )
 }

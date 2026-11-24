@@ -97,6 +97,7 @@ class RulesTextTest : UiTest() {
             listOf(
                 "House rules are common changes to the classic rules. Switch them on in House Rules on New Game, in any mix.",
                 "A game with any house rule on doesn't count towards the Leaderboard or Statistics, and only earns the house rules' own achievements.",
+                "Pawns gives each player from one to six pawns, instead of the mode's own number.",
             ),
             diagram = null,
         ),
@@ -135,11 +136,13 @@ class RulesTextTest : UiTest() {
     /** The Game Modes group's pages: a mode each beyond Classic. */
     private val modePages = listOf(
         Page(
-            "Quick",
-            "Quick",
+            "Colour Rush",
+            "Colour Rush",
             listOf(
-                "Quick plays the classic rules with two pawns each instead of four, for a shorter race. Pick it under Game Mode on New Game.",
-                "Each mode has its own Leaderboard, its own page in Statistics, and achievements of its own.",
+                "In Colour Rush the first pawn to land on a square of the track claims it, and it takes that player's colour. Claiming a square doesn't make it safe. Start squares and stars can't be claimed.",
+                "A claimed square only changes hands when another player captures a pawn on it, whoever's pawn that was.",
+                "The game ends when every square that can be claimed is, or when a player (or a team) has every pawn home. The most squares wins. If that's a tie, it goes to whoever's pawns have come furthest.",
+                "The Leaderboard ranks Colour Rush wins by the most squares. Your pawns home and your captures count in Statistics.",
             ),
             diagram = null,
         ),

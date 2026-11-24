@@ -79,6 +79,8 @@ import net.zodac.ludoplus.resources.achievement_inch_by_inch_description
 import net.zodac.ludoplus.resources.achievement_inch_by_inch_title
 import net.zodac.ludoplus.resources.achievement_insult_to_injury_description
 import net.zodac.ludoplus.resources.achievement_insult_to_injury_title
+import net.zodac.ludoplus.resources.achievement_colour_coordinated_description
+import net.zodac.ludoplus.resources.achievement_colour_coordinated_title
 import net.zodac.ludoplus.resources.achievement_lap_of_honour_description
 import net.zodac.ludoplus.resources.achievement_lap_of_honour_title
 import net.zodac.ludoplus.resources.achievement_late_bloomer_description
@@ -119,6 +121,8 @@ import net.zodac.ludoplus.resources.achievement_one_more_time_description
 import net.zodac.ludoplus.resources.achievement_one_more_time_title
 import net.zodac.ludoplus.resources.achievement_pacifist_description
 import net.zodac.ludoplus.resources.achievement_pacifist_title
+import net.zodac.ludoplus.resources.achievement_paint_the_town_red_description
+import net.zodac.ludoplus.resources.achievement_paint_the_town_red_title
 import net.zodac.ludoplus.resources.achievement_parting_shot_description
 import net.zodac.ludoplus.resources.achievement_parting_shot_title
 import net.zodac.ludoplus.resources.achievement_payback_description
@@ -189,10 +193,6 @@ import net.zodac.ludoplus.resources.achievement_everything_everywhere_all_at_onc
 import net.zodac.ludoplus.resources.achievement_everything_everywhere_all_at_once_description
 import net.zodac.ludoplus.resources.achievement_where_were_going_we_dont_need_rules_title
 import net.zodac.ludoplus.resources.achievement_where_were_going_we_dont_need_rules_description
-import net.zodac.ludoplus.resources.achievement_quick_on_the_draw_title
-import net.zodac.ludoplus.resources.achievement_quick_on_the_draw_description
-import net.zodac.ludoplus.resources.achievement_blink_and_youll_miss_it_title
-import net.zodac.ludoplus.resources.achievement_blink_and_youll_miss_it_description
 import net.zodac.ludoplus.resources.achievement_double_or_nothing_title
 import net.zodac.ludoplus.resources.achievement_double_or_nothing_description
 import net.zodac.ludoplus.resources.achievement_two_birds_two_stones_title
@@ -667,7 +667,7 @@ enum class Achievement(
         Res.string.achievement_express_delivery_description,
         AchievementCategory.RACING,
         // Classic's alone.
-        notEarnableIn = setOf(GameMode.QUICK, GameMode.TWO_DICE, GameMode.PORTALS, GameMode.CHAOS, GameMode.HAUNTED_HOUSE),
+        notEarnableIn = setOf(GameMode.COLOUR_RUSH, GameMode.TWO_DICE, GameMode.PORTALS, GameMode.CHAOS, GameMode.HAUNTED_HOUSE),
         impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     LAP_OF_HONOUR(
@@ -680,7 +680,7 @@ enum class Achievement(
         "full_house",
         Res.string.achievement_full_house_title,
         Res.string.achievement_full_house_description,
-        AchievementCategory.RACING, notEarnableIn = setOf(GameMode.QUICK), impossibleIn = setOf(GameMode.SURVIVAL),
+        AchievementCategory.RACING, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     GLOBETROTTER(
         "globetrotter",
@@ -700,13 +700,13 @@ enum class Achievement(
         "clean_sweep",
         Res.string.achievement_clean_sweep_title,
         Res.string.achievement_clean_sweep_description,
-        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.SURVIVAL),
+        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.COLOUR_RUSH, GameMode.SURVIVAL),
     ),
     COMEBACK_KID(
         "comeback_kid",
         Res.string.achievement_comeback_kid_title,
         Res.string.achievement_comeback_kid_description,
-        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.QUICK), impossibleIn = setOf(GameMode.SURVIVAL),
+        AchievementCategory.WINNING, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     CONQUEROR(
         "conqueror",
@@ -754,7 +754,7 @@ enum class Achievement(
         "pacifist",
         Res.string.achievement_pacifist_title,
         Res.string.achievement_pacifist_description,
-        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.QUICK),
+        AchievementCategory.WINNING,
     ),
     PHOTO_FINISH(
         "photo_finish",
@@ -766,7 +766,7 @@ enum class Achievement(
         "speed_demon",
         Res.string.achievement_speed_demon_title,
         Res.string.achievement_speed_demon_description,
-        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.QUICK),
+        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.COLOUR_RUSH),
     ),
     STOP_PICKING_ON_ME(
         "stop_picking_on_me",
@@ -778,7 +778,7 @@ enum class Achievement(
         "untouchable",
         Res.string.achievement_untouchable_title,
         Res.string.achievement_untouchable_description,
-        AchievementCategory.WINNING, notEarnableIn = setOf(GameMode.QUICK),
+        AchievementCategory.WINNING,
     ),
     WIRE_TO_WIRE(
         "wire_to_wire",
@@ -794,17 +794,17 @@ enum class Achievement(
         Res.string.achievement_where_were_going_we_dont_need_rules_description,
         AchievementCategory.GAME_MODES, impossibleIn = setOf(GameMode.CLASSIC), earnableWithHouseRules = true,
     ),
-    QUICK_ON_THE_DRAW(
-        "quick_on_the_draw",
-        Res.string.achievement_quick_on_the_draw_title,
-        Res.string.achievement_quick_on_the_draw_description,
-        AchievementCategory.GAME_MODES, mode = GameMode.QUICK, isModeWin = true,
+    PAINT_THE_TOWN_RED(
+        "paint_the_town_red",
+        Res.string.achievement_paint_the_town_red_title,
+        Res.string.achievement_paint_the_town_red_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.COLOUR_RUSH, isModeWin = true,
     ),
-    BLINK_AND_YOULL_MISS_IT(
-        "blink_and_youll_miss_it",
-        Res.string.achievement_blink_and_youll_miss_it_title,
-        Res.string.achievement_blink_and_youll_miss_it_description,
-        AchievementCategory.GAME_MODES, mode = GameMode.QUICK,
+    COLOUR_COORDINATED(
+        "colour_coordinated",
+        Res.string.achievement_colour_coordinated_title,
+        Res.string.achievement_colour_coordinated_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.COLOUR_RUSH,
     ),
     DOUBLE_OR_NOTHING(
         "double_or_nothing",
@@ -896,7 +896,7 @@ enum class Achievement(
         "defeat_from_the_jaws_of_victory",
         Res.string.achievement_defeat_from_the_jaws_of_victory_title,
         Res.string.achievement_defeat_from_the_jaws_of_victory_description,
-        AchievementCategory.MISFORTUNE, notEarnableIn = setOf(GameMode.QUICK), impossibleIn = setOf(GameMode.SURVIVAL),
+        AchievementCategory.MISFORTUNE, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     DRY_SPELL(
         "dry_spell",
@@ -1000,7 +1000,7 @@ enum class Achievement(
         "my_favourite_spot",
         Res.string.achievement_my_favourite_spot_title,
         Res.string.achievement_my_favourite_spot_description,
-        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN, notEarnableIn = setOf(GameMode.QUICK),
+        AchievementCategory.MISCELLANEOUS, visibility = AchievementVisibility.HIDDEN,
     ),
     NOT_SO_FAST(
         "not_so_fast",
@@ -1068,7 +1068,7 @@ enum class Achievement(
         "one_by_one",
         Res.string.achievement_one_by_one_title,
         Res.string.achievement_one_by_one_description,
-        AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN, notEarnableIn = setOf(GameMode.QUICK), impossibleIn = setOf(GameMode.SURVIVAL),
+        AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     SIDEWAYS(
         "sideways",
@@ -1080,7 +1080,7 @@ enum class Achievement(
         "the_great_escape",
         Res.string.achievement_the_great_escape_title,
         Res.string.achievement_the_great_escape_description,
-        AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN, notEarnableIn = setOf(GameMode.QUICK), impossibleIn = setOf(GameMode.SURVIVAL),
+        AchievementCategory.EASTER_EGGS, countsTowardCompletion = false, visibility = AchievementVisibility.HIDDEN, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     TIME_FLIES(
         "time_flies",

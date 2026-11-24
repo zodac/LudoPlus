@@ -42,6 +42,7 @@ object HeuristicStrategy : CpuStrategy {
     private const val PORTAL = 1.0
     private const val POWER_UP = 25.0
     private const val SWAP = 1.0
+    private const val CLAIM = 45.0
 
     override fun choose(state: GameState, moves: List<Move>, random: Random): Move =
         moves.shuffled(random).maxBy { score(state, it) }
@@ -64,7 +65,15 @@ object HeuristicStrategy : CpuStrategy {
         if (move.via != null) score += PORTAL * (move.to - move.via)
         if (takesPowerUp(state, owner, move)) score += POWER_UP
         score += SWAP * swapGain(state, owner, move)
+        score += CLAIM * claimGain(state, owner, move)
         return score
+    }
+
+    /** How many squares [move] puts [owner] ahead by, where they're claimed: one for a new one, and two taken from a rival. */
+    private fun claimGain(state: GameState, owner: Int, move: Move): Int {
+        val square = state.claimableSquare(owner, move.to) ?: return 0
+        val holder = state.claimed[square] ?: return 1
+        return if (holder == owner || move.captures.isEmpty()) 0 else if (state.rules.arePartners(owner, holder)) 1 else 2
     }
 
     /** What [move]'s swap gains [owner]'s pawn, and costs the rival it swaps with (or gives a partner), in squares. */
@@ -91,7 +100,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
      * The tuned weights: a pawn's worth is its progress, plus [outOfYard] once out, [homeBonus] once home, and
      * [safeBonus] on a safe square; an opponent's worth counts [opponent] times against this player's own, an expected
      * loss [risk] times, and an expected capture on the next roll [chance] times. Where the last standing wins, a pawn
-     * still in is worth [lastStanding], wherever it is, in place of its progress and [outOfYard]. Taking a power-up is worth [powerUp]. Tuned (2026-11-17) over 1,000
+     * still in is worth [lastStanding], wherever it is, in place of its progress and [outOfYard]. Taking a power-up is worth [powerUp], and a square claimed [square]. Tuned (2026-11-17) over 1,000
      * two-player games a setting against Medium; `CpuTournamentTest` checks them on other seeds.
      */
     data class Weights(
@@ -103,6 +112,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
         val chance: Double = 0.8,
         val lastStanding: Double = 40.0,
         val powerUp: Double = 12.0,
+        val square: Double = 20.0,
     )
 
     override fun choose(state: GameState, moves: List<Move>, random: Random): Move =
@@ -114,7 +124,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
         val me = state.current
         var value = if (takesPowerUp(state, move.ownerIn(state), move)) weights.powerUp else 0.0
         after.players.forEachIndexed { index, player ->
-            val worth = player.pawns.sumOf { pawnWorth(after, player.seat, it) }
+            val worth = player.pawns.sumOf { pawnWorth(after, player.seat, it) } + weights.square * after.squaresOf(index)
             // A partner's pawns are as good as this player's own.
             value += if (index == me || state.rules.arePartners(me, index)) worth else -weights.opponent * worth
         }

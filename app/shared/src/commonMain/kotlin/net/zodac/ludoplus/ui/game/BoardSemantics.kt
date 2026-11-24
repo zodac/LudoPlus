@@ -27,12 +27,14 @@ import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.game_move_action
 import net.zodac.ludoplus.resources.game_move_bounce_clause
 import net.zodac.ludoplus.resources.game_move_capture_clause
+import net.zodac.ludoplus.resources.game_move_claim_clause
 import net.zodac.ludoplus.resources.game_move_home_clause
 import net.zodac.ludoplus.resources.game_move_out_action
 import net.zodac.ludoplus.resources.game_move_portal_clause
 import net.zodac.ludoplus.resources.game_move_power_up_clause
 import net.zodac.ludoplus.resources.game_pawn_shielded_spoken
 import net.zodac.ludoplus.resources.game_square_blockade_spoken
+import net.zodac.ludoplus.resources.game_square_claimed_spoken
 import net.zodac.ludoplus.resources.game_square_column_spoken
 import net.zodac.ludoplus.resources.game_square_empty_spoken
 import net.zodac.ludoplus.resources.game_square_ghost_spoken
@@ -147,6 +149,7 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
             stringResource(Res.string.game_square_track_spoken, square + 1),
             startOf?.let { stringResource(Res.string.game_square_start_spoken, stringResource(colourOf(it).label)) },
             safety,
+            state.claimed[square]?.let { stringResource(Res.string.game_square_claimed_spoken, stringResource(colourOf(it).label)) },
             blockade,
         ) + portalClauses(state, square) + powerUpClauses(state, square) + ghostClauses(state, square) + here.map { it.second }.ifEmpty { listOf(empty) }
         val move = state.players.indices.firstNotNullOfOrNull { player -> movableAt(player, here.filter { it.first.first == player }.map { it.first.second }) }
@@ -187,6 +190,14 @@ private fun powerUpClauses(state: GameState, square: Int): List<String> =
 private fun ghostClauses(state: GameState, square: Int): List<String> =
     if (square in state.ghosts) listOf(stringResource(Res.string.game_square_ghost_spoken)) else emptyList()
 
+/** Whether [move] claims the square it ends on: nobody's, or another player's it captures on. */
+private fun claimsSquare(state: GameState, move: Move): Boolean {
+    val owner = move.ownerIn(state)
+    val square = state.claimableSquare(owner, move.to) ?: return false
+    val holder = state.claimed[square]
+    return holder == null || holder != owner && move.captures.isNotEmpty()
+}
+
 /** What TalkBack offers for [move] while its swap is picked: "Swap places with Green pawn 2". */
 @Composable
 internal fun swapLabel(move: Move, colourOf: (Int) -> PlayerColour): String {
@@ -223,5 +234,6 @@ fun moveLabel(state: GameState, move: Move, colourOf: (Int) -> PlayerColour): St
         stringResource(Res.string.game_move_capture_clause, stringResource(colourOf(it.player).label), it.pawn + 1)
     }
     val home = if (move.to == state.board.homeProgress) listOf(stringResource(Res.string.game_move_home_clause)) else emptyList()
-    return joinClauses(listOf(main) + portal + bounces + captures + powerUp + home)
+    val claim = if (claimsSquare(state, move)) listOf(stringResource(Res.string.game_move_claim_clause)) else emptyList()
+    return joinClauses(listOf(main) + portal + bounces + captures + claim + powerUp + home)
 }

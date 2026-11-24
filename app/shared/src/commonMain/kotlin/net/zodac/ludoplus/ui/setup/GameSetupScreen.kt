@@ -55,6 +55,7 @@ import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.CustomMode
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
+import net.zodac.ludoplus.model.GameRules
 import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerType
@@ -64,6 +65,9 @@ import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.common_cancel
 import net.zodac.ludoplus.resources.common_cpu_cd
 import net.zodac.ludoplus.resources.common_default_player_name
+import net.zodac.ludoplus.resources.house_rule_pawns
+import net.zodac.ludoplus.resources.house_rule_pawns_description
+import net.zodac.ludoplus.resources.house_rule_pawns_spoken
 import net.zodac.ludoplus.resources.setup_custom_delete
 import net.zodac.ludoplus.resources.setup_custom_delete_message
 import net.zodac.ludoplus.resources.setup_custom_delete_title
@@ -319,7 +323,8 @@ private fun HouseRulesPicker(setup: GameSetupState, form: GameSetupForm) {
         title = stringResource(Res.string.setup_house_rules),
         description = stringResource(Res.string.setup_house_rules_description),
         activeNote = stringResource(Res.string.setup_house_rules_active_note),
-        modifiers = HouseRule.entries.map { rule ->
+        // Pawns first: its numbers open under its switch, which at the list's foot would be out of sight.
+        modifiers = listOf(pawnsModifier(setup, form)) + HouseRule.entries.map { rule ->
             val applies = rule.appliesTo(setup.playedMode.rules)
             ModifierSetting(
                 title = stringResource(rule.title),
@@ -330,6 +335,23 @@ private fun HouseRulesPicker(setup: GameSetupState, form: GameSetupForm) {
                 lockedNote = if (applies) null else idleHouseRuleNote(setup.playedMode),
             )
         },
+    )
+}
+
+/** The Pawns house rule: how many each has, of the numbers that aren't the mode's own. Switched on, it's the fewest. */
+@Composable
+private fun pawnsModifier(setup: GameSetupState, form: GameSetupForm): ModifierSetting {
+    val choices = GameRules.PAWN_CHOICES.filter { it != setup.playedMode.rules.pawnsPerPlayer }
+    return ModifierSetting(
+        title = stringResource(Res.string.house_rule_pawns),
+        description = stringResource(Res.string.house_rule_pawns_description),
+        // The mode's own number, picked in another mode, isn't played here; the pick is kept for that one.
+        enabled = setup.playedPawns != null,
+        onEnabledChange = { on -> form.setPawns(if (on) choices.first() else null) },
+        valueLabels = choices.map { it.toString() },
+        spokenValueLabels = choices.map { pluralStringResource(Res.plurals.house_rule_pawns_spoken, it, it) },
+        selectedValue = choices.indexOf(setup.playedPawns).coerceAtLeast(0),
+        onValueSelect = { form.setPawns(choices[it]) },
     )
 }
 

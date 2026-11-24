@@ -97,6 +97,7 @@ import net.zodac.ludoplus.resources.game_die_used_spoken
 import net.zodac.ludoplus.resources.game_over_results
 import net.zodac.ludoplus.resources.game_over_team_winner
 import net.zodac.ludoplus.resources.game_over_winner
+import net.zodac.ludoplus.resources.gameover_squares
 import net.zodac.ludoplus.resources.game_player_doubled
 import net.zodac.ludoplus.resources.game_player_doubled_spoken
 import net.zodac.ludoplus.resources.game_player_pawns_home_spoken
@@ -689,6 +690,7 @@ private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier
         listOfNotNull(
             team?.let { stringResource(Res.string.game_player_team_spoken, it) },
             pluralStringResource(if (lastStanding) Res.plurals.game_player_pawns_left_spoken else Res.plurals.game_player_pawns_home_spoken, counted, counted),
+            if (state.rules.claims) state.squaresOf(index).let { pluralStringResource(Res.plurals.gameover_squares, it, it) } else null,
             if (current) stringResource(Res.string.game_player_turn_spoken) else null,
             side.doubledRolls.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.game_player_doubled_spoken, it, it) },
             placeText ?: spokenRank,
@@ -730,6 +732,7 @@ private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier
             }
             if (player.type == PlayerType.AI) CpuPlayerIcon(size = 16.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             if (side.doubledRolls > 0) DoubledBadge(side.doubledRolls, Modifier.clearAndSetSemantics { })
+            if (state.rules.claims) SquaresBadge(state.squaresOf(index), colour, Modifier.clearAndSetSemantics { })
             if (placeText != null) {
                 Text(placeText, style = MaterialTheme.typography.labelMedium, color = colour, modifier = Modifier.clearAndSetSemantics { })
             } else {
@@ -784,6 +787,22 @@ private fun DoubledBadge(rolls: Int, modifier: Modifier) {
             color = Color.White,
             maxLines = 1,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+        )
+    }
+}
+
+/** How many [squares] a player has claimed, on a square of their [colour]. Drawn only; the card says it. */
+@Composable
+private fun SquaresBadge(squares: Int, colour: Color, modifier: Modifier) {
+    Surface(color = colour, shape = RoundedCornerShape(3.dp), modifier = modifier) {
+        Text(
+            squares.toString(),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.padding(horizontal = 4.dp),
         )
     }
 }

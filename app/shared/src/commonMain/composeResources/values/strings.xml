@@ -167,6 +167,9 @@
     <string name="game_square_blockade_spoken">%1$s blockade</string>
     <!-- The Portals mode: a square with a portal, and the square it leads to. -->
     <string name="game_square_portal_spoken">portal to square %1$d</string>
+    <!-- Colour Rush: whose a claimed square is, %1$s a colour; and, after a move's action, that it claims the square it ends on. -->
+    <string name="game_square_claimed_spoken">%1$s's square</string>
+    <string name="game_move_claim_clause">claiming the square</string>
     <!-- Chaos: a power-up on a square. %1$s is its name (power_up_*). Then, after a pawn with a shield round it. -->
     <string name="game_square_power_up_spoken">%1$s power-up</string>
     <!-- A screen reader's action on such a square: it shows what the power-up does. %1$s is its name. -->
@@ -368,6 +371,11 @@
         <item quantity="one">%1$d turn</item>
         <item quantity="other">%1$d turns</item>
     </plurals>
+    <!-- Colour Rush: how many squares a player has claimed, on their card, the results, and the Leaderboard. -->
+    <plurals name="gameover_squares">
+        <item quantity="one">%1$d square</item>
+        <item quantity="other">%1$d squares</item>
+    </plurals>
     <plurals name="gameover_captures">
         <item quantity="one">%1$d capture</item>
         <item quantity="other">%1$d captures</item>
@@ -451,6 +459,7 @@
     <string name="leaderboard_heading">%1$s: fastest wins</string>
     <!-- The same, for Survival. -->
     <string name="leaderboard_heading_pawns">%1$s: most pawns left</string>
+    <string name="leaderboard_heading_squares">%1$s: most squares</string>
     <!-- A Leaderboard with no wins for the player count picked. %1$s is the game mode's name, %2$d the count (2 to 8). -->
     <plurals name="leaderboard_empty_players">
         <item quantity="one">No wins in %1$s with %2$d player yet. Win a game to set a time.</item>
@@ -466,6 +475,7 @@
     <string name="leaderboard_player">Player</string>
     <string name="leaderboard_turns">Turns</string>
     <string name="leaderboard_pawns">Pawns left</string>
+    <string name="leaderboard_squares">Squares</string>
     <string name="leaderboard_captures">Captures</string>
 
     <!-- Statistics (ui/records/StatisticsScreen.kt): each person's games added up. -->
@@ -579,6 +589,13 @@
     <string name="setup_custom_name_taken">There's a mode by that name already.</string>
     <string name="setup_custom_need_rule">Switch on a house rule: without one, it's just %1$s.</string>
     <!-- Each house rule: its name, and one line saying what it changes, in the picker and on the Rules page. -->
+    <string name="house_rule_pawns">Pawns</string>
+    <string name="house_rule_pawns_description">Each player has this many pawns.</string>
+    <!-- What a screen reader says for one of the Pawns house rule's numbers. -->
+    <plurals name="house_rule_pawns_spoken">
+        <item quantity="one">%1$d pawn each</item>
+        <item quantity="other">%1$d pawns each</item>
+    </plurals>
     <string name="house_rule_no_capture_roll">No Capture Roll</string>
     <string name="house_rule_no_capture_roll_description">Capturing a pawn doesn't earn another roll.</string>
     <string name="house_rule_no_home_roll">No Home Roll</string>
@@ -878,10 +895,10 @@
     <string name="achievement_everything_everywhere_all_at_once_description">Win a game of any mode but `Classic` with every house rule on</string>
     <string name="achievement_where_were_going_we_dont_need_rules_title">Where We're Going, We Don't Need Rules</string>
     <string name="achievement_where_were_going_we_dont_need_rules_description">Start a game of any mode but `Classic`</string>
-    <string name="achievement_quick_on_the_draw_title">Quick On The Draw</string>
-    <string name="achievement_quick_on_the_draw_description">Win a game of `Quick` mode</string>
-    <string name="achievement_blink_and_youll_miss_it_title">Blink And You'll Miss It</string>
-    <string name="achievement_blink_and_youll_miss_it_description">Win a game of `Quick` mode in 25 turns or fewer</string>
+    <string name="achievement_paint_the_town_red_title">Paint The Town Red</string>
+    <string name="achievement_paint_the_town_red_description">Win a game of `Colour Rush` mode</string>
+    <string name="achievement_colour_coordinated_title">Colour Coordinated</string>
+    <string name="achievement_colour_coordinated_description">Hold eight squares in a row in `Colour Rush` mode, not counting start squares and stars</string>
     <string name="achievement_double_or_nothing_title">Double Or Nothing</string>
     <string name="achievement_double_or_nothing_description">Win a game of `Two Dice` mode</string>
     <string name="achievement_two_birds_two_stones_title">Two Birds, Two Stones</string>
@@ -1106,8 +1123,8 @@
     <!-- The game modes, and the rules. -->
     <string name="mode_classic">Classic</string>
     <string name="mode_classic_description">The classic rules: roll a 6 to leave the yard, and race all four pawns home</string>
-    <string name="mode_quick">Quick</string>
-    <string name="mode_quick_description">The classic rules with two pawns each, for a shorter race</string>
+    <string name="mode_colour_rush">Colour Rush</string>
+    <string name="mode_colour_rush_description">Claim the squares you land on first, and take others with a capture: the most squares wins</string>
     <string name="mode_two_dice">Two Dice</string>
     <string name="mode_two_dice_description">Roll two dice and move by each in turn. A 6 on either brings a pawn out, and doubles roll again</string>
     <string name="mode_portals">Portals</string>
@@ -1156,7 +1173,10 @@
     <string name="rules_winning_2">The first player to bring all four pawns home wins, and everyone else plays on for the places.</string>
     <string name="rules_winning_3">With *Stop at first winner* on in Settings, the game ends as soon as one player has every pawn home. Everyone else is placed by how far their pawns have come.</string>
     <!-- The Game Modes pages: a page a mode beyond Classic, titled by its name (mode_*). -->
-    <string name="rules_quick_1">Quick plays the classic rules with two pawns each instead of four, for a shorter race. Pick it under *Game Mode* on New Game.</string>
+    <string name="rules_colour_rush_1">In Colour Rush the first pawn to land on a square of the track claims it, and it takes that player's colour. Claiming a square doesn't make it safe. Start squares and stars can't be claimed.</string>
+    <string name="rules_colour_rush_2">A claimed square only changes hands when another player captures a pawn on it, whoever's pawn that was.</string>
+    <string name="rules_colour_rush_3">The game ends when every square that can be claimed is, or when a player (or a team) has every pawn home. The most squares wins. If that's a tie, it goes to whoever's pawns have come furthest.</string>
+    <string name="rules_colour_rush_records">The Leaderboard ranks Colour Rush wins by the most squares. Your pawns home and your captures count in Statistics.</string>
     <string name="rules_two_dice_1">Two Dice rolls two dice at once. Move a pawn by each die, one after the other, in either order: the same pawn twice, or two pawns. Tap a die to pick the one your next move uses.</string>
     <string name="rules_two_dice_2">A 6 on either die brings a pawn out of the yard, and the other die can move it on. If a die has no move, it's lost.</string>
     <string name="rules_two_dice_3">Roll a double and you roll again once both dice are moved, but three doubles in a row end your turn. A capture, or a pawn brought home, still earns another roll.</string>
@@ -1180,6 +1200,7 @@
     <string name="rules_house_rules_tab">About</string>
     <string name="rules_house_rules_1">House rules are common changes to the classic rules. Switch them on in *House Rules* on New Game, in any mix.</string>
     <string name="rules_house_rules_2">A game with any house rule on doesn't count towards the Leaderboard or Statistics, and only earns the house rules' own achievements.</string>
+    <string name="rules_house_rules_pawns">Pawns gives each player from one to six pawns, instead of the mode's own number.</string>
     <string name="rules_house_rolling_title">Rolling Again</string>
     <string name="rules_house_rolling_tab">Rolling</string>
     <string name="rules_house_yard_title">Leaving the Yard</string>

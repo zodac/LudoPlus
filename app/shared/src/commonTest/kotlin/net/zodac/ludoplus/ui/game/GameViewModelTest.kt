@@ -453,17 +453,17 @@ class GameViewModelTest {
             GameViewModel(SettingsRepository(prefs), InProgressGameRepository(InMemoryPreferences(), backgroundScope), GameRecordRepository(InMemoryGameResultDao(finishedGame = finished)))
         val viewModel = viewModel()
         runCurrent()
-        val mode = CustomMode("custom_1", "Cut-Throat", GameMode.QUICK, setOf(HouseRule.MUST_CAPTURE))
+        val mode = CustomMode("custom_1", "Cut-Throat", GameMode.PORTALS, setOf(HouseRule.MUST_CAPTURE))
         viewModel.setupForm.setHouseRule(HouseRule.BLOCKADES, on = true)
         viewModel.saveCustomMode(mode)
         assertEquals(mode, viewModel.setupForm.setup.value.customMode)
         assertTrue(viewModel.startGame { "Player $it" })
         val game = assertNotNull(viewModel.game.value)
-        assertEquals(GameMode.QUICK, game.mode)
+        assertEquals(GameMode.PORTALS, game.mode)
         assertEquals("Cut-Throat", game.customName)
         // Its own house rules, not those switched on for the built-in modes.
         assertEquals(setOf(HouseRule.MUST_CAPTURE), game.state.rules.houseRules)
-        assertEquals(2, game.state.rules.pawnsPerPlayer)
+        assertTrue(game.state.rules.portals)
         runCurrent()
 
         // Kept, and picked, next time.
@@ -477,13 +477,13 @@ class GameViewModelTest {
         runCurrent()
         assertNull(locked.setupForm.setup.value.customMode)
         assertTrue(locked.startGame { "Player $it" })
-        assertEquals(GameMode.QUICK, locked.state.mode)
+        assertEquals(GameMode.PORTALS, locked.state.mode)
         assertEquals(emptySet(), locked.state.rules.houseRules)
         assertNull(assertNotNull(locked.game.value).customName)
 
         again.deleteCustomMode("custom_1")
         runCurrent()
-        assertEquals(GameMode.QUICK, again.setupForm.setup.value.gameMode)
+        assertEquals(GameMode.PORTALS, again.setupForm.setup.value.gameMode)
         assertNull(again.setupForm.setup.value.customMode)
         assertEquals(emptyList(), SettingsRepository(prefs).snapshot().customModes)
     }

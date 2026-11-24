@@ -50,7 +50,7 @@ private val BOARDS = GameMode.entries.filter { it.onlineLeaderboardKey != null }
 private val GameMode.leaderboardSymbol: ImageVector
     get() = when (this) {
         GameMode.CLASSIC -> Symbols.Flag
-        GameMode.QUICK -> Symbols.Bolt
+        GameMode.COLOUR_RUSH -> Symbols.FormatPaint
         GameMode.TWO_DICE -> Symbols.Casino
         GameMode.PORTALS -> Symbols.Sync
         GameMode.SURVIVAL -> Symbols.Swords

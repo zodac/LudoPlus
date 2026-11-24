@@ -30,7 +30,7 @@ import net.zodac.ludoplus.ui.records.StatisticsViewModel
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
 
 /** Every mode's name, in the drop-downs' order. */
-private val MODE_NAMES = listOf("Classic", "Quick", "Two Dice", "Portals", "Survival", "Chaos", "Haunted House")
+private val MODE_NAMES = listOf("Classic", "Colour Rush", "Two Dice", "Portals", "Survival", "Chaos", "Haunted House")
 
 /** The Leaderboard and Statistics pages: what they say, to the eye and to a screen reader, full and empty. */
 class RecordsScreensTest : UiTest() {
@@ -101,7 +101,7 @@ class RecordsScreensTest : UiTest() {
 
     @Test
     fun `the drop-down stays at the top while a long board scrolls - only the rows on screen built - and another mode's starts at its top`() = uiTest(TestScreen(411, 891)) {
-        val rows = (1..60).map { row("P$it", 1, 30 + it, 1, it.toLong()) } + (1..60).map { row("Q$it", 1, 20 + it, 1, it.toLong(), mode = GameMode.QUICK) }
+        val rows = (1..60).map { row("P$it", 1, 30 + it, 1, it.toLong()) } + (1..60).map { row("Q$it", 1, 20 + it, 1, it.toLong(), mode = GameMode.PORTALS) }
         val viewModel = LeaderboardViewModel(records(*rows.toTypedArray()))
         showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
         compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, P1, 31 turns, 1 capture")).fetchSemanticsNodes().isNotEmpty() }
@@ -111,9 +111,9 @@ class RecordsScreensTest : UiTest() {
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasContentDescription("60th, P60, 90 turns, 1 capture"))
         assertEquals(top, field("Leaderboard", "Classic").fetchSemanticsNode().boundsInRoot.top)
         compose.onNode(hasContentDescription("1st, P1", substring = true)).assertDoesNotExist()
-        pickMode("Leaderboard", from = "Classic", name = "Quick")
+        pickMode("Leaderboard", from = "Classic", name = "Portals")
         compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Q1, 21 turns, 1 capture")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Quick: fastest wins").assertIsDisplayed()
+        compose.onNodeWithText("Portals: fastest wins").assertIsDisplayed()
     }
 
     @Test
@@ -150,14 +150,31 @@ class RecordsScreensTest : UiTest() {
 
     @Test
     fun `the Leaderboard starts at the mode last picked there - each mode its own board`() = uiTest(TestScreen(411, 891)) {
-        val repository = records(row("Alex", 1, 38, 4, 1), row("Sam", 1, 22, 1, 2, mode = GameMode.QUICK))
-        val viewModel = LeaderboardViewModel(repository, MutableStateFlow(GameMode.QUICK))
+        val repository = records(row("Alex", 1, 38, 4, 1), row("Sam", 1, 22, 1, 2, mode = GameMode.PORTALS))
+        val viewModel = LeaderboardViewModel(repository, MutableStateFlow(GameMode.PORTALS))
         showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
         compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Sam, 22 turns, 1 capture")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Quick: fastest wins").assertExists()
-        pickMode("Leaderboard", from = "Quick", name = "Classic")
+        compose.onNodeWithText("Portals: fastest wins").assertExists()
+        pickMode("Leaderboard", from = "Portals", name = "Classic")
         compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Alex, 38 turns, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasContentDescription("1st, Sam", substring = true)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Colour Rush's Leaderboard ranks the most squares - then most captures - and its Statistics time no race but count pawns home`() = uiTest(TestScreen(411, 891)) {
+        val rush = { name: String, captures: Int, squares: Int, endedAt: Long -> row(name, 1, 40, captures, endedAt, mode = GameMode.COLOUR_RUSH).copy(squares = squares) }
+        val repository = records(rush("Alex", 9, 1, 1), rush("Sam", 2, 24, 2), rush("Jo", 4, 24, 3))
+        val viewModel = LeaderboardViewModel(repository, MutableStateFlow(GameMode.COLOUR_RUSH))
+        showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
+        compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Jo, 24 squares, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("2nd, Sam, 24 squares, 2 captures")).assertExists()
+        compose.onNode(hasContentDescription("3rd, Alex, 1 square, 9 captures")).assertExists()
+        compose.onNodeWithText("Colour Rush: most squares").assertExists()
+
+        val statistics = StatisticsViewModel(repository, MutableStateFlow(ModePage.Mode(GameMode.COLOUR_RUSH)))
+        showcase.show { LudoPlusTheme { StatisticsScreen(statistics, onBack = {}) } }
+        compose.waitUntil { compose.onAllNodes(hasText("Pawns home")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasText("Fewest turns to win")).assertDoesNotExist()
     }
 
     @Test
@@ -182,17 +199,17 @@ class RecordsScreensTest : UiTest() {
 
     @Test
     fun `Statistics adds up one mode - or every mode - an empty mode said by name`() = uiTest(TestScreen(411, 891)) {
-        val repository = records(row("Alex", 1, 38, 4, 1), row("Alex", 2, 30, 1, 2, mode = GameMode.QUICK))
+        val repository = records(row("Alex", 1, 38, 4, 1), row("Alex", 2, 30, 1, 2, mode = GameMode.PORTALS))
         val viewModel = StatisticsViewModel(repository)
         showcase.show { LudoPlusTheme { StatisticsScreen(viewModel, onBack = {}) } }
         compose.waitUntil { compose.onAllNodes(hasText("Games played") and hasText("1")).fetchSemanticsNodes().isNotEmpty() }
         pickMode("Statistics", from = "Classic", name = "All Modes")
         compose.waitUntil { compose.onAllNodes(hasText("Games played") and hasText("2")).fetchSemanticsNodes().isNotEmpty() }
-        pickMode("Statistics", from = "All Modes", name = "Quick")
+        pickMode("Statistics", from = "All Modes", name = "Portals")
         compose.waitUntil { compose.onAllNodes(hasText("Games played") and hasText("1")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasText("Wins") and hasText("0")).assertExists()
         compose.onNode(hasContentDescription("6 players")).performClick()
-        compose.waitUntil { compose.onAllNodes(hasText("No Quick games with 6 players yet.")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil { compose.onAllNodes(hasText("No Portals games with 6 players yet.")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasContentDescription("All games")).performClick()
         viewModel.selectPage(ModePage.Mode(GameMode.CLASSIC))
         compose.waitUntil { compose.onAllNodes(hasText("Games played") and hasText("1")).fetchSemanticsNodes().isNotEmpty() }

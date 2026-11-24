@@ -95,7 +95,7 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 | Mode | Rules beyond Classic | Leaderboard and Statistics | Achievements |
 | --- | --- | --- | --- |
 | Classic | The classic rules | Yes | Yes |
-| Quick | Two pawns each; each yard draws two spots, on opposite corners (the maintainer, 2026-11-18) | Yes, its own | Its own, and all but a few |
+| Colour Rush | The track's squares are claimed: the first to land on one has it, and a capture there takes it; the most at the end wins | Yes, its own, by most squares | Its own, and all but a few |
 | Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | Its own, and all but a few |
 | Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | Its own, and all but a few |
 | Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; Overtime, Sudden Death, and the Cataclysm late on | Yes, its own, by most pawns left | Its own, and all but a few |
@@ -105,6 +105,19 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 Every mode has its own Leaderboard (one a player count) and its own Statistics page, and earns achievements (the
 maintainer, 2026-11-24; "Achievements"). The Rules
 screen has a Game Modes group, a page a mode beyond Classic.
+
+**Colour Rush** (`GameRules.claims`, `ColourRushEngineTest`; the maintainer, 2026-11-24, in place of Quick). The first pawn to
+end a move on a square of the track claims it for its player (`GameState.claimed`), and it's no safer for it. It only changes
+hands when another player captures there, whoever's pawn that was. Start and star squares can't be claimed, whoever sits where
+(`GameState.claimableSquare`; the maintainer), nor can squares passed over, home columns, and home: 44 of the classic board's
+52 can (`BoardGeometry.claimableSquares`). The game ends with every one of them claimed, or a player (in teams, a team) with
+every pawn home; everyone is placed at once, by squares (a team's together), a tie by how far their pawns have come, then by
+who plays sooner. Four Medium CPUs claim them all in 96% of games, two in 22%; games are about half of Classic's turns with
+four, and the player who's home wins half of two-player games. A claimed square is drawn as its player's home column is, in
+every style (`BoardParts.claims`, `ClaimedSquareTest`), part of the board's painted image, once the pawn has landed. Cards
+have a count on a square of the player's colour; the Leaderboard ranks the most squares (`GameResult.squares`), then
+captures, with no online board. TalkBack: "Square 24, Yellow's square, empty", "Move Red pawn 1 3 squares, claiming the
+square", "0 pawns home, 2 squares".
 
 **Two Dice** (`GameRules.dice`, `rollAgainOnDoubles`). A roll is both dice (`LudoEngine.applyDice`); the move phase
 holds the dice still to move, the whole roll, and whether it has earned another roll (`TurnPhase.AwaitingMove.dice`,
@@ -226,7 +239,14 @@ the records.
 | Blockades | `blockades` | `blockades` | Two of one player's pawns on a track square can't be passed or landed on by another's |
 | Must Capture | `must_capture` | `mustCapture` | A roll with a capture allows only captures |
 | Guarded Starts | `guarded_starts` | `guardedStarts` | A start square is safe only for its own seat's pawns |
+| Pawns | setting `pawns` | `pawnsPerPlayer` | One to six pawns each, instead of the mode's own number |
 
+- **Pawns** (the maintainer, 2026-11-24, as Quick went). A number, not a `HouseRule`: `GameRules.withPawns`, which marks the
+    rules `pawnsChanged`, so the game counts as having a house rule. Its card is the picker's first, and its choices ("3 pawns each" to TalkBack)
+    leave out the mode's own number; a
+    pick that is it isn't played there, and is kept for other modes. The board stays as it is: only the yards' spots follow
+    (`BoardLayout.yardSpotOf`: one in the middle, two on opposite corners, three in a triangle, five and six smaller), and five
+    or six pawns home are smaller (`homePawnRadiusOf`). A custom mode has none.
 - **On the board.** "On the board" is the track or the home column: not the yard, not home. A Three Tries roll with no
     move keeps the turn (`GameState.yardTriesUsed`, `GameEvent.NoMove.triesLeft`, "Alex rolled 2 and had no move: 2
     more tries."), one turn however many tries.
@@ -399,7 +419,7 @@ known opens Classic's.
 counts under their heading (`ui/records/PlayerCountRow.kt`, TalkBack "4 players"). The Leaderboard has a board a count,
 2 to 8 (a bigger board's lap is longer, so turns only compare within a count), opening at the count New Game last
 started; Statistics opens on "All" (every game, spoken "All games") and can show one count's games. Filtered in the
-query and in `statistics`, with no schema change. A team game records each player at their team's place, and
+query and in `statistics`. A team game records each player at their team's place, and
 stays off the Leaderboard (`playedUnmodified` false): a team's win is its players' together, not one player's race.
 A game with house rules is in neither (`GameResult.houseRules`; "Modifiers").
 

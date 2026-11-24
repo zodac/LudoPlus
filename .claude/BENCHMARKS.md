@@ -36,7 +36,7 @@ Each of these fixed a reported stutter. New work must keep them.
     art past its box: a clip cuts off anything further. Art that only fades is cheaper as `PulsingArt`, recorded once.
     Used by the game's background, a move, a die's `PipShape.CUSTOM`, and Glitch. `BoundedArtTest` holds it.
 - **The Ludo board draws in four parts** (`LudoBoard`), so a pawn's move redraws only the move:
-    - the board itself, painted once into an image per style, seats' colours, pawn count, size, and density
+    - the board itself, painted once into an image per style, seats' colours, pawn count, squares claimed, size, and density
         (`PaintedSurface`, off the main thread), on a layer of its own;
     - the turn's yard ring, on a layer, drawn again as the turn passes;
     - the pawns standing still, on a layer, drawn again as a move starts and ends (the moving and captured pawns left out);

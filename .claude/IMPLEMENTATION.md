@@ -407,7 +407,8 @@ count but 4 has a board of its own; one player on two colours was dropped.
 - [x] Modes: rule sets that are data on `GameMode`, never `if (mode == X)` (`GAME_MODES.md`). Decided with the
     maintainer (2026-11-18): each mode has its own Leaderboard and Statistics page, and earned no achievements until the
     review of the list (2026-11-24, below); a short track and power-up squares weren't picked.
-    - [x] Quick: two pawns each.
+    - [x] Quick: two pawns each. Replaced by Colour Rush, and the Pawns house rule (the maintainer, 2026-11-24; its games' records
+        dropped).
     - [x] Two Dice: each die moved on its own, one after the other, on any pawns (the same pawn twice allowed); a 6 on
         either die brings a pawn out with that die; doubles roll again, three in a row end the turn; a capture or a pawn
         home still earns a roll (the maintainer, 2026-11-18).

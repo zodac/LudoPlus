@@ -10,7 +10,7 @@ THE CLASSIC RULES
 
 SEVEN WAYS TO PLAY
 • Classic: four pawns each, by the classic rules
-• Quick: two pawns each, for a shorter race
+• Colour Rush: claim the squares you land on first, take others with a capture, and finish with the most
 • Two Dice: roll two dice and move by each in turn; a 6 on either brings a pawn out, and doubles roll again
 • Portals: land on one and come out at its pair, further on or further back
 • Survival: six pawns each and no home; a captured pawn is out, sudden death comes, and the last player with a pawn wins
@@ -18,7 +18,7 @@ SEVEN WAYS TO PLAY
 • Haunted House: ghosts drift round the track and send pawns back to the yard
 
 HOUSE RULES
-Mix in the rules your family plays by: Must Capture, Guarded Starts, Free Start, Three Tries, Out on a 1, Blockades, No Capture Roll, No Home Roll, and Endless 6s.
+Mix in the rules your family plays by: Must Capture, Guarded Starts, Free Start, Three Tries, Out on a 1, Blockades, No Capture Roll, No Home Roll, Endless 6s, and from one to six pawns each.
 
 PLAY TOGETHER NEARBY
 • One game across several phones in the same room, linked directly, with no internet needed
@@ -42,7 +42,7 @@ ACHIEVEMENTS AND STYLES
 • Unlock every style at once with an optional purchase
 
 GOOGLE PLAY GAMES
-• Sign in, if you like, for achievements on your Play Games profile, global leaderboards for every mode but Survival, and your progress saved across your devices
+• Sign in, if you like, for achievements on your Play Games profile, global leaderboards for every mode but Survival and Colour Rush, and your progress saved across your devices
 
 MADE FOR EVERYONE
 • Built for TalkBack and large fonts, with every square and move described

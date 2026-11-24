@@ -5,12 +5,12 @@ import net.zodac.ludoplus.resources.mode_chaos
 import net.zodac.ludoplus.resources.mode_chaos_description
 import net.zodac.ludoplus.resources.mode_classic
 import net.zodac.ludoplus.resources.mode_classic_description
+import net.zodac.ludoplus.resources.mode_colour_rush
+import net.zodac.ludoplus.resources.mode_colour_rush_description
 import net.zodac.ludoplus.resources.mode_haunted_house
 import net.zodac.ludoplus.resources.mode_haunted_house_description
 import net.zodac.ludoplus.resources.mode_portals
 import net.zodac.ludoplus.resources.mode_portals_description
-import net.zodac.ludoplus.resources.mode_quick
-import net.zodac.ludoplus.resources.mode_quick_description
 import net.zodac.ludoplus.resources.mode_survival
 import net.zodac.ludoplus.resources.mode_survival_description
 import net.zodac.ludoplus.resources.mode_two_dice
@@ -50,13 +50,14 @@ enum class GameMode(
         onlineLeaderboardKey = "classic",
     ),
 
-    /** The classic rules, two pawns each: a shorter race. */
-    QUICK(
-        id = "quick",
-        displayName = Res.string.mode_quick,
-        description = Res.string.mode_quick_description,
-        rules = GameRules(pawnsPerPlayer = 2),
-        onlineLeaderboardKey = "quick",
+    /** The classic moves, for the squares of the track: each is the first to land there's, and the most squares at the end wins. */
+    COLOUR_RUSH(
+        id = "colour_rush",
+        displayName = Res.string.mode_colour_rush,
+        description = Res.string.mode_colour_rush_description,
+        rules = GameRules(claims = true),
+        onlineLeaderboardKey = null,
+        ranking = LeaderboardRanking.MOST_SQUARES,
     ),
 
     /**
@@ -122,7 +123,7 @@ enum class GameMode(
 }
 
 /** What a mode's Leaderboard ranks its wins by, most captures settling a tie. */
-enum class LeaderboardRanking { FEWEST_TURNS, MOST_PAWNS_LEFT }
+enum class LeaderboardRanking { FEWEST_TURNS, MOST_PAWNS_LEFT, MOST_SQUARES }
 
 /**
  * The rules of play a game follows: its [GameMode]'s, which house-rule modifiers (Phase 9 of
@@ -204,14 +205,22 @@ data class GameRules(
     val lastStanding: Boolean = false,
     /** Whether sudden death comes, round by round, making the start squares unsafe, then the stars, and then taking squares from the track ([suddenDeathRound]). */
     val suddenDeath: Boolean = false,
+    /**
+     * Whether the track's squares are claimed, all but the start and star squares: each is the first player's whose pawn
+     * lands on it, and another's only by a capture there. The game ends once every one is claimed, or a player (or team) has every pawn home, and the players
+     * (or teams) are placed by how many they have.
+     */
+    val claims: Boolean = false,
+    /** Whether [pawnsPerPlayer] isn't the mode's own ([withPawns]). */
+    val pawnsChanged: Boolean = false,
     /** The house rules these rules were made with ([withHouseRules]): empty for a mode's own rules. */
     val houseRules: Set<HouseRule> = emptySet(),
 ) {
     /** Whether a game of these rules draws chances of its own, besides the dice: power-ups', ghosts', or sudden death's. */
     val hasChances: Boolean get() = powerUps || ghosts || suddenDeath
 
-    /** Whether any house rule is on: such a game stays off the Leaderboard and out of Statistics, and earns only the house rules' own achievements. */
-    val hasHouseRules: Boolean get() = houseRules.isNotEmpty()
+    /** Whether any house rule is on, a number of pawns among them: such a game stays off the Leaderboard and out of Statistics, and earns only the house rules' own achievements. */
+    val hasHouseRules: Boolean get() = houseRules.isNotEmpty() || pawnsChanged
 
     /**
      * Whether a pawn of [seat] on the absolute track [square] is safe from capture: a star square, or a start square
@@ -228,6 +237,9 @@ data class GameRules(
 
     /** Whether [a] and [b] are on one team, [a] and [b] being different players. */
     fun arePartners(a: Int, b: Int): Boolean = a != b && teams != null && teams[a] == teams[b]
+
+    /** These rules with [pawns] each, a house rule; as they are with the mode's own number, or null. */
+    fun withPawns(pawns: Int?): GameRules = if (pawns == null || pawns == pawnsPerPlayer) this else copy(pawnsPerPlayer = pawns, pawnsChanged = true)
 
     /** These rules on the board for [players] players ([BoardGeometry.forPlayers]). */
     fun forPlayers(players: Int): GameRules = copy(board = BoardGeometry.forPlayers(players).copy(endless = board.endless))
@@ -249,10 +261,14 @@ data class GameRules(
         require(rollAgainLimit == null || rollAgainLimit > 0) { "A run of rolls again ends after one roll or more" }
         require(yardTries > 0) { "A player has a roll or more to leave the yard" }
         require(lastStanding == board.endless && (!lastStanding || startsOut)) { "Only an endless board has a last player standing, and no yard to leave" }
+        require(!claims || !lastStanding) { "A game is won by squares or by lasting, not both" }
         require(teams == null || teams.all { it >= 0 } && teams.toSet().size >= 2) { "A team game needs two teams or more" }
     }
 
     companion object {
+        /** How many pawns each a game may be played with, by a house rule ([withPawns]). */
+        val PAWN_CHOICES = 1..6
+
         /** The stage of sudden death with nowhere safe, the last that comes by rounds ([suddenDeathRound]). */
         const val NOWHERE_SAFE_STAGE = 2
 

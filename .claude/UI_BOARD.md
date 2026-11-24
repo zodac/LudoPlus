@@ -46,7 +46,8 @@ whose turn it is has an outline in their colour.
 - **Laid out as the yards are** round the board (`playerCardRows`, `PlayerCardRowsTest`): player 1 bottom left, and a yard
     straight above or below the middle on a row of its own. TalkBack reads them in player order, whatever the rows.
 - **Rank** (`GameState.ranks`, `RanksTest`; the maintainer, 2026-11-24): where the player stands now, in every mode. Those
-    placed keep their place; the rest go by pawns left in Survival (`lastStanding`), and otherwise by how far their pawns
+    placed keep their place; the rest go by pawns left in Survival (`lastStanding`), by squares in Colour Rush (`claims`, whose
+    cards also have a count on a square of the player's colour), and otherwise by how far their pawns
     have come in all (`stepsOf`), as a game stopped at its first winner places them. Partners share their team's, a tie
     shares one, and nobody has one while everyone is level. TalkBack: "currently 2nd", "currently joint 2nd", or "4th place"
     once placed (`PlayerCardTest`).

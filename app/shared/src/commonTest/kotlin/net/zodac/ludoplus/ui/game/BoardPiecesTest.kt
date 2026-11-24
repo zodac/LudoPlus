@@ -35,9 +35,24 @@ class BoardPiecesTest {
     }
 
     @Test
-    fun `in a Quick game the two yard pawns wait on opposite corners of the yard's four spots`() {
-        val marks = pawnMarks(GameState.new(GameMode.QUICK, 4)).filter { it.player == 1 }
+    fun `two yard pawns wait on opposite corners of the yard's four spots`() {
+        val marks = pawnMarks(GameState.new(GameMode.CLASSIC, 4, rules = GameMode.CLASSIC.rules.withPawns(2))).filter { it.player == 1 }
         assertEquals(listOf(ClassicBoardLayout.yardSpot(1, 0), ClassicBoardLayout.yardSpot(1, 3)), marks.sortedBy { it.pawns.single() }.map { it.centre })
+    }
+
+    @Test
+    fun `with any number of pawns - on every board - each has a spot of its own in its yard and home - none on another`() {
+        for (players in listOf(2, 3, 5, 6, 7, 8)) for (pawns in 1..6) {
+            val rules = GameMode.CLASSIC.rules.forPlayers(players).withPawns(pawns)
+            val new = GameState.new(GameMode.CLASSIC, players, rules = rules)
+            for (at in listOf(Y, rules.board.homeProgress)) {
+                val marks = pawnMarks(new.copy(players = new.players.map { it.copy(pawns = List(pawns) { at }) }))
+                assertEquals(players * pawns, marks.size)
+                for (a in marks) for (b in marks) if (a !== b) {
+                    assertTrue((a.centre - b.centre).getDistance() >= (a.radius + b.radius) * 0.99f, "$players players, $pawns pawns, at $at: ${a.player}'s ${a.pawns} and ${b.player}'s ${b.pawns}")
+                }
+            }
+        }
     }
 
     @Test

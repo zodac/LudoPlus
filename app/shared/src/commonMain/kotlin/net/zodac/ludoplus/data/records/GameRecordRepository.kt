@@ -45,7 +45,7 @@ class GameRecordRepository(
 
     /**
      * Records the finished [game]'s people at this phone, in one write: each one's place (their team's, in a team game),
-     * finish time, turns, captures, times captured, and pawns home, with the game's mode, length, and
+     * finish time, turns, captures, times captured, pawns home, and squares, with the game's mode, length, and
      * [endedAtEpochMillis]. The computer's players and a Nearby game's other phones' players aren't recorded, and a game
      * with no person in it writes nothing. On a guest's phone ([StartedGame.guestSeat]) only its own seat is, as the
      * device's own: elsewhere that's seat 0.
@@ -78,6 +78,7 @@ class GameRecordRepository(
                 captures = side.captures,
                 timesCaptured = side.timesCaptured,
                 pawnsHome = side.pawnsHome(state.board),
+                squares = state.squaresOf(index),
             )
         }
         if (rows.isEmpty()) return
@@ -87,12 +88,13 @@ class GameRecordRepository(
 
     /**
      * Page [pageIndex] of [gameMode]'s Leaderboard for games of [playerCount]: its best wins, by its [GameMode.ranking]
-     * (fewest turns, or most pawns left), then most captures. Each player count has its own, as a bigger board's lap is longer.
+     * (fewest turns, most pawns left, or most squares), then most captures. Each player count has its own, as a bigger board's lap is longer.
      */
     override suspend fun leaderboard(gameMode: GameMode, playerCount: Int, pageIndex: Int, pageSize: Int): List<GameResult> =
         when (gameMode.ranking) {
             LeaderboardRanking.FEWEST_TURNS -> dao.leaderboard(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
             LeaderboardRanking.MOST_PAWNS_LEFT -> dao.leaderboardByPawnsLeft(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
+            LeaderboardRanking.MOST_SQUARES -> dao.leaderboardBySquares(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
         }
 
     suspend fun leaderboardCount(gameMode: GameMode, playerCount: Int): Int = dao.leaderboardCount(gameMode.id, playerCount)
@@ -222,7 +224,7 @@ private fun statisticsOf(rows: List<GameResult>): PlayerStatistics = PlayerStati
 )
 
 /** The ids of the modes whose win isn't a race home. */
-private val LAST_STANDING_IDS = GameMode.entries.filter { it.rules.lastStanding }.map { it.id }.toSet()
+private val NO_RACE_IDS = GameMode.entries.filter { it.ranking != LeaderboardRanking.FEWEST_TURNS }.map { it.id }.toSet()
 
 /** [rows], oldest first, added up. */
 internal fun totalsOf(rows: List<GameResult>): RecordTotals {
@@ -240,7 +242,7 @@ internal fun totalsOf(rows: List<GameResult>): RecordTotals {
         captures = rows.sumOf { it.captures },
         timesCaptured = rows.sumOf { it.timesCaptured },
         pawnsHome = rows.sumOf { it.pawnsHome },
-        // Only a race's: outlasting everyone takes as long as it takes.
-        fewestTurnsToWin = rows.filter { it.won && it.gameModeId !in LAST_STANDING_IDS }.minOfOrNull { it.turns },
+        // Only a race's: outlasting everyone, or claiming the most, takes as long as it takes.
+        fewestTurnsToWin = rows.filter { it.won && it.gameModeId !in NO_RACE_IDS }.minOfOrNull { it.turns },
     )
 }

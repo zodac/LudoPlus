@@ -18,7 +18,7 @@ import kotlinx.coroutines.IO
  * Every schema change after the first release needs a version bump and a migration in [MIGRATIONS]; the exported
  * schemas in app/shared/schemas/ are what a migration test compares against.
  */
-@Database(entities = [GameResult::class], version = 3, exportSchema = true)
+@Database(entities = [GameResult::class], version = 4, exportSchema = true)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -50,6 +50,13 @@ val MIGRATIONS: Array<Migration> = arrayOf(
             connection.execSQL("ALTER TABLE `results` ADD COLUMN `uuid` TEXT NOT NULL DEFAULT ''")
             connection.execSQL("UPDATE `results` SET `uuid` = lower(hex(randomblob(16)))")
             connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_results_uuid` ON `results` (`uuid`)")
+        }
+    },
+    // Colour Rush: each game's squares, none before it. Quick, which it replaced, is gone, and its games with it.
+    object : Migration(3, 4) {
+        override fun migrate(connection: SQLiteConnection) {
+            connection.execSQL("ALTER TABLE `results` ADD COLUMN `squares` INTEGER NOT NULL DEFAULT 0")
+            connection.execSQL("DELETE FROM `results` WHERE `gameModeId` = 'quick'")
         }
     },
 )

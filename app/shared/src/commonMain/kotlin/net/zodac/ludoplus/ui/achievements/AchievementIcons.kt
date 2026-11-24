@@ -120,8 +120,8 @@ val Achievement.icon: ImageVector
         // ---- Game Modes ---------------------------------------------------------------------
         // A wedge-shaped sports car trailing fire: a nod to the film the title quotes, drawn from scratch.
         Achievement.WHERE_WERE_GOING_WE_DONT_NEED_RULES -> TIME_MACHINE_CAR_ICON
-        Achievement.QUICK_ON_THE_DRAW -> Symbols.FastForward
-        Achievement.BLINK_AND_YOULL_MISS_IT -> Symbols.Acute
+        Achievement.PAINT_THE_TOWN_RED -> RED_SQUARES_ICON
+        Achievement.COLOUR_COORDINATED -> TRACK_CORNER_ICON
         Achievement.DOUBLE_OR_NOTHING -> Symbols.Savings
         Achievement.TWO_BIRDS_TWO_STONES -> Symbols.MoveUp
         Achievement.THROUGH_THE_LOOKING_GLASS -> Symbols.AutoAwesome
@@ -188,10 +188,10 @@ val Achievement.icon: ImageVector
 /**
  * [tint] as given, except for the fixed-colour icons: every Easter Egg means a colour of its own, not whatever
  * container holds it (Big Fan's heart is always [AchievementHeartRed]; [Color.Unspecified] shows a drawn icon's own
- * fills), and so does Completionist's crystal.
+ * fills), and so do Completionist's crystal and Colour Rush's squares.
  */
 fun Achievement.iconTintOrUnspecified(tint: Color): Color = when (this) {
-    Achievement.COMPLETIONIST -> Color.Unspecified
+    Achievement.COMPLETIONIST, Achievement.PAINT_THE_TOWN_RED, Achievement.COLOUR_COORDINATED -> Color.Unspecified
     Achievement.ALLITERATION -> AchievementInkBlue
     Achievement.ARE_YOU_A_DEVELOPER -> AchievementDeveloperCyan
     Achievement.BIG_FAN -> AchievementHeartRed

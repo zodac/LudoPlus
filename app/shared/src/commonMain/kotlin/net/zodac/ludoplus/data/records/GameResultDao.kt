@@ -30,6 +30,13 @@ interface GameResultDao {
     )
     suspend fun leaderboardByPawnsLeft(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult>
 
+    /** [leaderboard] ranked by the most squares claimed, then most captures, then the earliest. */
+    @Query(
+        "SELECT * FROM results WHERE gameModeId = :gameModeId AND playedUnmodified = 1 AND won = 1 AND playerCount = :playerCount " +
+            "ORDER BY squares DESC, captures DESC, endedAtEpochMillis ASC LIMIT :limit OFFSET :offset",
+    )
+    suspend fun leaderboardBySquares(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult>
+
     /** How many rows [gameModeId]'s Leaderboard for games of [playerCount] has. */
     @Query("SELECT COUNT(*) FROM results WHERE gameModeId = :gameModeId AND playedUnmodified = 1 AND won = 1 AND playerCount = :playerCount")
     suspend fun leaderboardCount(gameModeId: String, playerCount: Int): Int

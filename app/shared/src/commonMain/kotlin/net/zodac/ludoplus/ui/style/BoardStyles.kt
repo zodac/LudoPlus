@@ -40,7 +40,7 @@ object ClassicBoardStyle : BoardStyle, Swatched {
             val cell = layout.trackSquare(square)
             val startOf = if (parts.starts && square % board.seatSpacing == 0) square / board.seatSpacing else null
             val star = parts.stars && square % board.seatSpacing == board.starOffset
-            shape(cell.corners, startOf?.let { seatColours.colourOf(it) } ?: if (star) SafeShade else BoardIvory)
+            shape(cell.corners, startOf?.let { seatColours.colourOf(it) } ?: parts.claims[square] ?: if (star) SafeShade else BoardIvory)
             if (star) drawStar(cell.centre * unit, unit * 0.36f, BoardInk.copy(alpha = 0.8f))
         }
         for (seat in 0..<board.seats) {
@@ -55,7 +55,7 @@ object ClassicBoardStyle : BoardStyle, Swatched {
                 drawPath(layout.yardCourt(seat).map { it * unit }.toPath(), BoardIvory)
             }
             for (pawn in 0..<pawns) {
-                drawCircle(colour.copy(alpha = 0.45f), unit * layout.yardSpotRadius, layout.yardSpotOf(seat, pawn, pawns) * unit)
+                drawCircle(colour.copy(alpha = 0.45f), unit * layout.yardSpotRadiusOf(pawns), layout.yardSpotOf(seat, pawn, pawns) * unit)
             }
             // Home: the seat's part of the centre.
             if (parts.homes) shape(layout.homeArea(seat), colour)

@@ -72,35 +72,35 @@ class RecordsViewModelsTest {
         testScheduler.runCurrent()
         assertEquals(board(GameMode.PORTALS, 6), viewModel.shown())
         assertEquals(emptyList(), kept)
-        viewModel.selectMode(GameMode.QUICK)
+        viewModel.selectMode(GameMode.PORTALS)
         testScheduler.runCurrent()
-        assertEquals(board(GameMode.QUICK, 6), viewModel.shown())
-        assertEquals(listOf(GameMode.QUICK), kept)
+        assertEquals(board(GameMode.PORTALS, 6), viewModel.shown())
+        assertEquals(listOf(GameMode.PORTALS), kept)
     }
 
     @Test
     fun `the board on view stays up until the one picked is read - then its name and rows change together`() = runTest(dispatcher) {
         val boards = Boards()
         val gate = CompletableDeferred<Unit>()
-        boards.gates[GameMode.QUICK] = gate
+        boards.gates[GameMode.PORTALS] = gate
         val viewModel = LeaderboardViewModel(boards)
         testScheduler.runCurrent()
-        viewModel.selectMode(GameMode.QUICK)
+        viewModel.selectMode(GameMode.PORTALS)
         testScheduler.runCurrent()
         assertEquals(board(GameMode.CLASSIC), viewModel.shown())
         gate.complete(Unit)
         testScheduler.runCurrent()
-        assertEquals(board(GameMode.QUICK), viewModel.shown())
+        assertEquals(board(GameMode.PORTALS), viewModel.shown())
     }
 
     @Test
     fun `a later pick is never replaced by an earlier one still being read`() = runTest(dispatcher) {
         val boards = Boards()
         val gate = CompletableDeferred<Unit>()
-        boards.gates[GameMode.QUICK] = gate
+        boards.gates[GameMode.PORTALS] = gate
         val viewModel = LeaderboardViewModel(boards)
         testScheduler.runCurrent()
-        viewModel.selectMode(GameMode.QUICK)
+        viewModel.selectMode(GameMode.PORTALS)
         testScheduler.runCurrent()
         viewModel.selectMode(GameMode.PORTALS)
         testScheduler.runCurrent()
@@ -114,35 +114,35 @@ class RecordsViewModelsTest {
         val boards = Boards()
         val viewModel = LeaderboardViewModel(boards)
         testScheduler.runCurrent()
-        viewModel.selectMode(GameMode.QUICK)
+        viewModel.selectMode(GameMode.PORTALS)
         testScheduler.runCurrent()
         viewModel.selectMode(GameMode.CLASSIC)
         testScheduler.runCurrent()
         viewModel.selectPlayerCount(2)
         testScheduler.runCurrent()
         assertEquals(board(GameMode.CLASSIC, 2), viewModel.shown())
-        val read = listOf(LeaderboardBoard(GameMode.CLASSIC, 4), LeaderboardBoard(GameMode.QUICK, 4), LeaderboardBoard(GameMode.CLASSIC, 2))
+        val read = listOf(LeaderboardBoard(GameMode.CLASSIC, 4), LeaderboardBoard(GameMode.PORTALS, 4), LeaderboardBoard(GameMode.CLASSIC, 2))
         assertEquals(read, boards.reads)
         boards.writes.value++
         testScheduler.runCurrent()
         assertEquals(read + LeaderboardBoard(GameMode.CLASSIC, 2), boards.reads)
-        viewModel.selectMode(GameMode.QUICK)
+        viewModel.selectMode(GameMode.PORTALS)
         testScheduler.runCurrent()
-        assertEquals(LeaderboardBoard(GameMode.QUICK, 2), boards.reads.last())
+        assertEquals(LeaderboardBoard(GameMode.PORTALS, 2), boards.reads.last())
     }
 
     @Test
     fun `a board that can't be read leaves the one on view - is tried again when picked again - and opens empty with none`() = runTest(dispatcher) {
-        val boards = Boards().apply { failing += GameMode.QUICK }
+        val boards = Boards().apply { failing += GameMode.PORTALS }
         val viewModel = LeaderboardViewModel(boards)
         testScheduler.runCurrent()
-        viewModel.selectMode(GameMode.QUICK)
+        viewModel.selectMode(GameMode.PORTALS)
         testScheduler.runCurrent()
         assertEquals(board(GameMode.CLASSIC), viewModel.shown())
         boards.failing.clear()
-        viewModel.selectMode(GameMode.QUICK)
+        viewModel.selectMode(GameMode.PORTALS)
         testScheduler.runCurrent()
-        assertEquals(board(GameMode.QUICK), viewModel.shown())
+        assertEquals(board(GameMode.PORTALS), viewModel.shown())
 
         boards.failing += GameMode.PORTALS
         val opened = LeaderboardViewModel(boards, MutableStateFlow(GameMode.PORTALS))
@@ -164,7 +164,7 @@ class RecordsViewModelsTest {
     @Test
     fun `Statistics reads the records once - however many pages are picked - and again when one is recorded`() = runTest(dispatcher) {
         val dao = CountingDao()
-        dao.insertGame(listOf(row(GameMode.CLASSIC), row(GameMode.QUICK, players = 2)))
+        dao.insertGame(listOf(row(GameMode.CLASSIC), row(GameMode.PORTALS, players = 2)))
         val repository = GameRecordRepository(dao)
         val kept = mutableListOf<ModePage>()
         val viewModel = StatisticsViewModel(repository, savePage = { kept += it })
@@ -175,7 +175,7 @@ class RecordsViewModelsTest {
         testScheduler.runCurrent()
         assertEquals(ModePage.AllModes, viewModel.page.value)
         assertEquals(listOf<ModePage>(ModePage.AllModes), kept)
-        assertEquals(listOf("quick"), viewModel.statistics.value!!.players(2, null).map { it.playerName })
+        assertEquals(listOf("portals"), viewModel.statistics.value!!.players(2, null).map { it.playerName })
         assertEquals(1, dao.reads)
         repository.reset()
         testScheduler.runCurrent()

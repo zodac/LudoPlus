@@ -9,12 +9,14 @@ import net.zodac.ludoplus.ui.icons.Symbols
 class AchievementIconColourTest {
 
     @Test
-    fun `only the Easter Eggs and Completionist's crystal ignore the row's tint`() {
+    fun `only the Easter Eggs - Completionist's crystal - and Colour Rush's squares ignore the row's tint`() {
         val tint = Color.Magenta
         val fixed = Achievement.entries.filter { it.iconTintOrUnspecified(tint) != tint }.toSet()
         assertEquals(
             setOf(
                 Achievement.COMPLETIONIST,
+                Achievement.PAINT_THE_TOWN_RED,
+                Achievement.COLOUR_COORDINATED,
                 Achievement.ALLITERATION,
                 Achievement.ARE_YOU_A_DEVELOPER,
                 Achievement.BIG_FAN,

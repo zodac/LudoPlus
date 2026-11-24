@@ -25,6 +25,7 @@ import kotlin.math.roundToInt
 import net.zodac.ludoplus.data.records.PlayerStatistics
 import net.zodac.ludoplus.data.records.RecordTotals
 import net.zodac.ludoplus.model.GameMode
+import net.zodac.ludoplus.model.LeaderboardRanking
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.stats_best_streak
 import net.zodac.ludoplus.resources.stats_captures
@@ -80,8 +81,11 @@ fun StatisticsScreen(viewModel: StatisticsViewModel, onBack: () -> Unit) {
                     item(key = "empty") { Box(modifier = Modifier.padding(top = PART_GAP)) { EmptyStateCard(emptyText(onPage.mode, playerCount)) } }
                 }
                 items(players, key = { "player ${it.playerName}" }) { player ->
-                    // A mode with no home has no race to time and brings no pawns there.
-                    Box(modifier = Modifier.padding(top = PART_GAP)) { PlayerCard(player, race = onPage.mode?.rules?.lastStanding != true) }
+                    // Only a race is timed, and a mode with no home brings no pawns there.
+                    val mode = onPage.mode
+                    Box(modifier = Modifier.padding(top = PART_GAP)) {
+                        PlayerCard(player, race = mode == null || mode.ranking == LeaderboardRanking.FEWEST_TURNS, home = mode?.rules?.lastStanding != true)
+                    }
                 }
             }
         }
@@ -101,7 +105,7 @@ private fun emptyText(mode: GameMode?, playerCount: Int?): String {
 }
 
 @Composable
-private fun PlayerCard(player: PlayerStatistics, race: Boolean) {
+private fun PlayerCard(player: PlayerStatistics, race: Boolean, home: Boolean) {
     val totals: RecordTotals = player.totals
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -120,7 +124,7 @@ private fun PlayerCard(player: PlayerStatistics, race: Boolean) {
             if (race) Figure(stringResource(Res.string.stats_fewest_turns), totals.fewestTurnsToWin?.toString() ?: stringResource(Res.string.stats_none))
             Figure(stringResource(Res.string.stats_captures), totals.captures.toString())
             Figure(stringResource(Res.string.stats_times_captured), totals.timesCaptured.toString())
-            if (race) Figure(stringResource(Res.string.stats_pawns_home), totals.pawnsHome.toString())
+            if (home) Figure(stringResource(Res.string.stats_pawns_home), totals.pawnsHome.toString())
         }
     }
 }

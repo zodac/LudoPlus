@@ -314,7 +314,7 @@ class GameViewModel(
                     teams = setup.teams,
                     partnerCaptures = setup.partnerCaptures,
                     rollForPartners = setup.rollForPartners,
-                ).withHouseRules(setup.playedHouseRules),
+                ).withHouseRules(setup.playedHouseRules).withPawns(setup.playedPawns),
                 // Drawn only where the rules need it.
                 seed = if (mode.rules.hasChances) random.nextLong() else 0,
             ),

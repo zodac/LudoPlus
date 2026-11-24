@@ -6,7 +6,7 @@ import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.mode_chaos
 import net.zodac.ludoplus.resources.mode_haunted_house
 import net.zodac.ludoplus.resources.mode_portals
-import net.zodac.ludoplus.resources.mode_quick
+import net.zodac.ludoplus.resources.mode_colour_rush
 import net.zodac.ludoplus.resources.mode_survival
 import net.zodac.ludoplus.resources.mode_two_dice
 import net.zodac.ludoplus.resources.rules_board_1
@@ -34,6 +34,7 @@ import net.zodac.ludoplus.resources.rules_house_rolling_tab
 import net.zodac.ludoplus.resources.rules_house_rolling_title
 import net.zodac.ludoplus.resources.rules_house_rules_1
 import net.zodac.ludoplus.resources.rules_house_rules_2
+import net.zodac.ludoplus.resources.rules_house_rules_pawns
 import net.zodac.ludoplus.resources.rules_house_rules_tab
 import net.zodac.ludoplus.resources.rules_house_rules_title
 import net.zodac.ludoplus.resources.rules_house_yard_tab
@@ -47,7 +48,10 @@ import net.zodac.ludoplus.resources.rules_modes_records
 import net.zodac.ludoplus.resources.rules_portals_1
 import net.zodac.ludoplus.resources.rules_portals_2
 import net.zodac.ludoplus.resources.rules_portals_3
-import net.zodac.ludoplus.resources.rules_quick_1
+import net.zodac.ludoplus.resources.rules_colour_rush_1
+import net.zodac.ludoplus.resources.rules_colour_rush_2
+import net.zodac.ludoplus.resources.rules_colour_rush_3
+import net.zodac.ludoplus.resources.rules_colour_rush_records
 import net.zodac.ludoplus.resources.rules_survival_1
 import net.zodac.ludoplus.resources.rules_survival_2
 import net.zodac.ludoplus.resources.rules_survival_3
@@ -136,7 +140,7 @@ private val GAMEPLAY = RulesGroup(
 private val HOUSE_RULES = RulesGroup(
     Res.string.rules_group_house_rules,
     listOf(
-        RulesPage(Res.string.rules_house_rules_title, Res.string.rules_house_rules_tab, texts(Res.string.rules_house_rules_1, Res.string.rules_house_rules_2)),
+        RulesPage(Res.string.rules_house_rules_title, Res.string.rules_house_rules_tab, texts(Res.string.rules_house_rules_1, Res.string.rules_house_rules_2, Res.string.rules_house_rules_pawns)),
         RulesPage(
             Res.string.rules_house_rolling_title,
             Res.string.rules_house_rolling_tab,
@@ -159,7 +163,11 @@ private val HOUSE_RULES = RulesGroup(
 private val GAME_MODES = RulesGroup(
     Res.string.rules_group_modes,
     listOf(
-        RulesPage(Res.string.mode_quick, Res.string.mode_quick, texts(Res.string.rules_quick_1, Res.string.rules_modes_records)),
+        RulesPage(
+            Res.string.mode_colour_rush,
+            Res.string.mode_colour_rush,
+            texts(Res.string.rules_colour_rush_1, Res.string.rules_colour_rush_2, Res.string.rules_colour_rush_3, Res.string.rules_colour_rush_records),
+        ),
         RulesPage(
             Res.string.mode_two_dice,
             Res.string.mode_two_dice,

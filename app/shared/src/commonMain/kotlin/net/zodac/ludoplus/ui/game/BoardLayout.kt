@@ -49,18 +49,26 @@ sealed interface BoardLayout {
     fun yardSpot(seat: Int, slot: Int): Offset
 
     /**
-     * Where [seat]'s pawn [pawn] waits in its yard, of a game of [pawns] each: its own spot, or with two pawns, opposite
-     * corners (the first spot and the last), so the pair sits balanced in the yard's four. More than four have spots
-     * of their own ([crowdedYardSpot]), smaller.
+     * Where [seat]'s pawn [pawn] waits in its yard, of a game of [pawns] each: its own spot; alone, the yard's middle; with two pawns, opposite
+     * corners (the first spot and the last), so the pair sits balanced in the yard's four; three make a triangle
+     * ([trioYardSpot]). More than four have spots of their own ([crowdedYardSpot]), smaller.
      */
     fun yardSpotOf(seat: Int, pawn: Int, pawns: Int): Offset = when {
-        pawns > YARD_SPOTS -> crowdedYardSpot(seat, pawn)
+        pawns > YARD_SPOTS -> crowdedYardSpot(seat, pawn, pawns)
+        pawns == 3 -> trioYardSpot(seat, pawn)
         pawns == 2 -> yardSpot(seat, pawn * 3)
+        pawns == 1 -> loneYardSpot(seat)
         else -> yardSpot(seat, pawn)
     }
 
-    /** The centre of spot [slot] (0-5) of [seat]'s yard laid out for six. */
-    fun crowdedYardSpot(seat: Int, slot: Int): Offset
+    /** The middle of [seat]'s yard, where a lone pawn waits. */
+    fun loneYardSpot(seat: Int): Offset
+
+    /** The centre of spot [slot] (0-2) of [seat]'s yard laid out for three, upright in every yard. */
+    fun trioYardSpot(seat: Int, slot: Int): Offset
+
+    /** The centre of spot [slot] of [seat]'s yard laid out for [pawns], five or six. */
+    fun crowdedYardSpot(seat: Int, slot: Int, pawns: Int): Offset
 
     /** How big a spot is drawn in a yard of [pawns], across from its centre. */
     fun yardSpotRadiusOf(pawns: Int): Float = if (pawns > YARD_SPOTS) yardSpotRadius * CROWDED_SPOT_SHARE else yardSpotRadius
@@ -77,18 +85,21 @@ sealed interface BoardLayout {
     /** The corners of [seat]'s part of home, in the centre: its side is the one its home column joins. */
     fun homeArea(seat: Int): List<Offset>
 
-    /** Where [seat]'s pawn [slot] (0-3) stands once home: each on a spot of its own in its part of home. */
-    fun homeSpot(seat: Int, slot: Int): Offset
+    /** Where [seat]'s pawn [slot] stands once home, of a game of [pawns] each: each on a spot of its own in its part of home. */
+    fun homeSpot(seat: Int, slot: Int, pawns: Int = YARD_SPOTS): Offset
+
+    /** How big a pawn home is drawn, of a game of [pawns] each. */
+    fun homePawnRadiusOf(pawns: Int): Float = if (pawns > YARD_SPOTS) HOME_PAWN_RADIUS * CROWDED_HOME_SHARE else HOME_PAWN_RADIUS
 
     /** The box round home, the whole centre. */
     val homeBounds: Rect
 
-    /** The centre of where a pawn of [seat] at [position] stands ([slot] places a yard or home pawn). */
-    fun centreOf(seat: Int, position: PawnPosition, slot: Int): Offset = when (position) {
-        PawnPosition.Yard, PawnPosition.Out -> yardSpot(seat, slot)
+    /** The centre of where a pawn of [seat] at [position] stands ([slot], of [pawns] each, places a yard or home pawn). */
+    fun centreOf(seat: Int, position: PawnPosition, slot: Int, pawns: Int = YARD_SPOTS): Offset = when (position) {
+        PawnPosition.Yard, PawnPosition.Out -> yardSpotOf(seat, slot, pawns)
         is PawnPosition.Track -> trackSquare((geometry.startSquare(seat) + position.steps) % geometry.trackLength).centre
         is PawnPosition.HomeColumn -> homeColumnSquare(seat, position.index).centre
-        PawnPosition.Home -> homeSpot(seat, slot)
+        PawnPosition.Home -> homeSpot(seat, slot, pawns)
     }
 
     companion object {
@@ -97,6 +108,9 @@ sealed interface BoardLayout {
         /** How much smaller the spots of a yard of six are than of four, and how much of one its pawn fills. */
         private const val CROWDED_SPOT_SHARE = 0.86f
         private const val CROWDED_PAWN_SHARE = 0.72f
+
+        /** How much smaller five or six pawns home are than four. */
+        private const val CROWDED_HOME_SHARE = 0.75f
 
         /** The layout that draws [geometry]: an endless board's squares lie where the same board's with a home do. */
         fun of(geometry: BoardGeometry): BoardLayout = geometry.copy(endless = false).let { board ->
@@ -154,6 +168,12 @@ object ClassicBoardLayout : BoardLayout {
     private const val CROWDED_ACROSS = 1.28f
     private const val CROWDED_DOWN = 0.95f
 
+    /** How far into its triangle a line of pawns home stands, and how far apart they are: up to four, then five or six. */
+    private const val HOME_IN = 6.4f
+    private const val HOME_SPACING = 0.5f
+    private const val CROWDED_HOME_IN = 6.32f
+    private const val CROWDED_HOME_SPACING = 0.36f
+
     /** How many quarters clockwise seat 0's part is turned from the top-left corner it's set out in: to the bottom left. */
     private const val SEAT_0_TURN = 3
 
@@ -193,9 +213,17 @@ object ClassicBoardLayout : BoardLayout {
 
     override fun yardSpot(seat: Int, slot: Int): Offset = SEAT_0_YARD_SPOTS[slot].turned(seat)
 
-    /** Two rows of three, upright in every yard. */
-    override fun crowdedYardSpot(seat: Int, slot: Int): Offset =
-        yardOrigin(seat).let { Offset(it.column + YARD_SIZE / 2f, it.row + YARD_SIZE / 2f) } + Offset((slot % 3 - 1) * CROWDED_ACROSS, (slot / 3 * 2 - 1) * CROWDED_DOWN)
+    override fun loneYardSpot(seat: Int): Offset = yardOrigin(seat).let { Offset(it.column + YARD_SIZE / 2f, it.row + YARD_SIZE / 2f) }
+
+    /** One above two. */
+    override fun trioYardSpot(seat: Int, slot: Int): Offset = loneYardSpot(seat) + listOf(Offset(0f, -1f), Offset(-1f, 0.9f), Offset(1f, 0.9f))[slot]
+
+    /** Two rows of three, upright in every yard; the second of five has two. */
+    override fun crowdedYardSpot(seat: Int, slot: Int, pawns: Int): Offset {
+        val second = slot / 3
+        val across = slot % 3 - if (second == 1) (pawns - 3 - 1) / 2f else 1f
+        return loneYardSpot(seat) + Offset(across * CROWDED_ACROSS, (second * 2 - 1) * CROWDED_DOWN)
+    }
 
     /** The three corners of [seat]'s triangle of home, in the centre: its base on the side its home column joins. */
     fun homeTriangle(seat: Int): List<Offset> =
@@ -204,12 +232,13 @@ object ClassicBoardLayout : BoardLayout {
     override fun homeArea(seat: Int): List<Offset> = homeTriangle(seat)
 
     /**
-     * Seat 0's spots for pawns that are home: in a line along its triangle's base, close together. In a line, not a
+     * In a line along its triangle's base, close together, about its middle. In a line, not a
      * block, so the upright pawns never stand in front of one another whichever way a seat's triangle points.
      */
-    private val SEAT_0_HOME_SPOTS = listOf(Offset(6.4f, 6.75f), Offset(6.4f, 7.25f), Offset(6.4f, 7.75f), Offset(6.4f, 8.25f))
-
-    override fun homeSpot(seat: Int, slot: Int): Offset = SEAT_0_HOME_SPOTS[slot].turned(seat)
+    override fun homeSpot(seat: Int, slot: Int, pawns: Int): Offset {
+        val (into, apart) = if (pawns > YARD_SPOTS) CROWDED_HOME_IN to CROWDED_HOME_SPACING else HOME_IN to HOME_SPACING
+        return Offset(into, CENTRE + (slot - (pawns - 1) / 2f) * apart).turned(seat)
+    }
 
     private fun square(left: Float, top: Float, side: Float) =
         listOf(Offset(left, top), Offset(left + side, top), Offset(left + side, top + side), Offset(left, top + side))
@@ -368,9 +397,18 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
     override fun yardSpotRadiusOf(pawns: Int): Float =
         super.yardSpotRadiusOf(pawns).let { if (pawns > YARD_SPOTS) min(it, courtRadius / CROWDED_RING_RADII) else it }
 
-    /** Six in a ring about the yard's widest circle, as wide as its court takes. */
-    override fun crowdedYardSpot(seat: Int, slot: Int): Offset {
-        val angle = PI / 6 + slot * PI / 3
+    override fun loneYardSpot(seat: Int): Offset = yardCircles[seat].first
+
+    /** In a ring about the yard's widest circle, one at the top. */
+    override fun trioYardSpot(seat: Int, slot: Int): Offset {
+        val (centre, radius) = yardCircles[seat]
+        val angle = -PI / 2 + slot * 2 * PI / 3
+        return centre + Offset(cos(angle).toFloat(), sin(angle).toFloat()) * (radius * SPOT_SPREAD)
+    }
+
+    /** In a ring about the yard's widest circle, as wide as its court takes. */
+    override fun crowdedYardSpot(seat: Int, slot: Int, pawns: Int): Offset {
+        val angle = (if (pawns == 6) PI / 6 else -PI / 2) + slot * 2 * PI / pawns
         return yardCircles[seat].first + Offset(cos(angle).toFloat(), sin(angle).toFloat()) * (courtRadius - yardSpotRadiusOf(YARD_SPOTS + 1))
     }
 
@@ -387,10 +425,15 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
     }
 
     /** Along the side its home column joins, as on the classic board; the three-seat board's homes have room for a block. */
-    override fun homeSpot(seat: Int, slot: Int): Offset = if (hexagon) {
-        point(seat, armStart * HEXAGON_HOME_DEPTH + (slot / 2 * 2 - 1) * HEXAGON_HOME_SPREAD_OUT, (slot % 2 * 2 - 1) * HEXAGON_HOME_SPREAD_ACROSS)
-    } else {
-        point(seat, armStart - HOME_INSET, (slot - 1.5) * HOME_SPACING)
+    override fun homeSpot(seat: Int, slot: Int, pawns: Int): Offset = when {
+        hexagon && pawns > YARD_SPOTS ->
+            point(seat, armStart * HEXAGON_HOME_DEPTH + (slot / 3 * 2 - 1) * HEXAGON_HOME_SPREAD_OUT, (slot % 3 - if (slot / 3 == 1) (pawns - 4) / 2.0 else 1.0) * HEXAGON_HOME_SPREAD_ACROSS)
+        hexagon && pawns == 1 -> point(seat, armStart * HEXAGON_HOME_DEPTH, 0.0)
+        // The last of three on its own in its row's middle.
+        hexagon && pawns == 3 && slot == 2 -> point(seat, armStart * HEXAGON_HOME_DEPTH + HEXAGON_HOME_SPREAD_OUT, 0.0)
+        hexagon -> point(seat, armStart * HEXAGON_HOME_DEPTH + (slot / 2 * 2 - 1) * HEXAGON_HOME_SPREAD_OUT, (slot % 2 * 2 - 1) * HEXAGON_HOME_SPREAD_ACROSS)
+        pawns > YARD_SPOTS -> point(seat, armStart - CROWDED_HOME_INSET, (slot - (pawns - 1) / 2.0) * CROWDED_HOME_SPACING)
+        else -> point(seat, armStart - HOME_INSET, (slot - (pawns - 1) / 2.0) * HOME_SPACING)
     }
 
     override val homeBounds: Rect = (0..<seats).flatMap { homeArea(it) }.let { points ->
@@ -418,6 +461,8 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
         const val CROWDED_RING_RADII = 3.05f
         const val HOME_INSET = 0.4
         const val HOME_SPACING = 0.5
+        const val CROWDED_HOME_INSET = 0.32
+        const val CROWDED_HOME_SPACING = 0.36
         const val HEXAGON_HOME_DEPTH = 0.6
         const val HEXAGON_HOME_SPREAD_OUT = 0.42
         const val HEXAGON_HOME_SPREAD_ACROSS = 0.48

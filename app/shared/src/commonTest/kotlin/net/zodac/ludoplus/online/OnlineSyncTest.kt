@@ -292,14 +292,14 @@ class OnlineSyncTest {
     @Test
     fun `wins played signed out are sent on signing in - the fastest of them`() = runTest {
         val settings = OnlineSettingsRepository(InMemoryPreferences())
-        val wins = SyncWins(Win(GameMode.QUICK, 3, 25, 20L))
+        val wins = SyncWins(Win(GameMode.PORTALS, 3, 25, 20L))
         val store = InMemoryAchievementStore(state())
         sync(SyncServices("ann"), store, settings, wins = wins).reconcile()
 
-        wins.wins += listOf(Win(GameMode.QUICK, 3, 24, 40L), Win(GameMode.QUICK, 3, 21, 50L), Win(GameMode.QUICK, 3, 23, 60L))
+        wins.wins += listOf(Win(GameMode.PORTALS, 3, 24, 40L), Win(GameMode.PORTALS, 3, 21, 50L), Win(GameMode.PORTALS, 3, 23, 60L))
         val again = SyncServices("ann")
         sync(again, store, settings, wins = wins).reconcile()
-        assertEquals(listOf("quick_3p" to 21L), again.posted)
+        assertEquals(listOf("portals_3p" to 21L), again.posted)
     }
 
     @Test

@@ -45,6 +45,8 @@ data class GameState(
     val justLost: List<Int> = emptyList(),
     /** How many turns have ended since sudden death came to its second stage, which its last comes by ([Cataclysm]). */
     val suddenDeathTurns: Int = 0,
+    /** Where the rules claim squares ([GameRules.claims]), the player each claimed one is, by its absolute track square. */
+    val claimed: Map<Int, Int> = emptyMap(),
     /** What the power-ups', ghosts', and lost squares' chances are drawn from next, so that a game plays on the same wherever it's kept. */
     val seed: Long = 0,
     /** What the last action did, for the screen to show and say. Null before the first roll. */
@@ -134,12 +136,33 @@ data class GameState(
         .sortedBy { (_, team) -> team.maxOf(knockedOut::indexOf) }
         .map { it.key }
 
+    /**
+     * The absolute track square a pawn of [player] with [progress] can claim, where squares are ([GameRules.claims]): null
+     * off the track, and on a start or star square.
+     */
+    fun claimableSquare(player: Int, progress: Int): Int? {
+        if (!rules.claims || progress !in 0..<board.trackSteps) return null
+        return board.trackSquare(players[player].seat, progress).takeUnless(board::isSafe)
+    }
+
+    /** The most squares in a row [player] has claimed, round the whole track, start and star squares passed over. */
+    fun longestRunOf(player: Int): Int {
+        val mine = (0..<board.trackLength).filterNot(board::isSafe).map { claimed[it] == player }
+        if (mine.all { it }) return mine.size
+        var run = 0
+        // Twice round, for a run over the end of the numbering.
+        return (mine + mine).maxOf { held -> run = if (held) run + 1 else 0; run }
+    }
+
+    /** How many squares [player] has claimed. */
+    fun squaresOf(player: Int): Int = claimed.count { it.value == player }
+
     /** How far [player]'s pawns have come: each one's steps from its yard, added up. */
     fun stepsOf(player: Int): Int = players[player].pawns.sumOf { it - PawnPosition.YARD_PROGRESS }
 
     /**
      * Each player's rank as the game stands, 1 for first, by index: their place once placed ([placeOf]), and after those
-     * placed, the most pawns left first where the last standing wins, or else the furthest along ([stepsOf]). A team's
+     * placed, the most pawns left first where the last standing wins, the most squares where they're claimed, or else the furthest along ([stepsOf]). A team's
      * players count together and share its rank, and a tie shares one, the next rank down left out. Null while everyone
      * is level.
      */
@@ -147,11 +170,18 @@ data class GameState(
         val placedFirst = finishingOrder.map(rules::teamOf).distinct().size
         val score = players.indices.groupBy(rules::teamOf)
             .filterValues { team -> placeOf(team.first()) == null }
-            .mapValues { (_, team) -> team.sumOf { if (rules.lastStanding) players[it].pawnsLeft else stepsOf(it) } }
+            .mapValues { (_, team) -> team.sumOf { scoreOf(it) } }
         val ranks = players.indices.map { player ->
             placeOf(player) ?: (placedFirst + 1 + score.values.count { it > score.getValue(rules.teamOf(player)) })
         }
         return ranks.takeIf { it.distinct().size > 1 }
+    }
+
+    /** What [player] is ranked by as the game stands ([ranks]). */
+    private fun scoreOf(player: Int): Int = when {
+        rules.lastStanding -> players[player].pawnsLeft
+        rules.claims -> squaresOf(player)
+        else -> stepsOf(player)
     }
 
     /** [player]'s partners, by index: none in a game without teams. */

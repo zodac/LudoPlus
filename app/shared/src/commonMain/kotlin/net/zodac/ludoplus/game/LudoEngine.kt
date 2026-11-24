@@ -261,7 +261,8 @@ object LudoEngine {
      * the game; otherwise play passes on. A run of roll-again rolls carries on through a roll earned another way.
      *
      * A player with every pawn home is placed then, or in a team game with their team once every partner's are too. Where
-     * the last standing wins, the game ends with one team left. A power-up the pawn ends on is taken ([PowerUps.take]); a Swap's
+     * the last standing wins, the game ends with one team left; where squares are claimed, the pawn may claim the one it
+     * ends on, and the game ends with the last of them, or the first team home. A power-up the pawn ends on is taken ([PowerUps.take]); a Swap's
      * is with [swap], or nobody.
      */
     fun move(state: GameState, pawn: Int, owner: Int? = null, die: Int? = null, swap: PawnRef? = null): GameState = move(state, pawn, owner, die, swap, chances = true)
@@ -287,7 +288,8 @@ object LudoEngine {
         val endedAt = players[whose].pawns[pawn]
         val finished = players[whose].isFinished(board)
         val knockedOut = captures.map { it.player }.distinct().filter { players[it].pawnsLeft == 0 }
-        var next = taken.copy(phase = TurnPhase.AwaitingRoll, yardTriesUsed = 0, knockedOut = state.knockedOut + knockedOut)
+        var next = claim(taken, whose, pawn, captured = captures.isNotEmpty())
+            .copy(phase = TurnPhase.AwaitingRoll, yardTriesUsed = 0, knockedOut = state.knockedOut + knockedOut)
         if (rules.lastStanding) {
             val out = next.teamsOut()
             val standing = players.indices.map(rules::teamOf).distinct() - out.toSet()
@@ -305,12 +307,21 @@ object LudoEngine {
         // A team is placed once all of it is home, its players together; a player alone is a team of one.
         val team = rules.teamOf(whose)
         val teamHome = finished && players.indices.filter { rules.teamOf(it) == team }.all { players[it].isFinished(board) }
+        if (rules.claims && (teamHome || next.claimed.size == board.claimableSquares)) {
+            return next.copy(
+                finishingOrder = placedBy(next, players.indices.toList(), next::squaresOf, next::stepsOf),
+                phase = TurnPhase.Finished,
+                rollAgainRun = 0,
+                rollingAgain = false,
+                lastEvent = GameEvent.Moved(player, used, move, finished, effect = effect),
+            )
+        }
         if (teamHome) next = next.copy(finishingOrder = next.finishingOrder + players.indices.filter { rules.teamOf(it) == team && it !in next.finishingOrder })
         val unfinishedTeams = next.players.indices.filter { it !in next.finishingOrder }.map(rules::teamOf).distinct()
         if (unfinishedTeams.size <= 1 || (teamHome && rules.stopAtFirstWinner)) {
             // The last team left takes last place; stopped at the first winner, the rest are placed as they stand.
             return next.copy(
-                finishingOrder = next.finishingOrder + placedAsTheyStand(next, next.players.indices.filter { it !in next.finishingOrder }),
+                finishingOrder = next.finishingOrder + placedBy(next, next.players.indices.filter { it !in next.finishingOrder }, next::stepsOf),
                 phase = TurnPhase.Finished,
                 rollAgainRun = 0,
                 rollingAgain = false,
@@ -387,16 +398,26 @@ object LudoEngine {
     }
 
     /**
-     * [unfinished] in the order they're placed when the game ends with them still racing, team by team: furthest along
-     * first (each pawn's steps from its yard added up, a team's together), and a tie by who plays sooner after the
-     * current player.
+     * [state] with the square [owner]'s pawn [pawn] has come to rest on claimed for [owner], where squares are: if it's
+     * nobody's, or the move [captured] there. As it is off the track, and on a start or star square.
      */
-    private fun placedAsTheyStand(state: GameState, unfinished: List<Int>): List<Int> {
+    private fun claim(state: GameState, owner: Int, pawn: Int, captured: Boolean): GameState {
+        val square = state.claimableSquare(owner, state.players[owner].pawns[pawn]) ?: return state
+        return if (captured || square !in state.claimed) state.copy(claimed = state.claimed + (square to owner)) else state
+    }
+
+    /**
+     * [unplaced] in the order they're placed when the game ends with them so, team by team: the most first by each of
+     * [scores] in turn (a team's added up), and a tie by who plays sooner after the current player. How far each has come
+     * is each pawn's steps from its yard added up.
+     */
+    private fun placedBy(state: GameState, unplaced: List<Int>, vararg scores: (player: Int) -> Int): List<Int> {
         val count = state.players.size
         val rules = state.rules
         fun after(player: Int) = (player - state.current + count) % count
-        return unfinished.groupBy(rules::teamOf).values
-            .sortedWith(compareByDescending<List<Int>> { team -> team.sumOf(state::stepsOf) }.thenBy { team -> team.minOf(::after) })
+        val most = scores.fold(compareBy<List<Int>> { 0 }) { order, score -> order.thenByDescending { team -> team.sumOf(score) } }
+        return unplaced.groupBy(rules::teamOf).values
+            .sortedWith(most.thenBy { team -> team.minOf(::after) })
             .flatMap { team -> team.sortedBy(::after) }
     }
 

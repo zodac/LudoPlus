@@ -291,6 +291,8 @@ class ModifierSetting(
     val valueLabels: List<String> = emptyList(),
     val selectedValue: Int = 0,
     val onValueSelect: (Int) -> Unit = {},
+    /** What a screen reader says for each of [valueLabels], where the label alone isn't enough. */
+    val spokenValueLabels: List<String> = valueLabels,
     val lockedNote: String? = null,
     /** Values counted up and down in steps instead of picked from [valueLabels], for more choices than a row of segments holds - one row each, in order. */
     val steppers: List<ModifierStepper> = emptyList(),
@@ -442,6 +444,7 @@ private fun ModifierRow(setting: ModifierSetting, onInvalidChange: (Boolean) -> 
                                 selected = if (custom?.active == true) -1 else setting.selectedValue,
                                 onSelect = { labelTaps++; setting.onValueSelect(it) },
                                 label = { setting.valueLabels[it] },
+                                spokenLabel = { setting.spokenValueLabels[it] },
                                 modifier = choiceModifier,
                                 enabled = unlocked,
                                 brandFont = true,

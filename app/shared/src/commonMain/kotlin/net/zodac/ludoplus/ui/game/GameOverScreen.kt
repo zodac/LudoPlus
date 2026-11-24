@@ -67,6 +67,7 @@ import net.zodac.ludoplus.resources.gameover_title
 import net.zodac.ludoplus.resources.gameover_tutorial_done
 import net.zodac.ludoplus.resources.gameover_tutorial_finished
 import net.zodac.ludoplus.resources.gameover_tutorial_new_game
+import net.zodac.ludoplus.resources.gameover_squares
 import net.zodac.ludoplus.resources.gameover_turns
 import net.zodac.ludoplus.resources.gameover_winner
 import net.zodac.ludoplus.ui.common.BrandBackdrop
@@ -218,7 +219,7 @@ fun GameOverScreen(
     }
 }
 
-/** What [player] did: their turns and captures, or, if they never finished, how many pawns they brought home; where the last standing wins, how many they had left, and their captures alone. */
+/** What [player] did: their turns and captures, or, if they never finished, how many pawns they brought home; where the last standing wins, how many they had left, and their captures alone; and where squares are claimed, theirs. */
 @Composable
 private fun resultLine(game: StartedGame, player: Int): String {
     val side = game.state.players[player]
@@ -226,6 +227,8 @@ private fun resultLine(game: StartedGame, player: Int): String {
     val total = game.state.rules.pawnsPerPlayer
     val first = if (game.state.rules.lastStanding) {
         pluralStringResource(Res.plurals.gameover_pawns_left, total, side.pawnsLeft, total)
+    } else if (game.state.rules.claims) {
+        game.state.squaresOf(player).let { pluralStringResource(Res.plurals.gameover_squares, it, it) }
     } else if (side.isFinished(board)) {
         pluralStringResource(Res.plurals.gameover_turns, side.turns, side.turns)
     } else {

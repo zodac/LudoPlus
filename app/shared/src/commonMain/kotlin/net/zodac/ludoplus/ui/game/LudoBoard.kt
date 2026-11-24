@@ -130,6 +130,8 @@ fun LudoBoard(
     val currentState by rememberUpdatedState(state)
     val currentOnMove by rememberUpdatedState(onMove)
     val currentSwapping by rememberUpdatedState(swapping)
+    // The squares claimed as they're shown: as they were, while a move plays out.
+    val shownClaims = remember { arrayOf(state.claimed) }
     // The portal being pressed, and the power-up whose popup is up.
     var pressedPortal by remember { mutableStateOf<Portal?>(null) }
     var tip by remember { mutableStateOf<PowerUpTip?>(null) }
@@ -144,11 +146,14 @@ fun LudoBoard(
     Box(modifier = modifier.aspectRatio(1f)) {
         // All that's drawn, faded together while a portal is pressed: read by the layer alone, so a press redraws none of it.
         Box(modifier = Modifier.matchParentSize().graphicsLayer { alpha = if (pressedPortal == null) 1f else PORTAL_PRESSED_FADE }) {
-            // The board, painted once (off the main thread) into an image for its style, seats' colours, pawn count, and size,
+            // The board, painted once (off the main thread) into an image for its style, seats' colours, pawn count, squares claimed, and size,
             // on a layer of its own: a frame of a move or a turn's ring never draws it again.
             val lastStanding = state.rules.lastStanding
             val stage = state.suddenDeathStage
-            val parts = if (lastStanding) BoardParts(starts = stage < 1, stars = stage < 2, homes = false) else BoardParts()
+            // The squares claimed: painted again as one changes hands, once the pawn that claims it has landed.
+            if (motion.moving == null) shownClaims[0] = state.claimed
+            val claims = shownClaims[0].mapValues { (_, player) -> pawnColours[player] }
+            val parts = if (lastStanding) BoardParts(starts = stage < 1, stars = stage < 2, homes = false) else BoardParts(claims = claims)
             // A last-standing yard's spots are its tally, drawn with the pawns.
             val spots = if (lastStanding) 0 else pawns
             val surface = BoardSurface(theme.board, layout, colours, spots, parts)
@@ -478,10 +483,10 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
         listOf(layout.yardSpotOf(seat, move.pawn, state.rules.pawnsPerPlayer), layout.centreOf(seat, PawnPosition.of(0, state.board), 0))
     } else {
         // On to where the roll takes it, over any lost squares, and where that's onto a shield, back to where it settles.
-        ((move.from..move.rolledTo) - move.skipped.toSet() + (move.bouncedFrom?.let { it - 1 downTo move.to } ?: IntRange.EMPTY)).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn) }
+        ((move.from..move.rolledTo) - move.skipped.toSet() + (move.bouncedFrom?.let { it - 1 downTo move.to } ?: IntRange.EMPTY)).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn, state.rules.pawnsPerPlayer) }
     }
     val effect = event.effect
-    fun centre(player: Int, pawn: Int, progress: Int) = layout.centreOf(state.players[player].seat, PawnPosition.of(progress, state.board), pawn)
+    fun centre(player: Int, pawn: Int, progress: Int) = layout.centreOf(state.players[player].seat, PawnPosition.of(progress, state.board), pawn, state.rules.pawnsPerPlayer)
     val endedAt = centre(owner, move.pawn, event.endedAt)
     val moveEnd = centre(owner, move.pawn, move.to)
     val home = event.endedAt == state.board.homeProgress
@@ -501,7 +506,7 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
         pawn = move.pawn,
         path = path,
         hops = !fromYard,
-        landingRadius = if (home) HOME_PAWN_RADIUS else PAWN_RADIUS,
+        landingRadius = if (home) layout.homePawnRadiusOf(state.rules.pawnsPerPlayer) else PAWN_RADIUS,
         home = home,
         sent = sent,
         totalMillis = travelMillis(move, effect) + afterLandingMillis(move, state.board.homeProgress, effect),

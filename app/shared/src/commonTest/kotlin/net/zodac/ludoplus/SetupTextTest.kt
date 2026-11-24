@@ -26,6 +26,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import net.zodac.ludoplus.data.records.GameRecordRepository
 import net.zodac.ludoplus.data.records.InMemoryGameResultDao
 import net.zodac.ludoplus.model.HouseRule
@@ -171,6 +172,37 @@ class SetupTextTest : UiTest() {
         compose.waitForIdle()
         compose.onNodeWithText("1 enabled").assertExists()
         compose.onNodeWithText("Off the Leaderboard and Statistics, and only its own achievements").assertExists()
+    }
+
+    @Test
+    fun `the Pawns house rule - off by default - then one to six each but the mode's own number - kept for another mode`() = uiTest(SCREEN) {
+        val viewModel = gameViewModel(records = GameRecordRepository(InMemoryGameResultDao(finishedGame = true)))
+        show(viewModel)
+        compose.onNodeWithText("House Rules").performScrollTo()
+        compose.onNode(hasContentDescription("House Rules") and hasClickAction()).performClick()
+        compose.waitForIdle()
+        compose.onNode(hasText("Pawns") and hasText("Each player has this many pawns.") and isToggleable()).assertIsOff().performClick()
+        compose.waitForIdle()
+        assertEquals(1, viewModel.setupForm.setup.value.playedPawns)
+        // Classic's four aren't a choice.
+        compose.onAllNodesWithContentDescription("4 pawns each").assertCountEquals(0)
+        compose.onNodeWithContentDescription("1 pawn each").assertExists()
+        compose.onNodeWithContentDescription("6 pawns each").performClick()
+        compose.waitForIdle()
+        assertEquals(6, viewModel.setupForm.setup.value.playedPawns)
+        compose.onNodeWithText("Done").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("1 enabled").assertExists()
+        compose.onNodeWithText("Off the Leaderboard and Statistics, and only its own achievements").assertExists()
+        // Survival's own number: nothing to change there.
+        viewModel.setupForm.setGameMode(GameMode.SURVIVAL)
+        assertEquals(null, viewModel.setupForm.setup.value.playedPawns)
+        viewModel.setupForm.setGameMode(GameMode.PORTALS)
+        assertEquals(6, viewModel.setupForm.setup.value.playedPawns)
+        assertTrue(viewModel.startGame { "Player $it" })
+        val rules = checkNotNull(viewModel.game.value).state.rules
+        assertEquals(6, rules.pawnsPerPlayer)
+        assertTrue(rules.hasHouseRules)
     }
 
     @Test

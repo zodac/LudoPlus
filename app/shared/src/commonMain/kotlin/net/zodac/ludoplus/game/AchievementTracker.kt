@@ -171,6 +171,7 @@ class AchievementTracker(
         }
         for (caught in after.ghostMove?.caught.orEmpty()) if (caught.player == mySeat) sentBack(caught.pawn)
         if (after.players[mySeat].timesCaptured >= PUNCHING_BAG_CAPTURES) feats += Achievement.PUNCHING_BAG
+        if (after.claimed != before.claimed && after.longestRunOf(mySeat) >= COORDINATED_SQUARES) feats += Achievement.COLOUR_COORDINATED
         if (event is GameEvent.Moved && everyPlayerSharesASquare(after)) feats += Achievement.WERE_ALL_FRIENDS_HERE
         // A partner isn't an opponent: in a team game, they're racing for player 1's place too.
         val opponents = after.players.indices.filter { it != mySeat && !after.rules.arePartners(mySeat, it) }
@@ -392,7 +393,6 @@ class AchievementTracker(
         val me = after.players[mySeat]
         add(Achievement.FIRST_VICTORY)
         Achievement.entries.filterTo(this) { it.isModeWin && it.mode == after.mode }
-        if (me.turns <= BLINK_TURNS) add(Achievement.BLINK_AND_YOULL_MISS_IT)
         if (me.pawnsLeft >= SCRATCH_PAWNS) add(Achievement.BARELY_A_SCRATCH)
         if (me.timesHaunted == 0) add(Achievement.NOT_A_GHOST_OF_A_CHANCE)
         if (after.rules.houseRules.isNotEmpty() && after.rules.houseRules == HouseRule.entries.filter { it.appliesTo(after.mode.rules) }.toSet()) {
@@ -452,6 +452,7 @@ class AchievementTracker(
         const val NEAR_MISSES = 3
         const val LOCKED_OUT_TURNS = 5
         const val PUNCHING_BAG_CAPTURES = 15
+        const val COORDINATED_SQUARES = 8
         const val FULL_SPREAD_ROLLS = 6
         const val SIX_PACK_SIXES = 30
         const val DRY_SPELL_ROLLS = 30
@@ -464,7 +465,6 @@ class AchievementTracker(
         /** Five minutes of the game on screen (the maintainer, 2026-11-23). */
         const val SPEED_DEMON_MILLIS = 5 * 60 * 1_000L
         const val FULL_TABLE_OPPONENTS = 3
-        const val BLINK_TURNS = 25
         const val SCRATCH_PAWNS = 4
     }
 }

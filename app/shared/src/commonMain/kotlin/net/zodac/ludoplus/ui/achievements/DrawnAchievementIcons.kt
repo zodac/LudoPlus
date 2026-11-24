@@ -8,10 +8,12 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.unit.dp
+import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.ui.theme.CrystalTrophyCyan
 import net.zodac.ludoplus.ui.theme.CrystalTrophyIce
 import net.zodac.ludoplus.ui.theme.CrystalTrophyViolet
 import net.zodac.ludoplus.ui.theme.CrystalTrophyWhite
+import net.zodac.ludoplus.ui.theme.color
 
 // Achievement icons drawn for this app where Material Symbols has nothing that fits. Each is one colour, as a
 // Symbol is - the row or banner tints it like any other - with any detail inside cut out of the shape rather than
@@ -92,4 +94,29 @@ internal val CRYSTAL_TROPHY_ICON: ImageVector by lazy {
         )
         addPath(addPathNodes(SYMBOLS_TROPHY), fill = crystal)
     }
+}
+
+/** An icon on a 24-unit grid of squares [side] across with rounded corners, each at its top left in its player's colour. */
+private fun squaresIcon(name: String, side: Float, corner: Float, squares: List<Pair<Offset, PlayerColour>>): ImageVector =
+    ImageVector.Builder(name = name, defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f).apply {
+        for ((at, colour) in squares) addPath(addPathNodes(roundSquare(at.x, at.y, side, corner)), fill = SolidColor(colour.color))
+    }.build()
+
+private fun roundSquare(x: Float, y: Float, side: Float, corner: Float): String {
+    val edge = side - 2 * corner
+    return "M${x + corner},${y}h${edge}a$corner,$corner 0 0,1 $corner,${corner}v${edge}a$corner,$corner 0 0,1 ${-corner},${corner}" +
+        "h${-edge}a$corner,$corner 0 0,1 ${-corner},${-corner}v${-edge}a$corner,$corner 0 0,1 $corner,${-corner}Z"
+}
+
+/** Nine squares, all red but a blue and a yellow one. For Paint The Town Red, the win in Colour Rush. */
+internal val RED_SQUARES_ICON: ImageVector by lazy {
+    val others = mapOf(2 to PlayerColour.BLUE, 6 to PlayerColour.YELLOW)
+    squaresIcon("RedSquares", side = 6.6f, corner = 1f, (0..8).map { Offset(1.5f + it % 3 * 7.2f, 1.5f + it / 3 * 7.2f) to (others[it] ?: PlayerColour.RED) })
+}
+
+/** A corner of the track, its eight squares red, round four of the other players'. For Colour Coordinated, eight squares in a row. */
+internal val TRACK_CORNER_ICON: ImageVector by lazy {
+    val row = listOf(0 to 4, 0 to 3, 0 to 2, 0 to 1, 0 to 0, 1 to 0, 2 to 0, 3 to 0).map { it to PlayerColour.RED }
+    val others = listOf((2 to 2) to PlayerColour.GREEN, (3 to 2) to PlayerColour.YELLOW, (2 to 3) to PlayerColour.BLUE, (3 to 3) to PlayerColour.GREEN)
+    squaresIcon("TrackCorner", side = 4.05f, corner = 0.7f, (row + others).map { (at, colour) -> Offset(3.15f + at.first * 4.55f, 0.87f + at.second * 4.55f) to colour })
 }

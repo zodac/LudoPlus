@@ -79,7 +79,7 @@ and reported to the maintainer. Counters (games, wins, streaks, captures, rolls)
 
 | Mode | Own, and how often (a game) |
 | --- | --- |
-| Quick | Quick On The Draw (the win), Blink And You'll Miss It 1.8% (25 turns or fewer; a win's median is 34) |
+| Colour Rush | Paint The Town Red (the win), Colour Coordinated 9% with four (35% with two, 13% with three, 10% with six or eight) |
 | Two Dice | Double Or Nothing, Two Birds, Two Stones 12% |
 | Portals | Through The Looking Glass, There And Back Again 45% |
 | Survival | Last Pawn Standing, Barely A Scratch 3.3% (a sixth of wins) |
@@ -99,23 +99,17 @@ so it's kept out of none. A ghost's catch is nobody's, and a partner isn't one o
 Express Delivery is Classic's alone (the maintainer, 2026-11-24): Chaos's Swap had made it 28% there, after Portals' 40% and
 Two Dice's 84%. Its description says so.
 
-## Quick (a mode)
+## Colour Rush (a mode)
 
-Two pawns each, about half as long.
+Over as soon as the track is claimed, in about half of Classic's turns.
 
-| Kept out | Quick, against Classic |
+| Kept out | Colour Rush, against Classic |
 | --- | --- |
-| Full House | 8.2%, against 0.0%: two pawns in the column, not four |
-| Comeback Kid | 12.8%, against 0.5%: "all but one" is one pawn |
-| Defeat From The Jaws Of Victory | 14.8%, against 0.2%: and three pawns home is its own words |
-| Untouchable | 14.8%, against 0.8% |
-| Pacifist | 5.5%, against 0.0% |
-| My Favourite Spot | 9.5%, against 2.0%: two pawns on a square is Buddy System |
+| Clean Sweep | 5.0%, against 0.0%: few pawns are home by then |
 | Speed Demon | Half the game in the same five minutes |
-| One By One, The Great Escape | Two pawns, not the four their words say |
 
-**Easier:** Clean Sweep (2.3%, against 0.2%), Never Left Home (4.7%, against 0.7%), Pipped To The Post, All Hands On Deck,
-and the games-played and win counters (games end sooner).
+**Easier:** Never Left Home (4.1%, against 0.1%), and the games-played and win counters (games end sooner). **Harder:** what
+comes late in a race (Photo Finish, Pipped To The Post, Parting Shot, So Near, Yet So Far, Lap Of Honour).
 
 ## Two Dice (a mode)
 

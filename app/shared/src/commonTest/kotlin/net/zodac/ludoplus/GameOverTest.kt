@@ -66,6 +66,25 @@ class GameOverTest : UiTest() {
     }
 
     @Test
+    fun `Colour Rush's results are in order of squares - a player home or not`() = uiTest(TestScreen(411, 891)) {
+        val state = GameState.new(GameMode.COLOUR_RUSH, 4)
+        val over = finished.copy(
+            mode = GameMode.COLOUR_RUSH,
+            state = state.copy(
+                players = finished.state.players,
+                claimed = (0..<20).associateWith { 2 } + (20..<30).associateWith { 1 } + (30 to 0),
+                phase = TurnPhase.Finished,
+                finishingOrder = listOf(2, 1, 0, 3),
+            ),
+        )
+        showcase.show { CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) { LudoPlusTheme { GameOverScreen(over, onBackToMenu = {}, onPlayAgain = {}, onReviewBoard = {}, celebrate = false) } } }
+        compose.onNode(hasText("Winner") and hasText("Pip") and hasText("20 squares, 1 capture, 6 captured")).assertExists()
+        compose.onNode(hasText("2nd") and hasText("Gambit") and hasText("10 squares, 3 captures, 0 captured")).assertExists()
+        compose.onNode(hasText("3rd") and hasText("Alex") and hasText("1 square, 1 capture, 1 captured")).assertExists()
+        compose.onNode(hasText("4th") and hasText("Sam") and hasText("0 squares, 1 capture, 1 captured")).assertExists()
+    }
+
+    @Test
     fun `Survival's results say how long each player lasted and the pawns they had left`() = uiTest(TestScreen(411, 891)) {
         val x = -2
         val state = GameState.new(GameMode.SURVIVAL, 4)

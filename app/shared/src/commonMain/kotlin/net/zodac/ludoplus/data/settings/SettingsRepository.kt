@@ -21,6 +21,7 @@ import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.CustomMode
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
+import net.zodac.ludoplus.model.GameRules
 import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.ModePage
 import net.zodac.ludoplus.model.PlayerColour
@@ -90,6 +91,11 @@ class SettingsRepository(
 
         fun setHouseRules(houseRules: Set<HouseRule>) {
             prefs[HOUSE_RULES_KEY] = houseRules.map { it.id }.toSet()
+        }
+
+        /** How many pawns each the Pawns house rule has, or null while it's off. */
+        fun setPawns(pawns: Int?) {
+            if (pawns == null) prefs.remove(PAWNS_KEY) else prefs[PAWNS_KEY] = pawns
         }
 
         /** The custom mode New Game has picked, by id, or none for a built-in mode ([setGameMode]'s). */
@@ -187,6 +193,9 @@ class SettingsRepository(
 
         /** The house rules the setup form last had on: none until it's chosen, any this app doesn't know dropped. */
         val houseRules: Set<HouseRule> get() = prefs[HOUSE_RULES_KEY].orEmpty().mapNotNull { storedIdOf<HouseRule>(it) }.toSet()
+
+        /** How many pawns each the Pawns house rule last had: null for off, or for a number no game has. */
+        val pawns: Int? get() = prefs[PAWNS_KEY]?.takeIf { it in GameRules.PAWN_CHOICES }
 
         /** The player's custom modes, in the order they were made ([CustomModesJson]). */
         val customModes: List<CustomMode> get() = prefs[CUSTOM_MODES_KEY]?.let(CustomModesJson::decode).orEmpty()
@@ -309,6 +318,7 @@ class SettingsRepository(
         val PARTNER_CAPTURES_KEY = booleanPreferencesKey("partner_captures")
         val ROLL_FOR_PARTNERS_KEY = booleanPreferencesKey("roll_for_partners")
         val HOUSE_RULES_KEY = stringSetPreferencesKey("house_rules")
+        val PAWNS_KEY = intPreferencesKey("pawns")
         val CUSTOM_MODES_KEY = stringPreferencesKey("custom_modes")
         val CUSTOM_MODE_KEY = stringPreferencesKey("custom_mode")
 
@@ -349,6 +359,7 @@ class SettingsRepository(
                 listOf(playerNameKey(slot), playerTypeKey(slot), playerColourKey(slot), playerDifficultyKey(slot)).mapTo(this) { SyncedKey.Text(it) }
             }
             add(SyncedKey.Number(PLAYER_COUNT_KEY))
+            add(SyncedKey.Number(PAWNS_KEY))
             listOf(
                 PARTNER_CAPTURES_KEY, ROLL_FOR_PARTNERS_KEY, CONFIRM_BEFORE_LEAVING_GAME_KEY, STOP_AT_FIRST_WINNER_KEY, SOUND_ENABLED_KEY,
                 VIBRATION_ENABLED_KEY,

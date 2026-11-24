@@ -69,7 +69,8 @@ Robolectric test shares one process, so a test that opens the screen calls it fi
 - **Fixed colours** via `iconTintOrUnspecified`, rather than the row's tint:
     - every Easter Egg (Big Fan's red heart, Are You A Developer?'s cyan, Can't Wait To Get Going's red pawn, Midnight
         Run's moon). A new Easter Egg adds its case there;
-    - and the few whose point is a colour: Everything Everywhere's googly eye, and Completionist's crystal trophy.
+    - and the few whose point is a colour: Completionist's crystal trophy, and Colour Rush's squares (Paint The Town
+        Red's nine, Colour Coordinated's corner of the track).
 - When adding one, grep that the glyph is unused. `PlayConsoleExportTest` fails if two achievements draw the same.
 
 ## Achievement banners
