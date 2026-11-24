@@ -118,8 +118,8 @@ function every category calls, rather than copying it. Already shared:
 
 ## Heavy art: paint once, keep it off the frame
 
-- **The board** draws on a Canvas of its own under the pawns (`LudoBoard`), reading only the style and the seats'
-    colours, so its texture (up to about 1,200 flecks on Stone) is recorded once and not redrawn on a move's frames.
+- **The board** is a `PaintedSurface` under the pawns (`LudoBoard`): painted once, off the main thread, from only the style
+    and the seats' colours, so a style may hold nothing that changes, and its texture is never redrawn on a move's frames.
     Pawns are live, a few dozen paths each.
 - **Static, costly surfaces** elsewhere go through `drawCachedSurface(key) { ... }` (`Patterns.kt`). The key captures
     everything but size.

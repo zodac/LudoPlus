@@ -13,10 +13,15 @@ Each of these fixed a reported stutter. New work must keep them.
 
 - **Paint costly, unchanging surfaces once.**
     - `drawCachedSurface(key)` (`Patterns.kt`) paints once per key and size into an `ImageBitmap`, then stamps it. It's
-        an LRU of 128 and at most 48MB (~90KB each at die size, ~8MB for a phone-sized background), released when Android
+        an LRU of 192 and at most 48MB (~90KB each at die size, ~8MB for a phone-sized background), released when Android
         trims memory in the background (`LudoPlusApplication.onTrimMemory`). The key captures everything except size.
         Marble and Frosted cost 10x more
         when repainted every frame.
+    - **`PaintedSurface` paints it off the main thread** (2026-11-24, for the heavy boards), into the same images, and holds
+        the page cover until it's there, so no frame waits for it: the board, the Board tiles, and the menu logo's board.
+        A paint once begun is finished and kept even if its page has gone, so a two-frame warm-up pass still counts. The
+        app provides `LocalSurfacePainting`; without it (tests of one page) it paints as it's drawn. What it paints may
+        touch nothing that changes. `PaintedSurfaceTest` holds it.
 - **Hold art still where nobody sees it move.**
     - A tumbling face is frozen (`LocalArtFrozen`).
     - Off-screen Styles tiles get `LocalReduceMotion`.
@@ -32,7 +37,7 @@ Each of these fixed a reported stutter. New work must keep them.
     Used by the game's background, a move, a die's `PipShape.CUSTOM`, and Glitch. `BoundedArtTest` holds it.
 - **The Ludo board draws in four parts** (`LudoBoard`), so a pawn's move redraws only the move:
     - the board itself, painted once into an image per style, seats' colours, pawn count, size, and density
-        (`drawCachedSurface`), on a layer of its own;
+        (`PaintedSurface`, off the main thread), on a layer of its own;
     - the turn's yard ring, on a layer, drawn again as the turn passes;
     - the pawns standing still, on a layer, drawn again as a move starts and ends (the moving and captured pawns left out);
     - the move itself in `BoundedArt`, which alone reads the move's clock. The board doesn't recompose on a move's frames.
@@ -125,6 +130,17 @@ Desktop JVM, warm, in ms. These are relative only: compare within a run.
         (composition and the move's recording) 1.1 and ~3.5, now 0.87 and ~3.0.
     - A tumble's frames, animation phase: Classic 2.3, now 1.5; RGB Rainbow 2.3, now 1.2. Its p95 (a new face) is
         unchanged at ~3.6-4.5.
+- **Painting a board once, and 16 pawns** (2026-11-24, Robolectric, 1080px, median of 40 ms; nothing of a board's is on a
+    frame). Boards at 4 then 8 seats: Classic 1.1 and 2.4, Stone 2.5 and 6.6, Wood 7.3 and 13, Paper 9.7 and 34 (the
+    dearest); Circuit 4.2 and 11, Groovy 3.9 and 12, Obsidian 4.9 and 11, Comic 5.5 and 15, Candy 6.7 and 15, Bestagons 7.2
+    and 15, Disco 8.1 and 13, Patchwork 9.3 and 20, Meadow 12 and 24. Sixteen pawns: 0.8 to 1.5 for the first seven
+    families, 0.5 (Retro) to 1.9 (Cake, Frog) for the new.
+- **A heavy board's first frame** (2026-11-24, Robolectric, 411x891dp at 3x, whole-frame median of 9 ms, a blank page ~8-10):
+    - The slowest frame of a board opening, painted by its first frame and now off the main thread: 8 seats, Classic 18 and
+        12, Meadow 41 and 12, Paper 60 and 12; 4 seats, Paper 33 and 17, Meadow 31 and 14.
+    - The menu's logo, every redraw (it was drawn live, with no layer of its own): Meadow 18.8 and 9.4, Classic 6.6 and 5.7.
+    - The Board page's first frame 88 and 70, of which the pawn page's (no board art) is 54-63.
+    - Still pawns cost 0.7 (Frog) to nothing more than Classic's, so they aren't made images.
 - **Pages.** Styles opens at ~42-44 the first time after launch, then 16-24. A tile scrolling in costs ~0.6. Settings'
     first frame is ~26-30. A Rules tap frame is ~6-8.
 

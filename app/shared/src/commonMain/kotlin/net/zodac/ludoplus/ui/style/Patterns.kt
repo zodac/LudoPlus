@@ -15,13 +15,20 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import net.zodac.ludoplus.data.settings.MotionGroup
 import net.zodac.ludoplus.ui.common.LocalFramePaces
 import net.zodac.ludoplus.ui.common.ambientMotion
@@ -167,19 +174,61 @@ internal fun DrawScope.cachedSurface(key: Any, paint: DrawScope.() -> Unit): Ima
     val height = ceil(size.height).toInt()
     if (width <= 0 || height <= 0) return null
     val sized = SizedSurface(key, width, height)
-    val image = surfaceImages.remove(sized) ?: ImageBitmap(width, height).also { image ->
-        CanvasDrawScope().draw(this, layoutDirection, Canvas(image), Size(width.toFloat(), height.toFloat()), paint)
-        surfacesPainted++
-        surfaceBytes += sized.bytes
-    }
+    return keptSurface(sized) ?: paintSurface(sized, this, layoutDirection, paint).also { keepSurface(sized, it) }
+}
+
+/**
+ * [surface]'s image, [paint]ed on [painting] if it isn't kept already. Once begun it's painted to the end, and kept, even
+ * if the caller is cancelled; callers wanting the same one while it's being painted share it.
+ */
+internal suspend fun paintedSurface(
+    surface: SizedSurface,
+    painting: CoroutineContext,
+    density: Density,
+    direction: LayoutDirection,
+    paint: DrawScope.() -> Unit,
+): ImageBitmap {
+    keptSurface(surface)?.let { return it }
+    val image = surfacesInHand.getOrPut(surface) { CoroutineScope(painting).async { paintSurface(surface, density, direction, paint) } }.await()
+    return keptSurface(surface) ?: image
+}
+
+/** [surface] painted afresh: safe on any thread. */
+private fun paintSurface(surface: SizedSurface, density: Density, direction: LayoutDirection, paint: DrawScope.() -> Unit): ImageBitmap {
+    val image = ImageBitmap(surface.width, surface.height)
+    CanvasDrawScope().draw(density, direction, Canvas(image), Size(surface.width.toFloat(), surface.height.toFloat()), paint)
+    return image
+}
+
+/** [surface]'s image, if it's been painted and is still kept. */
+internal fun keptSurface(surface: SizedSurface): ImageBitmap? {
+    keepSurfacesPainted()
     // Re-added on every use, so the map runs least recently used first.
-    surfaceImages[sized] = image
+    val image = surfaceImages.remove(surface) ?: return null
+    surfaceImages[surface] = image
+    return image
+}
+
+/** Keeps every surface [paintedSurface] has finished since this was last called. One that failed is its caller's error. */
+@OptIn(ExperimentalCoroutinesApi::class)
+private fun keepSurfacesPainted() {
+    if (surfacesInHand.isEmpty()) return
+    val finished = surfacesInHand.filterValues { it.isCompleted }
+    for ((surface, painted) in finished) {
+        surfacesInHand.remove(surface)
+        if (painted.getCompletionExceptionOrNull() == null) keepSurface(surface, painted.getCompleted())
+    }
+}
+
+private fun keepSurface(surface: SizedSurface, image: ImageBitmap) {
+    surfacesPainted++
+    surfaceBytes += surface.bytes
+    surfaceImages[surface] = image
     while (surfaceImages.size > SURFACE_CACHE_SIZE || surfaceBytes > SURFACE_CACHE_BYTES) {
         val oldest = surfaceImages.keys.first()
         surfaceImages.remove(oldest)
         surfaceBytes -= oldest.bytes
     }
-    return image
 }
 
 /**
@@ -188,17 +237,21 @@ internal fun DrawScope.cachedSurface(key: Any, paint: DrawScope.() -> Unit): Ima
  */
 fun releaseCachedSurfaces() {
     surfaceImages.clear()
+    surfacesInHand.clear()
     surfaceBytes = 0
     starFields.clear()
 }
 
-// Only ever drawn (and released) on the main thread, so never shared between threads.
+// Only ever looked up, added to, and released on the main thread, so never shared between threads.
 private val surfaceImages = LinkedHashMap<SizedSurface, ImageBitmap>()
+
+// What paintedSurface is painting, off the main thread, or has painted and not kept yet. Main thread only, as above.
+private val surfacesInHand = HashMap<SizedSurface, Deferred<ImageBitmap>>()
 
 // The pixel memory of everything in surfaceImages.
 private var surfaceBytes = 0L
 
-private data class SizedSurface(val key: Any, val width: Int, val height: Int) {
+internal data class SizedSurface(val key: Any, val width: Int, val height: Int) {
     val bytes: Long get() = width.toLong() * height * BYTES_PER_PIXEL
 }
 
@@ -211,8 +264,8 @@ private var surfacesPainted = 0
 fun surfacesPaintedForTest(): Int = surfacesPainted
 
 // Every face of a die in several patterned styles, with room for another size (the Styles previews) - about 90KB apiece
-// at a phone's usual die size.
-private const val SURFACE_CACHE_SIZE = 128
+// at a phone's usual die size - and the Styles pages' board and pawn tiles, about 250KB apiece.
+private const val SURFACE_CACHE_SIZE = 192
 
 // And at most this much pixel memory: a whole background is many dice faces' worth (a phone-sized background ~8MB), and
 // each size it's drawn at (portrait, landscape, a Styles preview) is kept as its own surface.

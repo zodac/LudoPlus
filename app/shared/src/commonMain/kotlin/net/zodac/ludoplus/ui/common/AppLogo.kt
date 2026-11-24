@@ -46,6 +46,8 @@ import net.zodac.ludoplus.ui.game.HOP_SWELL
 import net.zodac.ludoplus.ui.game.PAWN_RADIUS as BOARD_PAWN_RADIUS
 import net.zodac.ludoplus.ui.game.PAWN_STEP_MILLIS
 import net.zodac.ludoplus.ui.game.drawGroundShadow
+import net.zodac.ludoplus.ui.style.PaintedSurface
+import net.zodac.ludoplus.ui.style.rememberSurfaceState
 import net.zodac.ludoplus.ui.style.BoardStyle
 import net.zodac.ludoplus.ui.style.GameVisualTheme
 import net.zodac.ludoplus.ui.style.PawnStyle
@@ -152,12 +154,13 @@ fun AppLogo(theme: GameVisualTheme?, modifier: Modifier = Modifier, onPawnTapped
 }
 
 /**
- * The board in [board]'s style and the pawn in [pawns]', each on a layer of its own: the board drawn again only when its
- * style changes, the pawn as it hops too. A tap on the pawn sets it hopping (see [AppLogo]).
+ * The board in [board]'s style, painted once, and the pawn in [pawns]': the menu's drift and the pawn's hops stamp the
+ * board's image, never draw it again. A tap on the pawn sets it hopping (see [AppLogo]).
  */
 @Composable
 private fun LogoArt(board: BoardStyle, pawns: PawnStyle, onPawnTapped: (() -> Unit)?, modifier: Modifier = Modifier) {
     val layout = remember { BoardLayout.of(BoardGeometry.CLASSIC) }
+    val boardArt = rememberSurfaceState()
     val colours = remember { PlayerColour.entries.take(BoardGeometry.CLASSIC.seats).map { it.color } }
     // How many hops in, 0 to LOGO_PAWN_HOPS: each whole number is the pawn standing on the ground.
     val hop = remember { Animatable(0f) }
@@ -189,7 +192,7 @@ private fun LogoArt(board: BoardStyle, pawns: PawnStyle, onPawnTapped: (() -> Un
         }
     }
     Box(modifier = modifier.then(taps)) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        PaintedSurface(LogoBoard(board), modifier = Modifier.fillMaxSize(), state = boardArt) {
             // The board's diagonal spans the art's width, its nearest corner at the art's foot.
             val side = size.width / sqrt(2f)
             val unit = side / layout.size
@@ -203,6 +206,8 @@ private fun LogoArt(board: BoardStyle, pawns: PawnStyle, onPawnTapped: (() -> Un
             }
         }
         Canvas(modifier = Modifier.fillMaxSize()) {
+            // The two come together.
+            if (!boardArt.painted) return@Canvas
             val pawn = pawnPlace(size.width, size.height, layout.size)
             // Up and down again each hop, swelling as it rises, as a pawn hops from square to square on the board.
             val fraction = hop.value - hop.value.toInt()
@@ -214,6 +219,8 @@ private fun LogoArt(board: BoardStyle, pawns: PawnStyle, onPawnTapped: (() -> Un
         }
     }
 }
+
+private data class LogoBoard(val board: BoardStyle)
 
 /** Where the pawn stands on the ground and how big it is. */
 private class PawnPlace(val centre: Offset, val radius: Float)

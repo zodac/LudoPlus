@@ -5,6 +5,7 @@ import net.zodac.ludoplus.ui.theme.color
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.ui.game.ClassicBoardLayout
 import net.zodac.ludoplus.ui.common.DevicePullEffect
+import net.zodac.ludoplus.ui.style.PaintedSurface
 import net.zodac.ludoplus.ui.style.PawnStyle
 import net.zodac.ludoplus.ui.style.BoardStyle
 import net.zodac.ludoplus.ui.style.PawnStyles
@@ -1172,10 +1173,13 @@ private val CornerSeatColours: List<Color> by lazy {
  */
 @Composable
 private fun BoardCornerPreview(board: BoardStyle, modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier.clipToBounds()) {
+    // Painted at the tile's size, which cuts it to the corner.
+    PaintedSurface(BoardCorner(board), modifier) {
         with(board) { drawBoard(ClassicBoardLayout, size.width / CORNER_VIEW_WIDTH, CornerSeatColours) }
     }
 }
+
+private data class BoardCorner(val board: BoardStyle)
 
 /** The share of its tile's height [PawnPreview]'s pawn is drawn at, as the radius a style's pawn stands within. */
 private const val PAWN_PREVIEW_RADIUS = 0.36f

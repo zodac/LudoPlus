@@ -87,7 +87,7 @@ fun LudoPlusNavHost(navController: NavHostController = rememberNavController(), 
                 popEnterTransition = { EnterTransition.None },
                 popExitTransition = { ExitTransition.None },
             ) {
-                pages(navController, container, change)
+                pages(navController, container, cover, change)
             }
         }
         PageCoverOverlay(cover)
@@ -98,7 +98,7 @@ fun LudoPlusNavHost(navController: NavHostController = rememberNavController(), 
 /** How many frames of a resumed board still count as its [ResumeAttempt]: enough for it to be composed, laid out, and drawn. */
 private const val RESUME_ATTEMPT_FRAMES = 5
 
-private fun NavGraphBuilder.pages(navController: NavHostController, container: AppContainer, change: (() -> Unit) -> Unit) {
+private fun NavGraphBuilder.pages(navController: NavHostController, container: AppContainer, cover: PageCover, change: (() -> Unit) -> Unit) {
     val navigate = { route: String -> change { navController.navigate(route) } }
     val navigateUp: () -> Unit = { navController.navigateUp() }
     val backToMenu: () -> Unit = { navController.popBackStack(Screen.MENU, inclusive = false) }
@@ -170,7 +170,13 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
             LaunchedEffect(gameViewModel) {
                 if (gameViewModel.game.value == null) {
                     ResumeAttempt.during {
-                        if (gameViewModel.resumeGame()) repeat(RESUME_ATTEMPT_FRAMES) { withFrameNanos {} } else backToMenu()
+                        if (gameViewModel.resumeGame()) {
+                            repeat(RESUME_ATTEMPT_FRAMES) { withFrameNanos {} }
+                            // And its board painted, off the main thread (PaintedSurface).
+                            cover.awaitNoHolds()
+                        } else {
+                            backToMenu()
+                        }
                     }
                 }
             }

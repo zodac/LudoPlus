@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
@@ -87,6 +88,7 @@ import net.zodac.ludoplus.ui.game.LocalLeaveGameConfirmation
 import net.zodac.ludoplus.ui.game.LocalSoundEffects
 import net.zodac.ludoplus.ui.game.rememberAppHaptics
 import net.zodac.ludoplus.ui.game.rememberAppSoundEffects
+import net.zodac.ludoplus.ui.style.LocalSurfacePainting
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
 
 /**
@@ -201,6 +203,7 @@ fun LudoPlusApp(
         LocalDriftState provides driftState,
         LocalScreenIdle provides screenIdle,
         LocalLeaveGameConfirmation provides leaveConfirmation,
+        LocalSurfacePainting provides Dispatchers.Default,
     ) {
         // Inside the provider above, for the platform it creates its player from.
         CompositionLocalProvider(

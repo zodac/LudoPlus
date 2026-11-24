@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -27,6 +28,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -53,9 +55,17 @@ class PageCover internal constructor(private val scope: CoroutineScope, covered:
 
     internal val opacity: Float get() = alpha.value
 
+    /** Whether anything is holding the cover up ([HoldPageCover]). */
+    internal val held: Boolean get() = holds > 0
+
     internal fun hold() = holds++
 
     internal fun release() = holds--
+
+    /** Returns once nothing holds the cover: the page under it has everything it was waiting for. */
+    internal suspend fun awaitNoHolds() {
+        snapshotFlow { held }.first { !it }
+    }
 
     /**
      * Fades the cover in, makes [change] (a navigation) under it, waits for the next page to settle, then fades it out.
