@@ -157,9 +157,11 @@ turn has played out (`VanishMotion`, `VANISH_MILLIS`), with a buzz; the log's li
 the board counts the turns, and TalkBack's board leaves the square out.
 
 **Chaos** (`GameRules.powerUps`, `model/PowerUp.kt`, `game/PowerUps.kt`; the maintainer, 2026-11-24, reversing Phase 9's
-"power-up squares weren't picked"). One power-up on each seat's stretch of the track, never on a safe square or a pawn's;
-one taken comes back 8 rolls later, as any kind, on a stretch with none. One works a move, at once: a pawn moved onto
-another leaves it there.
+"power-up squares weren't picked"). One power-up for each player at the start, and a new one every one to five turns
+(anyone's, a run of rolls being one; `GameState.turnsToPowerUp`, as the last of them starts), whether any is taken or not, but never more than
+two for each player (`PowerUp.MOST_PER_PLAYER`; the maintainer, 2026-11-24). With no limit, four Medium CPUs' board averaged
+12 and reached 30; with it, it averages 7. Each is of any kind, anywhere on the track but a safe square, a pawn's, or another's. One works a
+move, at once: a pawn moved onto another leaves it there.
 
 - **Double**: the taker's next 3 rolls (not turns) move twice as far, but for one that would overshoot home, which counts
     once. A 6 still leaves the yard and rolls again. `PlayerState.doubledRolls`, on their card as "×2 · 3".

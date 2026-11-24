@@ -193,10 +193,10 @@ object SavedGameJson {
         if (state.knockedOut.isNotEmpty()) put("knockedOut", jsonInts(state.knockedOut))
         // Over: never saved, but a Nearby host sends its guests the game's end (`.claude/NETPLAY.md`).
         if (state.isFinished) put("finished", true)
-        // The power-ups on the board, those to come, and what their chances are drawn from; absent where the rules have none.
+        // The power-ups on the board, the turns until the next, and what their chances are drawn from; absent where the rules have none.
         if (state.rules.powerUps) {
             put("powerUps", JsonArray(state.powerUps.map { (square, powerUp) -> buildJsonObject { put("square", square); put("kind", powerUp.id) } }))
-            put("powerUpsDue", jsonInts(state.powerUpsDue))
+            put("turnsToPowerUp", state.turnsToPowerUp)
         }
         // The ghosts, and the move one has just made, for a Nearby guest to see it made.
         if (state.rules.ghosts) {
@@ -268,8 +268,8 @@ object SavedGameJson {
             emptyMap()
         }
         require(powerUps.keys.all { it in 0..<board.trackLength && !board.isSafe(it) }) { "A power-up is off the track or on a safe square" }
-        val powerUpsDue = if (rules.powerUps) obj.array("powerUpsDue").ints() else emptyList()
-        require(powerUpsDue.all { it in 1..PowerUp.RETURN_ROLLS }) { "A power-up is due at a time that doesn't fit" }
+        val turnsToPowerUp = if (rules.powerUps) obj.intOrNull("turnsToPowerUp") ?: PowerUp.MOST_TURNS else 0
+        require(!rules.powerUps || turnsToPowerUp in 1..PowerUp.MOST_TURNS) { "A power-up is due at a time that doesn't fit" }
         val ghosts = if (rules.ghosts) obj.array("ghosts").ints() else emptyList()
         require(ghosts.size == (if (rules.ghosts) Ghosts.count(playerCount) else 0) && ghosts.all { it in 0..<board.trackLength }) { "The ghosts aren't on the track" }
         val turnsSinceGhost = if (rules.ghosts) obj.int("turnsSinceGhost") else 0
@@ -293,7 +293,7 @@ object SavedGameJson {
                 roundsPlayed = roundsPlayed,
                 knockedOut = knockedOut,
                 powerUps = powerUps,
-                powerUpsDue = powerUpsDue,
+                turnsToPowerUp = turnsToPowerUp,
                 ghosts = ghosts,
                 turnsSinceGhost = turnsSinceGhost,
                 ghostMove = ghostMove,
@@ -329,7 +329,7 @@ object SavedGameJson {
             roundsPlayed = roundsPlayed,
             knockedOut = knockedOut,
             powerUps = powerUps,
-            powerUpsDue = powerUpsDue,
+            turnsToPowerUp = turnsToPowerUp,
             ghosts = ghosts,
             turnsSinceGhost = turnsSinceGhost,
             ghostMove = ghostMove,

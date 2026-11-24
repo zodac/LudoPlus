@@ -31,8 +31,8 @@ data class GameState(
     val knockedOut: List<Int> = emptyList(),
     /** Where the rules have power-ups, each one on the board, by its absolute track square. */
     val powerUps: Map<Int, PowerUp> = emptyMap(),
-    /** The rolls left before each power-up taken comes back, as another somewhere else. */
-    val powerUpsDue: List<Int> = emptyList(),
+    /** Where the rules have power-ups, how many turns until a new one comes, as the last of them starts. */
+    val turnsToPowerUp: Int = 0,
     /** Where the rules have ghosts, the absolute track square each is on. */
     val ghosts: List<Int> = emptyList(),
     /** How many turns have ended since a ghost last moved. */

@@ -23,7 +23,7 @@ private const val HOME = 56
 /** A Chaos game of four with each player's pawns at the progress given and only [powerUps] on the board, red to roll. */
 private fun game(vararg pawns: List<Int>, powerUps: Map<Int, PowerUp> = emptyMap(), houseRules: Set<HouseRule> = emptySet(), seed: Long = 1): GameState {
     val new = GameState.new(GameMode.CHAOS, 4, rules = GameMode.CHAOS.rules.withHouseRules(houseRules), seed = seed)
-    return new.copy(players = new.players.mapIndexed { i, player -> player.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }) }, powerUps = powerUps)
+    return new.copy(players = new.players.mapIndexed { i, player -> player.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }) }, powerUps = powerUps, turnsToPowerUp = 5)
 }
 
 private fun GameState.shielding(player: Int, vararg pawns: Int) = copy(players = players.mapIndexed { i, side -> if (i == player) side.copy(shielded = pawns.toSet()) else side })
@@ -37,36 +37,74 @@ private val GameState.effect: PowerUpEffect get() = assertNotNull(moved.effect)
 class ChaosEngineTest {
 
     @Test
-    fun `a game starts with a power-up on each seat's stretch - never on a safe square - the same from the same seed`() {
+    fun `a game starts with a power-up for each player - anywhere but a safe square - the same from the same seed`() {
         for (players in 2..8) {
-            for (seed in 0L..40L) {
-                val state = GameState.new(GameMode.CHAOS, players, rules = GameMode.CHAOS.rules.forPlayers(players), seed = seed)
-                val board = state.board
-                assertEquals((0..<board.seats).toList(), state.powerUps.keys.map { it / board.seatSpacing }.sorted())
-                assertTrue(state.powerUps.keys.none(board::isSafe))
-                assertEquals(state, GameState.new(GameMode.CHAOS, players, rules = GameMode.CHAOS.rules.forPlayers(players), seed = seed))
+            val rules = GameMode.CHAOS.rules.forPlayers(players)
+            val games = (0L..200L).map { GameState.new(GameMode.CHAOS, players, rules = rules, seed = it) }
+            for (state in games) {
+                assertEquals(players, state.powerUps.size)
+                assertTrue(state.powerUps.keys.none(state.board::isSafe))
+                assertTrue(state.turnsToPowerUp in 1..5)
             }
+            assertEquals(games, (0L..200L).map { GameState.new(GameMode.CHAOS, players, rules = rules, seed = it) })
+            // Not held to a stretch each: some start with two on one.
+            assertTrue(games.any { state -> state.powerUps.keys.groupBy { it / state.board.seatSpacing }.any { it.value.size > 1 } }, "$players players")
         }
-        val kinds = (0L..60L).flatMap { GameState.new(GameMode.CHAOS, 4, seed = it).powerUps.values }.toSet()
-        assertEquals(PowerUp.entries.toSet(), kinds)
+        val games = (0L..400L).map { GameState.new(GameMode.CHAOS, 4, seed = it) }
+        assertEquals(PowerUp.entries.toSet(), games.flatMap { it.powerUps.values }.toSet())
+        assertEquals((1..5).toSet(), games.map { it.turnsToPowerUp }.toSet())
+        // Every square that isn't safe has one in some game.
+        assertEquals((0..<52).filterNot(games.first().board::isSafe).toSet(), games.flatMap { it.powerUps.keys }.toSet())
         assertEquals(emptyMap(), GameState.new(GameMode.CLASSIC, 4).powerUps)
     }
 
     @Test
-    fun `one taken comes back eight rolls later - on a stretch with none - clear of pawns`() {
-        var state = game(listOf(1, Y, Y, Y), powerUps = mapOf(3 to PowerUp.SHIELD, 16 to PowerUp.SWAP, 29 to PowerUp.SWAP, 42 to PowerUp.SWAP)).play(2)
-        assertEquals(setOf(16, 29, 42), state.powerUps.keys)
-        assertEquals(listOf(8), state.powerUpsDue)
-        // Seven rolls by the others, none with a move, then red's, of 1.
-        repeat(3) { state = LudoEngine.applyRoll(state, 1) }
-        state = state.play(1)
-        repeat(3) { state = LudoEngine.applyRoll(state, 1) }
-        assertEquals(listOf(1), state.powerUpsDue)
-        assertEquals(3, state.powerUps.size)
-        state = LudoEngine.applyRoll(state, 1)
-        assertEquals(emptyList(), state.powerUpsDue)
-        val back = (state.powerUps.keys - setOf(16, 29, 42)).single()
-        assertTrue(back in 1..12 && back != 8 && back != 4, "It came back on $back")
+    fun `a new one comes every one to five turns - clear of pawns and the others - until there are two for each player`() {
+        val gaps = mutableSetOf<Int>()
+        for (seed in 0L..40L) {
+            // Nobody can leave the yard: every roll of 1 is a turn.
+            var state = game(seed = seed).copy(turnsToPowerUp = 2)
+            state = LudoEngine.applyRoll(state, 1)
+            assertEquals(0 to 1, state.powerUps.size to state.turnsToPowerUp)
+            var turns = 0
+            var before = state.powerUps
+            repeat(60) {
+                state = LudoEngine.applyRoll(state, 1)
+                turns++
+                assertTrue(state.powerUps.size <= 8)
+                if (state.powerUps.size == before.size) return@repeat
+                assertEquals(before.size + 1, state.powerUps.size)
+                assertEquals(before, state.powerUps.filterKeys { it in before })
+                assertTrue(state.powerUps.keys.none(state.board::isSafe))
+                gaps += turns
+                turns = 0
+                before = state.powerUps
+            }
+        }
+        assertEquals((1..5).toSet(), gaps)
+        // Full: the next is due again, and comes once there's room.
+        val full = game(powerUps = (1..8).associate { (if (it == 8) 9 else it) to PowerUp.SHIELD }).copy(turnsToPowerUp = 1)
+        val later = LudoEngine.applyRoll(full, 1)
+        assertEquals(full.powerUps, later.powerUps)
+        assertTrue(later.turnsToPowerUp in 1..5)
+        assertEquals(8, LudoEngine.applyRoll(full.copy(powerUps = full.powerUps - 1), 1).powerUps.size)
+        // Two players have two each too, on the board for four; and eight have sixteen.
+        for (players in listOf(2, 8)) {
+            var state = GameState.new(GameMode.CHAOS, players, rules = GameMode.CHAOS.rules.forPlayers(players))
+            repeat(200) { state = LudoEngine.applyRoll(state, 1) }
+            assertEquals(2 * players, state.powerUps.size)
+        }
+    }
+
+    @Test
+    fun `a turn with more than one roll counts once towards the next - and one taken isn't replaced sooner`() {
+        val state = game(listOf(20, Y, Y, Y), powerUps = mapOf(26 to PowerUp.SHIELD)).copy(turnsToPowerUp = 4)
+        val six = state.play(6)
+        assertEquals(3, six.turnsToPowerUp)
+        assertEquals(emptyMap(), six.powerUps)
+        val again = six.play(1)
+        assertEquals(3, again.turnsToPowerUp)
+        assertEquals(2, LudoEngine.applyRoll(again, 1).turnsToPowerUp)
     }
 
     @Test
@@ -278,7 +316,7 @@ class ChaosEngineTest {
                 }
                 val board = state.board
                 assertTrue(state.players.all { side -> side.pawns.all { it in Y..board.homeProgress } && side.shielded.all { side.pawns[it] in 0..<board.trackSteps } })
-                assertTrue(state.powerUps.keys.none(board::isSafe) && state.powerUps.size + state.powerUpsDue.size <= board.seats)
+                assertTrue(state.powerUps.keys.none(board::isSafe) && state.turnsToPowerUp in 1..5 && state.powerUps.size <= 2 * players)
                 // Nobody's pawns share an unsafe square with a rival's.
                 val squares = state.players.flatMapIndexed { i, side -> side.pawns.filter { it in 0..<board.trackSteps }.map { board.trackSquare(side.seat, it) to i }.distinct() }
                 if (houseRules.isEmpty()) assertTrue(squares.filterNot { board.isSafe(it.first) }.groupBy { it.first }.values.all { it.size == 1 })

@@ -191,7 +191,7 @@ data class GameRules(
     val guardedStarts: Boolean = false,
     /** Whether the board's portals ([BoardGeometry.portals]) are open: a move that ends on one comes out at its pair. */
     val portals: Boolean = false,
-    /** Whether there are power-ups on the track ([PowerUp]), one for each seat's stretch of it. */
+    /** Whether there are power-ups on the track ([PowerUp]): one for each player at first, and a new one every few turns. */
     val powerUps: Boolean = false,
     /** Whether ghosts haunt the track, one for every two players, sending home the pawns they land on. */
     val ghosts: Boolean = false,

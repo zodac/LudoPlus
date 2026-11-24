@@ -11,20 +11,22 @@ import net.zodac.ludoplus.model.PowerUp
  */
 internal object PowerUps {
 
-    /** [state], a game's start, with a power-up on each seat's stretch of the track. */
-    fun start(state: GameState): GameState = (0..<state.board.seats).fold(state) { next, seat -> spawn(next, seat) }
+    /** [state], a game's start, with a power-up on the track for each player, and the first new one due. */
+    fun start(state: GameState): GameState = due(state.players.indices.fold(state) { next, _ -> spawn(next) })
 
-    /** [state] as a roll is made: each power-up due a roll nearer, and any whose time has come on the board. */
+    /** [state] as a turn starts: the next power-up a turn nearer, and if its time has come, on the track (unless it's full: [PowerUp.MOST_PER_PLAYER]), with another due. */
     fun tick(state: GameState): GameState {
-        if (!state.rules.powerUps || state.powerUpsDue.isEmpty()) return state
-        val due = state.powerUpsDue.map { it - 1 }
-        val ticked = state.copy(powerUpsDue = due.filter { it > 0 })
-        return (0..<due.count { it <= 0 }).fold(ticked) { next, _ ->
-            val (random, drawn) = draw(next)
-            // On a stretch that has none.
-            val bare = (0..<next.board.seats).filter { seat -> next.powerUps.keys.none { it / next.board.seatSpacing == seat } }
-            if (bare.isEmpty()) drawn else spawn(drawn, bare.random(random))
-        }
+        if (!state.rules.powerUps) return state
+        val left = state.turnsToPowerUp - 1
+        if (left > 0) return state.copy(turnsToPowerUp = left)
+        val full = state.powerUps.size >= PowerUp.MOST_PER_PLAYER * state.players.size
+        return due(if (full) state else spawn(state))
+    }
+
+    /** [state] with the next power-up due in a random number of turns. */
+    private fun due(state: GameState): GameState {
+        val (random, drawn) = draw(state)
+        return drawn.copy(turnsToPowerUp = random.nextInt(1, PowerUp.MOST_TURNS + 1))
     }
 
     /** [state] with one of the current player's doubled rolls spent, if they have any. */
@@ -42,7 +44,7 @@ internal object PowerUps {
         if (progress !in 0..<state.board.trackSteps) return state to null
         val square = state.board.trackSquare(state.players[owner].seat, progress)
         val powerUp = state.powerUps[square] ?: return state to null
-        val taken = state.copy(powerUps = state.powerUps - square, powerUpsDue = state.powerUpsDue + PowerUp.RETURN_ROLLS)
+        val taken = state.copy(powerUps = state.powerUps - square)
         return when (powerUp) {
             // The roller's: the one whose rolls are counted.
             PowerUp.DOUBLE -> taken.copy(players = taken.players.replace(state.current) { it.copy(doubledRolls = PowerUp.DOUBLED_ROLLS) }) to PowerUpEffect(powerUp)
@@ -100,11 +102,11 @@ internal object PowerUps {
         return state.copy(players = players) to PowerUpEffect(PowerUp.SWAP, movedTo = to, swapped = other)
     }
 
-    /** [state] with a power-up of any kind on [seat]'s stretch of the track: never a safe square, a pawn's, or another's. */
-    private fun spawn(state: GameState, seat: Int): GameState {
+    /** [state] with a power-up of any kind anywhere on the track: never on a safe square, a pawn's, or another's. As it is with no square free. */
+    private fun spawn(state: GameState): GameState {
         val board = state.board
         val taken = state.players.flatMap { side -> side.pawns.filter { it in 0..<board.trackSteps }.map { board.trackSquare(side.seat, it) } }.toSet() + state.powerUps.keys
-        val free = (0..<board.seatSpacing).map { board.startSquare(seat) + it }.filter { !board.isSafe(it) && it !in taken }
+        val free = (0..<board.trackLength).filter { !board.isSafe(it) && it !in taken }
         if (free.isEmpty()) return state
         val (random, drawn) = draw(state)
         return drawn.copy(powerUps = state.powerUps + (free.random(random) to PowerUp.entries.random(random)))

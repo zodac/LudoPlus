@@ -35,8 +35,8 @@ object LudoEngine {
         val second = dice.getOrNull(1)
         val player = state.current
         // The first roll of a turn starts it; a roll again continues it.
-        val started = PowerUps.tick(state.copy(ghostMove = null, justLost = emptyList())).let { ticked ->
-            if (state.rollingAgain) ticked else ticked.copy(players = ticked.players.replace(player) { it.copy(turns = it.turns + 1) })
+        val started = state.copy(ghostMove = null, justLost = emptyList()).let { next ->
+            if (state.rollingAgain) next else PowerUps.tick(next).let { ticked -> ticked.copy(players = ticked.players.replace(player) { it.copy(turns = it.turns + 1) }) }
         }
         val rollsAgain = if (dice.size == 1) roll in rules.rollAgainRolls else rules.rollAgainOnDoubles && dice.distinct().size == 1
         val run = if (rollsAgain) state.rollAgainRun + 1 else 0
