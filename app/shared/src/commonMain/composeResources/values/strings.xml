@@ -91,7 +91,7 @@
     <string name="about_game_body">%1$s plays the rules of `Ludo`, the race game that grew from the ancient Indian game `Pachisi`.</string>
     <string name="about_game_link">Ludo on Wikipedia</string>
     <string name="about_privacy_heading">Privacy</string>
-    <string name="about_privacy_body">%1$s holds no user data. Your games, scores, and settings stay on this device, and there are no ads, analytics, or tracking.</string>
+    <string name="about_privacy_body">%1$s holds no user data. Your games, achievements, and settings stay on this device, and there are no ads, analytics, or tracking.</string>
     <string name="about_privacy_link">Full privacy policy</string>
 
     <!-- Licences dialog (ui/settings/LicensesDialog.kt, ComposeLicenceDocument.kt, and Android's TextViewLicenceDocument via LicenceLabels). -->
@@ -412,7 +412,7 @@
     <string name="gameover_tutorial_done">Done</string>
     <string name="gameover_tutorial_new_game">New Game</string>
     <!-- Rules' How to Play page, above its button, and New Game's link while no game has been finished. -->
-    <string name="rules_how_to_play_tutorial">Want to see it played? The tutorial takes you through it in four short parts. Nothing in it counts: no scores and no saved game.</string>
+    <string name="rules_how_to_play_tutorial">Want to see it played? The tutorial takes you through it in four short parts. Nothing in it counts: no records and no saved game.</string>
     <string name="rules_tutorial_start">Play the Tutorial</string>
     <string name="setup_tutorial_link">New to the game? Play the tutorial</string>
     <string name="game_leave_title">Leave game?</string>
@@ -750,9 +750,9 @@
     <!-- The Achievements page's count banner, signed in: what a screen reader says a tap does. %1$s is the service's name. -->
     <string name="achievements_online_action">Open %1$s</string>
     <!-- About's privacy paragraph where the app shows its ad banner (the play app). %1$s is the app's name. -->
-    <string name="about_privacy_body_ads">%1$s holds no user data of its own. Your games, scores, and settings stay on this device, unless you sign in to save them online. The ad banner comes from Google, which may use your device's advertising ID to choose its ads, as your ad privacy choices allow. There are no analytics of our own.</string>
+    <string name="about_privacy_body_ads">%1$s holds no user data of its own. Your games, achievements, and settings stay on this device, unless you sign in to save them online. The ad banner comes from Google, which may use your device's advertising ID to choose its ads, as your ad privacy choices allow. There are no analytics of our own.</string>
     <!-- About's privacy paragraph in the play app without ads. %1$s is the app's name, %2$s the online service's. -->
-    <string name="about_privacy_body_online">%1$s holds no user data. Your games, scores, and settings stay on this device, unless you sign in to %2$s. There are no ads, analytics, or tracking.</string>
+    <string name="about_privacy_body_online">%1$s holds no user data. Your games, achievements, and settings stay on this device, unless you sign in to %2$s. There are no ads, analytics, or tracking.</string>
     <!-- A merge's progress, after a spinner and above a progress bar: %1$s is the step (one of online_sync_step_*), %2$d which step it is, and %3$d how many there are. -->
     <string name="online_sync_progress">%1$s (%2$d/%3$d)</string>
     <string name="online_sync_step_settings">Merging settings</string>
@@ -760,7 +760,7 @@
     <string name="online_sync_step_achievements">Merging achievements</string>
     <string name="online_sync_step_records">Merging game records</string>
 
-    <!-- The Styles screen's names, for now only the Graphics page's Styles card and its Background row (the Styles screen itself comes back in Phase 7 of .claude/IMPLEMENTATION.md). -->
+    <!-- The Styles screen's names. -->
     <string name="styles_title">Styles</string>
     <string name="styles_category_background">Background</string>
     <string name="styles_unlocked_percent">%1$d%</string>
@@ -1061,7 +1061,7 @@
     <string name="rules_page_in_group_spoken">%1$s, page %2$d of %3$d</string>
 
     <!-- Shown in place of the whole app when the file holding the scores can't be opened, typically after an update whose database change failed (ui/common/DatabaseFailurePage.kt). %1$s is the app's name. -->
-    <string name="common_database_failure_title">Your scores can't be opened</string>
+    <string name="common_database_failure_title">Your games can't be opened</string>
     <string name="common_database_failure_body">%1$s couldn't open the file that holds your Leaderboard and Statistics, so it has stopped here rather than risk changing it.</string>
     <string name="common_database_failure_advice">Nothing has been deleted. Updating the app to its latest version usually puts this right.</string>
     <!-- Above the technical error message on this page and the crash page, shown untranslated so it can be copied into a report (ui/common/FailurePage.kt). -->
@@ -1070,8 +1070,8 @@
     <!-- Shown in place of the whole app after an error it couldn't recover from stopped it (ui/common/CrashPage.kt), above the same details as the page above. %1$s is the app's name. -->
     <string name="common_crash_title">Something went wrong</string>
     <string name="common_crash_body">%1$s ran into a problem it couldn't recover from, so it has stopped here.</string>
-    <string name="common_crash_advice">Your scores, achievements, and settings are kept, but a game in progress may have lost its last move.</string>
-    <string name="common_crash_advice_game_removed">Your scores, achievements, and settings are kept, but the game in progress can't be resumed and will be removed.</string>
+    <string name="common_crash_advice">Your records, achievements, and settings are kept, but a game in progress may have lost its last move.</string>
+    <string name="common_crash_advice_game_removed">Your records, achievements, and settings are kept, but the game in progress can't be resumed and will be removed.</string>
     <!-- The button that starts the app again, beside Report on GitHub. -->
     <string name="common_crash_restart">Restart</string>
     <!-- In the details section, above them: copies them, then says it has. -->
@@ -1080,7 +1080,7 @@
     <!-- Opens a new issue on the app's GitHub page with the details filled in, for the player to post. GitHub is a brand name. -->
     <string name="common_crash_report">Report on GitHub</string>
 
-    <!-- LudoPlus: the game modes, the placeholder game screen (Phase 0 of .claude/IMPLEMENTATION.md), and the rules. -->
+    <!-- The game modes, and the rules. -->
     <string name="mode_classic">Classic</string>
     <string name="mode_classic_description">The classic rules: roll a 6 to leave the yard, and race all four pawns home</string>
     <string name="mode_quick">Quick</string>
@@ -1173,7 +1173,7 @@
     <string name="rules_winning_diagram_cd">Diagram: a red pawn 3 squares from home needs exactly 3 to get there. Another red pawn is already home.</string>
 
 
-    <!-- Styles (Phase 7) -->
+    <!-- Styles -->
     <string name="styles_requirement_free">Always available</string>
     <plurals name="styles_requirement_count">
         <item quantity="one">`%1$d` achievement needed</item>
@@ -1411,7 +1411,7 @@
         <item quantity="one">%1$s and %2$d more</item>
         <item quantity="other">%1$s and %2$d more</item>
     </plurals>
-    <!-- One unlocked style as the banner names it: %1$s is its name ("Frosted"), %2$s what it is ("dice", "mat"). -->
+    <!-- One unlocked style as the banner names it: %1$s is its name ("Frosted"), %2$s what it is ("die", "board"). -->
     <string name="achievements_styles_unlocked_named">'%1$s' %2$s</string>
     <!-- %1$d is how many achievements are earned, %2$s the style as named above. -->
     <string name="achievements_styles_unlocked_one">the %1$s style</string>

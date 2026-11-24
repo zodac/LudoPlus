@@ -64,7 +64,7 @@ class ChromeTextTest : UiTest() {
         }
         compose.onNodeWithText("LudoPlus is created by zodac.").assertExists()
         compose.onNodeWithText("LudoPlus plays the rules of Ludo, the race game that grew from the ancient Indian game Pachisi.").assertExists()
-        compose.onNodeWithText("LudoPlus holds no user data. Your games, scores, and settings stay on this device, and there are no ads, analytics, or tracking.")
+        compose.onNodeWithText("LudoPlus holds no user data. Your games, achievements, and settings stay on this device, and there are no ads, analytics, or tracking.")
             .assertExists()
     }
 }

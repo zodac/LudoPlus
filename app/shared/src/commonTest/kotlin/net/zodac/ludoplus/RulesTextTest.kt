@@ -40,7 +40,7 @@ class RulesTextTest : UiTest() {
             listOf(
                 "Race your four pawns a full lap of the board and into home, in the middle. The first player to bring all four pawns home wins.",
                 "Players take turns clockwise, each rolling one die. The first player listed on New Game goes first.",
-                "Want to see it played? The tutorial takes you through it in four short parts. Nothing in it counts: no scores and no saved game.",
+                "Want to see it played? The tutorial takes you through it in four short parts. Nothing in it counts: no records and no saved game.",
             ),
             diagram = null,
         ),

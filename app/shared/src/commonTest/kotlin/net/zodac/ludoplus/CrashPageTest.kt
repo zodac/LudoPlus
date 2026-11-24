@@ -36,7 +36,7 @@ class CrashPageTest : UiTest() {
         compose.onNode(isHeading and hasText("Something went wrong")).assertIsDisplayed()
         listOf(
             "LudoPlus ran into a problem it couldn't recover from, so it has stopped here.",
-            "Your scores, achievements, and settings are kept, but a game in progress may have lost its last move.",
+            "Your records, achievements, and settings are kept, but a game in progress may have lost its last move.",
         ).forEach { compose.onNodeWithText(it).assertIsDisplayed() }
         listOf("If it keeps happening, these details will help when you report it:", "Copy Details", details)
             .forEach { compose.onNodeWithText(it).assertDoesNotExist() }
@@ -105,7 +105,7 @@ class CrashPageTest : UiTest() {
     @Test
     fun `a saved game that can't be resumed is said to be going - in place of what a crash usually costs`() = uiTest(SCREEN) {
         compose.setContent { LudoPlusTheme { CrashPage(details = "Boom", gameRemoved = true, onRestart = {}, onCopy = {}, onReport = {}) } }
-        compose.onNodeWithText("Your scores, achievements, and settings are kept, but the game in progress can't be resumed and will be removed.").assertIsDisplayed()
-        compose.onNodeWithText("Your scores, achievements, and settings are kept, but a game in progress may have lost its last move.").assertDoesNotExist()
+        compose.onNodeWithText("Your records, achievements, and settings are kept, but the game in progress can't be resumed and will be removed.").assertIsDisplayed()
+        compose.onNodeWithText("Your records, achievements, and settings are kept, but a game in progress may have lost its last move.").assertDoesNotExist()
     }
 }
