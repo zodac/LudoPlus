@@ -20,13 +20,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import net.zodac.ludoplus.data.settings.MotionGroup
+import net.zodac.ludoplus.ui.style.ClassicPawnShape
 import net.zodac.ludoplus.ui.style.drawPips
 
 /**
@@ -246,20 +247,19 @@ internal fun DrawScope.drawDiceWatermark(color: Color, dice: List<DriftingDie>) 
     }
 }
 
-/** A pawn standing in the [extent]-wide square at [topLeft], side on: a round head over a flared body on a base. */
-private fun DrawScope.drawPawnWatermark(topLeft: Offset, extent: Float, outline: Color, fill: Color) {
-    fun at(x: Float, y: Float) = Offset(topLeft.x + extent * x, topLeft.y + extent * y)
-    val stroke = Stroke(width = extent * 0.035f)
-    val body = Path().apply {
-        at(0.42f, 0.40f).let { moveTo(it.x, it.y) }
-        at(0.58f, 0.40f).let { lineTo(it.x, it.y) }
-        at(0.70f, 0.82f).let { lineTo(it.x, it.y) }
-        at(0.30f, 0.82f).let { lineTo(it.x, it.y) }
-        close()
+/** The pawn's radius as a share of the square it stands in: a little within it, as tall as it is. */
+private const val PAWN_RADIUS_SHARE = 0.46f
+
+/** The classic pawn ([ClassicPawnShape]), standing in the middle of the [extent]-wide square at [topLeft]. */
+internal fun DrawScope.drawPawnWatermark(topLeft: Offset, extent: Float, outline: Color, fill: Color) {
+    val radius = extent * PAWN_RADIUS_SHARE
+    val centre = topLeft + Offset(extent / 2f, extent / 2f) - ClassicPawnShape.MIDDLE * radius
+    withTransform({
+        translate(centre.x, centre.y)
+        scale(radius, radius, pivot = Offset.Zero)
+    }) {
+        drawPath(ClassicPawnShape.silhouette, fill)
+        drawPath(ClassicPawnShape.lines, outline, style = Stroke(width = 0.035f / PAWN_RADIUS_SHARE))
+        drawCircle(outline, ClassicPawnShape.GLINT_RADIUS, ClassicPawnShape.GLINT)
     }
-    drawPath(body, fill)
-    drawPath(body, outline, style = stroke)
-    drawRoundRect(outline, at(0.20f, 0.82f), Size(extent * 0.60f, extent * 0.12f), CornerRadius(extent * 0.05f), style = stroke)
-    drawCircle(fill, extent * 0.15f, at(0.5f, 0.27f))
-    drawCircle(outline, extent * 0.15f, at(0.5f, 0.27f), style = stroke)
 }

@@ -16,6 +16,7 @@ import kotlin.test.assertTrue
 import net.zodac.ludoplus.UiTest
 import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.PlayerColour
+import net.zodac.ludoplus.ui.common.drawPawnWatermark
 import net.zodac.ludoplus.ui.game.BoardLayout
 import net.zodac.ludoplus.ui.theme.color
 
@@ -59,6 +60,33 @@ class BoardAndPawnArtTest : UiTest() {
                 assertTrue(x in -1.06f..1.06f && y in -1.1f..1.12f, "${style.id} draws at ($x, $y)")
             }
         }
+    }
+
+    @Test
+    fun `the menu's drifting pawn is the classic pawn's shape`() = uiTest {
+        val classic = pawn(ClassicPawnStyle, PlayerColour.RED)
+        // The square a watermark stands its pawn in, sized and placed for a pawn of the same radius at the same centre.
+        val extent = PAWN_RADIUS / 0.46f
+        val middle = Offset(PAWN_SIDE / 2f, PAWN_SIDE / 2f) + ClassicPawnShape.MIDDLE * PAWN_RADIUS
+        val drifting = pixels(PAWN_SIDE) {
+            drawPawnWatermark(middle - Offset(extent / 2f, extent / 2f), extent, Color.Red, Color.Red)
+        }
+        // Solid pixels: not the classic pawn's shadow. Their outlines differ a little in width, so the edges may.
+        val drawn = classic.indices.filter { classic[it] ushr 24 > 0x90 }
+        val differ = classic.indices.count { (classic[it] ushr 24 > 0x90) != (drifting[it] ushr 24 > 0x90) }
+        assertTrue(differ < drawn.size * 0.04, "$differ of ${drawn.size} pixels differ")
+    }
+
+    @Test
+    fun `a drifting pawn's lines and fill are each one strength throughout`() = uiTest {
+        val drifting = pixels(PAWN_SIDE) {
+            drawPawnWatermark(Offset.Zero, PAWN_SIDE.toFloat(), Color.Transparent, Color.Red.copy(alpha = 0.5f))
+        }
+        assertTrue(drifting.all { it ushr 24 <= 0x81 }, "the fill doubles up where the pawn's parts overlap")
+        val lines = pixels(PAWN_SIDE) {
+            drawPawnWatermark(Offset.Zero, PAWN_SIDE.toFloat(), Color.Red.copy(alpha = 0.5f), Color.Transparent)
+        }
+        assertTrue(lines.all { it ushr 24 <= 0x81 }, "the lines double up where the pawn's parts meet")
     }
 
     @Test

@@ -300,6 +300,8 @@ players.
 **Drifting dice.** `BrandBackdrop`'s watermark dice drift on the menu and on every screen off it. The game itself has
 none.
 
+- An even face is a die; an odd one is a pawn, the Classic style's (`ClassicPawnShape`, which `ClassicPawnStyle` draws
+    from too), whatever pawns the player picked.
 - One `DriftState`, held in `LudoPlusApp` and shared through `LocalDriftState`, so the dice keep their places across
     screens.
 - It resets only after a game left unfinished, or on a fresh launch.
