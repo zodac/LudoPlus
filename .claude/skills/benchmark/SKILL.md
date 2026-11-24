@@ -37,19 +37,16 @@ shows up late. Leave out `runOnIdle` and it can be missed.
 
 ## Set-ups
 
-- **Whole game screen.** Build `GameViewModel()`, call `setPlayerCount(1)` and `startGame()`, then show
-    `GameScreen(viewModel)` inside `LocalPlatformServices provides SilentPlatformServices` and `LudoPlusTheme`. Roll with
-    `onNodeWithContentDescription("Dice cup", substring = true).performSemanticsAction(SemanticsActions.OnClick)`, and
-    score with `viewModel.commitScore(...)` once `rollsRemaining == 0`. The landing frame is the 27th after the tap
-    (`CUP_SHAKE_MILLIS` 420).
-- **Board and tray with any art.** Put `GameBoard(state, rolling, ...)` over `DiceTray(dice, ..., rolling)` in a
-    411x780dp `Column`, under `LocalGameVisualTheme provides GameVisualTheme(background = ...)` (or `mat`,
-    `diceCupStyle`). Flip `rolling` to walk through idle (20 frames), shake (26) and toss (40). Do this for each entry
-    of `TableBackgrounds.all`, `DiceMats.all` and `DiceCupStyles.all`.
+- **Whole game screen.** Build `gameViewModel()` (`UiTestSupport.kt`), call `startGame { "Player $it" }`, then show
+    `GameScreen(viewModel, onBackToMenu = {})` inside `LocalPlatformServices provides SilentPlatformServices` and
+    `LudoPlusTheme`. Roll with `onNodeWithContentDescription("Die").performSemanticsAction(SemanticsActions.OnClick)`,
+    and move with `viewModel.move(...)`. `BoardFrameCostTest` is a small one.
+- **The board with any art.** Put `LudoBoard` in a 411dp box, under `LocalGameVisualTheme provides
+    GameVisualTheme(background = ...)` (or `board`, `pawns`), for each entry of `BoardStyles.all`, `PawnStyles.all`, and
+    `TableBackgrounds.all`.
 - **Dice (the reference).** Put seven 54dp dice in a `Row` (`LocalDieIndex` 0-6) and capture **only that row**
-    (`onNodeWithTag(...).captureToImage()`). Run 80 frames at rest and 120 tumbling (`style.TossedDie`, `roll` stepped
-    0 to 3.9 and round), against a `_blank` style whose `Die` is an empty `Box`. A whole-screen capture adds a 9-12ms
-    floor that buries the differences.
+    (`onNodeWithTag(...).captureToImage()`). Run 80 frames at rest, against a `_blank` style whose
+    `Die` is an empty `Box`. A whole-screen capture adds a 9-12ms floor that buries the differences.
 - **Styles pages.** Use `StylesScreen(StylesViewModel(savedStyles = flow), onBack = {}, onOpenCategory = {})`, or a
     category's `StyleCategoryScreen(viewModel, category, onBack = {})` (the dice have the most tiles), with
     `AchievementsState(unlockedAt = Achievement.entries.associateWith { 1L })`, so every style is shown, under

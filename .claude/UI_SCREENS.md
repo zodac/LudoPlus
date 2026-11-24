@@ -1,16 +1,5 @@
 # LudoPlus: screen-specific UI detail
 
-> **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
-> from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
-> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for LudoPlus as part of that phase.
->
-> **Achievements (Phase 6) and Styles (Phase 7).** "The achievements list", "Achievement banners", "Style locks", and
-> "The Styles screen" hold for LudoPlus, except: no online count button yet (Phase 10), and no row dialogs (DiceFive's
-> mode limits and missing-entry lists). A row is one TalkBack item: its title, description, and when it was earned or
-> how far along it is, then, for a style reward, the reward's sentence, with the action "Show which style this
-> unlocks", whose tap shows that sentence as a tip. The Easter Eggs' fixed colours are Big Fan's red heart, Are You A
-> Developer?'s cyan, Can't Wait To Get Going's red pawn, and Midnight Run's moon; Completionist keeps its crystal trophy.
-
 Achievements, banners, Styles, Leaderboard and menu decisions. The general rules are in `UI.md`, the game screen is in
 `UI_BOARD.md`, and what the features do is in `DESIGN.md`.
 
@@ -78,11 +67,9 @@ Robolectric test shares one process, so a test that opens the screen calls it fi
     mode's name (in the string's own language) sits outside them, "non-`Standard`" included.
 - **Locked rows all show the same question mark**, so they never spoil the achievement.
 - **Fixed colours** via `iconTintOrUnspecified`, rather than the row's tint:
-    - every Easter Egg (Luck Of The Irish shows its real flag fills with `Color.Unspecified`; Big Fan's heart is forced
-        red). A new Easter Egg adds its case there;
-    - and the few whose point is a colour: Tricolour's red/yellow/blue (Tricolourful's traffic light, Tricolour Me
-        Impressed's dice, which are also Tricolour's Play leaderboard icon), Everything Everywhere's googly eye, and
-        Completionist's crystal trophy.
+    - every Easter Egg (Big Fan's red heart, Are You A Developer?'s cyan, Can't Wait To Get Going's red pawn, Midnight
+        Run's moon). A new Easter Egg adds its case there;
+    - and the few whose point is a colour: Everything Everywhere's googly eye, and Completionist's crystal trophy.
 - When adding one, grep that the glyph is unused. `PlayConsoleExportTest` fails if two achievements draw the same.
 
 ## Achievement banners
@@ -173,8 +160,7 @@ available. `StyleRegistryTest` keeps the counts within what can be earned.
     - Wireframe die (Are You A Developer?);
     - Devil die (Too Much Of A Good Thing);
     - Starry die and background (Midnight Run).
-- **Secret colours** (`StyleVariant.secretAchievement`) are left out entirely until earned. None yet: DiceFive's (the
-    Irish Multicolour, the D20 colours, the gold Egg) are ordinary colours in LudoPlus.
+- **Secret colours** (`StyleVariant.secretAchievement`) are left out entirely until earned. None yet.
 - **On the Achievements screen**, a row whose achievement unlocks a style reads the reward's sentence with the row
     ("Earn this to unlock the 'Maths' die style"; one style's items named once, as the unlock banner does: "'Starry'
     die and background"), and a tap shows it as a tooltip that **stays until the row is tapped again**. Its action is
@@ -246,8 +232,8 @@ opening already scrolled to them (`LocalStyleTileJump`), or sliding there if it 
 (`StyleScrollRequest.animate`). Styles of several categories open the
 Styles page, those fields flashed; opening one hands the request on (`CategoryFocus`), so its styles flash there.
 
-**Unlock All** (the purchase, `PURCHASES.md`) comes back in Phase 11, from `5423b6c`: a tonal button at the Styles page's
-app bar end (`UnlockAllStylesButton`, `UnlockAllStylesIcon`, `UnlockAllStylesButtonTest`).
+**Unlock All** (the purchase, `PURCHASES.md`): a tonal button at the Styles page's app bar end (`UnlockAllStylesButton`,
+`UnlockAllStylesIcon`).
 
 - Debug builds: 5 taps on the Styles page's unlocked count pretend every style is owned (`DESIGN.md`, "Superuser modes").
 
@@ -287,49 +273,17 @@ the Styles page has been opened.
 - The pages and the warm-ups share `StyleCategoryTiles`, `StyleCategoryScaffold` and `StylesScaffold`, so new
     categories are warmed automatically. Keep it that way.
 
-## The Leaderboard's boards
+## The Leaderboard and Statistics
 
-A `ModePagePicker` (`ui/common`) at the top, always shown: a board for each game mode, then Combined
-(`ModePage.all`), with a divider after Standard and before Combined, the one on view ticked. Statistics has the
-same drop-down for its pages (`DESIGN.md`, "Leaderboard and Statistics"). The board picked is under it, and is remembered
-(the `leaderboard_choice` preference, in the cloud save) through screen changes and restarts; a stored mode that no longer
-exists opens Standard's.
+What they show is in `DESIGN.md`, "Leaderboard and Statistics". Both open with a mode picker (`ModePicker`) and a row of
+player counts (`PlayerCountRow`), each number said as players.
 
-- **One table for every board** (`LeaderboardTable`, `ui/scores`). Every board looks and behaves alike, so a
-    board added later is a new `ModePage` and a source for its pages, nothing more:
-    - A card titled with the board's name (a heading, Sora bold), the column headings, then the ranked rows. 1st-3rd are
-        in gold, silver, and bronze on every board, with the same gap between podium rows and the same extra room when
-        the card ends on one.
-    - The card is as tall as its rows, growing until it has the page, then the list scrolls inside it. Its page controls
-        are under it, in a row whose height is reserved so a one-page board ends where a two-page one does. In landscape
-        they share the drop-down's row (`LeaderboardPagination`) over a 640dp table.
-    - A long press on a row shows its date (a mode's board's title says the mode). That is the row's `stateDescription`.
-    - **While a page scrolls** (whenever its scrollbar shows), its title row has gold up and down arrows
-        (`UpDownButtons`, as on Achievements' category headers, there in the header's own colour) that glide to its top
-        and bottom (`smoothScrollToItem`, or jump under reduced motion), each faded and disabled at its own end. They're
-        at the row's end, in the same place signed in or out, and like Global take no height. Where all won't fit,
-        Global goes to its globe first, then the title steps down in size (`ShrinkThenWrapText`). Only when even its
-        smallest readable size won't fit does it take two lines, which grows the card ("Third Wind" at 200%). TalkBack
-        hears "Go to the top of the page" and "Go to the bottom of the page".
-    - **Combined** holds every mode's games: each player's name is in its mode's colour (`UI.md`, "Mode colours"), the
-        podium rows keep their gold, silver, and bronze, and a long press adds the mode under the date.
-    - A board with no scores shows a card saying so instead: "No scores in `<board>` yet". Every board is listed, scored
-        or not.
-- A board is read the first time it is picked and kept. The switch waits, with the board on view still up, until the new
-    one is read, then gives way in one frame (no empty page).
-- Every board lists only games played with no modifier on (`playedUnmodified`), as online boards do.
-- **Global** (signed in to a service): a text button with a globe in the middle of a mode's title row, moving along only to
-    clear a long title, opening that mode's board on the service (`GlobalLeaderboardButton`). It takes **no height**: the
-    title sets the row's, and the button is centred on it, spilling into the card's padding, so the card doesn't move on
-    signing in. Where the title and the label won't share the line (large fonts, narrow phones) it's the globe alone. On a
-    board with no arrows, that keeps the title from wrapping. TalkBack hears "Global
-    leaderboard for `<mode>` on `<service>`", a button. Combined has none: it has no board on the service.
-- **TalkBack.** The field is one drop-down ("Leaderboard, Standard"), with state Collapsed or Expanded. Each menu row is
-    a radio button, the picked one "Selected", with its place in the set. Board titles are headings.
-- Rows use `OnDemandTooltip`, because a `TooltipBox` per row cost real first-frame time.
-- **`ScoresWarmUp`.** 2s after the menu settles, it draws Standard's board, then Combined, once from a made-up board
-    (`ScoresViewModel(WarmUpBoard)`, no database), the same way as `StylesWarmUp` (`ScoresWarmUpTest`). The lag was
-    first-run code, not the number of entries.
+- **The Leaderboard** is one card: a heading row, then the ranked rows, 1st to 3rd in gold, silver, and bronze. Where a
+    name hasn't room beside the number columns, the heading goes and each row is two lines. A row is one TalkBack item. A
+    board with no rows shows a card saying how to get on it.
+- **Global**, while signed in to a service with a board for the mode: a button to it, with rows or without.
+- **Statistics** is a card a person: the name as a heading, then each figure with its label as one item. The time played
+    is over them, with players or without.
 
 ## The menu's backdrop and logo
 

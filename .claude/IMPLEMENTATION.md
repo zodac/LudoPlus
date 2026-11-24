@@ -244,9 +244,9 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 - [x] Save and continue a game in progress (`data/game`: `SavedGameJson`, `InProgressGameRepository`), resilient to
     process death. Saved as it starts and after every roll and move, cleared when it finishes; the menu's Continue (and
     a game screen restored with no game) brings it back. A save that can't be read is removed. Play time
-    (`StartedGame.playMillis`) counts only while the game is on screen and not under a dialog. DiceFive's cloud-save
-    stamps and its crash-page removal of a save that can't be drawn (`ResumeAttempt`) were left in `5423b6c`: the
-    stamps come back with cloud save (Phase 10).
+    (`StartedGame.playMillis`) counts only while the game is on screen and not under a dialog. The cloud-save
+    stamps came back with Phase 10, and the crash page's removal of a save that can't be drawn (`ResumeAttempt`) on
+    2026-11-24.
 - [x] Game Over (`GameOverScreen`, `GameOverTest`): once the last move has played out, the winner's card, then each
     placing with its finish time ("Finished in 18m 42s", the last player's when the game ended), turns, captures, and
     times captured (the last, their pawns home in place of turns). Review Board, Main Menu, and Play Again (the same
@@ -432,11 +432,11 @@ count but 4 has a board of its own; one player on two colours was dropped.
         (`STORE_ASSETS.md`).
 - [ ] Play Games Services: achievements, the fastest-win leaderboards, cloud save, and sign-in (`PLAY_GAMES.md`).
     The Console's achievements and leaderboards wait for the maintainer's review of them (2026-11-23).
-    Decided with the maintainer (2026-11-18): a leaderboard for each built-in mode and player count, 2-8 (21 of Play's
-    70), each the turns in a win, fewer better. Play ranks one number, so the local captures tie-break doesn't carry.
+    Decided with the maintainer (2026-11-18): a leaderboard for each built-in mode and player count, 2-8 (42 of Play's
+    70: Survival has none), each the turns in a win, fewer better. Play ranks one number, so the local captures tie-break doesn't carry.
     - [x] The code, restored from `5423b6c` (2026-11-18): `OnlineSync`, the Settings card, the Achievements page's way
         to Play's screen, the Leaderboard's "Global leaderboard", About's sign-in line, `PlayGamesServices`, Sidekick,
-        backup rules, and the Play Console export (achievements with proposed points, and the 21 boards' sheet and
+        backup rules, and the Play Console export (achievements with proposed points, and the 42 boards' sheet and
         icons). Ids are empty until the Console project exists.
     - [ ] The maintainer's Console steps (`PLAY_GAMES.md`, "Play Console"), the ids filled in, the points reviewed, and
         sign-in checked on a Play install. The privacy policy and data-safety form must cover sign-in and cloud save

@@ -32,11 +32,11 @@ Connections: no server, no accounts. This file is the plan and the one source on
 - **Sessions** (`HostSession`, `GuestSession`): the lobby and the game's messages as pure state machines over a
     `NetLink` (send, receive, connected): tested without radios.
 - **The transport seam** (`netplay/Nearby.kt`): advertise, discover, connect, accept, send, receive, disconnect;
-    `NearbyConnectionsTransport` in the play flavour (`Strategy.P2P_STAR`: the host the star's centre), `NoNearby`
+    `NearbyConnections` in the play flavour (`Strategy.P2P_STAR`: the host the star's centre), `NoNearby`
     elsewhere. Its permissions (Bluetooth and nearby Wi-Fi, and location up to Android 12) are asked for when the player
     first hosts or joins, never at launch.
 - **The device's own seat** is no longer always seat 1 in a Nearby game: what records and achievements count as "this
-    device's" becomes a seat the game names (`localSeat`), 0 everywhere else.
+    device's" is the seat the game names (`StartedGame.guestSeat`), 0 everywhere else.
 
 ## Slices
 

@@ -1,12 +1,8 @@
 # LudoPlus: the languages (l10n)
 
-> **Inherited from DiceFive.** This doc describes DiceFive's dice game, which Phase 0 of `IMPLEMENTATION.md` removed
-> from the code. The code it describes is in commit `5423b6c` (`git show 5423b6c:<path>`, or `git checkout 5423b6c --
-> <path>`). Read it to bring a feature back in its phase, then rewrite this doc for LudoPlus as part of that phase.
-
-The shipped translations, their glossaries, and how to add a language. How strings work is in `I18N.md`. Both
-translations are machine-assisted and **not yet checked by a native speaker or on a device**. Each still needs a hand
-pass, a TalkBack pass and a Play listing.
+The app ships English alone for now. This is how to add a language, and what DiceFive's Spanish and Arabic taught: their
+glossaries below are for words the two apps share, and their files are in commit `5423b6c`. How strings work is in
+`I18N.md`.
 
 ## Adding a language
 
@@ -26,8 +22,7 @@ pass, a TalkBack pass and a Play listing.
    the system font: add the locale to `StringChecks.localesOutsideSora`, so the Latin-1 guards skip it.
 6. **Run the guards**:
    - `StringResourcesTest`, `AchievementTextTest`, `GameModeTextTest` and `StyleNamesTest`;
-   - `TextFitTest` with the language's `qualifiers`;
-   - a new `<Language>TextTest` like `SpanishTextTest`.
+   - a new `<Language>TextTest`, of the words that language could get wrong.
 7. **A device pass**, with TalkBack.
 8. **The store listing** (`PUBLISHING.md`), under the banned-words rule.
 

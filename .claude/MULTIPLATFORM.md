@@ -117,8 +117,7 @@ app/
     `LicenceDocument`, `loadLicenceReports`, `reduceMotion`, `capFrameRate`, `defaultDensity` (the device's own pixels
     to a dp, for `isDisplayZoomed`; null where a platform can't tell), and `progressFiles` (null: only a build with no
     online service has them; `DESIGN.md`, "Distribution").
-    - `SoundEffects` and `DiceHaptics` are shared wrappers.
-    - `ShakeDetector` is pure logic (`ShakeDetectorTest`).
+    - `SoundEffects` and `Haptics` are shared wrappers.
 - **Build info.** `BuildInfo` (version, debug flag). Superuser tests pass `isDebugBuild` explicitly, and a test pins
     that release builds never activate it.
 - **Text.** `expect fun stripDiacritics`.
@@ -127,7 +126,7 @@ app/
         SQLite; a desktop app would bring a driver of its own (bundled SQLite).
     - DataStore: `createPreferencesDataStore(path)` with the `PreferencesFile` names; `AppContainer.create(dataDir,
         databaseBuilder, buildInfo)` builds the container for every platform.
-    - Tests: `AndroidAppContainerTest`.
+    - Tests: `MainActivitySmokeTest`, `AppDatabaseMigrationTest`.
 - **UI.**
     - On Android, the CMP artifacts resolve to androidx, so it's the same Compose.
     - `SoraFontFamily` is a `@Composable` getter, as CMP's `Font()` is.
@@ -169,8 +168,8 @@ The JVM target was removed in the commit that made the app Android-only
     repackages, so both format alike) and the two test ones in `jvmTest` (`PlatformUiTest`, with a test
     `Dispatchers.Main` on the test clock, and `setTimeZone`).
 - **Lint.** With a JVM target, `lintJvm` reads Room's generated code for it as the module's: restore
-    `app/shared/lint.xml`'s `RestrictedApi` exception for `build/generated/ksp/**`. `FontScale.kt` and `CupDrawScope`
-    already suppress the desktop target's `RestrictedApi`.
+    `app/shared/lint.xml`'s `RestrictedApi` exception for `build/generated/ksp/**`. `FontScale.kt`
+    already suppresses the desktop target's `RestrictedApi`.
 - **Tests.** `testDebugUnitTest` compiles them for the new target (`compileTestKotlinJvm`); once an app ships there,
     `android-release.yml`'s `shared-tests` and the update gates run them (`:app:shared:jvmTest`). The tests in
     `androidHostTest` for a desktop harness limit stay there.

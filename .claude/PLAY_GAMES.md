@@ -72,7 +72,8 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
     finish (`OnlineSync.signInSynced`).
 - **The gamer name appears only on the Settings card** and never touches seat 1's name. Sanitised, ellipsised, up to
     two lines.
-- **Seat 1 reports to the signed-in account**, whatever name it holds; seats 2-4 never do.
+- **Seat 1 reports to the signed-in account**, whatever name it holds (on a Nearby guest's phone, its own
+    seat); the other seats never do.
 - **Choosing the account** is Play's: its default, or long-press the icon > Choose profile. No in-app picker.
 - **Accounts are kept apart.** `synced_account` (salted hash) is the last account to sync. That account, or the first
     ever, **merges**. A different one **wipes** the synced data (achievements, counters, records, synced settings, the
@@ -154,8 +155,8 @@ Always on while signed in, with no switch and no prompt. Every sync merges; noth
 - **The write** reopens the snapshot and merges with anything committed since the read (`RESOLUTION_POLICY_MANUAL`,
     up to 10 retries). It writes only if this device added something, and before posting wins.
 - **A sync with nothing to do costs no rows.** The save is still read from the service, but one matching the hash of
-    what this device left there isn't decoded, and with `CloudSaveStore.changeStamp` unchanged too (the score writes
-    `ScoreRepository` has made, and the save's other parts) no row is read and nothing is written. It is kept in memory, so
+    what this device left there isn't decoded, and with `CloudSaveStore.changeStamp` unchanged too (the writes
+    `GameRecordRepository` has made, and the save's other parts) no row is read and nothing is written. It is kept in memory, so
     each launch's first sync does it all.
 - **When.** A new unlock syncs at once, as Play announces it. An update with only counters or progress waits while the
     game screen is up (`OnlineSyncRequests.requestOutsideGame`): a finished game, leaving the screen, and going to the
@@ -189,8 +190,8 @@ hidden when `Unavailable`.
 Play's overlay: an edge tab that slides out achievements, streaks, offers and recording tools. We don't build it.
 
 - `res/xml/sidekick_config.xml`, through the `com.google.android.finsky.deku.OVERLAY_CONFIG` meta-data
-    (`SidekickConfigTest`): **`TOP_RIGHT` in portrait and landscape**, chosen from renders. The middle-right default
-    covers the Σ totals button or the cup, and `TOP_LEFT` the back arrow. Positions are physical edges (the same in
+    (`SidekickConfigTest`): **`TOP_RIGHT` in portrait and landscape**, clear of the board and the die. `TOP_LEFT`
+    would cover the back arrow. To check on a Play install ("Release"). Positions are physical edges (the same in
     Arabic), and a player's own drag outranks them. **Snooze 300s** in a player's first session.
 - No Sidekick SDK: that's for APKs. Play adds Sidekick to an uploaded bundle.
 

@@ -122,7 +122,7 @@ until the player signs in.
     - the style counts (8 boards, 7 sets of pawns, 35 dice, and 20 backgrounds), as `README.md` gives them;
     - what "Google Play Games" says sign-in brings (`PLAY_GAMES.md`);
     - the purchases ("Unlock all styles", "Remove ads"; `PURCHASES.md`) and the ad banner (`ADS.md`).
-- **The banned-word rule applies.** Play also rejects listings that lean on another product's trademark. Use 3x/4x/5x.
+- **The banned-word rule applies.** Play also rejects listings that lean on another product's trademark.
 - **Open-source notices are done in-app** (Settings > Licences, generated with a copyleft guard).
     - The build strips each AndroidX `META-INF/androidx/**/LICENSE.txt`, which is fine because the dialog ships the
         Apache-2.0 text once.

@@ -1,19 +1,12 @@
 # LudoPlus: design reference
 
-> **Partly inherited from DiceFive.** Phase 0 of `IMPLEMENTATION.md` removed DiceFive's dice game. Sections on what
-> is still in the app (the stack, errors and the crash page, settings, achievements, styles, distribution, and the
-> release pipeline) hold, and so do Game modes and Modifiers (rewritten in Phase 9);
-> sections on the dice, the scorecard, the CPU, scores, and saved games describe the code
-> in commit `5423b6c` (`git show 5423b6c:<path>`), for bringing a feature back in its phase. Rewrite a section for
-> LudoPlus when the code it describes is.
-
 What the app does and why. The interface is in `UI.md` (plus `UI_BOARD.md` and `UI_SCREENS.md`), modes in
 `GAME_MODES.md`, and art in `STYLE_ART.md`.
 
 ## Stack
 
 - Platform code sits behind three seams. View models take an `AppContainer`, never a `Context`.
-    - `platform/PlatformServices`: sound, haptics, accelerometer, transient messages, licences, reduce motion, frame cap.
+    - `platform/PlatformServices`: sound, haptics, accelerometer (the googly dice's pupils), transient messages, licences, reduce motion, frame cap.
     - `BuildInfo`: version and debug flag.
     - `AppContainer`: what each platform's entry point builds.
 - There is no `kotlinx.serialization` or `kotlinx-datetime`; both were dropped to keep the APK small.
@@ -25,42 +18,34 @@ What the app does and why. The interface is in `UI.md` (plus `UI_BOARD.md` and `
 
 ```text
 NavHost(start = "menu")
-  "menu"         MenuScreen - Play (New Game | Continue), Achievements, Styles, Leaderboard, Statistics, Rules, Settings
+  "menu"         MenuScreen - Play (New Game | Continue), Achievements, Leaderboard, Statistics, Styles, Rules, Settings
   "play" graph   one GameViewModel scoped to the graph (no player lists through nav args), shared by:
-    "play/setup"   GameSetupScreen
-    "play/game"    GameScreen, then GameOverScreen and the scorecard review (Continue comes straight here and loads
-                   the saved game)
-  "scores"  ScoresScreen (the Leaderboard)   "statistics"  "achievements"  "styles"  "rules"
-  "tutorial"     GameScreen on a GameViewModel of its own, playing TutorialScript.CLASSIC (Rules' How to Play page, or New Game)
-  "settings"     SettingsScreen (About and Licences open from links at its foot)
+    setup        GameSetupScreen
+    lobby        HostLobbyScreen (a Nearby game's host)
+    game         GameScreen, then GameOverScreen and the board again to review (Continue comes straight here and loads
+                 the saved game)
+  "join" graph   finding and joining a Nearby game, then its board
+  leaderboard, statistics, achievements, styles, rules, settings
+  tutorial       GameScreen on a GameViewModel of its own, playing TutorialScript.CLASSIC (Rules' How to Play page, or New Game)
 ```
+
+The routes are `Screen` (`navigation/`); the pages are in `LudoPlusNavHost`.
 
 ## Game setup
 
-- **Players.** There are 1-4.
-    - Player 1 is always human and is the only seat that earns achievements.
-    - Players 2-4 are Human or CPU.
-    - A CPU has a difficulty (Easy/Medium/Hard, default Medium). Its name is generated at Start Game, unique in the game
-        (`AiNameGenerator`).
-- **Names.**
-    - An empty name field shows a localised "Player N" hint, and the game uses that name.
-    - Names are sanitised as they're typed (`model/PlayerName.kt`).
-    - Names are capped by width per player count (`model/NameWidth.kt`'s `maxPlayerNameLength` 14/12/10/8; see
-        `UI_BOARD.md`).
-    - `GameEngine.newGame` holds every table to its rules: 1-4 players, a Human in seat 1 whenever any play, distinct
-        colours, and no two Human names alike (`duplicateHumanNameSlots`; the Leaderboard and Statistics tell players apart
-        by name). The New Game form asks the same function, and `startGame` refuses a clash.
+- **Players.** 2 to 8, four at first. Player 1 is always a person, and the only seat that earns achievements. The others
+    are a person, the computer (Easy, Medium, or Hard; Medium at first), or in the play app a phone nearby. A computer
+    player's name is generated as the game starts, unique in it (`AiNameGenerator`).
+- **Names.** An empty name field shows a localised "Player N" hint, and the game uses that. Names are sanitised as
+    they're typed (`model/PlayerName.kt`) and held to the most players' cap (`GameSetupForm`, `model/NameWidth.kt`: 8),
+    so changing the count never cuts one. No two people may have the same name (`duplicateHumanNameSlots`): the form
+    flags it, and `startGame` refuses it.
 - **Colours.** Each player picks a distinct colour (`PlayerColour`).
-- **Remembered.** The mode, the modifiers and everything on the form are saved for next time in `SettingsRepository`.
-- **Locked until a first game is finished.** Until any game reaches its end (any mode, solo or not, won or lost; a
-    game left unfinished doesn't count), the Game Mode and Modifiers cards show only their titles over "Finish a game to
-    unlock game modes" / "... modifiers" (no picker), and the form plays Standard with no modifiers. A "New to the game?
-    Play the tutorial" button, which starts it, sits above Start Game, only while locked.
-    - The flag is `first_game_completed` (`SettingsRepository.firstGameCompleted`). It's synced, only ever set, and no
-        reset clears it. The tutorial game won't set it.
-    - It costs nothing once unlocked. It comes in the setup form's single settings read (`GameSetupState.modesUnlocked`),
-        and it's written once, at the first game over.
-    - While locked, the saved mode and modifier picks are neither restored nor overwritten.
+- **Teams** (4, 6, or 8 players), the **mode**, the **house rules**, and the **custom modes**: "Game modes" and
+    "Modifiers".
+- **Remembered.** Everything on the form is saved for next time in `SettingsRepository`.
+- **First game.** "New to the game? Play the tutorial" shows until a person has finished a game, and house rules and
+    custom modes are locked until then ("Modifiers"). The modes aren't.
 
 ## The tutorial
 
@@ -88,75 +73,19 @@ How it's built, its scripting rules, and how to add one for another mode: `TUTOR
 
 ## The turn and the rules
 
-All numbers here are Standard's. Each comes from the game's `GameMode`.
+The rules are in `IMPLEMENTATION.md`, "The classic rules", and each mode's in "Game modes". Every number comes from the
+game's `GameRules`.
 
-- **A turn** starts with 5 dice, 3 rolls and nothing held. A roll rolls every unheld die.
-- **One roll path.** Every roll, human or CPU, lands through `GameViewModel.performRoll` after the cup has shaken for
-    `CUP_SHAKE_MILLIS`.
-    - A human's roll comes from the cup tap (`onCupTap`): a finger or a phone shake, which calls
-        `GameViewModel.shakeAndRoll`.
-    - A CPU's roll comes from its own turn loop. Both shakes are timed in the view model and pause with the game.
-    - A tap while a roll is shaking or landing is ignored.
-- **Holding** toggles a die once the turn has rolled. It's still allowed after the last roll: it does nothing then,
-    but disabled dice looked broken.
-- **Scoring** is any open box after the first roll. `ScoreCalculator` applies two rules:
-    - The upper bonus: 63 or more in the upper section earns 35.
-    - The joker rule. Every 5x after a scored 50 adds a +100 chip, recorded on the box it scores in (`jokerBonusSlots`)
-      and shown there. If the 5x box is filled, the score goes in the
-        matching upper box if it's open, else any open lower box (Full House and the straights at their fixed values),
-        else a zero in any open box.
-- **The CPU** scores, then plays its rolls with short pauses so it's visibly animated.
-- **Turn timer** (a modifier):
-    - Running out on a rolled turn scores the first open box (in Stud, the hand is completed first).
-    - Running out before the first roll forfeits the turn as a zero in the first open box, with no roll
-        (`GameEngine.forfeitTurn`). Both are `GameEngine.timeOut`.
-    - CPUs time out the same way.
-- **Undo** exists in solo games only. It takes back the last score; a roll or hold clears it (they aren't undoable),
-    as does any CPU move, and a finished game has none. It's saved with the game, so a resumed game can still undo.
-- **The end.** The game ends when every card is full. **Human** totals are recorded; CPU scores never are. The results
-    screen shows the ranking with tie-break captions.
-- `DiceScoring`, `ScoreCalculator` and `GameEngine` are pure, with no platform dependencies.
-
-**Maximum and minimum scores.** These are `GameMode.maxPossibleScore` and `minPossibleScore`, each with its derivation
-as a doc comment. `GameModeTest` locks each one by playing that game through the engine: the perfect game, and the
-lowest. Chance is the only box that can't score 0, so a mode's minimum is its Chance slots at five 1s each. Quickfire's
-is 0, because some of its cards have Chance switched off. The game screen marks a running total as a new Leaderboard
-score only from the minimum up (`newLeaderboardScoreSeats`).
-
-| Mode           | Maximum | Minimum |
-|----------------|---------|---------|
-| Standard, Stud | 1575    | 5       |
-| Tricolour      | 2120    | 5       |
-| Third Wind     | 4725    | 15      |
-| D20            | 1350    | 0       |
-| Hit List       | 785     | 0       |
-| Quickfire      | 210     | 0       |
-
-The Leaderboard pads scores to the digit width of `HIGHEST_POSSIBLE_SCORE` (4 digits).
-
-### Tie-break house rule
-
-The official rules call a tie a shared win. Here, equal scores are separated by whoever had more handicaps, checked in
-this order:
-
-1. Fewest 5x.
-2. Most zeroed boxes.
-3. Fewest Tricolour colour boxes scored (Tricolour only).
-4. Lowest upper section (without its bonus).
-5. Lowest Chance.
-6. Lowest 3x.
-7. Lowest 4x.
-
-The first criterion that differs decides it. If all match, it's a true tie with a shared rank ("=2").
-
-- **Where it's used.** `game/TieBreak.kt` holds the criteria and `TieBreak.rank`. They're shared by the results
-    screen (its caption: "Won on fewer 5x") and the Tie Break achievement.
-- **The Leaderboard** uses the same criteria minus the Tricolour one, as every board shares one SQL `ORDER BY`, which
-    mirrors the comparator.
-- **Who won.** `GameState.wonBy` (`game/Standings.kt`): rank 1 after the tie-break, so only a true tie shares a win.
-    The one rule for Statistics' `won`, the win streak, every win-gated achievement and One More Time. Score rows
-    recorded up to Android 1.2.1 keep the raw-score rule they were saved with.
-- **Player tabs** rank by total during play ("=1st"), then take `TieBreak.rank` once every card is full.
+- **`game/LudoEngine` is pure**: `roll` (drawing from an injected `Random`), `applyRoll`, and `move` each take a
+    `GameState` and return the next. `LudoEnginePropertyTest` plays random games through it.
+- **A turn** is a roll, then a move if there's one; a roll with no move passes. `GameState.phase` is what the game waits
+    for, with the legal moves, and `lastEvent` is what just happened, for the screen to show and say.
+- **One choice makes itself**: a person's only move is made for them once the screen has caught up
+    (`LudoEngine.automaticMove`), never in the tutorial.
+- **The computer** rolls and moves with a pause before each (`GamePacing`), waiting out the die and the pawns. The pauses
+    stop while the game is in the background or under a dialog.
+- **The end.** The last player home (or left) ends the game, or the first with "Stop at first winner" on. Every placing,
+    with each person's turns, captures, and finish time, goes to the results, and people's to the records.
 
 ## Game modes
 
@@ -232,7 +161,7 @@ another leaves it there.
     pass its own start; nothing with none.
 
 Every chance is drawn from `GameState.seed`, which each draw moves on, so a saved game and a Nearby one play on the same;
-the CPU weighs a move with its power-up left alone (`LudoEngine.moveWithoutPowerUp`), so it never sees what a chance will
+the CPU weighs a move with its power-up left alone (`LudoEngine.moveWithoutChances`), so it never sees what a chance will
 be. What a power-up did is the move's `GameEvent.Moved.effect`. TalkBack: "Square 4, Teleport power-up, empty", "Green pawn
 1, 47 squares from home, shielded", "Move Red pawn 1 2 squares, taking Teleport", "1 doubled roll left"; the log adds a
 sentence ("Alex teleported 4 squares.").
@@ -302,34 +231,21 @@ the records.
 
 ## The CPU
 
-`game/AiTurnPlayer.kt` plays from the player's own mode and card.
+`game/CpuStrategy.kt`: pure, choosing one of the legal moves from the state alone, in any mode.
 
-- **Easy** never holds. It rerolls everything until some open box scores above zero, then takes the highest.
-- **Medium** plays by rules of thumb.
-    - It holds a forming straight, else the largest matching group (colour sets in Tricolour, the best open number in
-        D20).
-    - It banks a good-enough hand early: Full House, Large Straight, a Small Straight once Large is gone, or three or
-        more 4s/5s/6s with that box open.
-    - Ties lean toward an upper box that's on pace for the bonus.
-- **Hard** plans the whole turn exactly: every hold, every outcome, every reroll left. `DiceSpace`/`HandScoring`
-    number and score each hand once, so a decision is a few array passes. It values a finished hand as follows.
-    - **Standard without Extended Scores.** The bundled **perfect-play table** (`StandardPerfectPlayTable`,
-        `composeResources/files/standard_perfect_play.bin`) holds the optimal expected value of every start-of-turn state.
-        - Hard plays Standard perfectly, about 254 a game.
-        - `StandardPerfectPlayTableTest` fails if the rules drift from the table. Regenerating it is in the `test` skill.
-    - **Elsewhere.** An estimate: the score less the box's baseline, plus a share of any reachable section bonus.
-        Tricolour's ~10 MB space is built in the background when a game with a Hard CPU starts.
-    - **Special cases.**
-        - Stud maps each seven-dice roll to its best five (`RollSpace`).
-        - Hit List has its own exact play at every difficulty (`HitListPlay.kt`).
-        - With a die locked by Unlucky Dice, Hard plays as Medium.
+- **Easy** plays any legal move at random.
+- **Medium** scores each move by what it does now: a capture, reaching home, leaving the yard, reaching safety, getting
+    out of reach, a portal's gain or loss, a power-up, and a little for the furthest pawn; ending in an opponent's reach
+    costs.
+- **Hard** looks a roll ahead (`ExpectimaxStrategy`): how far every pawn has come, for and against, less what each
+    opponent's next roll can be expected to take, plus what its own can. A power-up is worth the same whatever it is, as
+    its chances aren't known. The weights were tuned against Medium, and `CpuTournamentTest` checks them.
+- A partner's pawns count as its own.
 
 ## Persistence
 
 Everything is in app-private storage. **Every stored id is permanent once released**, because achievements and modes
 will map to Play Games.
-
-**LudoPlus today** (Phase 10, 2026-11-18). The rest of this section is DiceFive's, kept for Play Games.
 
 - **Game records**: Room, `ludo.db`, table `results` (`GameResult`), version 3. Each row has a random `uuid` (32 hex
     digits, unique index), its id on every device; `id` is the device's own. Version 3's migration gives every older row
@@ -344,82 +260,34 @@ will map to Play Games.
     older build's `play_seconds` setting is moved into it at launch, then removed.
 - **The save** (`online/CloudSave`, `CloudSaveCodec` version 1): achievements, records (packed rows: names and modes once
     each, then one string of rows), the synced settings, and the saved game, gzipped JSON. `CloudSaveMerge` combines two
-    without picking. Progress files carry it now ("Distribution"); Play Games' cloud save will.
+    without picking. Progress files carry it ("Distribution"), and so will Play Games' cloud save once it's wired (`PLAY_GAMES.md`, "Cloud
+    save").
 
-- **Scores.**
-    - Room, `ludo.db`, `AppDatabase`, with each version's schema exported to `app/shared/schemas/`.
-    - Tables:
-        - `scores` (`ScoreEntry`): name, score, time, `won` (null for a solo game), `isPrimaryPlayer`, the tie-break stats,
-            `gameModeId`, `playedUnmodified`, `onLeaderboard`, `playerKey`, `diceRolled`, and a random `uuid`. Every column
-            but `won` is NOT NULL. `diceRolled` (`PlayerState.diceRolled`: each roll's unheld dice, saved with the game)
-            came in database version 6; older games have 0, and the cloud save's rows add it at the end, read as 0
-            when missing.
-        - `dismissed_player_stats`: name, when it was dismissed, and `playerKey` (the primary key: one dismissal a player).
-    - **`uuid` is the primary key**, a row's id on every device and in the cloud save. It is a `kotlin.uuid.Uuid`, stored
-        as its 16 bytes (`UuidConverters`) and written to the cloud save as 32 hex digits. There is no device-local id.
-    - **Names are matched by `playerKey`**, never by `playerName` or `COLLATE NOCASE` (SQLite folds only ASCII case, so
-        "Ángel" and "ángel" would be two players). It is `playerNameKey(playerName)`, derived in the entity, so a copy with
-        another name gets that name's key.
-    - **`onLeaderboard` is derived too**: the mode's `countsOnLeaderboard` and `playedUnmodified`, so it can't disagree with
-        them. The cloud save doesn't hold it from format 2 on; a format 1 save's is ignored, and it is worked out on reading.
-    - **Every read made while the app is in use comes from an index**, never a scan or a sort of the table. Statistics
-        (`playerRecords`) adds up every game, so reads a whole index, but never the table; the cloud save (`allScores`) reads
-        every row by design. `ScoreQueryPlanTest` checks each read's query plan against the real SQLite. The indices:
-        - `index_scores_unmodified_order` and `index_scores_mode_order` hold the Combined board and each mode's board in
-            `LEADERBOARD_ORDER`, with the same ASC/DESC per column, so a page is read in order. Room's annotation can't be built
-            from `TieBreak.leaderboardOrder`, so a change to the tie-break order must change both (`ScoreQueryPlanTest` fails
-            until it does).
-        - `playerKey, onLeaderboard, score`: a player's best.
-        - `index_scores_primary_player`: player 1's career points and modes played.
-        - `index_scores_player_mode_totals` and `index_scores_player_history`: Statistics (below).
-    - **Statistics is added up by SQLite.** `playerRows` reads, in one transaction, each player's games summed per mode (a
-        `GROUP BY` over a covering index), their latest spelling, and only the outcomes of their decided games, unordered,
-        for the win streaks; window functions, which could do the streaks too, need Android 11. That's three reads for
-        every player together, never a read per player (`ScoreQueryPlanTest`). `playerRecords` then puts each player's
-        outcomes newest first and walks the streaks, and `ScoreRepository` adds the modes up, all after the transaction and
-        off the main thread, so a long history holds up no write. `PlayerStatisticsQueryTest` checks the result equals
-        walking every game.
-    - **Leaderboard order is total.** Rows equal on every criterion follow in `rowid` (recording) order, so `LIMIT/OFFSET`
-        pages never repeat or skip a row.
-    - **Multi-statement reads and writes are one transaction**: a game's rows (`insertGame`), a reset (`clearAll`), the
-        achievements' figures (`leaderboardTotals`), Statistics' reads (`playerRows`) and the cloud merge (`mergeCloud`).
-    - Every schema change needs a version bump and a migration in `MIGRATIONS` (`data/scores/Migrations.kt`), tested by
-        `ScoreDatabaseMigrationTest` from the exported schema it migrates from. There is **deliberately no destructive
-        fallback**: a missing migration must fail loudly, never wipe scores. A change to `playerNameKey` changes stored
-        keys, so it needs a migration too.
+- **The records' rules.**
+    - **Names are matched by `playerKey`** (`playerNameKey`), never by `playerName`: SQLite folds only ASCII case.
+    - A game's rows are written, and a merge's, in one transaction each.
+    - Every schema change needs a version bump and a migration in `MIGRATIONS` (`data/records/AppDatabase.kt`), tested by
+        `AppDatabaseMigrationTest` from the exported schema (`app/shared/schemas/`). There is **deliberately no
+        destructive fallback**: a missing migration must fail loudly, never wipe records.
     - **Failing loudly is a page, not a crash**: `DatabaseFailurePage` (see "Errors").
 - **Preferences.** Five DataStore files (`PreferencesFile`), kept apart so a reset can clear one. Each is a
     `ResilientDataStore`: a write that fails (a full disk) is skipped and a read that fails is empty, never thrown into
     the coroutine that asked. A failed read is retried three times, after 1s, 3s and 5s, and a retry that reads the file
     gives it to the collector; after the third, it stops.
-    - `settings`. Every key but the Animations level, the Orientation, and the two list filters is synced
-        (`SettingsRepository.SYNCED_KEYS`) and stamped `synced_at:<key>` when it changes. A key no version reads any more is listed in
-        `RETIRED_KEYS` and removed at launch (`forgetRetired`).
-    - `achievements`: unlock times and counters, plus the cloud save's counter shares (this file's own share id and the
-        others' counts) and the streak's stamp.
+    - `settings`. A key no version reads any more is listed in `RETIRED_KEYS` and removed at launch (`forgetRetired`).
+    - `achievements`: unlock times and counters, plus the counter shares and the streaks' stamps.
     - `in_progress_game`, stamped `saved_at` on every save and clear.
-    - `online`: Play Games choices and the cloud save's bookkeeping (leaderboard reset marker, "Saved").
-        No reset clears it.
-    - `purchases`: `owns_all_styles`, what the store last said (`PURCHASES.md`). No reset clears it, and it isn't in
-        the cloud save.
-- **Cloud save** (signed in only): one gzipped JSON snapshot of all of the above but the Animations level, the
-    Orientation, and the two list filters, merged, never picked. `PLAY_GAMES.md`, "Cloud save", is the source.
+    - `online`: Play Games choices and the cloud save's bookkeeping.
+    - `purchases`: what the store last said (`PURCHASES.md`). It isn't in the cloud save.
 - **Progress files** (the github app only): the same snapshot, sealed, in a file the player keeps. "Distribution",
     below.
-- **The in-progress game.** `InProgressGameRepository` holds at most one, saved as JSON (`GameStateJson`).
-    - It's saved after every change and cleared when the game ends.
-    - Each game has an id (`GameState.id`, from `GameEngine.newGame`), and `rollsMade` only goes up. The cloud save
-        keeps the copy of a game with more rolls, whatever the stamps say, and never brings back a game finished on this
-        device (`PLAY_GAMES.md`, "Cloud save"). A save stamp is never earlier than the last, even with the clock set back.
+- **The in-progress game.** `InProgressGameRepository` holds at most one, saved as JSON (`SavedGameJson`) after every change
+    and cleared when the game ends.
     - Writes are queued and conflated in a process-lifetime scope, so leaving a game can't lose its last move.
-    - An undecodable save is treated as nothing to resume: a missing required field, an unknown mode, a mode's draw
-        missing, or a game the board can't play (`checkPlayable`: the seats, the dice count, each die within the mode's
-        `dieValues`, the hold slots, the rolls). A cloud save or progress file can bring in what this app never wrote.
-    - Fields a modifier adds are left out when it's off.
-    - What Undo goes back to is saved as a nested game (`undoSnapshot`), and the box an undo took back as
-        `undoneCategory`. One that can't be read only loses the undo; the game still loads.
-- **Style picks.** Five ids (dice, cup, mat, background, frame) in `settings`. An id nothing recognises draws the
-    default.
+    - A save that can't be read, or that the rules couldn't have reached (`SavedGameJson.decode` checks it), is removed
+        as Continue loads it. A merge never takes one.
+    - One that can be read but not drawn: "Errors", `ResumeAttempt`.
+- **Style picks.** Four ids (board, pawns, die, and background) in `settings`. An id nothing recognises draws the default.
 
 ## Errors
 
@@ -429,11 +297,10 @@ can't is a page saying so, with the stack trace to report. The app never just cl
 - **Recovered where it happens**, so nothing reaches the pages:
     - storage: `ResilientDataStore` (see "Persistence"), and `orNullOnFailure` (`data/Failures.kt`, which rethrows a
         `CancellationException`) around writes and loads that can fail;
-    - a cloud or progress-file game that can't be read or played (`GameStateJson.checkPlayable`) is never taken;
+    - a cloud or progress-file game that can't be read or played (`SavedGameJson.decode`) is never taken;
     - a failed cloud sync costs that sync (`LudoPlusApp`), and a progress file that won't open is reported on its card;
-    - Hard's perfect-play table that can't be read leaves Hard estimating (`AppContainer`);
     - Leaderboard or Statistics data that can't be read leaves what's on view, or opens empty with nothing on view yet.
-- **The scores database won't open** (a migration missing or failing): `AppContainer` opens it as it's built and keeps
+- **The records database won't open** (a migration missing or failing): `AppContainer` opens it as it's built and keeps
     the stack trace in `databaseFailure`. `LudoPlusApp` then shows `DatabaseFailurePage` in place of every page: what
     happened, that nothing was deleted, to update, and the trace. The process stays up.
 - **An error nothing caught**, on any thread (a coroutine's included): `CrashHandler` (`device/`), installed by
@@ -448,9 +315,9 @@ can't is a page saying so, with the stack trace to report. The app never just cl
     - The report holds the build and flavour, the Android version, the device, the screen and font scale, the language,
         the thread, the last actions, and the stack trace, cut to 100,000 characters to fit an Intent. It's developer
         text, never translated.
-    - **Last actions** are `Breadcrumbs` (`app/`): the last 12 pages opened (`LudoPlusApp`) and moves made (a game
-        started or resumed, a roll, a hold or release, a score, an undo, and a CPU's roll, in `GameViewModel`), oldest
-        first. They hold ids and numbers, never a name or anything typed.
+    - **Last actions** are `Breadcrumbs` (`app/`): the last 12 pages opened (`LudoPlusApp`) and steps taken (a game
+        started or resumed, and every roll and move in it, whoever's: `GameBreadcrumbs`), oldest first. They hold ids and
+        numbers, never a name or anything typed.
     - Only a process's first error opens the page; another thread's waits for it, then ends with it. Installing again
       (each Robolectric test's Application) replaces the
         handler rather than stacking it. With no platform handler (a plain JVM), the error is printed.
@@ -462,13 +329,14 @@ can't is a page saying so, with the stack trace to report. The app never just cl
         `CrashPage`, `DatabaseFailurePage`, and their shared layout (`FailurePage`, `FailureDetails`) are in `ui/common`.
         - It opens as a page from the menu does: under the page cover, which fades away once it has settled
             (`RevealedPage`). Android's own window animation is off (`FLAG_ACTIVITY_NO_ANIMATION`). The crash process
-            doesn't read the settings, so it's handed the Animations level the app last drew with (`LastAnimationLevel`).
+            doesn't read the settings, so it's handed the motion the app last drew with (`LastMotionSettings`).
         - **Restart** (filled) and **Report on GitHub** (tonal) sit side by side, one above the other at a large font.
             Restart starts the app in a fresh process and ends the crash page's.
         - **Report on GitHub** opens the browser at a new issue on the repo, filled in with the report
             (`CrashReport.issueUrl`), titled `[Crash]` and the error's first line: a line for the player to say what they
             were doing, a table of the details, the last actions, and the trace. The player reads it and posts it
-            themselves; the app sends nothing. The link stays within 7,500 characters, under GitHub's limit, by cutting the
+            themselves; the app sends nothing. The link is kept short enough to survive GitHub's sign-in page
+            (`MAX_SIGN_IN_URL_LENGTH`, measured 2026-11-24: over it, signing in fails or loses the report), by cutting the
             trace from its end and saying so. With no browser, nothing opens.
         - **Show Details** opens the collapsed section (Hide Details closes it): what the details are for, **Copy
             details** (tonal), then the report. Copy details puts the report on the clipboard, then reads "Copied", a
@@ -478,15 +346,14 @@ can't is a page saying so, with the stack trace to report. The app never just cl
             whole of it (`ScrollingColumn`, its bar in the page's margin); on a screen too short to leave 160dp it gets that
             much, and the page scrolls too. The database page's details are
             always shown.
-- **A saved game that can't be resumed** (an upgrade across versions, say) goes to the crash page, then goes for good.
-    - Continue offers any saved game. `loadToResume` throws `UnresumableGameException` for one it can't read.
-    - `ResumeAttempt` marks what counts: Continue's load and the board's first frames (`LudoPlusNavHost`), and the menu's
-        off-screen drawing of the saved game (`SavedGameWarmUp`), which would otherwise fail at every start. Any error nothing
-        caught during one, on any thread, counts. One after it, such as on the next roll, is an ordinary crash.
+- **A saved game that can't be resumed** goes to the crash page, then goes for good (`ResumeAttempt`; the crash page's
+    half was lost in Phase 4 and restored 2026-11-24).
+    - `ResumeAttempt` marks what counts: Continue's load and the board's first frames (`LudoPlusNavHost`). Any error
+        nothing caught during one, on any thread, counts. One after it, such as on the next roll, is an ordinary crash.
     - `CrashHandler` then writes `SavedGameDiscardFile`, whether or not a page opens, and `CrashPage` says the game will be
         removed (`gameRemoved`).
     - `InProgressGameRepository` removes it at the app's next start, before anything reads the save, however the page was
-        closed: Restart, Back, reported or not, or swiped away. No copy of it comes back from the cloud (`FINISHED_KEY`).
+        closed: Restart, Back, reported or not, or swiped away. No copy of it comes back from a merge (`FINISHED_KEY`).
 - **Not caught**: native crashes and ANRs.
 - **Trying it**: a debug build's crash mode on Settings > About (see "Superuser modes"). The taps on the name are
     raw gestures, attached only in a debug build, so no other build has them and TalkBack is never handed a dead link.
@@ -496,9 +363,8 @@ can't is a page saying so, with the stack trace to report. The app never just cl
 
 ## Leaderboard and Statistics
 
-**By mode** (Phase 9, 2026-11-18): a row of modes under each page's heading (`ModeRow`, each said by its name). The
-Leaderboard opens at the mode New Game last started; Statistics opens on "All" (spoken "All modes", every mode's
-games), and can show one mode's.
+**By mode**: a picker at the top of each page (`ModePicker`, `ui/records/`), a field that opens a page of the modes. The
+Leaderboard opens at the mode New Game last started; Statistics opens on All Modes, every mode's games together.
 
 **By player count** (Phase 8, 2026-11-18). Each record keeps its game's `playerCount`, and both pages have a row of
 counts under their heading (`ui/records/PlayerCountRow.kt`, TalkBack "4 players"). The Leaderboard has a board a count,
@@ -519,58 +385,14 @@ the monotonic clock, and saves at each pause and every five minutes while resume
 `AchievementsState`, so it never moves achievement flows or a game's counter write, and out of `changeStamp`, so it
 goes with the next save that has something else to send. It started at zero in the version that added it.
 
-The rest of this section is DiceFive's (its drop-down of mode pages and Combined, from `5423b6c`); Ludo's pages pick
-by the mode and count rows above. Both pages picked what they showed from a drop-down at the top: a page for each game
-mode, Standard's first and the one they opened on, then **Combined**, every mode's games together, last.
+**The Leaderboard** (`LeaderboardScreen`) ranks a mode's wins at a player count: the fewest turns, or in Survival the most
+pawns left (`GameMode.ranking`), then the most captures. 1st to 3rd are in gold, silver, and bronze. Columns become two
+lines a row where a name hasn't room beside them (a large font). TalkBack reads a row as one: "1st, Alex, 38 turns, 4
+captures". While signed in to Play Games, a mode with an online board has a button to it.
 
-- **Leaderboard** (`ScoresScreen`). The drop-down (`ModePage`) picks a board. The pick is the
-    `leaderboard_choice` preference (the mode's id, or `combined`), restored on every open and carried in the cloud save
-    and the GitHub app's export; a mode no longer known opens Standard's. Details are in `UI_SCREENS.md`.
-    - **Every board is the same `LeaderboardTable`**: score-descending, 1,000 a page, 1st-3rd in gold/silver/bronze, "="
-        only for a true tie, paged on its own.
-    - Every board has only games with no modifier on (`playedUnmodified`). A **mode's board** has its mode's, the same
-        ones its online leaderboard takes. **Combined** has every mode's (Stud's and Third Wind's run far above
-        Standard's), each name in its mode's colour (`UI.md`, "Mode colours").
-    - Rows show rank, name, 5x count and score. A long press shows the date, and on Combined the mode; that is also the
-        row's spoken state.
-- **Statistics** (`StatisticsScreen`). One card per distinct human *name*; a rename starts a new player.
-    - **Pages** (`ModePage`). The drop-down picks one; the pick is the `statistics_choice` preference (as the
-        Leaderboard's). A mode's page has that mode's games alone: its own numbers, win streaks, best score and first game
-        (`PlayerStatistics.forMode`), and a player with no game in it has no card there. Combined has every mode's games
-        together, and every player.
-    - Closed, a card is the name and the page's best score ("1,287pts", the unit at 0.75 of the number's size). Its
-        header opens it.
-    - **Open**: games, win rate and average (in points), then a won/lost/solo bar with its key, then the current and
-        best win streak, 5x scored, dice rolled, total points, and first played (date and time), all of the page's games.
-        On Combined, a table follows: a row per mode played, in mode order (games, win rate, solo games and best score, the name in the
-        mode's colour). Its total points are the player's (by name); Professional Roller's are seat 1's.
-    - **Open by default** when every card fits on screen opened (the list is laid out with every card open under the page cover, which
-        builds only the cards on screen, and they fit if it has nothing to scroll; more than 12
-        players skip the measure and don't fit). Otherwise all start closed but the top card of each column (the first
-        one in portrait, the first two in landscape), which always open. Opening a card never closes another. A new page
-        deals them out afresh.
-    - **A closed card's open content is built ahead** while the page is still, one card on screen a frame, and kept
-        built, unseen, silent and taking no room (`OpenAhead`, `BENCHMARKS.md`); opening only gives it its room.
-    - **Sort** (`StatisticsSort`), **each page its own**: a button at the app bar's end opens a menu of Name, First
-        played, Highest score, Highest average and Most games, each by the page's numbers. The one in use is marked with
-        an arrow, up for ascending and down for descending; picking it reverses it, picking another starts it in its own
-        direction (A to Z and oldest first for Name and First played, highest first for the rest). Ties go by name. A new
-        order deals the cards out afresh: the top card of each column opens, the rest as at the start. Each page's sort is
-        a preference (`<id>:asc` or `<id>:desc`, `StatisticsSortOrder`): `statistics_sort_<mode id>` for a mode's page,
-        and `statistics_sort` for Combined's (the one sort there was before 1.5.0, when every card held every mode).
-        They're loaded with the app container and carried in the cloud save and the GitHub app's export.
-    - Above 1.3x font, the header's score goes under the name, the details put the label over the value, and each mode
-        table's name takes its own line over its numbers. A mode's name, or a heading, shrinks to stay on one line; each
-        stacked column's share of the row is its widest text.
-    - **Win rate** is won / (won + lost), a whole percentage rounded half up. Solo games aren't in it; with only solo
-        games it's shown as "-" and not spoken.
-    - TalkBack: the drop-down is one ("Statistics, Standard"). A card's header is one stop (name, best score, its state
-        and action), its numbers two, and each mode table row one, in full sentences. The headings and bars are silent.
-    - Every recorded game with no modifier on counts (`playedUnmodified`, in both Statistics indices). A solo game's
-        outcome is null: it isn't a win or a loss, and it doesn't break a streak.
-    - Each card has a delete button (top end, open or closed) that dismisses it after a confirmation; the scores stay.
-        Playing again under that name brings it back. It goes from every page, as the confirmation says.
-- Settings' "Reset leaderboard" deletes every score, and with them the Statistics.
+**Statistics** (`StatisticsScreen`) is a card for each person, by name (`playerKey`), in name order: games, wins, win rate,
+streaks, fewest turns to win, captures, times captured, and pawns home, less the race's figures in Survival. Added up
+in `GameRecordRepository.playerStatistics`, off the main thread. Each figure is read with its label as one.
 
 ## Achievements
 
@@ -685,7 +507,7 @@ The pawns are Classic, Counter, Cone, Peg, Glass, Animal (Cat and Duck), and Gem
 them and leaves the family its body. Gems takes the Gems die's lock; the rest open at 5, 20, 25, 30, and 40
 achievements.
 
-**The die** is DiceFive's 35 families, D20 included (drawn showing 1-6). `GameDie` draws the style's face, turning
+**The die** has 35 families, D20 included (drawn showing 1-6). `GameDie` draws the style's face, turning
 through random faces as it tumbles; a style that tumbles itself (the D20, the Egg, the Bestagon) is handed the tumble's
 clock (`LocalDieTumbleMillis`) instead. Before the first roll it's the style's body colour with no face. Its ring is
 drawn round the style, not by it: in the colour of the player whose turn it is, in full while it can be rolled (or, of
@@ -693,7 +515,7 @@ two dice, once picked) and faint the rest of the turn, a CPU's included (2026-11
 has a white ring, edged in ink, round its inside edge (`LudoBoard`), until the game is over. Both are visual only: the
 status lines name whose turn it is (`TurnHighlightTest`).
 
-**Backgrounds** are DiceFive's 20 families. One that moves (the Ocean's Waves, Floating Dice)
+**Backgrounds** have 20 families. One that moves (the Ocean's Waves, Floating Dice)
 runs on the Background decoration group; a die's own sparkle or glow on the Die group (`MotionGroup.DICE`).
 
 Each category is two lists in the same order:
@@ -705,8 +527,8 @@ Each category is two lists in the same order:
     the registry by id into the Styles screen's `StyleFamily`s of `StyleColour`s, and refuses a mismatch at load.
 
 - **Ids** are the family's string key, then the colour's (`classic_ivory`, `ocean_lagoon`), and permanent once
-    released. `StyleRegistryTest` enforces this. The die's and background's are DiceFive's, as are their saved keys
-    (`dice_style_id`, `table_background_id`); the board's and pawns' are `board_style_id` and `pawn_style_id`.
+    released. `StyleRegistryTest` enforces this. The die's and background's saved keys are
+    `dice_style_id` and `table_background_id`; the board's and pawns' are `board_style_id` and `pawn_style_id`.
 - **The Classic family** comes first in every category and is free. Its first colour is the default: the cream board,
     glossy pawns, the ivory die, and the navy felt.
 - **A style with a counterpart of the same name is unlocked by the same thing** in every category that has one:
@@ -743,7 +565,7 @@ Each category is two lists in the same order:
     - The sources are `app/audio/*.ogg`.
     - They're peak-normalised to -0.8 dBFS by ffmpeg at build time (`scripts/normalize-audio.sh`): never `res/raw/`,
         never hand-adjusted. Android packages Ogg copies (`NormalizeOggAudioTask`). `scripts/tests/normalize-audio-test.sh`
-        checks they keep each clip's length (the shake window is timed to them) and peak.
+        checks they keep each clip's length and peak.
     - The app has one player (`rememberAppSoundEffects`, provided at `LudoPlusApp` as `LocalSoundEffects`). With sound
         on it loads its clips off the main thread a second after launch; otherwise on its first sound. It's held in the
         background and released with the app, so a sound started on one screen carries on to the next.
@@ -754,44 +576,34 @@ Each category is two lists in the same order:
     yard (`CAPTURE_FLIGHT_MILLIS`). A pawn reaching home pops, in a gold ring and one of its colour, with sparks
     (`HOME_FLOURISH_MILLIS`). All of it is the Pawn moves motion group's: with it off, the pawns snap. A CPU, the
     tutorial, and the results page wait it out (`GamePacing.waitAfter`).
-- **Haptics.** A tick on hold or unhold, and a buzz for the shake. Settings switches sound and vibration off
-    separately. Vibration is wired like sound: one `DiceHaptics` (`rememberAppHaptics`, `LocalDiceHaptics`) that follows
-    the switch. Only the player's own rolls and holds vibrate: a CPU's roll still plays its sounds but never buzzes.
-- **The roll.**
-    - As the cup shakes, unheld dice are swept into it.
-    - On landing they're thrown up their own columns, bounce off the far wall, and tumble to rest on their results. A
-        flat-faced die tumbles as a cube of its own faces, starting from the face it showed, so no face ever jumps.
-    - The toss starts in the frame its dice arrive (`RollTracker`), so the result never flashes first.
-    - Scoring and the next roll both wait for the dice to land.
-    - Each die casts one shadow from a fixed light.
-- **Animations setting** (`AnimationLevel`): High (uncapped), Medium (60fps, ambient decoration still), Low (30fps,
-    simple roll) or Off, each a preset of the Graphics page's **Advanced graphics settings** (`MotionSettings`): Off, 30fps, 60fps
-    or Max for each style's decoration (Dice, Dice Cup, Mat, Background, and Boxes), Menus & pages, Banners, Scores, Celebrations, Score glow, the cup's
-    shake, and the dice's roll (no Off), the dice's roll itself (Off, In place, or Tossed), and Pause when idle (High
-    and Medium 60s, Low and Off 30s). The system's
-    remove-animations setting counts as Off. Details are in `UI.md`, "Reduced motion".
+- **Haptics** (`ui/game/Haptics.kt`). A tick for a pawn moved, and a longer buzz for a capture or a Nearby guest's turn
+    running out. Settings switches sound and vibration off separately; vibration is wired like sound
+    (`rememberAppHaptics`).
+- **The roll.** The die tumbles for `DIE_TUMBLE_MILLIS`, flicking through random faces as it turns, and lands on its result;
+    a style that tumbles itself is handed the clock (`LocalDieTumbleMillis`).
+- **Animations setting** (`AnimationLevel`): High (uncapped), Medium (60fps, ambient decoration still), Low (30fps), or Off,
+    each a preset of the Graphics page's **Advanced graphics settings** (`MotionSettings`): Off, 30fps, 60fps, or Max for
+    the Die's and Background's decoration, Menus & pages, Achievement banners, Celebrations, the Die roll, and Pawn
+    moves, and Pause when idle (High and Medium 60s, Low and Off 30s). The system's remove-animations setting counts as
+    Off. Details are in `UI.md`, "Reduced motion". Tests: `MotionSettingsTest`, `AnimationLevelSettingTest`.
 
 ## Settings
 
 - **Contents.** The online account card (the play app) or the progress files card (the github app), at the top; switches
-    for Sound effects, Vibration, Confirm leaving game, and Tricolour shapes; the **Graphics** row; and the leaderboard
-    reset behind a confirmation.
+    for Sound effects, Vibration, Confirm leaving game, and Stop at first winner; the **Graphics** row; and in the play
+    app, Remove ads and the ad privacy choices (`ADS.md`).
 - **Graphics** (`GraphicsScreen`, `GraphicsViewModel`, route `settings/graphics`): a page of its own, opened by a button
     row with an onward arrow. The Orientation, then the Animations level, each under its title, in one card; then the
     Advanced graphics settings, under their own heading in three cards, each collapsed until opened (`UI.md`, "Reduced
     motion"). The Gameplay card also holds **Pause when idle** (`IdleTimeout`, `motion_idle_timeout`: 30s, 60s, 90s, or
     Off), how long an untouched screen waits before its infinite animations freeze, preset by the level like the rest.
-    None is synced: they're about this device. Tests: `GraphicsScreenTest`, `AnimationLevelSettingTest`,
+    None is synced: they're about this device. Tests: `AnimationLevelSettingTest`,
     `MotionSettingsTest`, `IdleTimeoutSettingTest`, `ScreenIdleTest`.
-- **Tricolour shapes** (`tricolour_marks`, synced, off by default): a triangle, circle, or square for red, yellow, or
-    blue, on a Tricolour die's corner (`DieColourMark`), in the game and the Rules page's examples, and in its
-    colour's box (`BoxColourMark`), for telling the dice apart without their colours. Not while a die is tossed, and
-    not spoken, as a die and a box already say their colour. Tests: `ColourMarksTest`, `RulesScreenAccessibilityTest`.
 - **Orientation** (`ScreenOrientation`): Device (the default: turns as the system allows), Portrait or Landscape. Not
     synced, as a phone and a tablet can want different ones. `LudoPlusApp` hands it to `PlatformServices.lockOrientation`;
     on Android `MainActivity` sets `requestedOrientation` (sensor portrait or landscape, so either way up). The manifest's
     `android:appCategory="game"` is what lets the lock hold on a large screen: Android 16+ ignores it there otherwise.
-    Tests: `ScreenOrientationSettingTest`, `OrientationLockTest`, `GraphicsScreenTest`.
+    Tests: `ScreenOrientationSettingTest`, `OrientationLockTest`.
 - **Foot of the page.** The version pill is the last thing on the page (not pinned), after About and **Licences**: every
   library, font and sound, with its licence
     text, generated at build time (`app/licensing/README.md`).
@@ -813,9 +625,8 @@ Each category is two lists in the same order:
 
 `ui/rules/RulesContent.kt` (the pages: `RULES_GROUPS` and its block types) and `ui/rules/RulesScreen.kt` (drawing them).
 
-- **Layout.** Two tab rows: groups, then the pages of the chosen group. One pager runs across every page. There is only
-    **Gameplay** so far (How to Play, The Board, Your Turn, Captures, and Winning), so its group row isn't shown;
-    **Modes** and **Modifiers** join it in Phase 9.
+- **Layout.** Two tab rows: groups (**Gameplay**, **Game Modes**, and **House Rules**), then the pages of the chosen group.
+    One pager runs across every page.
 - **Diagrams** (`RulesDiagram.kt`): a crop of the real board (`drawBoard`, `drawPawn`, and `ClassicBoardLayout`'s positions),
     in the default seat colours, with pawns, ink arrows (dashed for a pawn sent back), and a die. One image to TalkBack,
     described in words (`rules_*_diagram_cd`).

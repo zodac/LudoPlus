@@ -14,7 +14,8 @@ them all home first. Releasing from 1.0.0 (2026-11-18).
 - **Bringing DiceFive's features back.** Achievements, styles, scores and Statistics, saved games, progress files, the
     tutorial, Play Games and purchases were removed with the dice game. Their code, built and tested, is in commit
     `5423b6c` (the renamed copy, before the gut): restore what a phase needs from there (`git show 5423b6c:<path>`)
-    rather than writing it again, then make it Ludo's. Docs that still describe DiceFive say so in a note at their top.
+    rather than writing it again, then make it Ludo's. All of it is back (2026-11-24 for the last of
+    it); a doc that mentions DiceFive does so for its history.
 - **Players.** 2-8 per game: any mix of pass-and-play, CPU opponents, and, in the play app, phones nearby (`NETPLAY.md`).
 - **Content.** Custom game modes, house-rule modifiers, Nearby netplay, achievements, styles for the board, pawns and
     die, and in-app purchases, all built through Phase 12 (`IMPLEMENTATION.md`).
@@ -46,9 +47,9 @@ them all home first. Releasing from 1.0.0 (2026-11-18).
 | Package | `net.zodac.ludoplus` (Kotlin root package; the play app's `applicationId`; the github APK is `net.zodac.ludoplus.github`; was `net.zodac.ludo` until 2026-11-19, which 1.0.0's github APK shipped as: a separate app no later release upgrades, left behind at the maintainer's word). The name is one word, `LudoPlus`, in code identifiers (`LudoPlusTheme`) and player text alike (the maintainer, 2026-11-19) |
 | Version | `VERSION` at the repo root (1.0.0 from 2026-11-18, set at the maintainer's word: releases are on). Never hand-edit for a debug install |
 | Platforms | Android minSdk 26, targetSdk/compileSdk 37 (`gradle/android-sdk.properties`). Android only |
-| Stack | Kotlin Multiplatform, Compose Multiplatform, Material 3 (dark only), Navigation Compose, MVVM (`ViewModel` + `StateFlow`), DataStore (settings). Room comes back for game records in Phase 4 |
+| Stack | Kotlin Multiplatform, Compose Multiplatform, Material 3 (dark only), Navigation Compose, MVVM (`ViewModel` + `StateFlow`), DataStore (settings), Room (game records) |
 | Versions | `gradle/libs.versions.toml`, bumped monthly by CI (an entry tied to another is marked `# @update`); sandbox pins in `ai-sandbox-configuration/Dockerfile` |
-| Languages | English (`en-GB` base, British spelling) only for now: all player text in Compose resources (`I18N.md`), so translations can follow. The Spanish and Arabic folders inherited from DiceFive go in Phase 0 |
+| Languages | English (`en-GB` base, British spelling) only for now: all player text in Compose resources (`I18N.md`), so translations can follow |
 | Licence | Proprietary, all rights reserved (`LICENSE`), source public read-only; no outside contributions. Third-party parts keep their own licences (the Sora font stays OFL) |
 | Sandbox | Claude runs in the Docker sandbox (`ai-sandbox/README.md`); an emulator boots on demand |
 | Sandbox tools | git, gh, jq, python3, node, curl, sqlite3, adb, `emulator.sh`, taskset, `ps`/`pgrep`/`pkill`, `magick`, ffmpeg, and docker (the linters run in it). Not there: `file`, `tree`, `wget`, `zip`, `xmllint`, and `strace`. CI's logs and artifacts need `gh` logged in: ask the maintainer to run `! gh auth login -h github.com -p https -w`, then `gh run view <id> --log-failed` and `gh run download` |
@@ -102,7 +103,7 @@ them all home first. Releasing from 1.0.0 (2026-11-18).
 - **Accessibility is part of done.** Every new or changed UI element goes through the checklist in `.claude/UI.md`.
     The report says what TalkBack does with it. Don't add that it wasn't heard on a device: the maintainer knows
     speech is never heard here.
-- **Achievement titles (from Phase 6) fit ONE line of the unlock banner at 11sp or larger.**
+- **Achievement titles fit ONE line of the unlock banner at 11sp or larger.**
     - English titles are at most `MAX_ACHIEVEMENT_TITLE_LENGTH` (38) characters (`AchievementTextTest`). A translation
         may set its own `achievement_title_max_length`.
     - Shorten a title that doesn't fit; never wrap or shrink it. A description gets exactly two lines.
@@ -157,14 +158,14 @@ and limit; read a whole doc only when the change spans it.
 | `.claude/IMPLEMENTATION.md` | **Any gameplay or feature work**: the Ludo rules this app implements, the phased plan, each phase's status and exit criteria |
 | `.claude/DESIGN.md` | Rules of play, modes and modifiers in brief, the CPU, persistence, errors and the crash page, Leaderboard/Statistics, achievements, table art, sound, settings, the play and github apps (progress files), release pipeline |
 | `.claude/UI.md` | Any visual change: colour, the brand font, shared chrome, insets, component rules, **the accessibility checklist**, motion and reduced motion, scrollbars, player colours, gotchas |
-| `.claude/UI_BOARD.md` | The game screen: scorecard grid per mode, tiles, tray, cup, totals and undo, tablets and landscape, name caps |
-| `.claude/UI_SCREENS.md` | Achievements list and banners, Styles screen and locks, Leaderboard views, menu logo and backdrop |
+| `.claude/UI_BOARD.md` | The game screen: its layout, the board, player cards and names, the die, the move log, what TalkBack hears |
+| `.claude/UI_SCREENS.md` | Achievements list and banners, Styles screen and locks, Leaderboard and Statistics, menu logo and backdrop |
 | `.claude/GAME_MODES.md` | Adding or changing a game mode or modifier: the mode-is-data rule, field map, checklist, turn flow, tests |
 | `.claude/GAME_MODES_AUDIT.md` | Which achievements each mode or modifier blocks or guards, and how to audit a new one |
 | `.claude/TUTORIAL.md` | The guided tutorial: its script, steps, coach card, gates and tests, and how to add one for another mode |
 | `.claude/I18N.md` | Adding or moving any player-visible or spoken string, or a formatter or platform text API |
 | `.claude/I18N_LANGUAGES.md` | Translating: shipped languages, glossaries, adding a language |
-| `.claude/STYLE_ART.md` | Creating or reworking dice, cups, mats, backgrounds or frames |
+| `.claude/STYLE_ART.md` | Creating or reworking boards, pawns, dice, or backgrounds |
 | `.claude/BENCHMARKS.md` | Performance: patterns that keep frames cheap, current costs, open items |
 | `.claude/EMULATOR.md` | Emulator internals, CI's twin, troubleshooting a dying emulator, versions |
 | `.claude/STORE_ASSETS.md` | Changing store screenshots, scenes, captions or the video, and the generator traps |
