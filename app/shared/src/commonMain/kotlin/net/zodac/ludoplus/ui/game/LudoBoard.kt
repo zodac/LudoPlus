@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -108,7 +109,7 @@ private const val HOME_SPARKS = 10
  * ([Move.swap]) can swap with.
  *
  * A move hops square by square (out of the yard, it glides to the start square). The pawns it comes to share a square with
- * make room as it comes onto the square, not before. A pawn it captures is knocked out
+ * make room as it comes onto the square, not before. A shield goes with its pawn. A pawn it captures is knocked out
  * in a burst on its square and thrown back to its yard; a pawn that reaches home pops in a ring of sparks. None of it
  * plays while the Pawn moves motion is off ([MotionGroup.PAWN_MOVE]).
  *
@@ -293,12 +294,20 @@ private class MovingPawn(
     val powerUp: PowerUp? = null,
     /** The pawns whose shields it breaks, each there till the move has played out. */
     val brokenShields: List<PawnRef> = emptyList(),
+    /** Whether it has a shield as it sets off. */
+    val shielded: Boolean = false,
+    /** How long till it's off the track, where its shield goes: null if it stays on it. */
+    val offTrackMillis: Int? = null,
 ) {
     val landing: Offset get() = warpTo ?: path.last()
 
     /** How long it hops for, before any portal. */
     val hopMillis: Int get() = (path.size - 1) * PAWN_STEP_MILLIS
     val travelMillis: Int get() = hopMillis + if (warpTo != null) PORTAL_WARP_MILLIS else 0
+
+    /** Whether it has a shield, [millis] from the move's start: one it takes, from when it lands. */
+    fun isShielded(millis: Float): Boolean =
+        (shielded && (offTrackMillis == null || millis < offTrackMillis)) || (powerUp == PowerUp.SHIELD && millis >= travelMillis)
 
     /** How far [shift]'s pawns have made room (0 to 1), [millis] from the move's start: all of it as the pawn they make it for lands. */
     fun shifted(shift: PawnShift, millis: Float): Float {
@@ -312,9 +321,17 @@ private class MovingPawn(
 
 /**
  * Another pawn, [ref], that a move sends from [from] to [to], where it is [toRadius] across: one taken, on its way back to
- * its yard spot, or one a power-up moves ([taken] false).
+ * its yard spot, or one a power-up moves ([taken] false). A shield on it ([shielded]) goes with it, but is lost as it's taken.
  */
-private class SentPawn(val ref: PawnRef, val from: Offset, val to: Offset, val fromRadius: Float, val toRadius: Float, val taken: Boolean)
+private class SentPawn(
+    val ref: PawnRef,
+    val from: Offset,
+    val to: Offset,
+    val fromRadius: Float,
+    val toRadius: Float,
+    val taken: Boolean,
+    val shielded: Boolean,
+)
 
 /** The squares of [state]'s board with something of the mode's own on them to tap: portals, or power-ups. */
 private fun specialSquares(state: GameState): Collection<Int> =
@@ -365,6 +382,7 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
         if (moving.warpTo != null && warp > 0f && warp < 1f) drawWarpTrail(moving.path.last() * unit, moving.warpTo * unit, unit, warp, mover)
         val (centre, lift, radius) = moverPose(moving, if (landed && moving.home) after else 0f)
         if (lift > 0f) drawGroundShadow(centre * unit, radius * unit, lift / HOP_HEIGHT)
+        if (moving.isShielded(millis)) drawShieldBubble((centre - Offset(0f, lift)) * unit, radius * unit)
         with(pawns) { drawPawn((centre - Offset(0f, lift)) * unit, radius * unit, mover, ringed = false) }
         if (landed && moving.home) drawHomeSparks(moving.landing * unit, unit, after, mover)
         for (sent in moving.sent) {
@@ -374,6 +392,7 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
             val up = height * 4f * flight * (1f - flight)
             val size = sent.fromRadius + (sent.toRadius - sent.fromRadius) * flight
             if (up > 0f) drawGroundShadow(ground * unit, size * unit, up / height)
+            if (sent.shielded && !(sent.taken && landed)) drawShieldBubble((ground - Offset(0f, up)) * unit, size * unit)
             with(pawns) { drawPawn((ground - Offset(0f, up)) * unit, size * unit, colourOf(sent.ref.player), ringed = false) }
         }
     }
@@ -488,7 +507,7 @@ private fun DrawScope.drawSpark(centre: Offset, size: Float, colour: Color, alph
 
 /**
  * Follows [state]'s last move, animating it from where it started; the first state seen is shown as it is. A roll made
- * while a move is still playing out doesn't cut it short.
+ * while a move is still playing out doesn't cut it short. The shields pawns set off with are those of the state shown before it.
  */
 @Composable
 private fun rememberMoveMotion(state: GameState): MoveMotion {
@@ -496,7 +515,9 @@ private fun rememberMoveMotion(state: GameState): MoveMotion {
     val firstSeen = remember { latest[0] }
     val event = (state.lastEvent as? GameEvent.Moved)?.also { latest[0] = it } ?: latest[0]
     val reduce = groupReduceMotion(MotionGroup.PAWN_MOVE)
-    val moving = remember(event) { if (event == null || event === firstSeen || reduce) null else movingPawn(state, event) }
+    val shown = remember { arrayOf(state) }
+    val moving = remember(event) { if (event == null || event === firstSeen || reduce) null else movingPawn(state, event, before = shown[0]) }
+    SideEffect { shown[0] = state }
     val clock = remember(event) { Animatable(0f) }
     var done by remember(event) { mutableStateOf(moving == null) }
     LaunchedEffect(event) {
@@ -507,7 +528,8 @@ private fun rememberMoveMotion(state: GameState): MoveMotion {
     return MoveMotion(if (done) null else moving, clock.asState())
 }
 
-private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
+/** [event]'s move, [state] being the game after it, and [before] the one it was made in. */
+private fun movingPawn(state: GameState, event: GameEvent.Moved, before: GameState): MovingPawn {
     val layout = BoardLayout.of(state.board)
     val move = event.move
     // The pawn's owner: the mover, or a partner they rolled for.
@@ -516,11 +538,12 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
     val fromYard = move.from == PawnPosition.YARD_PROGRESS
     val marks = moveMarks(state, event)
     val landing = marks.after(PawnRef(owner, move.pawn))
+    // On to where the roll takes it, over any lost squares, and where that's onto a shield, back to where it settles.
+    val steps = (move.from..move.rolledTo) - move.skipped.toSet() + (move.bouncedFrom?.let { it - 1 downTo move.to } ?: IntRange.EMPTY)
     val squares = if (fromYard) {
         listOf(layout.yardSpotOf(seat, move.pawn, state.rules.pawnsPerPlayer), layout.centreOf(seat, PawnPosition.of(0, state.board), 0))
     } else {
-        // On to where the roll takes it, over any lost squares, and where that's onto a shield, back to where it settles.
-        ((move.from..move.rolledTo) - move.skipped.toSet() + (move.bouncedFrom?.let { it - 1 downTo move.to } ?: IntRange.EMPTY)).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn, state.rules.pawnsPerPlayer) }
+        steps.map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn, state.rules.pawnsPerPlayer) }
     }
     val effect = event.effect
     val warps = move.via != null || effect?.movedTo != null
@@ -529,7 +552,7 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
     val home = event.endedAt == state.board.homeProgress
     fun sent(ref: PawnRef, taken: Boolean): SentPawn {
         val (from, to) = marks.before(ref) to marks.after(ref)
-        return SentPawn(ref, from.centre, to.centre, from.radius, to.radius, taken)
+        return SentPawn(ref, from.centre, to.centre, from.radius, to.radius, taken, before.isShielded(ref.player, ref.pawn))
     }
     val sent = event.allCaptures.map { sent(it, taken = true) } +
         listOfNotNull(effect?.swapped, effect?.calledUp?.let { PawnRef(owner, it) }).map { sent(it, taken = false) }
@@ -547,6 +570,8 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
         powerUp = effect?.powerUp,
         brokenShields = move.brokenShields + effect?.brokenShields.orEmpty(),
         warpTo = if (warps) landing.centre else null,
+        shielded = before.isShielded(owner, move.pawn),
+        offTrackMillis = steps.indexOfFirst { it >= state.board.trackSteps }.takeIf { it >= 0 }?.let { it * PAWN_STEP_MILLIS },
     )
 }
 
