@@ -104,8 +104,12 @@ minutes in the sandbox.
 - **It plays** a fresh install of the last release's github APK: Play, Start Game (a fresh install's default setup), then
     the player's rolls and moves, at least four and until a pawn is out of its yard, and leaves the game waiting on the
     player's roll. **It upgrades** from the background with `adb install -r`. **It resumes** with Continue, compares the
-    names and every board place's numbers (BoardSemantics: squares, pawns, and squares from home), then takes two more
-    rolls or moves to prove it plays on.
+    names, every board place's numbers (BoardSemantics: squares, pawns, and squares from home), and the whole move log
+    (scrolled through: each line's time, players, and numbers), then takes two more rolls or moves to prove it plays on.
+    The names are every text on the game screen that isn't a sentence, so a new label there must be left out in the
+    script's `is_name`.
+- **A release with no move log** (`LOGLESS_RELEASES`: 1.0.1) is compared without it. Temporary: remove it once 1.1.0 is
+    released.
 - **A retired package.** 1.0.0 went out as `net.zodac.ludo.github`, before the package became `net.zodac.ludoplus`, so
     no later release can upgrade it (the maintainer, 2026-11-19, let it go). The script reads both APKs' packages with
     `aapt2` and passes a last release in `RETIRED_PACKAGES` with a notice; any other mismatch fails.

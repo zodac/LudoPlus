@@ -41,6 +41,21 @@ LEFT = (
 )
 
 
+LOG = [
+    ("[08:49:10]", "Joker captured 2 of Player 1's pawns."),
+    ("[08:49:02]", "Player 1 moved a pawn 3 squares."),
+    ("[08:48:51]", "Player 1 goes first."),
+]
+
+
+def log_screen(*lines):
+    """A dump of the move log's list: a row for each line, with its time and what happened as texts of their own."""
+    rows = "".join(
+        f'<node><node content-desc="{line}" /><node text="{time} " /><node text="{line}" /></node>' for time, line in lines
+    )
+    return check.parse_screen(f'<hierarchy><node text="Moves" /><node scrollable="true" bounds="[53,1866][1027,2316]">{rows}</node></hierarchy>')
+
+
 def replaced(nodes, old, new):
     """nodes with each one whose text or description starts with old replaced by new."""
     return [new if any(field.startswith(old) for field in node[:2]) else node for node in nodes]
@@ -50,7 +65,7 @@ class UpgradeCheckTest(unittest.TestCase):
 
     def test_a_snapshot_holds_the_names_and_each_places_numbers_in_order(self):
         self.assertEqual(
-            {"names": ["Joker", "Player 1"], "places": [[3], [4], [1], [16, 3, 54], [1], []]},
+            {"names": ["Joker", "Player 1"], "places": [[3], [4], [1], [16, 3, 54], [1], []], "log": None},
             check.snapshot(board(*LEFT)),
         )
 
@@ -59,6 +74,52 @@ class UpgradeCheckTest(unittest.TestCase):
         reworded = replaced(reworded, "Player 1, tap the die to roll.", ("Your roll, Player 1.", "", "false"))
         reworded = replaced(reworded, "Die showing 4", ("", "Die", "true"))
         self.assertEqual([], check.differences(check.snapshot(board(*LEFT)), check.snapshot(board(*reworded))))
+
+    def test_the_move_logs_title_and_times_are_not_names(self):
+        logged = board(*LEFT, ("Moves", "", "false"), ("[08:48:51] ", "", "false"), ("Player 1 goes first.", "", "false"))
+        self.assertEqual(["Joker", "Player 1"], check.snapshot(logged)["names"])
+
+    def test_the_log_is_the_scrolling_list_of_times_and_what_happened_then(self):
+        self.assertEqual(LOG, check.log_lines(check.find_log(log_screen(*LOG))))
+        self.assertIsNone(check.find_log(board(*LEFT)))
+        self.assertIsNone(check.find_log(check.parse_screen('<hierarchy><node scrollable="true"><node text="Moves" /></node></hierarchy>')))
+
+    def test_a_scrolled_logs_pages_join_where_they_overlap(self):
+        self.assertEqual(LOG, check.joined_lines([], LOG))
+        self.assertEqual(LOG, check.joined_lines(LOG[:2], LOG[1:]))
+        self.assertEqual(LOG, check.joined_lines(LOG, LOG[1:]))
+        self.assertIsNone(check.joined_lines(LOG[:1], LOG[1:]))
+
+    def test_a_lines_rewording_is_not_a_changed_log(self):
+        before = check.snapshot(board(*LEFT), LOG)
+        self.assertEqual(["[08:49:10]", ["Joker", "Player 1"], [2, 1]], before["log"][0])
+        reworded = [(LOG[0][0], "Joker sent 2 of Player 1's pawns back."), *LOG[1:]]
+        self.assertEqual([], check.differences(before, check.snapshot(board(*LEFT), reworded)))
+
+    def test_a_log_that_lost_changed_or_retimed_a_line_is_named(self):
+        before = check.snapshot(board(*LEFT), LOG)
+
+        def changed(*log):
+            return check.differences(before, check.snapshot(board(*LEFT), list(log)))
+
+        self.assertEqual(["move log: was 3 lines, now 2"], changed(*LOG[:2]))
+        self.assertEqual(["move log: was 3 lines, now 0"], changed())
+        self.assertEqual(["move log: was 3 lines, now 0"], check.differences(before, check.snapshot(board(*LEFT))))
+        self.assertEqual(
+            ["move log, line 2: was ['[08:49:02]', ['Player 1'], [1, 3]], now ['[08:49:03]', ['Player 1'], [1, 3]]"],
+            changed(LOG[0], ("[08:49:03]", LOG[1][1]), LOG[2]),
+        )
+        self.assertEqual(
+            ["move log, line 2: was ['[08:49:02]', ['Player 1'], [1, 3]], now ['[08:49:02]', ['Player 1'], [1, 4]]"],
+            changed(LOG[0], (LOG[1][0], "Player 1 moved a pawn 4 squares."), LOG[2]),
+        )
+        self.assertEqual(
+            ["move log, line 3: was ['[08:48:51]', ['Player 1'], [1]], now ['[08:48:51]', ['Joker'], []]"],
+            changed(LOG[0], LOG[1], (LOG[2][0], "Joker goes first.")),
+        )
+
+    def test_a_game_from_a_release_with_no_log_is_compared_without_one(self):
+        self.assertEqual([], check.differences(check.snapshot(board(*LEFT)), check.snapshot(board(*LEFT), LOG)))
 
     def test_a_moved_pawn_changed_name_or_lost_game_is_named(self):
         before = check.snapshot(board(*LEFT))
@@ -100,6 +161,15 @@ class UpgradeCheckTest(unittest.TestCase):
         self.assertFalse(check.pawn_out(board(*in_column)))
         in_column = replaced(in_column, "Red home column, square 1", ("", "Red home column, square 1, Red pawn 3, 5 squares from home", "false"))
         self.assertTrue(check.pawn_out(board(*in_column)))
+
+    def test_the_game_is_not_left_while_a_move_waits_to_be_picked(self):
+        self.assertTrue(check.ready_to_leave(board(*LEFT)))
+        moving = replaced(LEFT, "Die showing 4", ("", "Die showing 1", "false"))
+        moving = replaced(moving, "Square 16", ("", "Square 16, Red pawn 3, 54 squares from home", "true"))
+        self.assertFalse(check.ready_to_leave(board(*moving)))
+        self.assertIsNotNone(check.player_action(board(*moving)))
+        in_yard = replaced(LEFT, "Square 16, Red pawn 3", ("", "Square 16, empty", "false"))
+        self.assertFalse(check.ready_to_leave(board(*in_yard)))
 
     def test_an_upgrade_reaches_the_same_package_skips_a_retired_one_and_fails_any_other(self):
         self.assertTrue(check.upgrade_reaches(check.PACKAGE, check.PACKAGE))

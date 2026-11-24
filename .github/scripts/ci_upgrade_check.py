@@ -7,8 +7,8 @@ It drives the app with adb and UiAutomator's dump rather than the Baseline Profi
 runs the play app built from this commit, while this has to drive a release already out, whose labels can differ from
 this commit's. Every label it needs is in the constants below, and a game saved by the old app is compared to the new
 app's board by what the board says of each place on it (the yards, squares, home columns, and home, which name every
-pawn) and the names shown, keeping only the numbers of each place so a rewording in a release isn't taken for a lost
-game. It's left only while it waits for the player's roll, so nothing moves between its snapshot and the upgrade.
+pawn), the names shown, and the whole move log, keeping only the numbers of each place, and the time, players, and
+numbers of each line of the log, so a rewording in a release isn't taken for a lost game. It's left only while it waits for the player's roll, so nothing moves between its snapshot and the upgrade.
 
 Usage:        .github/scripts/ci_upgrade_check.py <old.apk> <new.apk> <directory for a failure's files>
               Both APKs must be the github app, signed with one key, with the new one's versionCode the higher.
@@ -50,6 +50,12 @@ PAWN_OUT = re.compile(r"^(Square \d+|\w+ home column, square \d+),.* pawn \d")
 BANNER_DESCRIPTION = re.compile(r"(Achievement earned|Styles? unlocked): ")
 # The board's prompt ("Player 1, tap the die to roll."), told from a name by its full stop.
 SENTENCE = re.compile(r"[.!?]$")
+# The move log (MoveLogPanel): its title, and the time that starts each line, a text of its own before the line's.
+LOG_TITLE_LABELS = ("Moves",)
+LOG_TIME = re.compile(r"\[\d{2}:\d{2}:\d{2}\]\s*$")
+# TEMPORARY: releases with no move log, whose game can't be compared by it. Once 1.1.0 is released no upgrade check starts
+# from one of these: remove this, and what it's used for in play_on_old_app and differences.
+LOGLESS_RELEASES = ("1.0.1",)
 
 # The player's own rolls and moves before the game is left, at the least; more, up to MAX_PLAYER_ACTIONS, until a pawn
 # is out of its yard, so the saved game holds more than a new one.
@@ -65,6 +71,10 @@ TURN_TIMEOUT_SECONDS = 180
 TAP_RETRY_SECONDS = 20
 POLL_SECONDS = 1
 SAVE_SETTLE_SECONDS = 5
+# Swipes over the log that bring up no new line before it's taken to be at its end: a starved emulator drops some.
+LOG_END_SWIPES = 3
+# Slow, so the list stops with the finger rather than gliding on past lines not read yet.
+LOG_SWIPE_MILLIS = 2000
 
 
 class DriveFailure(Exception):
@@ -143,6 +153,11 @@ def pawn_out(nodes):
     return any(PAWN_OUT.match(description) for description, _ in places(nodes))
 
 
+def ready_to_leave(nodes):
+    """A pawn is out, so the saved game holds more than a new one, and the player's next action is a roll, not a move."""
+    return awaiting_roll(nodes) and pawn_out(nodes)
+
+
 def action_key(node):
     return node.get("content-desc"), node.get("bounds")
 
@@ -151,16 +166,54 @@ def numbers_in(text):
     return [int(number) for number in re.findall(r"\d+", text)]
 
 
-def snapshot(nodes):
+def is_name(text):
+    """True for a text on the board that names something in the game: not a sentence, nor the move log's title or times."""
+    return bool(text) and not SENTENCE.search(text) and text not in LOG_TITLE_LABELS and not LOG_TIME.match(text)
+
+
+def find_log(nodes):
+    """The move log's list: what scrolls and holds the lines' times. None if the screen has none."""
+    return next(
+        (node for node in nodes if node.get("scrollable") == "true" and any(LOG_TIME.match(text.get("text", "")) for text in node.iter("node"))),
+        None,
+    )
+
+
+def log_lines(log):
+    """The lines of the move log's list that are on screen, newest first, as (time, what happened)."""
+    texts = [node.get("text") for node in log.iter("node") if node.get("text")]
+    return [(time_text.strip(), line) for time_text, line in zip(texts, texts[1:]) if LOG_TIME.match(time_text) and not LOG_TIME.match(line)]
+
+
+def joined_lines(lines, page):
+    """lines with the page under them, which starts with some of their last. None if it doesn't: lines between were missed."""
+    if not lines:
+        return page
+    for overlap in range(min(len(lines), len(page)), 0, -1):
+        if lines[-overlap:] == page[:overlap]:
+            return lines + page[overlap:]
+    return None
+
+
+def log_entry(line, names):
+    """A line of the log with its wording left out: its time, the players it names in order, and its numbers."""
+    time_text, happened = line
+    return [time_text, sorted((name for name in names if name in happened), key=happened.index), numbers_in(happened)]
+
+
+def snapshot(nodes, log=None):
     """
-    What a saved game has to bring back: the names the board shows, and each place's numbers in order (a square's
-    number, and each pawn's number and squares from home there; a yard's pawns). Only the numbers of a description are
-    kept, so rewording one in a release isn't taken for a lost game. Neither the board's prompt (a sentence: worded, not
-    saved) nor the die (it shows the last roll until the next) is kept.
+    What a saved game has to bring back: the names the board shows, each place's numbers in order (a square's number, and
+    each pawn's number and squares from home there; a yard's pawns), and every line of the move log (log, as read_log
+    gives it; None where it wasn't read). Of a description only the numbers are kept, and of a line of the log what
+    log_entry keeps, so rewording one in a release isn't taken for a lost game. Neither the board's prompt (a sentence:
+    worded, not saved) nor the die (it shows the last roll until the next) is kept.
     """
+    names = sorted(node.get("text") for node in nodes if is_name(node.get("text")))
     return {
-        "names": sorted(node.get("text") for node in nodes if node.get("text") and not SENTENCE.search(node.get("text"))),
+        "names": names,
         "places": [numbers_in(description) for description, _ in places(nodes)],
+        "log": None if log is None else [log_entry(line, names) for line in log],
     }
 
 
@@ -177,7 +230,16 @@ def differences(before, after):
             for index, (was, now) in enumerate(zip(before["places"], after["places"]))
             if was != now
         ]
+    # TEMPORARY (LOGLESS_RELEASES): no log was read before, so there's none to compare.
+    if before["log"] is not None:
+        changed += log_differences(before["log"], after["log"] or [])
     return changed
+
+
+def log_differences(before, after):
+    if len(before) != len(after):
+        return [f"move log: was {len(before)} lines, now {len(after)}"]
+    return [f"move log, line {index + 1}: was {was}, now {now}" for index, (was, now) in enumerate(zip(before, after)) if was != now]
 
 
 def centre(node):
@@ -246,6 +308,26 @@ def take_action():
     tap_until("the player's roll or move", player_action, taken)
 
 
+def read_log():
+    """
+    Every line of the move log, newest first, scrolled through from its top. The game has to be waiting on the player's
+    roll: a move adds a line and brings the log back to its top.
+    """
+    lines = []
+    unmoved = 0
+    while unmoved < LOG_END_SWIPES:
+        log = wait_for("the move log", find_log)
+        joined = joined_lines(lines, log_lines(log))
+        if joined is None:
+            raise DriveFailure("the move log scrolled past lines that weren't read")
+        unmoved = 0 if len(joined) > len(lines) else unmoved + 1
+        lines = joined
+        left, top, right, bottom = numbers_in(log.get("bounds"))
+        x, quarter = (left + right) // 2, (bottom - top) // 4
+        adb("shell", "input", "swipe", str(x), str(bottom - quarter), str(x), str(top + quarter), str(LOG_SWIPE_MILLIS))
+    return lines
+
+
 def apk_package(apk):
     """The applicationId an APK installs as, read by the newest aapt2 under $ANDROID_HOME."""
     sdk = Path(os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT") or "")
@@ -288,19 +370,29 @@ def play_on_old_app(old_apk):
     """A fresh install of the old app with a game left waiting on the player's roll. Returns the board as it was left."""
     adb("uninstall", PACKAGE, check=False)
     adb("install", "--no-incremental", str(old_apk))
-    print(f"Installed the old app, version {installed_times()[2]}", flush=True)
+    version = installed_times()[2]
+    print(f"Installed the old app, version {version}", flush=True)
     launch()
     tap_until("Play", lambda nodes: find_text(nodes, PLAY_LABELS), lambda nodes: find_text(nodes, START_GAME_LABELS) is not None)
     tap_until("Start Game", lambda nodes: find_text(nodes, START_GAME_LABELS), has_board)
     actions = 0
-    while actions < PLAYER_ACTIONS or not pawn_out(read_screen()):
+    # Read at the player's turn: the last action can be a roll that leaves a move to pick, which is taken too.
+    while True:
+        nodes = wait_for("the player's turn", lambda nodes: nodes if player_action(nodes) is not None else None, timeout=TURN_TIMEOUT_SECONDS)
+        if actions >= PLAYER_ACTIONS and ready_to_leave(nodes):
+            break
         if actions == MAX_PLAYER_ACTIONS:
-            raise DriveFailure(f"no pawn out of its yard after {actions} of the player's rolls and moves")
+            raise DriveFailure(f"no roll to wait on with a pawn out of its yard after {actions} of the player's rolls and moves")
         take_action()
         actions += 1
     wait_for("the player's roll", awaiting_roll, timeout=TURN_TIMEOUT_SECONDS)
     time.sleep(SAVE_SETTLE_SECONDS)
-    left = snapshot(wait_for("the player's roll", lambda nodes: nodes if awaiting_roll(nodes) else None))
+    nodes = wait_for("the player's roll", lambda nodes: nodes if awaiting_roll(nodes) else None)
+    if version in LOGLESS_RELEASES:
+        print(f"::notice::{version} has no move log: the game is compared without it", flush=True)
+        left = snapshot(nodes)
+    else:
+        left = snapshot(nodes, read_log())
     print(f"The game as it was left, after {actions} of the player's rolls and moves: {left}", flush=True)
     return left
 
@@ -321,7 +413,10 @@ def resume_on_new_app(left):
     """Continues the game on the new app: the same board, and one that still plays."""
     launch()
     tap_until("Continue", lambda nodes: find_text(nodes, CONTINUE_LABELS), has_board)
-    resumed = snapshot(wait_for("the player's roll", lambda nodes: nodes if awaiting_roll(nodes) else None))
+    wait_for("the player's roll", awaiting_roll)
+    time.sleep(SAVE_SETTLE_SECONDS)
+    nodes = wait_for("the player's roll", lambda nodes: nodes if awaiting_roll(nodes) else None)
+    resumed = snapshot(nodes, None if left["log"] is None else read_log())
     print(f"The game as it resumed: {resumed}", flush=True)
     changed = differences(left, resumed)
     if changed:
