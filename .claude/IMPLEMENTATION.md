@@ -414,7 +414,7 @@ count but 4 has a board of its own; one player on two colours was dropped.
 - [x] Portals, a mode (the maintainer, 2026-11-24): short and long pairs of two-way portals, from a design that began as
     snakes and ladders (`DESIGN.md`, "Game modes").
 - [x] Survival, a mode (the maintainer, 2026-11-24): six pawns each starting out, no home, captured pawns out of the game,
-    and two stages of sudden death, later the more players there are (`DESIGN.md`, "Game modes").
+    and stages of sudden death, later the more players there are (Overtime and Sudden Death, then the Cataclysm) (`DESIGN.md`, "Game modes").
 - [x] Chaos, a mode (the maintainer, 2026-11-24): six power-ups on the track, Double, Shield, Teleport, Roll Again, Call
     Up, and Swap (`DESIGN.md`, "Game modes"). It reverses the decision above against power-up squares.
 - [x] Haunted House, a mode (the maintainer, 2026-11-24), the seventh, as DiceFive had: ghosts that send pawns back.

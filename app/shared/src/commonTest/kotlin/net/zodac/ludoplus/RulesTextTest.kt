@@ -171,8 +171,9 @@ class RulesTextTest : UiTest() {
             listOf(
                 "In Survival there's no home to reach. Each player's six pawns start out on their start square and go round the track until one player is left.",
                 "A captured pawn is out of the game. Lose all six and you're out: the last player with a pawn left wins, and everyone else is placed by how long they lasted.",
-                "Start squares and star squares are safe at first, until sudden death. Start squares stop being safe first, then star squares too. The line above the board counts the rounds, and with more players it takes longer.",
-                "On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when sudden death comes.",
+                "Start squares and star squares are safe at first. In Overtime the start squares stop being safe, and in Sudden Death the star squares do too. The line above the board counts the rounds, and with more players it takes longer.",
+                "On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when Overtime comes.",
+                "Ten turns after that comes the Cataclysm: after every five turns, up to three squares with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven squares left, so nobody can keep away for ever.",
                 "The Leaderboard ranks Survival wins by the most pawns left.",
             ),
             diagram = null,

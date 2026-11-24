@@ -52,6 +52,7 @@ import net.zodac.ludoplus.resources.rules_survival_1
 import net.zodac.ludoplus.resources.rules_survival_2
 import net.zodac.ludoplus.resources.rules_survival_3
 import net.zodac.ludoplus.resources.rules_survival_4
+import net.zodac.ludoplus.resources.rules_survival_5
 import net.zodac.ludoplus.resources.rules_survival_records
 import net.zodac.ludoplus.resources.rules_turn_1
 import net.zodac.ludoplus.resources.rules_turn_2
@@ -172,7 +173,7 @@ private val GAME_MODES = RulesGroup(
         RulesPage(
             Res.string.mode_survival,
             Res.string.mode_survival,
-            texts(Res.string.rules_survival_1, Res.string.rules_survival_2, Res.string.rules_survival_3, Res.string.rules_survival_4, Res.string.rules_survival_records),
+            texts(Res.string.rules_survival_1, Res.string.rules_survival_2, Res.string.rules_survival_3, Res.string.rules_survival_4, Res.string.rules_survival_5, Res.string.rules_survival_records),
         ),
         RulesPage(
             Res.string.mode_chaos,

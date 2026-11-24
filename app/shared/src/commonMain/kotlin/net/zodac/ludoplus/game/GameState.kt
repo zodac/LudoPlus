@@ -39,7 +39,13 @@ data class GameState(
     val turnsSinceGhost: Int = 0,
     /** The ghost's move that came after the last action, or null where it ended no turn or none was due. */
     val ghostMove: GhostMove? = null,
-    /** What the power-ups' and ghosts' chances are drawn from next, so that a game plays on the same wherever it's kept. */
+    /** Where the rules have sudden death, the absolute track squares its last stage has taken: pawns step over them ([stepOn]). */
+    val lostSquares: Set<Int> = emptySet(),
+    /** The squares of [lostSquares] lost as the last action ended a turn: empty where it ended none, or took none. */
+    val justLost: List<Int> = emptyList(),
+    /** How many turns have ended since sudden death came to its second stage, which its last comes by ([Cataclysm]). */
+    val suddenDeathTurns: Int = 0,
+    /** What the power-ups', ghosts', and lost squares' chances are drawn from next, so that a game plays on the same wherever it's kept. */
     val seed: Long = 0,
     /** What the last action did, for the screen to show and say. Null before the first roll. */
     val lastEvent: GameEvent? = null,
@@ -50,25 +56,60 @@ data class GameState(
 
     val isFinished: Boolean get() = phase == TurnPhase.Finished
 
-    /** How far sudden death has come: 0 for not yet, 1 with the start squares unsafe, and 2 with the stars unsafe too. */
+    /**
+     * How far sudden death has come: 0 for not yet; 1, Overtime, with the start squares unsafe; 2, Sudden Death, with the
+     * stars unsafe too; and 3, the Cataclysm, with the track vanishing ([Cataclysm]).
+     */
     val suddenDeathStage: Int
-        get() = if (!rules.suddenDeath) 0 else (1..SUDDEN_DEATH_STAGES).count { roundsPlayed >= rules.suddenDeathRound(it, players.size) }
+        get() = when {
+            !rules.suddenDeath -> 0
+            suddenDeathTurns >= Cataclysm.STARTS -> CATACLYSM_STAGE
+            else -> (1..GameRules.NOWHERE_SAFE_STAGE).count { roundsPlayed >= rules.suddenDeathRound(it, players.size) }
+        }
 
-    /** How many rounds are left before sudden death's next stage, or null with none to come. */
+    /** Whether sudden death has come to its last stage, the Cataclysm. */
+    val cataclysm: Boolean get() = suddenDeathStage == CATACLYSM_STAGE
+
+    /** In sudden death's second stage, how many turns are left before the Cataclysm. */
+    val turnsToCataclysm: Int? get() = if (suddenDeathStage == GameRules.NOWHERE_SAFE_STAGE) Cataclysm.STARTS - suddenDeathTurns else null
+
+    /** In the Cataclysm, how many turns are left before squares next vanish, or null with no more to. */
+    val turnsToLoss: Int? get() = if (cataclysm && !Cataclysm.isOver(this)) Cataclysm.TURNS - (suddenDeathTurns - Cataclysm.STARTS) % Cataclysm.TURNS else null
+
+    /** The progress of a pawn of [player] at progress [from] (on the track, or home column) moved [steps] squares on, over any [lostSquares]. */
+    fun stepOn(player: Int, from: Int, steps: Int): Int {
+        if (lostSquares.isEmpty()) return from + steps
+        var at = from
+        repeat(steps) {
+            do at++ while (isLost(player, at))
+        }
+        return at
+    }
+
+    /** Whether the track square at [progress] from [player]'s start is one of the [lostSquares]. */
+    fun isLost(player: Int, progress: Int): Boolean = board.trackSquare(players[player].seat, progress) in lostSquares
+
+    /** How many rounds are left before sudden death's next stage, or null with none to come by rounds. */
     val roundsToSuddenDeath: Int?
-        get() = (suddenDeathStage + 1).takeIf { rules.suddenDeath && it <= SUDDEN_DEATH_STAGES }?.let { rules.suddenDeathRound(it, players.size) - roundsPlayed }
+        get() = (suddenDeathStage + 1).takeIf { rules.suddenDeath && it <= GameRules.NOWHERE_SAFE_STAGE }?.let { rules.suddenDeathRound(it, players.size) - roundsPlayed }
 
     /** Whether [player]'s pawn [pawn] has a shield. */
     fun isShielded(player: Int, pawn: Int): Boolean = pawn in players[player].shielded
 
-    /** Whether the round being played is a stage of sudden death's first. */
-    val suddenDeathJustCame: Boolean get() = suddenDeathStage > 0 && roundsPlayed == rules.suddenDeathRound(suddenDeathStage, players.size)
+    /** Whether sudden death has just come to its stage: for the round its first comes in, its second's first few turns, and its last's first. */
+    val suddenDeathJustCame: Boolean
+        get() = when (suddenDeathStage) {
+            0 -> false
+            1 -> roundsPlayed == rules.suddenDeathRound(1, players.size)
+            GameRules.NOWHERE_SAFE_STAGE -> suddenDeathTurns < JUST_CAME_TURNS
+            else -> suddenDeathTurns == Cataclysm.STARTS
+        }
 
     /** Whether a pawn of [seat] on the absolute track [square] is safe from capture now: by the rules, until sudden death. */
     fun isSafeFor(seat: Int, square: Int): Boolean = isSafe(square) && rules.isSafeFor(seat, square)
 
     /** Whether the absolute track [square] is a safe square now: a start or star square, until sudden death. */
-    fun isSafe(square: Int): Boolean = board.isSafe(square) && suddenDeathStage < if (square % board.seatSpacing == 0) 1 else SUDDEN_DEATH_STAGES
+    fun isSafe(square: Int): Boolean = board.isSafe(square) && suddenDeathStage < if (square % board.seatSpacing == 0) 1 else 2
 
     /** The player in first place (one of the first team's, in a team game), once someone has brought every pawn home. */
     val winner: Int? get() = finishingOrder.firstOrNull()
@@ -120,12 +161,16 @@ data class GameState(
     fun position(player: Int, pawn: Int): PawnPosition = PawnPosition.of(players[player].pawns[pawn], board)
 
     companion object {
-        private const val SUDDEN_DEATH_STAGES = 2
+        /** The last stage of sudden death, the Cataclysm. */
+        private const val CATACLYSM_STAGE = 3
+
+        /** How many turns sudden death's second stage has just come for. */
+        private const val JUST_CAME_TURNS = 3
 
         /**
          * A new game of [mode] for [playerCount] players under [rules] (the mode's own by default), every pawn in its
          * yard (or where the rules start them out, on its start square), [first] to roll. The players sit at [seats], in clockwise order: spread round the board by default
-         * ([BoardGeometry.seatsFor]). Where the rules have power-ups or ghosts, [seed] is what their chances are
+         * ([BoardGeometry.seatsFor]). Where the rules have power-ups, ghosts, or sudden death, [seed] is what their chances are
          * drawn from.
          */
         fun new(
@@ -225,12 +270,16 @@ data class Move(
     val via: Int? = null,
     /** The progress of the shielded pawn it lands on and bounces off, settling at [to]; null for a move that meets none. */
     val bouncedFrom: Int? = null,
+    /** The progress of each lost square it steps over ([GameState.lostSquares]), in order. */
+    val skipped: List<Int> = emptyList(),
     /** The pawns whose shields it breaks, bouncing off each. */
     val brokenShields: List<PawnRef> = emptyList(),
 ) {
     /** The progress the roll brings the pawn to, before any portal or shield. */
     val rolledTo: Int get() = bouncedFrom ?: via ?: to
 
+    /** How many squares the roll moves the pawn, the lost ones it steps over not counted. */
+    val squares: Int get() = rolledTo - from - skipped.size
 
     /** Whose pawn moves in [state]: [owner], or the player whose turn it is. */
     fun ownerIn(state: GameState): Int = owner ?: state.current

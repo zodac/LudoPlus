@@ -12,7 +12,7 @@ The board, the player cards, the die, and the move log. The general rules are in
         prompt, or the winner's line, takes its room from the log and never resizes the board.
     - On a screen too short for it all, the player cards close up (`compact`).
 - **Landscape**: the board at the screen's height, and beside it, at least 280dp wide, the cards, the die, and the log.
-- Over the cards: a Nearby game's notice (`NetplayNotice`), and in Survival how long until sudden death
+- Over the cards: a Nearby game's notice (`NetplayNotice`), and in Survival how long until its next stage
     (`SuddenDeathNotice`), both polite live regions. The tutorial's coach card takes the cards' place (`TUTORIAL.md`).
 - The background style fills the page from the foot of the app bar down (`ScreenScaffold`'s `underlay`).
 - Tests: `MoveLogRoomTest`, `NetplayNoticeTest`, `TutorialScreenTest`.
@@ -61,7 +61,7 @@ whose turn it is has an outline in their colour.
 
 - `GameDie` draws the player's die style, with a ring in the turn's colour: in full while it can be rolled, and faint the
     rest of the turn. It can't be rolled until the last action has played out (`GameViewModel.settled`: the die's tumble, a
-    pawn's move, or a ghost's drift). Two Dice draws two, at 0.8 of the size; a tap on one picks it for the next move (`TwoDice`).
+    pawn's move, a ghost's drift, or squares vanishing). Two Dice draws two, at 0.8 of the size; a tap on one picks it for the next move (`TwoDice`).
 - `StatusLines` says what to do now, names in their players' colours. It's a polite live region, and holds every legal
     move as a custom action, so TalkBack can make a move from there as well as from a pawn's square.
 

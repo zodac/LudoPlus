@@ -221,16 +221,32 @@
         <item quantity="one">%1$d pawn left</item>
         <item quantity="other">%1$d pawns left</item>
     </plurals>
-    <!-- Survival's line under the players: how sudden death stands. %1$d is how many rounds until it comes on further. -->
-    <plurals name="game_sudden_death_starts">
-        <item quantity="one">Start squares stop being safe in %1$d round.</item>
-        <item quantity="other">Start squares stop being safe in %1$d rounds.</item>
+    <!-- Survival's line under the players: how its last stages stand. They are Overtime (start squares stop being safe), Sudden Death (star squares do too), and the Cataclysm (squares vanish from the track). "coming" counts down to a stage, %1$d the rounds left (for the Cataclysm, the turns); "came" is shown in the round it comes. -->
+    <plurals name="game_overtime_coming">
+        <item quantity="one">Overtime in %1$d round: start squares unsafe.</item>
+        <item quantity="other">Overtime in %1$d rounds: start squares unsafe.</item>
     </plurals>
-    <plurals name="game_sudden_death_stars">
-        <item quantity="one">Only stars are safe, for %1$d more round.</item>
-        <item quantity="other">Only stars are safe, for %1$d more rounds.</item>
+    <string name="game_overtime_came">Overtime! Only stars are safe.</string>
+    <plurals name="game_sudden_death_coming">
+        <item quantity="one">Sudden Death in %1$d round: stars unsafe.</item>
+        <item quantity="other">Sudden Death in %1$d rounds: stars unsafe.</item>
     </plurals>
-    <string name="game_sudden_death_nowhere">Sudden death! Nowhere is safe.</string>
+    <string name="game_sudden_death_came">Sudden Death! Nowhere is safe.</string>
+    <plurals name="game_cataclysm_coming">
+        <item quantity="one">Cataclysm in %1$d turn: squares vanish.</item>
+        <item quantity="other">Cataclysm in %1$d turns: squares vanish.</item>
+    </plurals>
+    <!-- In the Cataclysm: %1$d is how many turns are left before squares next vanish. -->
+    <plurals name="game_cataclysm">
+        <item quantity="one">Cataclysm! Squares vanish in %1$d turn.</item>
+        <item quantity="other">Cataclysm! Squares vanish in %1$d turns.</item>
+    </plurals>
+    <string name="game_cataclysm_over">Cataclysm! No more squares will vanish.</string>
+    <!-- Added to a move's line in the log when squares vanished after it. -->
+    <plurals name="game_event_vanished">
+        <item quantity="one">%1$d square vanished.</item>
+        <item quantity="other">%1$d squares vanished.</item>
+    </plurals>
     <!-- Chaos: how many more of a player's rolls count double (Double, a power-up): on their card, and as TalkBack says it. -->
     <string name="game_player_doubled">×2 · %1$d</string>
     <plurals name="game_player_doubled_spoken">
@@ -1152,8 +1168,9 @@
     <string name="rules_portals_3">Short portals are open to everyone. Long portals, with a split ring, are shut to the colour on their lock, whose start square they would take a pawn past.</string>
     <string name="rules_survival_1">In Survival there's no home to reach. Each player's six pawns start out on their start square and go round the track until one player is left.</string>
     <string name="rules_survival_2">A captured pawn is out of the game. Lose all six and you're out: the last player with a pawn left wins, and everyone else is placed by how long they lasted.</string>
-    <string name="rules_survival_3">Start squares and star squares are safe at first, until sudden death. Start squares stop being safe first, then star squares too. The line above the board counts the rounds, and with more players it takes longer.</string>
-    <string name="rules_survival_4">On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when sudden death comes.</string>
+    <string name="rules_survival_3">Start squares and star squares are safe at first. In Overtime the start squares stop being safe, and in Sudden Death the star squares do too. The line above the board counts the rounds, and with more players it takes longer.</string>
+    <string name="rules_survival_4">On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when Overtime comes.</string>
+    <string name="rules_survival_5">Ten turns after that comes the Cataclysm: after every five turns, up to three squares with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven squares left, so nobody can keep away for ever.</string>
     <string name="rules_survival_records">The Leaderboard ranks Survival wins by the most pawns left.</string>
     <string name="rules_chaos_1">In Chaos there are power-ups on the track, one on each player's stretch of it. End a move on one to use it at once:</string>
     <string name="rules_chaos_2">Only one power-up works in a move: a pawn moved onto another leaves it there. A power-up that's taken comes back somewhere else a few rolls later.</string>

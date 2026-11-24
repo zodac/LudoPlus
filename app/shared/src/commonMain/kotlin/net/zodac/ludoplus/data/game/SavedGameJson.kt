@@ -23,6 +23,7 @@ import net.zodac.ludoplus.data.string
 import net.zodac.ludoplus.data.stringOrNull
 import net.zodac.ludoplus.data.stringList
 import net.zodac.ludoplus.data.toJson
+import net.zodac.ludoplus.game.Cataclysm
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.GhostMove
@@ -185,6 +186,10 @@ object SavedGameJson {
         put("finishingOrder", jsonInts(state.finishingOrder))
         // Sudden death's count of rounds, and the players with no pawn left; absent where the rules have neither.
         if (state.rules.suddenDeath) put("roundsPlayed", state.roundsPlayed)
+        // The turns since sudden death's second stage, the squares the Cataclysm has taken, and those it has just taken (for a Nearby guest to see them go).
+        if (state.lostSquares.isNotEmpty()) put("lostSquares", jsonInts(state.lostSquares.sorted()))
+        if (state.justLost.isNotEmpty()) put("justLost", jsonInts(state.justLost))
+        if (state.suddenDeathTurns > 0) put("suddenDeathTurns", state.suddenDeathTurns)
         if (state.knockedOut.isNotEmpty()) put("knockedOut", jsonInts(state.knockedOut))
         // Over: never saved, but a Nearby host sends its guests the game's end (`.claude/NETPLAY.md`).
         if (state.isFinished) put("finished", true)
@@ -242,6 +247,17 @@ object SavedGameJson {
         val finishingOrder = obj.array("finishingOrder").ints()
         val roundsPlayed = if (rules.suddenDeath) obj.int("roundsPlayed") else 0
         require(roundsPlayed >= 0) { "Negative rounds" }
+        val lostSquares = if ("lostSquares" in obj) obj.array("lostSquares").ints().toSet() else emptySet()
+        val justLost = if ("justLost" in obj) obj.array("justLost").ints() else emptyList()
+        val suddenDeathTurns = obj.intOrNull("suddenDeathTurns") ?: 0
+        require(suddenDeathTurns == 0 || (suddenDeathTurns > 0 && rules.suddenDeath && roundsPlayed >= rules.suddenDeathRound(GameRules.NOWHERE_SAFE_STAGE, playerCount))) {
+            "Turns of sudden death before it came"
+        }
+        require(lostSquares.isEmpty() || suddenDeathTurns >= Cataclysm.STARTS + Cataclysm.TURNS) { "Squares lost before the Cataclysm" }
+        require(lostSquares.all { it in 0..<board.trackLength } && lostSquares.containsAll(justLost) && board.trackLength - lostSquares.size > rules.dieFaces) {
+            "The squares lost don't fit the track"
+        }
+        require(players.all { side -> side.pawns.none { it in 0..<board.trackSteps && board.trackSquare(side.seat, it) in lostSquares } }) { "A pawn is on a lost square" }
         val knockedOut = if ("knockedOut" in obj) obj.array("knockedOut").ints() else emptyList()
         require(knockedOut.distinct() == knockedOut && knockedOut.toSet() == players.indices.filter { players[it].pawnsLeft == 0 }.toSet()) {
             "The players knocked out aren't those with no pawn left"
@@ -281,6 +297,9 @@ object SavedGameJson {
                 ghosts = ghosts,
                 turnsSinceGhost = turnsSinceGhost,
                 ghostMove = ghostMove,
+                lostSquares = lostSquares,
+                justLost = justLost,
+                suddenDeathTurns = suddenDeathTurns,
                 seed = seed,
                 lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
             )
@@ -314,6 +333,9 @@ object SavedGameJson {
             ghosts = ghosts,
             turnsSinceGhost = turnsSinceGhost,
             ghostMove = ghostMove,
+            lostSquares = lostSquares,
+            justLost = justLost,
+            suddenDeathTurns = suddenDeathTurns,
             seed = seed,
             lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
         )
@@ -336,6 +358,7 @@ object SavedGameJson {
         put("at", entry.atEpochMillis)
         entry.place?.let { put("place", it) }
         if (entry.haunted.isNotEmpty()) put("haunted", encodePawns(entry.haunted))
+        if (entry.vanished > 0) put("vanished", entry.vanished)
     }
 
     private fun decodeLogEntry(obj: JsonObject, playerCount: Int): LogEntry = LogEntry(
@@ -343,6 +366,7 @@ object SavedGameJson {
         atEpochMillis = obj.long("at"),
         place = obj.intOrNull("place")?.also { require(it in 1..playerCount) { "No place $it" } },
         haunted = decodePawnsIn(obj, "haunted").also { pawns -> require(pawns.all { it.player in 0..<playerCount }) { "No player in $pawns" } },
+        vanished = obj.intOrNull("vanished") ?: 0,
     )
 
     private fun encodeEvent(event: GameEvent): JsonObject = buildJsonObject {
@@ -371,6 +395,7 @@ object SavedGameJson {
             event.move.owner?.let { put("owner", it) }
             event.move.roll?.let { put("die", it) }
             event.move.via?.let { put("via", it) }
+            if (event.move.skipped.isNotEmpty()) put("skipped", jsonInts(event.move.skipped))
             event.move.bouncedFrom?.let { put("bouncedFrom", it) }
             if (event.move.brokenShields.isNotEmpty()) put("brokenShields", encodePawns(event.move.brokenShields))
             event.effect?.let { effect ->
@@ -408,6 +433,7 @@ object SavedGameJson {
                     owner = obj.intOrNull("owner")?.also { require(it in 0..<playerCount) { "No player $it owns the pawn" } },
                     roll = obj.intOrNull("die"),
                     via = obj.intOrNull("via"),
+                    skipped = if ("skipped" in obj) obj.array("skipped").ints() else emptyList(),
                     bouncedFrom = obj.intOrNull("bouncedFrom"),
                     brokenShields = decodePawnsIn(obj, "brokenShields"),
                 ),

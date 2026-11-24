@@ -119,9 +119,13 @@ import net.zodac.ludoplus.resources.game_prompt_roll
 import net.zodac.ludoplus.resources.game_prompt_roll_again
 import net.zodac.ludoplus.resources.game_prompt_roll_again_dice
 import net.zodac.ludoplus.resources.game_prompt_roll_dice
-import net.zodac.ludoplus.resources.game_sudden_death_nowhere
-import net.zodac.ludoplus.resources.game_sudden_death_stars
-import net.zodac.ludoplus.resources.game_sudden_death_starts
+import net.zodac.ludoplus.resources.game_cataclysm
+import net.zodac.ludoplus.resources.game_cataclysm_coming
+import net.zodac.ludoplus.resources.game_cataclysm_over
+import net.zodac.ludoplus.resources.game_overtime_came
+import net.zodac.ludoplus.resources.game_overtime_coming
+import net.zodac.ludoplus.resources.game_sudden_death_came
+import net.zodac.ludoplus.resources.game_sudden_death_coming
 import net.zodac.ludoplus.resources.game_tutorial_coach_name
 import net.zodac.ludoplus.resources.game_tutorial_cpu_turn
 import net.zodac.ludoplus.resources.game_tutorial_next
@@ -349,6 +353,14 @@ private fun GameFeedback(state: GameState) {
         haptics.playCaptureBuzz()
         sounds.playCapture()
     }
+    val justLost = state.justLost
+    val firstLost = remember { justLost }
+    LaunchedEffect(justLost) {
+        if (justLost.isEmpty() || justLost == firstLost) return@LaunchedEffect
+        // As they go, once the turn before has played out.
+        if (animated) lifecycle.delayWhileResumed(turnMillis(state).toLong())
+        haptics.playCaptureBuzz()
+    }
     LaunchedEffect(event) {
         if (event == null || event === firstSeen) return@LaunchedEffect
         when (event) {
@@ -533,20 +545,27 @@ private fun NetplayNotice(notice: String) {
 }
 
 /**
- * How sudden death stands, under the players: what stops being safe and in how many rounds, or that nothing is safe, warmer
- * the further it has come. TalkBack hears it as it changes (a polite live region) in the last [SUDDEN_DEATH_WARNING] rounds
- * before a stage, and as the stage comes.
+ * How sudden death stands, under the players, in the stage's own colour: its name and what it does in the round it comes,
+ * and then its next stage and the rounds (or for the Cataclysm, turns) left to it, or in the Cataclysm, the turns left until
+ * squares vanish. TalkBack
+ * hears it as it changes (a polite live region) in the last [SUDDEN_DEATH_WARNING] of those before a stage, and as the stage
+ * comes; as squares vanish, the move log says so.
  */
 @Composable
 private fun SuddenDeathNotice(state: GameState) {
     val stage = state.suddenDeathStage
     val rounds = state.roundsToSuddenDeath
+    val toCataclysm = state.turnsToCataclysm
+    val toLoss = state.turnsToLoss
     val text = when {
-        rounds == null -> stringResource(Res.string.game_sudden_death_nowhere)
-        stage == 0 -> pluralStringResource(Res.plurals.game_sudden_death_starts, rounds, rounds)
-        else -> pluralStringResource(Res.plurals.game_sudden_death_stars, rounds, rounds)
+        state.suddenDeathJustCame && !state.cataclysm -> stringResource(if (stage == 1) Res.string.game_overtime_came else Res.string.game_sudden_death_came)
+        rounds != null -> pluralStringResource(if (stage == 0) Res.plurals.game_overtime_coming else Res.plurals.game_sudden_death_coming, rounds, rounds)
+        toCataclysm != null -> pluralStringResource(Res.plurals.game_cataclysm_coming, toCataclysm, toCataclysm)
+        toLoss != null -> pluralStringResource(Res.plurals.game_cataclysm, toLoss, toLoss)
+        else -> stringResource(Res.string.game_cataclysm_over)
     }
-    val announced = rounds == null || rounds <= SUDDEN_DEATH_WARNING || state.suddenDeathJustCame
+    // Not at every turn of the Cataclysm's own count.
+    val announced = state.suddenDeathJustCame || listOfNotNull(rounds, toCataclysm).any { it <= SUDDEN_DEATH_WARNING } || (state.cataclysm && toLoss == null)
     Text(
         text = text,
         style = MaterialTheme.typography.bodyMedium,
@@ -559,7 +578,7 @@ private fun SuddenDeathNotice(state: GameState) {
     )
 }
 
-/** How many rounds before a stage of sudden death its countdown is heard. */
+/** How many rounds (turns, for the Cataclysm) before a stage of sudden death its countdown is heard. */
 private const val SUDDEN_DEATH_WARNING = 3
 
 /** [background] filling the room it's given: its brush, and over it any decoration it draws, running while it's shown. */

@@ -123,6 +123,7 @@ fun LudoBoard(
     val currentOnMove by rememberUpdatedState(onMove)
     val motion = rememberMoveMotion(state)
     val ghostMotion = rememberGhostMotion(state)
+    val vanish = rememberVanishMotion(state)
     val theme = LocalGameVisualTheme.current
     val layout = BoardLayout.of(state.board)
     // Read here, so the board's layer below holds a number rather than the state, which changes every move.
@@ -140,8 +141,12 @@ fun LudoBoard(
         PaintedSurface(surface, modifier = Modifier.fillMaxSize().graphicsLayer { }) {
             with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours, spots, parts) }
         }
-        // The arena, drawn again only as sudden death comes on.
-        if (lastStanding) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawArena(layout, size.minDimension / layout.size, stage) }
+        // The arena, drawn again only as sudden death comes on, or takes squares.
+        if (lastStanding) {
+            val lost = state.lostSquares - vanish.squares
+            Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawArena(layout, size.minDimension / layout.size, stage, lost) }
+            if (vanish.squares.isNotEmpty()) BoundedArt(modifier = Modifier.fillMaxSize()) { with(vanish) { drawVanishing(layout, size.minDimension / layout.size, stage) } }
+        }
         // The portals, under the pawns: drawn once.
         if (state.rules.portals) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPortals(layout, size.minDimension / layout.size, colours) }
         // The power-ups, under the pawns: drawn again as one comes or goes.
@@ -417,8 +422,8 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
     val path = if (fromYard) {
         listOf(layout.yardSpotOf(seat, move.pawn, state.rules.pawnsPerPlayer), layout.centreOf(seat, PawnPosition.of(0, state.board), 0))
     } else {
-        // On to where the roll takes it, and where that's onto a shield, back to where it settles.
-        ((move.from..move.rolledTo) + (move.bouncedFrom?.let { it - 1 downTo move.to } ?: IntRange.EMPTY)).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn) }
+        // On to where the roll takes it, over any lost squares, and where that's onto a shield, back to where it settles.
+        ((move.from..move.rolledTo) - move.skipped.toSet() + (move.bouncedFrom?.let { it - 1 downTo move.to } ?: IntRange.EMPTY)).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn) }
     }
     val effect = event.effect
     fun centre(player: Int, pawn: Int, progress: Int) = layout.centreOf(state.players[player].seat, PawnPosition.of(progress, state.board), pawn)

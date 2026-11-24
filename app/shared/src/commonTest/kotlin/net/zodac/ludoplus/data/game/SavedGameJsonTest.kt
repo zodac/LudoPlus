@@ -15,6 +15,7 @@ import net.zodac.ludoplus.game.MoveLog
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
+import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerConfig
@@ -196,6 +197,7 @@ class SavedGameJsonTest {
         val random = Random(23)
         var knockedOut = 0
         var suddenDeath = 0
+        var lost = 0
         repeat(6) {
             var state = GameState.new(GameMode.SURVIVAL, 4)
             while (!state.isFinished) {
@@ -203,6 +205,7 @@ class SavedGameJsonTest {
                 assertEquals(saved, SavedGameJson.decode(SavedGameJson.encode(saved)))
                 if (state.knockedOut.isNotEmpty()) knockedOut++
                 if (state.suddenDeathStage == 2) suddenDeath++
+                if (state.justLost.isNotEmpty()) lost++
                 state = when (val phase = state.phase) {
                     is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random))
                     else -> LudoEngine.roll(state, random)
@@ -211,7 +214,19 @@ class SavedGameJsonTest {
             val ended = game(state).copy(mode = GameMode.SURVIVAL)
             assertEquals(ended, SavedGameJson.decode(SavedGameJson.encode(ended)))
         }
-        assert(knockedOut > 0 && suddenDeath > 0) { "No player knocked out, or no sudden death, was saved" }
+        // A game that ends before the Cataclysm is most of them: one brought near it, with few enough pawns to last.
+        val new = GameState.new(GameMode.SURVIVAL, 4, seed = 5)
+        var state = new.copy(roundsPlayed = 74, players = new.players.map { it.copy(pawns = listOf(0) + List(5) { PawnPosition.OUT_PROGRESS }) })
+        while (!state.isFinished) {
+            val saved = game(state).copy(mode = GameMode.SURVIVAL)
+            assertEquals(saved, SavedGameJson.decode(SavedGameJson.encode(saved)))
+            if (state.justLost.isNotEmpty()) lost++
+            state = when (val phase = state.phase) {
+                is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random))
+                else -> LudoEngine.roll(state, random)
+            }
+        }
+        assert(knockedOut > 0 && suddenDeath > 0 && lost > 0) { "No player knocked out, or no sudden death or lost squares, were saved" }
     }
 
     @Test

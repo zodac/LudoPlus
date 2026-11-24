@@ -2,6 +2,7 @@ package net.zodac.ludoplus.ui.game
 
 import kotlin.math.abs
 import net.zodac.ludoplus.game.GameEvent
+import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.GhostMove
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PowerUpEffect
@@ -21,11 +22,14 @@ const val PORTAL_WARP_MILLIS = 520
 /** How long a ghost takes to drift from one square to the next: half a pawn's speed. */
 const val GHOST_STEP_MILLIS = PAWN_STEP_MILLIS * 2
 
+/** How long squares take to vanish in the Cataclysm, once the turn they go after has played out. */
+const val VANISH_MILLIS = 700
+
 /** How long the die tumbles before it settles on a roll. */
 const val DIE_TUMBLE_MILLIS = 420
 
 /** How many hops [move]'s pawn makes: one a square, and one out of the yard. */
-private fun hops(move: Move): Int = if (move.from < 0) 1 else move.rolledTo - move.from
+private fun hops(move: Move): Int = if (move.from < 0) 1 else move.squares
 
 /** How many hops back [move]'s pawn makes, off a shield. */
 private fun hopsBack(move: Move): Int = move.bouncedFrom?.let { it - move.to } ?: 0
@@ -63,21 +67,30 @@ data class GamePacing(
 ) {
     /**
      * How long to wait after [event], on a board whose home is [homeProgress], before the next action: the pause, plus
-     * its animation's length (a move's travel, then its capture's flight or its home flourish), and the [ghostMove]'s that
-     * came after it.
+     * its animation's length (a move's travel, then its capture's flight or its home flourish), and that of the [ghostMove]
+     * or of squares [vanishing] after it.
      */
-    fun waitAfter(event: GameEvent?, homeProgress: Int, ghostMove: GhostMove? = null): Long =
-        thinkMillis + playOutMillis(event, homeProgress, ghostMove)
+    fun waitAfter(event: GameEvent?, homeProgress: Int, ghostMove: GhostMove? = null, vanishing: Boolean = false): Long =
+        thinkMillis + playOutMillis(event, homeProgress, ghostMove, vanishing)
+
+    /** [waitAfter] the last action of [state], and what came after it. */
+    fun waitAfter(state: GameState): Long = thinkMillis + playOutMillis(state)
 
     /**
      * How long the screen animates [event] for, on a board whose home is [homeProgress]: the die's tumble, or a move's
-     * travel and what follows its landing, then the [ghostMove]'s that came after it.
+     * travel and what follows its landing, then the [ghostMove] that came after it, or squares [vanishing].
      */
-    fun playOutMillis(event: GameEvent?, homeProgress: Int, ghostMove: GhostMove? = null): Long = (if (ghostMove != null && pawnsAnimated) ghostMillis(ghostMove) else 0) + when (event) {
+    fun playOutMillis(event: GameEvent?, homeProgress: Int, ghostMove: GhostMove? = null, vanishing: Boolean = false): Long = afterTurnMillis(ghostMove, vanishing) + when (event) {
         null -> 0L
         is GameEvent.Moved -> if (pawnsAnimated) (travelMillis(event.move, event.effect) + afterLandingMillis(event.move, homeProgress, event.effect)).toLong() else 0L
         is GameEvent.Rolled, is GameEvent.NoMove, is GameEvent.RollAgainLimit -> if (dieAnimated) DIE_TUMBLE_MILLIS.toLong() else 0L
     }
+
+    /** [playOutMillis] for the last action of [state], and what came after it. */
+    fun playOutMillis(state: GameState): Long = playOutMillis(state.lastEvent, state.board.homeProgress, state.ghostMove, state.justLost.isNotEmpty())
+
+    private fun afterTurnMillis(ghostMove: GhostMove?, vanishing: Boolean): Long =
+        if (!pawnsAnimated) 0 else (ghostMove?.let(::ghostMillis) ?: 0) + if (vanishing) VANISH_MILLIS.toLong() else 0
 
     companion object {
         /** How long a CPU pauses before each roll and move, so each can be followed. */

@@ -3,9 +3,10 @@ package net.zodac.ludoplus.game
 /**
  * One line of a game's move log: an [event] that changed the game (a move, a roll with no move, or a turn ended by a run of
  * roll-again rolls), when it happened ([atEpochMillis], on the phone's clock), and for a move that brought its owner's
- * last pawn home, the [place] they had then (null while their team wasn't yet placed). [haunted] are the pawns a ghost caught as the turn ended.
+ * last pawn home, the [place] they had then (null while their team wasn't yet placed). [haunted] are the pawns a ghost caught as the turn
+ * ended, and [vanished] how many squares were lost then.
  */
-data class LogEntry(val event: GameEvent, val atEpochMillis: Long = 0, val place: Int? = null, val haunted: List<PawnRef> = emptyList())
+data class LogEntry(val event: GameEvent, val atEpochMillis: Long = 0, val place: Int? = null, val haunted: List<PawnRef> = emptyList(), val vanished: Int = 0)
 
 /** The game screen's log of every move in a game, built up one state at a time. */
 object MoveLog {
@@ -19,6 +20,6 @@ object MoveLog {
         val event = after.lastEvent ?: return emptyList()
         if (event is GameEvent.Rolled || event == before?.lastEvent) return log
         val place = (event as? GameEvent.Moved)?.takeIf { it.finished }?.let { after.placeOf(it.move.owner ?: it.player) }
-        return log + LogEntry(event, at, place, after.ghostMove?.caught.orEmpty())
+        return log + LogEntry(event, at, place, after.ghostMove?.caught.orEmpty(), after.justLost.size)
     }
 }

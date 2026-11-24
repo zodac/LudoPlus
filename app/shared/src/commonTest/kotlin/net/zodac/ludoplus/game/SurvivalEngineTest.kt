@@ -121,13 +121,17 @@ class SurvivalEngineTest {
     }
 
     @Test
-    fun `sudden death comes later the more players there are - a half as long again to its second stage`() {
+    fun `sudden death comes later the more players there are - a half as long again to its second stage - and its third ten turns after, however many play`() {
         val rules = GameMode.SURVIVAL.rules
         assertEquals(listOf(40, 45, 50, 55, 60, 65, 70), (2..8).map { rules.suddenDeathRound(1, it) })
         assertEquals(listOf(60, 67, 75, 82, 90, 97, 105), (2..8).map { rules.suddenDeathRound(2, it) })
-        assertEquals(listOf(0, 1, 1, 2), listOf(49, 50, 74, 75).map { game(rounds = it).suddenDeathStage })
+        assertEquals(listOf(0, 1, 1, 2, 2), listOf(49, 50, 74, 75, 500).map { game(rounds = it).suddenDeathStage })
         assertEquals(listOf(50, 1, 25, 1, null), listOf(0, 49, 50, 74, 75).map { game(rounds = it).roundsToSuddenDeath })
-        assertEquals(listOf(false, true, false, true, false), listOf(49, 50, 51, 75, 76).map { game(rounds = it).suddenDeathJustCame })
+        assertEquals(listOf(false, true, false, true), listOf(49, 50, 51, 75).map { game(rounds = it).suddenDeathJustCame })
+        val turns = listOf(0, 2, 3, 9, 10, 11).map { game(rounds = 76).copy(suddenDeathTurns = it) }
+        assertEquals(listOf(2, 2, 2, 2, 3, 3), turns.map { it.suddenDeathStage })
+        assertEquals(listOf(10, 8, 7, 1, null, null), turns.map { it.turnsToCataclysm })
+        assertEquals(listOf(true, true, false, false, true, false), turns.map { it.suddenDeathJustCame })
         assertEquals(0, GameState.new(GameMode.CLASSIC, 4).copy(roundsPlayed = 500).suddenDeathStage)
     }
 

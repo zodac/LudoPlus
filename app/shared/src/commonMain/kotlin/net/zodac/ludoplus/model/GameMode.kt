@@ -82,7 +82,7 @@ enum class GameMode(
 
     /**
      * No home: pawns lap the track from their start squares, a captured pawn is out of the game, and the last player with
-     * one wins. Late in the game sudden death makes the start squares unsafe, then the stars too.
+     * one wins. Late in the game sudden death makes the start squares unsafe, then the stars too, then takes the track away.
      */
     SURVIVAL(
         id = "survival",
@@ -202,13 +202,13 @@ data class GameRules(
      * placed by how late they lost their last. Only on an endless board ([BoardGeometry.endless]), from the start squares.
      */
     val lastStanding: Boolean = false,
-    /** Whether sudden death comes, round by round, making the start squares unsafe and then the stars ([suddenDeathRound]). */
+    /** Whether sudden death comes, round by round, making the start squares unsafe, then the stars, and then taking squares from the track ([suddenDeathRound]). */
     val suddenDeath: Boolean = false,
     /** The house rules these rules were made with ([withHouseRules]): empty for a mode's own rules. */
     val houseRules: Set<HouseRule> = emptySet(),
 ) {
-    /** Whether a game of these rules draws chances of its own, besides the dice: power-ups' or ghosts'. */
-    val hasChances: Boolean get() = powerUps || ghosts
+    /** Whether a game of these rules draws chances of its own, besides the dice: power-ups', ghosts', or sudden death's. */
+    val hasChances: Boolean get() = powerUps || ghosts || suddenDeath
 
     /** Whether any house rule is on: such a game stays off the Leaderboard and out of Statistics, and earns only the house rules' own achievements. */
     val hasHouseRules: Boolean get() = houseRules.isNotEmpty()
@@ -234,7 +234,7 @@ data class GameRules(
 
     /**
      * How many rounds (a turn for every player still in) are played before sudden death's [stage] comes, in a game of
-     * [players]: 1 makes the start squares unsafe, 2 the star squares too. Later the more players there are.
+     * [players]: 1 makes the start squares unsafe, and 2 the star squares too. Later the more players there are.
      */
     fun suddenDeathRound(stage: Int, players: Int): Int {
         val first = SUDDEN_DEATH_ROUNDS + SUDDEN_DEATH_ROUNDS_A_PLAYER * players
@@ -252,12 +252,15 @@ data class GameRules(
         require(teams == null || teams.all { it >= 0 } && teams.toSet().size >= 2) { "A team game needs two teams or more" }
     }
 
-    private companion object {
+    companion object {
+        /** The stage of sudden death with nowhere safe, the last that comes by rounds ([suddenDeathRound]). */
+        const val NOWHERE_SAFE_STAGE = 2
+
         /** Where a teamless game's one-player teams are numbered from, clear of any real team's number. */
-        const val TEAMLESS = 1_000
+        private const val TEAMLESS = 1_000
 
         /** When sudden death's first stage comes ([suddenDeathRound]). */
-        const val SUDDEN_DEATH_ROUNDS = 30
-        const val SUDDEN_DEATH_ROUNDS_A_PLAYER = 5
+        private const val SUDDEN_DEATH_ROUNDS = 30
+        private const val SUDDEN_DEATH_ROUNDS_A_PLAYER = 5
     }
 }

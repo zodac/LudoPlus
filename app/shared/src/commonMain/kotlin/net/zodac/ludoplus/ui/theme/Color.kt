@@ -148,8 +148,11 @@ val PortalColours = listOf(
 val BoardSparkGold = Color(0xFFFFD45C)
 
 /** The arena of a last-standing board, and the glow of its emblem, at each stage of sudden death. */
-val ArenaFloors = listOf(Color(0xFF3A3550), Color(0xFF5A3220), Color(0xFF5C1420))
-val ArenaHeats = listOf(BoardSparkGold, Color(0xFFFF922B), Color(0xFFFF3B3B))
+val ArenaFloors = listOf(Color(0xFF3A3550), Color(0xFF5A3220), Color(0xFF5C1420), Color(0xFF1C0A2E))
+val ArenaHeats = listOf(BoardSparkGold, Color(0xFFFF922B), Color(0xFFFF3B3B), Color(0xFFB04CFF))
+
+/** The pit a square lost to the Cataclysm leaves. */
+val LostSquare = Color(0xFF0B0414)
 
 /** The arena's crossed swords (and its skull). */
 val SwordSteel = Color(0xFFE4E8EC)

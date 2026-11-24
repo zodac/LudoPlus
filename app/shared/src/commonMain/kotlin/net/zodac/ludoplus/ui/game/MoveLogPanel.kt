@@ -64,6 +64,7 @@ import net.zodac.ludoplus.resources.game_event_swap
 import net.zodac.ludoplus.resources.game_event_team_finished
 import net.zodac.ludoplus.resources.game_event_teleport
 import net.zodac.ludoplus.resources.game_event_three_doubles
+import net.zodac.ludoplus.resources.game_event_vanished
 import net.zodac.ludoplus.resources.game_event_three_sixes
 import net.zodac.ludoplus.resources.game_log_line
 import net.zodac.ludoplus.resources.game_log_time_pattern
@@ -205,12 +206,13 @@ private fun colourOf(game: StartedGame, seatColours: List<PlayerColour?>, player
 @Composable
 internal fun logLine(game: StartedGame, entry: LogEntry): String {
     val line = eventLine(game, entry)
+    if (entry.vanished > 0) return stringResource(Res.string.game_event_and, line, pluralStringResource(Res.plurals.game_event_vanished, entry.vanished, entry.vanished))
     if (entry.haunted.isEmpty()) return line
     val names = entry.haunted.map { it.player }.distinct().map { game.players[it].name }
     return stringResource(Res.string.game_event_and, line, stringResource(Res.string.game_event_haunted, spokenList(names)))
 }
 
-/** What [entry]'s event did, before any ghost came. */
+/** What [entry]'s event did, before any ghost came or square vanished. */
 @Composable
 private fun eventLine(game: StartedGame, entry: LogEntry): String {
     val name = { index: Int -> game.players[index].name }
@@ -242,7 +244,7 @@ private fun eventLine(game: StartedGame, entry: LogEntry): String {
 private fun movedLine(game: StartedGame, entry: LogEntry, event: GameEvent.Moved): String {
     val name = { index: Int -> game.players[index].name }
     val move = event.move
-    val squares = move.rolledTo - move.from
+    val squares = move.squares
     return when {
         event.finished -> finishedLine(game, move.owner ?: event.player, entry.place)
         event.knockedOut.isNotEmpty() -> stringResource(Res.string.game_event_knocked_out, name(event.player), spokenList(event.knockedOut.map(name)))

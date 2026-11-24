@@ -1,6 +1,7 @@
 package net.zodac.ludoplus.game
 
 import kotlin.random.Random
+import net.zodac.ludoplus.model.GameRules
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.model.throughPortal
@@ -34,7 +35,7 @@ object LudoEngine {
         val second = dice.getOrNull(1)
         val player = state.current
         // The first roll of a turn starts it; a roll again continues it.
-        val started = PowerUps.tick(state.copy(ghostMove = null)).let { ticked ->
+        val started = PowerUps.tick(state.copy(ghostMove = null, justLost = emptyList())).let { ticked ->
             if (state.rollingAgain) ticked else ticked.copy(players = ticked.players.replace(player) { it.copy(turns = it.turns + 1) })
         }
         val rollsAgain = if (dice.size == 1) roll in rules.rollAgainRolls else rules.rollAgainOnDoubles && dice.distinct().size == 1
@@ -129,6 +130,7 @@ object LudoEngine {
                     captures = landing.captures,
                     owner = owner.takeIf { it != me },
                     via = via,
+                    skipped = if (state.lostSquares.isEmpty()) emptyList() else (from + 1..<rolledTo).filter { state.isLost(owner, it) },
                     bouncedFrom = to.takeIf { landing.brokenShields.isNotEmpty() },
                     brokenShields = landing.brokenShields,
                 )
@@ -138,7 +140,7 @@ object LudoEngine {
 
     /**
      * Where a pawn of [owner] at progress [from] goes with [roll], blockades aside, or null if it can't move: out of the
-     * yard onto its start square on a roll the rules allow, or that many steps on, never past home.
+     * yard onto its start square on a roll the rules allow, or that many steps on (over any lost squares), never past home.
      */
     fun destination(state: GameState, owner: Int, from: Int, roll: Int): Int? {
         val board = state.board
@@ -150,7 +152,7 @@ object LudoEngine {
             from + 2 * roll <= board.homeProgress && isDoubled(state, owner) -> from + 2 * roll
             // Exact roll home: a pawn can't overshoot it.
             from + roll > board.homeProgress -> null
-            else -> from + roll
+            else -> state.stepOn(owner, from, roll)
         }
     }
 
@@ -268,7 +270,7 @@ object LudoEngine {
         val whose = move.ownerIn(state)
         val rules = state.rules
         val board = state.board
-        val moved = place(PowerUps.spendDouble(state.copy(ghostMove = null)), whose, pawn, Landing(move.to, move.captures, move.brokenShields))
+        val moved = place(PowerUps.spendDouble(state.copy(ghostMove = null, justLost = emptyList())), whose, pawn, Landing(move.to, move.captures, move.brokenShields))
         val (taken, effect) = if (chances) PowerUps.take(moved, whose, pawn) else moved to null
         val players = taken.players
         val captures = move.captures + effect?.captures.orEmpty()
@@ -391,7 +393,7 @@ object LudoEngine {
     /**
      * Play passes to the next player still racing, who awaits a roll: not one placed or knocked out, nor one home in a
      * team game that doesn't roll for partners. Coming back round to a player no later than this one, a round is played. With [chances], a ghost
-     * moves as the turn ends, if it's time.
+     * moves as the turn ends, or the Cataclysm takes squares, if it's time.
      */
     private fun nextPlayer(state: GameState, chances: Boolean = true): GameState {
         val skipsHome = !(state.rules.teams != null && state.rules.rollForPartners)
@@ -406,7 +408,9 @@ object LudoEngine {
             rollingAgain = false,
             yardTriesUsed = 0,
             roundsPlayed = if (state.rules.suddenDeath && next <= state.current) state.roundsPlayed + 1 else state.roundsPlayed,
-        ).let { if (chances) Ghosts.afterTurn(it) else it }
+            // The turn that brings sudden death's second stage isn't one of those in it.
+            suddenDeathTurns = if (state.suddenDeathStage >= GameRules.NOWHERE_SAFE_STAGE) state.suddenDeathTurns + 1 else state.suddenDeathTurns,
+        ).let { if (chances) Ghosts.afterTurn(it) else it }.let { if (chances && it.cataclysm) Cataclysm.afterTurn(it) else it }
     }
 
     internal inline fun <T> List<T>.replace(index: Int, change: (T) -> T): List<T> =

@@ -157,20 +157,48 @@ class BoardSemanticsTest : UiTest() {
         compose.onNode(hasContentDescription("home", substring = true, ignoreCase = true)).assertDoesNotExist()
         compose.onNode(hasText("Alex") and stateSays("3 pawns left, playing now, currently 3rd")).assertExists()
         compose.onNode(hasText("Gambit") and stateSays("0 pawns left, 4th place")).assertExists()
-        compose.onNodeWithText("Start squares stop being safe in 50 rounds.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+        compose.onNodeWithText("Overtime in 50 rounds: start squares unsafe.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
 
         // The last three rounds are counted down aloud, and the stage said as it comes.
         show(state.copy(roundsPlayed = 49))
-        compose.onNodeWithText("Start squares stop being safe in 1 round.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+        compose.onNodeWithText("Overtime in 1 round: start squares unsafe.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
         show(state.copy(roundsPlayed = 50))
-        compose.onNodeWithText("Only stars are safe, for 25 more rounds.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+        compose.onNodeWithText("Overtime! Only stars are safe.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
         compose.onNodeWithContentDescription("Square 1, Red start, Red pawn 1, Red pawn 2").assertExists()
         compose.onNodeWithContentDescription("Square 9, safe, empty").assertExists()
         show(state.copy(roundsPlayed = 60))
-        compose.onNodeWithText("Only stars are safe, for 15 more rounds.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+        compose.onNodeWithText("Sudden Death in 15 rounds: stars unsafe.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
         show(state.copy(roundsPlayed = 75))
-        compose.onNodeWithText("Sudden death! Nowhere is safe.").assertExists()
+        compose.onNodeWithText("Sudden Death! Nowhere is safe.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
         compose.onNodeWithContentDescription("Square 9, empty").assertExists()
+        show(state.copy(roundsPlayed = 76, suddenDeathTurns = 6))
+        compose.onNodeWithText("Cataclysm in 4 turns: squares vanish.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+        show(state.copy(roundsPlayed = 76, suddenDeathTurns = 9))
+        compose.onNodeWithText("Cataclysm in 1 turn: squares vanish.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+    }
+
+    @Test
+    fun `the Cataclysm is counted down in turns, heard as it comes - and the squares it takes are no longer there`() = uiTest(TestScreen(411, 891)) {
+        val new = GameState.new(GameMode.SURVIVAL, 4)
+        val x = -2
+        val pawns = listOf(listOf(8, 20, x, x, x, x), listOf(0, x, x, x, x, x))
+        val state = new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns.getOrElse(i) { listOf(5 + i, x, x, x, x, x) }) }, roundsPlayed = 100, suddenDeathTurns = 10)
+        show(state)
+        compose.onNodeWithText("Cataclysm! Squares vanish in 5 turns.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+        compose.onNodeWithContentDescription("Square 11, empty").assertExists()
+        show(state.copy(suddenDeathTurns = 14))
+        compose.onNodeWithText("Cataclysm! Squares vanish in 1 turn.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+
+        // Over squares 10 and 11, a roll of 4 reaches square 15.
+        show(LudoEngine.applyRoll(state.copy(lostSquares = setOf(9, 10)), 4))
+        compose.onNodeWithContentDescription("Square 11, empty").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Square 9, Red pawn 1").assert(onClickLabel("Move Red pawn 1 4 squares"))
+        val log = listOf(LogEntry(GameEvent.Moved(0, 4, Move(0, 8, 14, skipped = listOf(9, 10)), finished = false), vanished = 2))
+        show(state, log)
+        compose.onNodeWithContentDescription("Alex moved a pawn 4 squares. 2 squares vanished.", useUnmergedTree = true).assertExists()
+
+        show(state.copy(lostSquares = (0..<52).filter { it !in setOf(8, 20, 13, 33, 47, 1, 2) }.toSet()))
+        compose.onNodeWithText("Cataclysm! No more squares will vanish.").assertExists()
     }
 
     private fun stateSays(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)

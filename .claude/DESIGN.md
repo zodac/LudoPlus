@@ -98,7 +98,7 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 | Quick | Two pawns each; each yard draws two spots, on opposite corners (the maintainer, 2026-11-18) | Yes, its own | Its own, and all but a few |
 | Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | Its own, and all but a few |
 | Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | Its own, and all but a few |
-| Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; sudden death late on | Yes, its own, by most pawns left | Its own, and all but a few |
+| Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; Overtime, Sudden Death, and the Cataclysm late on | Yes, its own, by most pawns left | Its own, and all but a few |
 | Chaos | Power-ups on the track, taken by the pawn that ends its move on one | Yes, its own | Its own, and all but a few |
 | Haunted House | Ghosts on the track, which send the pawns they land on back to their yards | Yes, its own | Its own, and all but a few |
 
@@ -132,16 +132,28 @@ square 23, shut to Green, empty", "Move Red pawn 1 2 squares, through a portal t
 its start square, and the board is endless (`BoardGeometry.endless`): no home column, every square of the track walked,
 progress counting on lap after lap. A captured pawn is `PawnPosition.Out`; a player with none is knocked out
 (`GameState.knockedOut`), placed at once, and passed by; a team lasts while any of its players does. A round is a turn for
-everyone still in (`roundsPlayed`). Sudden death (`suddenDeathStage`) makes the start squares unsafe after 30 + 5 rounds a
-player, and the stars too after half as many again, so safety is asked of the state (`GameState.isSafe`,
+everyone still in (`roundsPlayed`). Sudden death (`suddenDeathStage`) has three stages (the
+maintainer, 2026-11-24): **Overtime**, the start squares unsafe after 30 + 5 rounds a player; **Sudden Death**, the stars
+too after half as many again; and the **Cataclysm**,
+ten turns after that, however many play (`suddenDeathTurns`; below). So safety is asked of the state (`GameState.isSafe`,
 `isSafeFor`), never the board alone. A 6 needn't move a pawn off the start stack (the maintainer's choice): a stack left
 there as sudden death comes can be captured whole. No Home Roll, Out on a 1, Free Start, and Three Tries change nothing
 here, so are locked, saying so (`HouseRule.appliesTo`), and not played. The board is drawn with no home, and as sudden death comes without its
 start colours, then its stars (`BoardParts`), under `SurvivalArt.kt`'s arena: crossed swords, then flames, then a skull,
 with a red cross on the squares no longer safe. Yards tally the fallen; cards' dots are the pawns left. The Leaderboard ranks
 the most pawns left (`LeaderboardRanking`, from `timesCaptured`), then captures; its wins set no fewest turns, and it has
-no online board. TalkBack: "Red yard, 3 of 6 pawns lost", "3 pawns left, playing now"; the line over the board ("Start
-squares stop being safe in 3 rounds.") is live in the last three rounds before a stage and as it comes.
+no online board. TalkBack: "Red yard, 3 of 6 pawns lost", "3 pawns left, playing now"; the line over the board
+("Overtime in 3 rounds: start squares unsafe.", "Overtime! Only stars are safe.") is live in the last three rounds before a
+stage and as it comes.
+
+**The Cataclysm** (`game/Cataclysm.kt`, `CataclysmTest`; the maintainer, 2026-11-24): two last pawns can chase each other
+round a big board without ever meeting, so the track shrinks. After every fifth turn (anyone's; a run of rolls is one) one to
+three random squares with no pawn on them vanish (`GameState.lostSquares`, drawn from `seed`), until seven are left: one more
+than the die's faces, so a 6 never comes round to its own square, and a lone rival is always within a roll. Pawns step over
+the gaps (`GameState.stepOn`); progress still counts every square, and a move says which it stepped over (`Move.skipped`,
+`squares`). Eight Medium CPUs' longest of 60 games went from 772 rounds to 220. A lost square is a dark pit, opening once the
+turn has played out (`VanishMotion`, `VANISH_MILLIS`), with a buzz; the log's line ends "2 squares vanished.", the line over
+the board counts the turns, and TalkBack's board leaves the square out.
 
 **Chaos** (`GameRules.powerUps`, `model/PowerUp.kt`, `game/PowerUps.kt`; the maintainer, 2026-11-24, reversing Phase 9's
 "power-up squares weren't picked"). One power-up on each seat's stretch of the track, never on a safe square or a pawn's;

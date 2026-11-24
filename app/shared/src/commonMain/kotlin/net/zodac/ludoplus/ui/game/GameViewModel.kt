@@ -205,7 +205,7 @@ class GameViewModel(
     private val _settled = MutableStateFlow(true)
 
     /**
-     * Whether the screen has played out the last action (the die's tumble, a pawn's move, a ghost's drift): until then a
+     * Whether the screen has played out the last action (the die's tumble, a pawn's move, a ghost's drift, squares vanishing): until then a
      * person can't roll, so that nobody rolls while the pawn before is still on its way. Always true in the tutorial, whose
      * steps wait for it themselves.
      */
@@ -215,7 +215,7 @@ class GameViewModel(
     /** The action that brought the game to [state] is being played out; null for a game new here, with none to play. */
     private fun settle(state: GameState?) {
         settling?.cancel()
-        val playOut = if (state == null || tutorial != null) 0 else pacing.playOutMillis(state.lastEvent, state.board.homeProgress, state.ghostMove)
+        val playOut = if (state == null || tutorial != null) 0 else pacing.playOutMillis(state)
         _settled.value = playOut == 0L
         if (playOut == 0L) return
         settling = viewModelScope.launch {
@@ -622,7 +622,7 @@ class GameViewModel(
         if (tutorial != null || game.guestSeat != null) return
         val move = LudoEngine.automaticMove(game.state) ?: return
         automaticMove = viewModelScope.launch {
-            pausableDelay(pacing.waitAfter(game.state.lastEvent, game.state.board.homeProgress, game.state.ghostMove))
+            pausableDelay(pacing.waitAfter(game.state))
             if (_game.value?.state != game.state) return@launch
             automaticMove = null
             update(LudoEngine.move(game.state, move))
@@ -643,7 +643,7 @@ class GameViewModel(
         }
         if (game.state.isFinished || cpuTurn?.isActive == true) return
         cpuTurn = viewModelScope.launch {
-            pausableDelay(pacing.waitAfter(game.state.lastEvent, game.state.board.homeProgress, game.state.ghostMove))
+            pausableDelay(pacing.waitAfter(game.state))
             val now = _game.value ?: return@launch
             // A guest back in its seat plays it again.
             if (!computerPlays(now)) {

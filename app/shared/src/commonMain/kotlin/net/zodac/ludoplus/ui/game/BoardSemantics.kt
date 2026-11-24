@@ -122,6 +122,8 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
     // The track, from red's start.
     val blockades = LudoEngine.blockades(state)
     for (square in 0..<board.trackLength) {
+        // One lost to the Cataclysm is no longer there to find.
+        if (square in state.lostSquares) continue
         val here = pawns.filter { (key, _) ->
             val (player, _, position) = key
             position is PawnPosition.Track && board.trackSquare(state.players[player].seat, position.steps) == square
@@ -192,7 +194,7 @@ private fun ghostClauses(state: GameState, square: Int): List<String> =
 fun moveLabel(state: GameState, move: Move, colourOf: (Int) -> PlayerColour): String {
     val colour = stringResource(colourOf(move.ownerIn(state)).label)
     val number = move.pawn + 1
-    val roll = move.rolledTo - move.from
+    val roll = move.squares
     val main = if (move.from == PawnPosition.YARD_PROGRESS) {
         stringResource(Res.string.game_move_out_action, colour, number)
     } else {
