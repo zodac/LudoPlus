@@ -137,7 +137,8 @@ end.
 
 | Kept out | Survival, against Classic |
 | --- | --- |
-| All Hands On Deck, Buddy System | The opening stack: 100% |
+| All Hands On Deck | The opening stack: 100% |
+| Buddy System | 96%, against 69%, its start square left out (2026-11-25): six pawns, all out from the first |
 | Clean Sweep, Wire To Wire | Nobody brings a pawn home: every win |
 | Two For One, Hat Trick | Stacks are captured together: 19% and 13%, against 2.2% and 2.3% |
 | Sitting Ducks, Insult To Injury | The same, lost: 26% and 43%, against 2.8% and 8.3% |

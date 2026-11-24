@@ -216,7 +216,7 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `All Hands On Deck is every pawn on the board - Buddy System two on one square`() {
+    fun `All Hands On Deck is every pawn on the board - Buddy System two on one square but not the start square`() {
         val deck = Play(game(listOf(1, 2, 3, Y))).play(6, pawn = 3)
         assertTrue(Achievement.ALL_HANDS_ON_DECK in deck.earned)
         val home = Play(game(listOf(HOME, 2, 3, Y))).play(6, pawn = 3)
@@ -224,6 +224,12 @@ class AchievementTrackerTest {
 
         assertEquals(setOf(Achievement.BUDDY_SYSTEM), Play(game(listOf(1, 3, Y, Y))).play(2, pawn = 0).earned)
         assertEquals(emptySet(), Play(game(listOf(1, 3, Y, Y))).play(1, pawn = 0).earned)
+        assertTrue(Achievement.BUDDY_SYSTEM in Play(game(listOf(LAST_TRACK, 52, Y, Y))).play(2, pawn = 0).earned, "the home column counts")
+
+        assertFalse(Achievement.BUDDY_SYSTEM in Play(game(listOf(0, Y, Y, Y))).play(6, pawn = 1).earned, "the start square doesn't count")
+        assertEquals(emptySet(), Play(game(listOf(0, 0, 10, Y))).play(1, pawn = 2).earned, "a pair left on the start square doesn't count")
+        assertFalse(Achievement.BUDDY_SYSTEM in Play(game(listOf(HOME, HOME - 1, Y, Y))).play(1, pawn = 1).earned, "home isn't a square")
+        assertTrue(Achievement.BUDDY_SYSTEM in Play(game(listOf(0, 0, 7, 10))).play(3, pawn = 2).earned, "a pair off it does, whatever is on it")
     }
 
     @Test

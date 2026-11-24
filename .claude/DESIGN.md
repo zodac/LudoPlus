@@ -464,7 +464,8 @@ in `GameRecordRepository.statistics`, off the main thread. Each figure is read w
     twelve on 2026-11-24 (two of them never released), and is
     adding new ones: My Favourite Spot (every pawn on one square, not the start square, home column included) and
     We're All Friends Here (a pawn of every player on one track square, by anyone's move) on 2026-11-23, when Pest and
-    Completionist moved to Milestones and the Collection category went.
+    Completionist moved to Milestones and the Collection category went. Buddy System leaves out the start square too (the
+    maintainer, 2026-11-25).
     - Speed Demon is a win within 5 minutes of the game on screen (`StartedGame.playMillis`, as Time Flies counts it; the
         maintainer, 2026-11-23). Locked Out is 5 turns, and Lifetime Achievement 500 games.
     - Punching Bag (15 captured) comes from simulated games: a player is captured about 6 times a game.

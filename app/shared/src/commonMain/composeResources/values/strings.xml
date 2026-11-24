@@ -1046,7 +1046,7 @@
     <string name="achievement_wooden_spoon_title">Wooden Spoon</string>
     <string name="achievement_wooden_spoon_description">Finish last</string>
     <string name="achievement_buddy_system_title">Buddy System</string>
-    <string name="achievement_buddy_system_description">Have two of your pawns share a square</string>
+    <string name="achievement_buddy_system_description">Have two of your pawns share a square, other than your start square</string>
     <string name="achievement_deja_vu_title">Déjà Vu</string>
     <string name="achievement_deja_vu_description">Capture the same pawn twice in one game</string>
     <string name="achievement_inch_by_inch_title">Inch By Inch</string>

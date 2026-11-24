@@ -361,7 +361,8 @@ class AchievementTracker(
         if (move.owner == null && leftYardOnTurn.size == pawnsPerPlayer && leftYardOnTurn.values.all { it > turn - ESCAPE_TURNS }) feats += Achievement.THE_GREAT_ESCAPE
         if (move.owner == null && seenFromStart && oneByOne && pawns.all { it == board.homeProgress }) feats += Achievement.ONE_BY_ONE
         val onBoard = pawns.filter { it in 0..<board.homeProgress }
-        if (onBoard.size != onBoard.toSet().size) feats += Achievement.BUDDY_SYSTEM
+        val offStart = onBoard.filter { it != 0 }
+        if (offStart.size != offStart.toSet().size) feats += Achievement.BUDDY_SYSTEM
         if (pawns.distinct().singleOrNull().let { it != null && it in 1..<board.homeProgress }) feats += Achievement.MY_FAVOURITE_SPOT
         if (onBoard.size == pawnsPerPlayer) feats += Achievement.ALL_HANDS_ON_DECK
         if (pawns.all { it in board.trackSteps..<board.homeProgress }) feats += Achievement.FULL_HOUSE
