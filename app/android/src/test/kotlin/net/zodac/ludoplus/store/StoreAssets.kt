@@ -23,12 +23,16 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.zodac.ludoplus.app.AppContainer
+import net.zodac.ludoplus.data.settings.DefaultStyleIds
 import net.zodac.ludoplus.game.CpuStrategy
 import net.zodac.ludoplus.game.GameState
+import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
+import net.zodac.ludoplus.game.MoveLog
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.Achievement
 import net.zodac.ludoplus.model.AchievementCategory
+import net.zodac.ludoplus.model.AchievementCounter
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PlayerConfig
@@ -112,7 +116,21 @@ internal object Cast {
         PlayerConfig(slot = 3, type = PlayerType.HUMAN, name = FRIENDS[0]),
         PlayerConfig(slot = 4, type = PlayerType.HUMAN, name = FRIENDS[1]),
     )
+
+    /** [TABLE], and two more, on a bigger board: with six, the phone still has room for the move log. */
+    val BIG_TABLE: List<PlayerConfig> = TABLE + listOf(
+        PlayerConfig(slot = 5, type = PlayerType.HUMAN, name = "Kim"),
+        PlayerConfig(slot = 6, type = PlayerType.HUMAN, name = "Max"),
+    )
 }
+
+/** The styles a scene is dressed in: the app's own by default. Each must be unlocked, or the app draws the default. */
+internal data class StylePicks(
+    val board: String = DefaultStyleIds.BOARD,
+    val pawns: String = DefaultStyleIds.PAWNS,
+    val dice: String = "classic_ivory",
+    val background: String = "classic_navy",
+)
 
 /** The app state behind every store screen: a believable history, and the staged games to resume. */
 internal object StoreState {
@@ -123,9 +141,11 @@ internal object StoreState {
     /** 10 hours 27 minutes of play, for Statistics' time played. */
     private const val STAGED_TIME_PLAYED_SECONDS = 10 * 3_600 + 27 * 60 + 12
 
-    /** Resets everything, then seeds the history and Sam's name for player 1. Waits until it's all on disk. */
+    /** Resets everything (the achievements too), then seeds the history and Sam's name for player 1. Waits until it's all on disk. */
     fun seed(container: AppContainer) = runBlocking {
         container.gameRecordRepository.reset()
+        // The time played with them, which would add up from part to part.
+        container.achievementsRepository.resetAll()
         container.inProgressGameRepository.clear()
         withTimeout(10_000) { container.inProgressGameRepository.hasInProgressGame.first { !it } }
         val now = System.currentTimeMillis()
@@ -144,18 +164,41 @@ internal object StoreState {
     }
 
     /** A staged game's time on screen so far, so its results say how long it took. */
-    private const val STAGED_PLAY_MILLIS = 23 * 60_000L + 41_000L
+    const val STAGED_PLAY_MILLIS = 23 * 60_000L + 41_000L
 
     /** Records every achievement but [locked] as earned, quietly: no banner, as a long-played app has them. */
     fun unlockAllBut(container: AppContainer, locked: Set<Achievement>) = runBlocking {
         val now = System.currentTimeMillis()
-        container.achievementsRepository.record(Achievement.entries.filter { it !in locked }.associateWith { now - DAY_MILLIS }, emptyMap())
+        val earned = Achievement.entries.filter { it !in locked }
+        // One every few hours or so, at no regular time of day.
+        val unlockedAt = earned.mapIndexed { index, achievement -> achievement to now - DAY_MILLIS - (earned.size - index) * EARNED_EVERY_MILLIS }.toMap()
+        container.achievementsRepository.record(unlockedAt, STAGED_COUNTERS)
     }
 
-    /** Saves [state] as the game to continue, at [Cast.TABLE]. */
-    fun saveGame(container: AppContainer, state: GameState) {
-        container.inProgressGameRepository.save(StartedGame(GameMode.CLASSIC, Cast.TABLE, state, first = 0, playMillis = STAGED_PLAY_MILLIS))
+    private const val EARNED_EVERY_MILLIS = 11 * 3_600_000L + 37 * 60_000L
+
+    /** The totals behind the long climbs: past those earned, and some way short of those left ([Scenes.LOCKED]). */
+    private val STAGED_COUNTERS = mapOf(
+        AchievementCounter.GAMES_PLAYED to 312,
+        AchievementCounter.CAPTURES to 748,
+        AchievementCounter.PAWNS_HOME to 861,
+        AchievementCounter.SQUARES_MOVED to 64_230,
+    )
+
+    /** Saves [game] as the game to continue. */
+    fun saveGame(container: AppContainer, game: StartedGame) {
+        container.inProgressGameRepository.save(game)
         runBlocking { withTimeout(10_000) { container.inProgressGameRepository.hasInProgressGame.first { it } } }
+    }
+
+    /** Picks [styles] for every table from now on. */
+    fun applyStyles(container: AppContainer, styles: StylePicks) = runBlocking {
+        val settings = container.settingsRepository
+        settings.setBoardStyleId(styles.board)
+        settings.setPawnStyleId(styles.pawns)
+        settings.setDiceStyleId(styles.dice)
+        settings.setTableBackgroundId(styles.background)
+        withTimeout(10_000) { settings.tableBackgroundId.first { it == styles.background } }
     }
 
     /** The next action of [state], played by the Medium CPU for whoever's turn it is. */
@@ -175,52 +218,106 @@ internal object StoreState {
 /** The staged games: each a real game, played by the CPU for everyone up to the moment shown, found by a seed search. */
 internal object Scenes {
 
-    /** The achievement the video's last scene unlocks, banner and all. */
-    val VIDEO_UNLOCK = Achievement.LAP_OF_HONOUR
+    /** The achievement the last screenshot and the video's last scene unlock, banner and all. */
+    val UNLOCK = Achievement.LAP_OF_HONOUR
 
     /**
-     * What the video leaves locked: its own unlock, the longest climbs, so the Achievements page isn't all done, and the
+     * What the listing leaves locked: its own unlock, the longest climbs, so the Achievements page isn't all done, and the
      * Easter eggs, which would count past the total ("110 of 100") and look like a slip.
      */
-    val VIDEO_LOCKED: Set<Achievement> = setOf(
-        VIDEO_UNLOCK, Achievement.COMPLETIONIST, Achievement.PUBLIC_ENEMY, Achievement.LIFETIME_ACHIEVEMENT, Achievement.ULTRAMARATHON,
+    val LOCKED: Set<Achievement> = setOf(
+        UNLOCK, Achievement.COMPLETIONIST, Achievement.PUBLIC_ENEMY, Achievement.LIFETIME_ACHIEVEMENT, Achievement.ULTRAMARATHON,
         Achievement.GLOBETROTTER,
     ) + Achievement.entries.filter { it.category == AchievementCategory.EASTER_EGGS }
+
+    /** The Portals game's table: ducks on the water. */
+    val POND = StylePicks(board = "ocean_lagoon", pawns = "animal_duck", dice = "ocean_lagoon", background = "ocean_waves")
+
+    /** The Haunted House game's table: dark, so its ghosts stand out. */
+    val CRYPT = StylePicks(board = "stone_slate", pawns = DefaultStyleIds.PAWNS, dice = "obsidian_lava", background = "spotlight_purple")
+
+    /** A new Classic game, Sam to roll. */
+    fun newGame(): StartedGame = started(Cast.TABLE, listOf(GameState.new(GameMode.CLASSIC, 4, first = 0)))
 
     /**
      * Mid-game, Sam to move with a choice: two or more moves, one of them a capture, and every player with pawns out on
      * the track, so the board looks lived in.
      */
-    fun midGame(): GameState = search(maxActions = 600) { state ->
+    fun midGame(): StartedGame = search(GameMode.CLASSIC, Cast.TABLE, maxActions = 600) { state ->
         val phase = state.phase as? TurnPhase.AwaitingMove ?: return@search false
-        state.current == 0 && phase.moves.size >= 2 && phase.moves.any { it.captures.isNotEmpty() } &&
-            state.players.all { player -> player.pawns.count { it in 0..<state.board.trackSteps } >= 2 }
+        state.current == 0 && phase.moves.size >= 2 && phase.moves.any { it.captures.isNotEmpty() } && state.livedIn(pawns = 2)
     }
+
+    /** A Portals game, Sam to move with a choice, one of the moves through a portal, forwards. */
+    fun portals(): StartedGame = search(GameMode.PORTALS, Cast.TABLE, maxActions = 600) { state ->
+        val phase = state.phase as? TurnPhase.AwaitingMove ?: return@search false
+        state.current == 0 && phase.moves.size >= 2 && phase.moves.any { move -> move.via?.let { move.to > it } == true } && state.livedIn(pawns = 2)
+    }
+
+    /**
+     * A six-player Haunted House game, with its three ghosts, Sam to move with a choice. Their turn ends with the move,
+     * and whichever they pick, a ghost catches a pawn as Ada's ends (a ghost moves after every second turn, so never
+     * after Sam's).
+     */
+    fun hauntedHouse(): StartedGame = search(GameMode.HAUNTED_HOUSE, Cast.BIG_TABLE, maxActions = 900) { state ->
+        val phase = state.phase as? TurnPhase.AwaitingMove ?: return@search false
+        state.current == 0 && phase.moves.size >= 2 && state.livedIn(pawns = 1) && phase.moves.all { move ->
+            val moved = LudoEngine.move(state, move.pawn, move.owner)
+            moved.current == 1 && (1..ADA_TRIES).all { ghostCatchesAfterTurn(moved, Random(it)) }
+        }
+    }
+
+    /** Whether a ghost catches a pawn as the turn now starting in [start] ends, played with [random]'s rolls. */
+    private fun ghostCatchesAfterTurn(start: GameState, random: Random): Boolean {
+        var state = start
+        while (state.current == start.current && !state.isFinished) state = StoreState.step(state, random)
+        return state.ghostMove?.caught.orEmpty().isNotEmpty()
+    }
+
+    /** How many ways Ada's turn is played out, to be sure of the ghost's catch after it. */
+    private const val ADA_TRIES = 20
 
     /**
      * Sam about to win: three pawns home, and the move that brings the last one home waiting to be made. Stopping at the
      * first winner (Settings' setting, saved with the game), so that move ends the game and brings up its results.
      */
-    fun lastMove(): GameState = search(maxActions = 3_000) { state ->
+    fun lastMove(): StartedGame = search(GameMode.CLASSIC, Cast.TABLE, maxActions = 3_000) { state ->
         val phase = state.phase as? TurnPhase.AwaitingMove ?: return@search false
         val sam = state.players[0]
         state.current == 0 && state.finishingOrder.isEmpty() && sam.pawnsHome(state.board) == 3 &&
             phase.moves.any { it.to == state.board.homeProgress }
-    }.let { it.copy(rules = it.rules.copy(stopAtFirstWinner = true)) }
+    }.let { it.copy(state = it.state.copy(rules = it.state.rules.copy(stopAtFirstWinner = true))) }
 
-    /** The first state, over seeds from 1, that [wanted] says yes to within [maxActions] of a new game. */
-    private fun search(maxActions: Int, wanted: (GameState) -> Boolean): GameState {
-        for (seed in 1..2_000) {
+    /** Whether every player has [pawns] or more out on the track. */
+    private fun GameState.livedIn(pawns: Int): Boolean = players.all { player -> player.pawns.count { it in 0..<board.trackSteps } >= pawns }
+
+    /** The game up to the first state, over seeds from 1, that [wanted] says yes to within [maxActions] of a new game. */
+    private fun search(mode: GameMode, cast: List<PlayerConfig>, maxActions: Int, wanted: (GameState) -> Boolean): StartedGame {
+        for (seed in 1..20_000) {
             val random = Random(seed)
-            var state = GameState.new(GameMode.CLASSIC, 4)
-            repeat(maxActions) {
-                if (wanted(state)) return state
-                if (state.isFinished) return@repeat
-                state = StoreState.step(state, random)
+            val states = mutableListOf(GameState.new(mode, cast.size, rules = mode.rules.forPlayers(cast.size), seed = seed.toLong()))
+            while (states.size <= maxActions && !states.last().isFinished) {
+                if (wanted(states.last())) return started(cast, states)
+                states += StoreState.step(states.last(), random)
             }
         }
         error("No seed stages this scene")
     }
+
+    /** [states], a game from its first on, as one [cast] has been playing until now, its move log with it. */
+    private fun started(cast: List<PlayerConfig>, states: List<GameState>): StartedGame {
+        val now = System.currentTimeMillis()
+        val log = states.indices.drop(1).fold(emptyList<LogEntry>()) { log, index ->
+            MoveLog.next(log, states[index - 1], states[index], now - (states.size - index) * STAGED_ACTION_MILLIS)
+        }
+        return StartedGame(
+            states.first().mode, cast, states.last(), first = 0, startedAtEpochMillis = now - states.size * STAGED_ACTION_MILLIS,
+            playMillis = StoreState.STAGED_PLAY_MILLIS, log = log,
+        )
+    }
+
+    /** How long each roll and move of a staged game took, as its log has it. */
+    private const val STAGED_ACTION_MILLIS = 4_000L
 }
 
 /**

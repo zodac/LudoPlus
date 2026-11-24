@@ -85,7 +85,7 @@ class StoreArtGeneratorTest {
     @Config(qualifiers = "w1024dp-h500dp-xxhdpi")
     fun `feature graphic`() {
         val dir = File(StoreAssets.outDir, "feature-graphic-frames").apply { deleteRecursively(); mkdirs() }
-        val game = Scenes.midGame()
+        val game = Scenes.midGame().state
         compose.mainClock.autoAdvance = false
         compose.setContent { LudoPlusTheme { BannerScene(game) } }
         for (frame in 1..FEATURE_LOOP_FRAMES) {
@@ -104,7 +104,7 @@ class StoreArtGeneratorTest {
     @Config(qualifiers = "w640dp-h360dp-xxhdpi")
     fun `video end card`() {
         val dir = File(StoreAssets.outDir, "video-end-card").apply { deleteRecursively(); mkdirs() }
-        val game = Scenes.midGame()
+        val game = Scenes.midGame().state
         compose.mainClock.autoAdvance = false
         compose.setContent { LudoPlusTheme { BannerScene(game) } }
         repeat(END_CARD_FRAMES) { frame ->

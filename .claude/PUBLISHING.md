@@ -112,10 +112,10 @@ until the player signs in.
 
     It's the tagline: also `README.md`'s first line, the GitHub repo description, and the opening of the full
     description. Keep them the same.
-- **Full description**: `assets/full-description.txt`, about 2650 of 4000 characters (2026-11-18). Keep its counts and
+- **Full description**: `assets/full-description.txt`, about 3000 of 4000 characters (2026-11-24). Keep its counts and
     lists true, and in step with `README.md`'s "What's in it":
     - the player counts and team set-ups under "The classic rules";
-    - the built-in modes under "Three ways to play" (and that heading's count);
+    - the built-in modes under "Seven ways to play" (and that heading's count);
     - the house rules under "House rules", all nine, and custom modes;
     - "Play together nearby" (the play app's Nearby games, `NETPLAY.md`);
     - "Over 100 achievements" (110 today: 100 count towards completion, plus 10 Easter Eggs);

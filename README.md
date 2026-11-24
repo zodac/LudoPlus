@@ -20,7 +20,7 @@ and be the first to get all four home. Land on a rival to send them back to the 
 - **Play together on phones in the same room** (the Google Play version): one game across several phones, linked
     directly with no server, and a player whose phone drops out can rejoin
 - **A guided tutorial** that teaches the game in four short parts, and the rules with a diagram for each idea
-- **A Leaderboard** of the fastest wins, and **Statistics** for every player: wins, streaks, and captures
+- **A Leaderboard** of the best wins, and **Statistics** for every player: wins, streaks, and captures
 - **Achievements** to chase: over 100 of them, for captures, comebacks, close finishes, and a few hidden surprises
 - **Styles** they unlock: 8 boards, 7 sets of pawns, 35 dice, and 20 backgrounds for the table
 - Built for **TalkBack** and large fonts, with no accounts: your games stay on your phone
@@ -28,14 +28,16 @@ and be the first to get all four home. Land on a rival to send them back to the 
 
 <table>
 <tr>
-<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-1-game.png" alt="A game in play" width="270"></td>
-<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-2-rules.png" alt="The Captures rules page" width="270"></td>
-<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-3-tutorial.png" alt="The tutorial" width="270"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-1-game.png" alt="A game in play" width="200"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-2-portals.png" alt="Portals" width="200"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-3-haunted-house.png" alt="Haunted House" width="200"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-4-styles.png" alt="The die styles" width="200"></td>
 </tr>
 <tr>
-<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-4-game-over.png" alt="Game Over" width="270"></td>
-<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-5-leaderboard.png" alt="The Leaderboard" width="270"></td>
-<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-6-statistics.png" alt="Statistics" width="270"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-5-game-over.png" alt="Game Over" width="200"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-6-leaderboard.png" alt="The Leaderboard" width="200"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-7-statistics.png" alt="Statistics" width="200"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/phone-8-achievements.png" alt="Achievements" width="200"></td>
 </tr>
 </table>
 
@@ -45,15 +47,19 @@ and be the first to get all four home. Land on a rival to send them back to the 
 <table>
 <tr>
 <td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-1-game.png" alt="A game in play, on a tablet" width="420"></td>
-<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-2-rules.png" alt="The Captures rules page, on a tablet" width="420"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-2-portals.png" alt="Portals, on a tablet" width="420"></td>
 </tr>
 <tr>
-<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-3-tutorial.png" alt="The tutorial, on a tablet" width="420"></td>
-<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-4-game-over.png" alt="Game Over, on a tablet" width="420"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-3-haunted-house.png" alt="Haunted House, tablet" width="420"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-4-styles.png" alt="The die styles, on a tablet" width="420"></td>
 </tr>
 <tr>
-<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-5-leaderboard.png" alt="The Leaderboard, on a tablet" width="420"></td>
-<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-6-statistics.png" alt="Statistics, on a tablet" width="420"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-5-game-over.png" alt="Game Over, on a tablet" width="420"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-6-leaderboard.png" alt="The Leaderboard, on a tablet" width="420"></td>
+</tr>
+<tr>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-7-statistics.png" alt="Statistics, on a tablet" width="420"></td>
+<td><img src="https://github.com/zodac/LudoPlus/releases/download/readme-assets/tablet-10-8-achievements.png" alt="Achievements, on a tablet" width="420"></td>
 </tr>
 </table>
 

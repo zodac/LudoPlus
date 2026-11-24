@@ -10,7 +10,6 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
@@ -23,8 +22,8 @@ import net.zodac.ludoplus.app.AchievementEvent
 import net.zodac.ludoplus.app.AchievementEvents
 import net.zodac.ludoplus.app.AppContainer
 import net.zodac.ludoplus.device.AndroidAppContainer
-import net.zodac.ludoplus.game.GameState
-import net.zodac.ludoplus.model.GameMode
+import net.zodac.ludoplus.model.Achievement
+import net.zodac.ludoplus.ui.game.StartedGame
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,11 +40,16 @@ class StoreScreensGeneratorTest {
 
     private companion object {
         const val GAME = "game"
-        const val RULES = "rules"
-        const val TUTORIAL = "tutorial"
+        const val PORTALS = "portals"
+        const val HAUNTED_HOUSE = "haunted-house"
+        const val STYLES = "styles"
         const val GAME_OVER = "game-over"
         const val LEADERBOARD = "leaderboard"
         const val STATISTICS = "statistics"
+        const val ACHIEVEMENTS = "achievements"
+
+        /** The families the video picks on the Die page. */
+        val DICE_PICKS = listOf("Metal", "Obsidian", "Retro", "Cake")
 
         init {
             // The test's own clock has to drive the app - see MainActivity.useCappedFrameClock.
@@ -87,12 +91,12 @@ class StoreScreensGeneratorTest {
         val root = File(StoreAssets.outDir, "video").apply { deleteRecursively(); mkdirs() }
         StoreState.seed(container)
         // Earned already, so no banner covers a scene but the last scene's own, which unlocks one of those left.
-        StoreState.unlockAllBut(container, Scenes.VIDEO_LOCKED)
+        StoreState.unlockAllBut(container, Scenes.LOCKED)
         val dealt = DealtRandom()
         container.diceRandom = dealt
 
         // A first turn: a 6 brings a pawn out, and earns another roll, which moves it on.
-        resume(GameState.new(GameMode.CLASSIC, 4, first = 0))
+        resume(Scenes.newGame())
         FrameRecorder(compose, File(root, "1-turn")).apply {
             hold(700)
             dealt.deal(6)
@@ -121,19 +125,49 @@ class StoreScreensGeneratorTest {
         }
         leaveGame()
 
-        // The Rules' Captures page, with its diagram.
-        openFromMenu("Rules")
-        compose.onNode(isTab and hasText("Captures")).performSemanticsAction(SemanticsActions.OnClick)
-        settle()
-        FrameRecorder(compose, File(root, "3-rules")).apply {
-            hold(2_400)
+        // Through a portal, at a table of its own.
+        StoreState.applyStyles(container, Scenes.POND)
+        resume(Scenes.portals())
+        FrameRecorder(compose, File(root, "3-portals")).apply {
+            hold(800)
+            tap(compose.onAllNodes(moveLabelled { "through a portal" in it })[0])
+            hold(2_600)
+            finish()
+        }
+        leaveGame()
+
+        // A ghost catching a pawn, on the six-player board.
+        StoreState.applyStyles(container, Scenes.CRYPT)
+        resume(Scenes.hauntedHouse())
+        FrameRecorder(compose, File(root, "4-haunted-house")).apply {
+            hold(800)
+            tap(compose.onAllNodes(moveLabelled { it.startsWith("Move") })[0])
+            holdUntil(15_000) { exists(hasText("A ghost caught", substring = true)) }
+            hold(1_800)
+            finish()
+        }
+        leaveGame()
+        StoreState.applyStyles(container, StylePicks())
+
+        // Styles: the Styles page, then its dice, picking a few.
+        openFromMenu("Styles")
+        FrameRecorder(compose, File(root, "5-styles")).apply {
+            hold(1_200)
+            tap(compose.onNode(DICE_FIELD))
+            hold(1_200)
+            for (family in DICE_PICKS) {
+                tap(compose.onAllNodes(hasContentDescription("$family,", substring = true))[0])
+                hold(800)
+            }
             finish()
         }
         back()
+        back()
+        StoreState.applyStyles(container, StylePicks())
 
         // Sam's last pawn home: the win, then the results' celebration.
         resume(Scenes.lastMove())
-        FrameRecorder(compose, File(root, "4-win")).apply {
+        FrameRecorder(compose, File(root, "6-win")).apply {
             hold(700)
             tap(compose.onNode(WINNING_MOVE))
             holdUntil(20_000) { exists(hasText("Winner")) }
@@ -143,7 +177,7 @@ class StoreScreensGeneratorTest {
         back()
 
         openFromMenu("Leaderboard")
-        FrameRecorder(compose, File(root, "5-leaderboard")).apply {
+        FrameRecorder(compose, File(root, "7-leaderboard")).apply {
             hold(2_400)
             finish()
         }
@@ -151,9 +185,9 @@ class StoreScreensGeneratorTest {
 
         // An achievement unlocking, banner and all.
         openFromMenu("Achievements")
-        FrameRecorder(compose, File(root, "6-achievements")).apply {
+        FrameRecorder(compose, File(root, "8-achievements")).apply {
             hold(500)
-            AchievementEvents.emit(AchievementEvent.Unlocked(Scenes.VIDEO_UNLOCK))
+            AchievementEvents.emit(AchievementEvent.Unlocked(Scenes.UNLOCK))
             hold(3_000)
             finish()
         }
@@ -161,7 +195,7 @@ class StoreScreensGeneratorTest {
     }
 
     /**
-     * Six screens, the strongest first: names are listing order, and the script captions each
+     * Eight screens (Play's most), the strongest first: names are listing order, and the script captions each
      * (`scripts/store-assets/captions.txt`).
      */
     private fun screenshots(device: String) {
@@ -172,28 +206,30 @@ class StoreScreensGeneratorTest {
             StoreAssets.save(compose.captureScreen(), File(dir, "%d-%s.png".format(++number, name)))
         }
         StoreState.seed(container)
+        // Earned already, so no banner covers a screen but the last's own: a landscape game is an achievement itself (Sideways).
+        StoreState.unlockAllBut(container, Scenes.LOCKED - Achievement.SIDEWAYS)
 
         // A game in full swing, Sam to choose between moves, one of them a capture.
         resume(Scenes.midGame())
         shoot(GAME)
         leaveGame()
 
-        // The Rules' Captures page, with its diagram.
-        openFromMenu("Rules")
-        compose.onNode(isTab and hasText("Captures")).performSemanticsAction(SemanticsActions.OnClick)
-        shoot(RULES)
+        // Two of the other modes, each at a table of its own.
+        StoreState.applyStyles(container, Scenes.POND)
+        resume(Scenes.portals())
+        shoot(PORTALS)
+        leaveGame()
+        StoreState.applyStyles(container, Scenes.CRYPT)
+        resume(Scenes.hauntedHouse())
+        shoot(HAUNTED_HOUSE)
+        leaveGame()
+        StoreState.applyStyles(container, StylePicks())
 
-        // The tutorial from How to Play, on to its second part (captures).
-        compose.onNode(isTab and hasText("How to Play")).performSemanticsAction(SemanticsActions.OnClick)
-        settle()
-        compose.onNode(hasText("Play the Tutorial")).performScrollTo().performClick()
-        compose.waitUntil(10_000) { exists(DIE) }
-        settle()
-        compose.onNode(hasContentDescription("Next part")).performClick()
-        shoot(TUTORIAL)
+        // Every die at once, opened from its field on the Styles page.
+        openFromMenu("Styles")
+        compose.onNode(DICE_FIELD).performClick()
+        shoot(STYLES)
         back()
-        compose.onNode(hasText("Leave")).performClick()
-        compose.waitForIdle()
         back()
 
         // Sam's last pawn home: the win, played out, then the results in the middle of the celebration.
@@ -213,11 +249,18 @@ class StoreScreensGeneratorTest {
         openFromMenu("Statistics")
         shoot(STATISTICS)
         back()
+
+        // An achievement unlocking, its banner fully in.
+        openFromMenu("Achievements")
+        AchievementEvents.emit(AchievementEvent.Unlocked(Scenes.UNLOCK))
+        stepFor(1_500)
+        StoreAssets.save(compose.captureScreen(), File(dir, "%d-%s.png".format(++number, ACHIEVEMENTS)))
     }
 
     // ---- Driving the app -------------------------------------------------------------------------------------------
 
-    private val isTab = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
+    /** The Styles page's Die field, which opens the dice. */
+    private val DICE_FIELD = hasContentDescription("Die") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
 
     /** The die, whatever it shows: on screen means the board is. */
     private val DIE = hasContentDescription("Die", substring = true)
@@ -283,9 +326,9 @@ class StoreScreensGeneratorTest {
         compose.waitForIdle()
     }
 
-    /** Saves [state] and continues it from the menu. */
-    private fun resume(state: GameState) {
-        StoreState.saveGame(container, state)
+    /** Saves [game] and continues it from the menu. */
+    private fun resume(game: StartedGame) {
+        StoreState.saveGame(container, game)
         menu()
         compose.waitUntil(10_000) { exists(hasText("Continue")) }
         compose.onNode(hasText("Continue")).performClick()

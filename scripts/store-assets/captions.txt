@@ -5,14 +5,15 @@
 # The trademark rule in CLAUDE.md applies here too: "Ludo" and "the classic rules" only, never another company's name
 # for the game.
 game=Race your pawns home
-rules=The classic rules, explained
-tutorial=Learn as you play
+portals=Twists on the classic rules
+haunted-house=Up to 8 players, and ghosts
+styles=Unlock dozens of styles
 game-over=Beat friends or the computer
 leaderboard=Chase the fastest win
 statistics=Track your wins and captures
+achievements=Over 100 achievements
 # The promo video's scenes (StoreScreensGeneratorTest's `promo video frames`), by the part of each folder's name after
-# the number; rules and leaderboard are the screenshots' own.
+# the number, where they aren't the screenshots' own.
 turn=Roll a 6 to get going
 capture=Send rivals back to the yard
 win=Bring them all home to win
-achievements=Over 100 achievements
