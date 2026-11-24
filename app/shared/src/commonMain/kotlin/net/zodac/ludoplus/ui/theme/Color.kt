@@ -147,7 +147,7 @@ val PortalColours = listOf(
 /** The sparks of the flourish round a pawn that reaches home. */
 val BoardSparkGold = Color(0xFFFFD45C)
 
-/** The arena of a last-standing board, and the glow of its emblem and cracks, at each stage of sudden death. */
+/** The arena of a last-standing board, and the glow of its emblem, at each stage of sudden death. */
 val ArenaFloors = listOf(Color(0xFF3A3550), Color(0xFF5A3220), Color(0xFF5C1420))
 val ArenaHeats = listOf(BoardSparkGold, Color(0xFFFF922B), Color(0xFFFF3B3B))
 
@@ -158,6 +158,9 @@ val SwordHilt = Color(0xFF8D5524)
 /** A pawn out of the game, and the cross through it. */
 val FallenPawn = Color(0xFF9A9488)
 val FallenCross = Color(0xFFFF6B6B)
+
+/** The cross on a start or star square that is no longer safe. */
+val UnsafeCross = Color(0xFFE81E1E)
 
 /** The ivory die, light at its top-left to shaded at its bottom-right. */
 val IvoryDiceTop = Color(0xFFFFFCF3)

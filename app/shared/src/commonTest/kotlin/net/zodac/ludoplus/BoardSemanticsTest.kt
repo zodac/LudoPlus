@@ -155,7 +155,7 @@ class BoardSemanticsTest : UiTest() {
             "Square 9, safe, empty",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
         compose.onNode(hasContentDescription("home", substring = true, ignoreCase = true)).assertDoesNotExist()
-        compose.onNode(hasText("Alex") and stateSays("3 pawns left, playing now")).assertExists()
+        compose.onNode(hasText("Alex") and stateSays("3 pawns left, playing now, currently 3rd")).assertExists()
         compose.onNode(hasText("Gambit") and stateSays("0 pawns left, 4th place")).assertExists()
         compose.onNodeWithText("Start squares stop being safe in 50 rounds.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
 
@@ -193,7 +193,7 @@ class BoardSemanticsTest : UiTest() {
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
         compose.onNodeWithContentDescription("Square 2, Red pawn 1, 55 squares from home").assert(onClickLabel("Move Red pawn 1 2 squares, taking Teleport"))
         compose.onNodeWithContentDescription("Square 21, Red pawn 2, 36 squares from home").assert(onClickLabel("Move Red pawn 2 2 squares, bouncing off Green pawn 1's shield"))
-        compose.onNode(hasText("Sam") and stateSays("0 pawns home, 1 doubled roll left")).assertExists()
+        compose.onNode(hasText("Sam") and stateSays("0 pawns home, 1 doubled roll left, currently joint 3rd")).assertExists()
     }
 
     @Test
@@ -334,9 +334,9 @@ class BoardSemanticsTest : UiTest() {
         show(LudoEngine.applyRoll(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns[i]) }), 1))
         val prompt = compose.onNodeWithContentDescription("Alex rolled 1. Pick a partner's pawn to move.")
         assertEquals(listOf("Move Yellow pawn 4 1 square, reaching home"), prompt.fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label })
-        compose.onNode(hasText("Alex").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 1, 4 pawns home, playing now"))).assertExists()
-        compose.onNode(hasText("Sam").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 1, 3 pawns home"))).assertExists()
-        compose.onNode(hasText("Gambit").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 2, 0 pawns home"))).assertExists()
+        compose.onNode(hasText("Alex").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 1, 4 pawns home, playing now, currently 1st"))).assertExists()
+        compose.onNode(hasText("Sam").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 1, 3 pawns home, currently 1st"))).assertExists()
+        compose.onNode(hasText("Gambit").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 2, 0 pawns home, currently 2nd"))).assertExists()
         // The pawn's own square offers the move too.
         compose.onNode(onClickLabel("Move Yellow pawn 4 1 square, reaching home")).performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(listOf(3), moved)
@@ -347,11 +347,11 @@ class BoardSemanticsTest : UiTest() {
         show(state(listOf(H, Y, Y, Y)))
         compose.onNodeWithContentDescription("Die").assert(onClickLabel("Roll")).performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(1, rolls)
-        compose.onNode(hasText("Alex").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "1 pawn home, playing now")))
+        compose.onNode(hasText("Alex").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "1 pawn home, playing now, currently 1st")))
             .assertExists()
-        // A computer player's card names it as one: "Gambit, CPU, 0 pawns home".
+        // A computer player's card names it as one: "Gambit, CPU, 0 pawns home, currently joint 2nd".
         compose.onNode(
-            hasText("Gambit").and(hasContentDescription("CPU")).and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "0 pawns home")),
+            hasText("Gambit").and(hasContentDescription("CPU")).and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "0 pawns home, currently joint 2nd")),
         ).assertExists()
 
         // After a roll the die names it; on a CPU's turn it can't be rolled.

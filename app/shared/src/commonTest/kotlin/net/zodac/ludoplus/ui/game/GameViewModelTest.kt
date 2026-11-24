@@ -119,6 +119,61 @@ class GameViewModelTest {
     }
 
     @Test
+    fun `nobody rolls until the last action has played out - the die's tumble and a pawn's move - while it's on screen`() = runTest(dispatcher) {
+        val viewModel = started(noSixFirst, humans = true)
+        viewModel.setPacing(GamePacing(thinkMillis = 700))
+        assertTrue(viewModel.settled.value)
+        // Player 1 rolls no 6, and the turn passes: player 2 waits for the die to settle.
+        viewModel.roll()
+        runCurrent()
+        val missed = viewModel.state
+        assertEquals(1, missed.current)
+        viewModel.roll()
+        assertEquals(missed, viewModel.state)
+        viewModel.setForeground(false)
+        advanceTimeBy(5_000)
+        runCurrent()
+        assertFalse(viewModel.settled.value)
+        viewModel.setForeground(true)
+        advanceTimeBy(DIE_TUMBLE_MILLIS - 1L)
+        runCurrent()
+        viewModel.roll()
+        assertEquals(missed, viewModel.state)
+        advanceTimeBy(1)
+        runCurrent()
+        assertTrue(viewModel.settled.value)
+
+        // On to a 6, and its pawn out: the roll it earned waits for the pawn.
+        repeat(200) {
+            if (viewModel.state.phase == TurnPhase.AwaitingRoll) viewModel.roll()
+            advanceTimeBy(DIE_TUMBLE_MILLIS.toLong())
+            runCurrent()
+        }
+        viewModel.move(assertIs<TurnPhase.AwaitingMove>(viewModel.state.phase).moves.first())
+        runCurrent()
+        val moved = viewModel.state
+        assertTrue(moved.rollingAgain)
+        advanceTimeBy(PAWN_STEP_MILLIS - 1L)
+        runCurrent()
+        viewModel.roll()
+        assertEquals(moved, viewModel.state)
+        advanceTimeBy(1)
+        runCurrent()
+        viewModel.roll()
+        assertNotEquals(moved, viewModel.state)
+    }
+
+    @Test
+    fun `with nothing animated the next player can roll at once`() = runTest(dispatcher) {
+        val viewModel = started(noSixFirst, humans = true)
+        viewModel.roll()
+        assertTrue(viewModel.settled.value)
+        val missed = viewModel.state
+        viewModel.roll()
+        assertNotEquals(missed, viewModel.state)
+    }
+
+    @Test
     fun `a CPU's turn plays itself a pause at a time - and a person can't roll for it`() = runTest(dispatcher) {
         val viewModel = started(noSixFirst)
         passToCpu(viewModel)

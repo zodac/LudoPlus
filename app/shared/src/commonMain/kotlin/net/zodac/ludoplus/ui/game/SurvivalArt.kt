@@ -7,15 +7,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
-import kotlin.math.PI
-import kotlin.math.cos
 import kotlin.math.min
-import kotlin.math.sin
-import kotlin.random.Random
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.ui.style.PawnStyle
@@ -27,6 +22,7 @@ import net.zodac.ludoplus.ui.theme.FallenCross
 import net.zodac.ludoplus.ui.theme.FallenPawn
 import net.zodac.ludoplus.ui.theme.SwordHilt
 import net.zodac.ludoplus.ui.theme.SwordSteel
+import net.zodac.ludoplus.ui.theme.UnsafeCross
 
 /** The emblem's radius, in squares: in the middle of the arena, which home's whole centre makes. */
 private const val EMBLEM_RADIUS = 1.02f
@@ -34,7 +30,7 @@ private const val EMBLEM_RADIUS = 1.02f
 /**
  * The last-standing board's middle at [stage] of sudden death (0 to 2), over a board drawn with no home: the home columns
  * and home as one dark arena, crossed swords in its middle, in flames from stage 1, and a skull at stage 2; and each start
- * square (from 1) and star square (from 2) that is no longer safe, cracked.
+ * square (from 1) and star square (from 2) that is no longer safe, marked with a red cross.
  */
 internal fun DrawScope.drawArena(layout: BoardLayout, unit: Float, stage: Int) {
     val board = layout.geometry
@@ -43,8 +39,8 @@ internal fun DrawScope.drawArena(layout: BoardLayout, unit: Float, stage: Int) {
     for (seat in 0..<board.seats) {
         for (index in 0..<board.homeColumnLength) drawFloor(layout.homeColumnSquare(seat, index).corners, unit, floor)
         drawFloor(layout.homeArea(seat), unit, floor)
-        if (stage >= 1) drawCracks(layout.trackSquare(board.startSquare(seat)).centre * unit, unit, seat, heat)
-        if (stage >= 2) drawCracks(layout.trackSquare(board.startSquare(seat) + board.starOffset).centre * unit, unit, board.seats + seat, heat)
+        if (stage >= 1) drawCross(layout.trackSquare(board.startSquare(seat)).centre * unit, unit * UNSAFE_REACH, UnsafeCross)
+        if (stage >= 2) drawCross(layout.trackSquare(board.startSquare(seat) + board.starOffset).centre * unit, unit * UNSAFE_REACH, UnsafeCross)
     }
     val middle = layout.homeBounds.center * unit
     val radius = min(EMBLEM_RADIUS * unit, layout.homeBounds.width / 2 * unit)
@@ -74,26 +70,14 @@ private fun DrawScope.drawFloor(corners: List<Offset>, unit: Float, floor: Color
     drawPath(path, floor, style = Stroke(unit * 0.04f))
 }
 
-private const val CRACK_ARMS = 5
-private const val CRACK_STEPS = 3
+/** How far a no longer safe square's cross reaches from its middle, across and down, in squares. */
+private const val UNSAFE_REACH = 0.28f
 
-/** Cracks from the middle of a square that has stopped being safe, glowing: each [seed]'s its own, the same every time. */
-private fun DrawScope.drawCracks(centre: Offset, unit: Float, seed: Int, heat: Color) {
-    val random = Random(seed)
-    val cracks = Path()
-    repeat(CRACK_ARMS) { arm ->
-        // Evenly round, each a little off true, so none falls on another.
-        var angle = (arm + random.nextDouble(-0.2, 0.2)) * 2 * PI / CRACK_ARMS
-        var point = centre
-        cracks.moveTo(point.x, point.y)
-        repeat(CRACK_STEPS) {
-            angle += random.nextDouble(-0.35, 0.35)
-            point += Offset(cos(angle).toFloat(), sin(angle).toFloat()) * (unit * 0.14f)
-            cracks.lineTo(point.x, point.y)
-        }
+/** A cross of [red] edged in ink, [reach] across and down from [centre]: a pawn out of the game, and a square no longer safe. */
+private fun DrawScope.drawCross(centre: Offset, reach: Float, red: Color) {
+    for ((colour, width) in listOf(BoardInk to 0.45f, red to 0.27f)) {
+        for (lean in listOf(1f, -1f)) drawLine(colour, centre + Offset(-reach, -reach * lean), centre + Offset(reach, reach * lean), reach * width, StrokeCap.Round)
     }
-    drawPath(cracks, heat.copy(alpha = 0.75f), style = Stroke(unit * 0.11f, cap = StrokeCap.Round, join = StrokeJoin.Round))
-    drawPath(cracks, BoardInk, style = Stroke(unit * 0.05f, cap = StrokeCap.Round, join = StrokeJoin.Round))
 }
 
 private fun DrawScope.drawFlame(base: Offset, height: Float, colour: Color) {
@@ -147,12 +131,7 @@ internal fun DrawScope.drawFallen(state: GameState, layout: BoardLayout, unit: F
             drawCircle(BoardInk.copy(alpha = 0.45f), radius, centre, style = Stroke(unit * 0.04f))
             if (fallen && !inFlight(player, pawn)) {
                 with(pawns) { drawPawn(centre, radius * 0.72f, FallenPawn, ringed = false) }
-                val reach = radius * 0.62f
-                for (lean in listOf(1f, -1f)) {
-                    val (from, to) = centre + Offset(-reach, -reach * lean) to centre + Offset(reach, reach * lean)
-                    drawLine(BoardInk, from, to, radius * 0.28f, StrokeCap.Round)
-                    drawLine(FallenCross, from, to, radius * 0.17f, StrokeCap.Round)
-                }
+                drawCross(centre, radius * 0.62f, FallenCross)
             }
         }
     }

@@ -382,10 +382,9 @@ object LudoEngine {
     private fun placedAsTheyStand(state: GameState, unfinished: List<Int>): List<Int> {
         val count = state.players.size
         val rules = state.rules
-        fun progress(player: Int) = state.players[player].pawns.sumOf { it - PawnPosition.YARD_PROGRESS }
         fun after(player: Int) = (player - state.current + count) % count
         return unfinished.groupBy(rules::teamOf).values
-            .sortedWith(compareByDescending<List<Int>> { team -> team.sumOf(::progress) }.thenBy { team -> team.minOf(::after) })
+            .sortedWith(compareByDescending<List<Int>> { team -> team.sumOf(state::stepsOf) }.thenBy { team -> team.minOf(::after) })
             .flatMap { team -> team.sortedBy(::after) }
     }
 

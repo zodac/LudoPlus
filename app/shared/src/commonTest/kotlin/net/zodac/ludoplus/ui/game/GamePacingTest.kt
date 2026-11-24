@@ -56,6 +56,7 @@ class GamePacingTest {
         assertEquals(2 * PAWN_STEP_MILLIS, GHOST_STEP_MILLIS)
         assertEquals(3 * GHOST_STEP_MILLIS, ghostMillis(GhostMove(0, 20, -3)))
         assertEquals(3 * GHOST_STEP_MILLIS + CAPTURE_FLIGHT_MILLIS, ghostMillis(GhostMove(0, 20, 3, listOf(PawnRef(1, 0)))))
+        assertEquals(DIE_TUMBLE_MILLIS + 3L * GHOST_STEP_MILLIS, pacing.playOutMillis(GameEvent.NoMove(1, 4), HOME, GhostMove(0, 20, -3)))
         assertEquals(500L + DIE_TUMBLE_MILLIS + 3 * GHOST_STEP_MILLIS, pacing.waitAfter(GameEvent.NoMove(1, 4), HOME, GhostMove(0, 20, -3)))
     }
 

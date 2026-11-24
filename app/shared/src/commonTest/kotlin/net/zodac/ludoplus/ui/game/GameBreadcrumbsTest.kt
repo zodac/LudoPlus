@@ -40,7 +40,10 @@ class GameBreadcrumbsTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private fun TestScope.viewModel(saved: InProgressGameRepository, seed: Int = 1): GameViewModel =
-        GameViewModel(SettingsRepository(InMemoryPreferences()), saved, GameRecordRepository(InMemoryGameResultDao()), Random(seed)).also { runCurrent() }
+        GameViewModel(SettingsRepository(InMemoryPreferences()), saved, GameRecordRepository(InMemoryGameResultDao()), Random(seed)).also {
+            it.setPacing(GamePacing(pawnsAnimated = false, dieAnimated = false))
+            runCurrent()
+        }
 
     @Test
     fun `starting - rolling - moving and resuming each leave a breadcrumb - with no player's name`() = runTest(dispatcher) {

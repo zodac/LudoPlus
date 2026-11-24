@@ -31,6 +31,7 @@ import net.zodac.ludoplus.data.settings.SavedStyles
 import net.zodac.ludoplus.data.settings.SettingsRepository
 import net.zodac.ludoplus.game.AchievementEngine
 import net.zodac.ludoplus.game.AchievementTracker
+import net.zodac.ludoplus.game.AchievementUpdate
 import net.zodac.ludoplus.game.CpuStrategy
 import net.zodac.ludoplus.game.GameFeats
 import net.zodac.ludoplus.game.GameState
@@ -172,6 +173,7 @@ class GameViewModel(
         val previous = _game.value
         val wasFinished = previous?.state?.isFinished == true
         val sameGame = previous != null && previous.id == game.id && previous.startedAtEpochMillis == game.startedAtEpochMillis
+        if (!sameGame || previous.state != game.state) settle(game.state.takeIf { sameGame })
         // A game new here (started, brought back, or a guest's first) comes with its own log.
         val logged = if (sameGame) game.copy(log = MoveLog.next(previous.log, previous.state, game.state, now())) else game
         val stepped = if (previous != null && previous.id == game.id && previous.state != game.state) logged.copy(steps = game.steps + 1) else logged
@@ -185,7 +187,8 @@ class GameViewModel(
             if (timedOutSeat != timed.state.current) timedOutSeat = null
             timeGuestTurn(timed)
         }
-        tracker?.let { record(it.playTime(timed.playMillis, timed.state)) }
+        val played = timed.state.takeIf { sameGame && previous.state != it }
+        tracker?.let { record(it.playTime(timed.playMillis, timed.state), after = played) }
         // A guest's game is the host's to keep: nothing to save here, but its own seat's records.
         if (timed.guestSeat != null) {
             if (timed.state.isFinished && !wasFinished) recordFinished(timed)
@@ -199,6 +202,28 @@ class GameViewModel(
         if (!wasFinished) recordFinished(timed)
     }
 
+    private val _settled = MutableStateFlow(true)
+
+    /**
+     * Whether the screen has played out the last action (the die's tumble, a pawn's move, a ghost's drift): until then a
+     * person can't roll, so that nobody rolls while the pawn before is still on its way. Always true in the tutorial, whose
+     * steps wait for it themselves.
+     */
+    val settled: StateFlow<Boolean> = _settled.asStateFlow()
+    private var settling: Job? = null
+
+    /** The action that brought the game to [state] is being played out; null for a game new here, with none to play. */
+    private fun settle(state: GameState?) {
+        settling?.cancel()
+        val playOut = if (state == null || tutorial != null) 0 else pacing.playOutMillis(state.lastEvent, state.board.homeProgress, state.ghostMove)
+        _settled.value = playOut == 0L
+        if (playOut == 0L) return
+        settling = viewModelScope.launch {
+            pausableDelay(playOut)
+            _settled.value = true
+        }
+    }
+
     /** Writes the finished [game]'s records, once. */
     private fun recordFinished(game: StartedGame) {
         val endedAt = now()
@@ -209,7 +234,7 @@ class GameViewModel(
                 orNullOnFailure {
                     records.recordGame(game, endedAt)
                     // Each mode finished counts towards Grand Tour, whichever game it was in.
-                    if (!game.state.rules.hasHouseRules) record(GameFeats(levels = mapOf(AchievementCounter.MODES_FINISHED to records.modesFinished())))
+                    if (!game.state.rules.hasHouseRules) record(GameFeats(levels = mapOf(AchievementCounter.MODES_FINISHED to records.modesFinished())), after = game.state)
                 }
             }
             // The win reaches the online leaderboards, and the record the cloud save.
@@ -342,12 +367,13 @@ class GameViewModel(
     }
 
     /**
-     * The current player rolls the die, if it's a person's turn and the game is waiting for a roll. In the tutorial, only
+     * The current player rolls the die, if it's a person's turn, the game is waiting for a roll, and the last action has
+     * played out ([settled]). In the tutorial, only
      * at a roll step once it's shown, rolling the script's number.
      */
     fun roll() {
         val game = _game.value ?: return
-        if (game.state.phase != TurnPhase.AwaitingRoll || game.currentIsCpu) return
+        if (game.state.phase != TurnPhase.AwaitingRoll || game.currentIsCpu || !settled.value) return
         // A guest's roll is the host's to make.
         guestSession?.let {
             it.roll()
@@ -400,17 +426,37 @@ class GameViewModel(
     /** Shows the step from [before] to [after] to the [tracker], and records what it earned. */
     private fun track(before: GameState, after: GameState) {
         if (tutorial != null) return
-        tracker?.let { record(it.observe(before, after)) }
+        tracker?.let { record(it.observe(before, after), after) }
     }
+
+    /** The last of the announcements still to be made: see [record]. */
+    private var announcing: Job? = null
 
     /**
      * Records [feats] with [achievements], even if the screen is left at once (it starts at once, on the main thread's
      * immediate dispatcher). Each waits its turn in the unlocker, in the order played.
+     *
+     * Feats of the action that brought the game to [after] are recorded at once, but announced only once the screen has
+     * played that action out, so that no banner tells of a roll before the die has settled. Leaving the game announces
+     * them straight away. Announcements keep the order they were earned in.
      */
-    private fun record(feats: GameFeats) {
+    private fun record(feats: GameFeats, after: GameState? = null) {
         val unlocker = achievements ?: return
         if (tutorial != null || feats.isEmpty) return
-        viewModelScope.launch { withContext(NonCancellable) { orNullOnFailure { unlocker.record(feats) } } }
+        val playOut = after?.let { pacing.playOutMillis(it.lastEvent, it.board.homeProgress) } ?: 0
+        val before = announcing
+        announcing = viewModelScope.launch {
+            var update: AchievementUpdate? = null
+            try {
+                // Timed from now, however long the store takes.
+                val shown = launch { if (playOut > 0) pausableDelay(playOut) }
+                withContext(NonCancellable) { update = orNullOnFailure { unlocker.recordQuietly(feats) } }
+                shown.join()
+                before?.join()
+            } finally {
+                withContext(NonCancellable) { update?.let { orNullOnFailure { unlocker.announceStored(it) } } }
+            }
+        }
     }
 
     // ---- Superuser mode (debug builds only) ----------------------------------------------------
@@ -501,7 +547,7 @@ class GameViewModel(
         progress.next()
         val state = _game.value?.state
         // Only the action's own animation: the coach doesn't think.
-        val playOut = pacing.waitAfter(state?.lastEvent, state?.board?.homeProgress ?: 0) - pacing.thinkMillis
+        val playOut = pacing.playOutMillis(state?.lastEvent, state?.board?.homeProgress ?: 0)
         tutorialShow?.cancel()
         tutorialShow = viewModelScope.launch {
             pausableDelay(playOut)

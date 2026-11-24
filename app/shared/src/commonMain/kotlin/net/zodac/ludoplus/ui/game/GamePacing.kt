@@ -66,7 +66,14 @@ data class GamePacing(
      * its animation's length (a move's travel, then its capture's flight or its home flourish), and the [ghostMove]'s that
      * came after it.
      */
-    fun waitAfter(event: GameEvent?, homeProgress: Int, ghostMove: GhostMove? = null): Long = thinkMillis + (if (ghostMove != null && pawnsAnimated) ghostMillis(ghostMove) else 0) + when (event) {
+    fun waitAfter(event: GameEvent?, homeProgress: Int, ghostMove: GhostMove? = null): Long =
+        thinkMillis + playOutMillis(event, homeProgress, ghostMove)
+
+    /**
+     * How long the screen animates [event] for, on a board whose home is [homeProgress]: the die's tumble, or a move's
+     * travel and what follows its landing, then the [ghostMove]'s that came after it.
+     */
+    fun playOutMillis(event: GameEvent?, homeProgress: Int, ghostMove: GhostMove? = null): Long = (if (ghostMove != null && pawnsAnimated) ghostMillis(ghostMove) else 0) + when (event) {
         null -> 0L
         is GameEvent.Moved -> if (pawnsAnimated) (travelMillis(event.move, event.effect) + afterLandingMillis(event.move, homeProgress, event.effect)).toLong() else 0L
         is GameEvent.Rolled, is GameEvent.NoMove, is GameEvent.RollAgainLimit -> if (dieAnimated) DIE_TUMBLE_MILLIS.toLong() else 0L

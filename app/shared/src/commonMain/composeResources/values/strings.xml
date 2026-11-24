@@ -239,6 +239,9 @@
     </plurals>
     <string name="game_player_turn_spoken">playing now</string>
     <string name="game_player_place">%1$s place</string>
+    <!-- While a player is still playing: their rank as the game stands (%1$s is "1st", "2nd"...), alone in it or level with another. Shown on their card as the number, on their colour. -->
+    <string name="game_player_rank_spoken">currently %1$s</string>
+    <string name="game_player_rank_tied_spoken">currently joint %1$s</string>
     <!-- The line under the die saying what to do now. %1$s is the player's name, %2$d the roll. -->
     <string name="game_prompt_roll">%1$s, tap the die to roll.</string>
     <string name="game_prompt_cpu_roll">%1$s is rolling.</string>

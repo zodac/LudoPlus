@@ -93,6 +93,26 @@ data class GameState(
         .sortedBy { (_, team) -> team.maxOf(knockedOut::indexOf) }
         .map { it.key }
 
+    /** How far [player]'s pawns have come: each one's steps from its yard, added up. */
+    fun stepsOf(player: Int): Int = players[player].pawns.sumOf { it - PawnPosition.YARD_PROGRESS }
+
+    /**
+     * Each player's rank as the game stands, 1 for first, by index: their place once placed ([placeOf]), and after those
+     * placed, the most pawns left first where the last standing wins, or else the furthest along ([stepsOf]). A team's
+     * players count together and share its rank, and a tie shares one, the next rank down left out. Null while everyone
+     * is level.
+     */
+    fun ranks(): List<Int>? {
+        val placedFirst = finishingOrder.map(rules::teamOf).distinct().size
+        val score = players.indices.groupBy(rules::teamOf)
+            .filterValues { team -> placeOf(team.first()) == null }
+            .mapValues { (_, team) -> team.sumOf { if (rules.lastStanding) players[it].pawnsLeft else stepsOf(it) } }
+        val ranks = players.indices.map { player ->
+            placeOf(player) ?: (placedFirst + 1 + score.values.count { it > score.getValue(rules.teamOf(player)) })
+        }
+        return ranks.takeIf { it.distinct().size > 1 }
+    }
+
     /** [player]'s partners, by index: none in a game without teams. */
     fun partnersOf(player: Int): List<Int> = players.indices.filter { rules.arePartners(player, it) }
 

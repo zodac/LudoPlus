@@ -2,6 +2,7 @@ package net.zodac.ludoplus.ui.game
 
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import net.zodac.ludoplus.ui.style.visualTheme
 import net.zodac.ludoplus.ui.style.TableBackground
 import net.zodac.ludoplus.ui.style.LocalGameVisualTheme
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -33,12 +35,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -62,6 +66,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -97,6 +102,8 @@ import net.zodac.ludoplus.resources.game_player_doubled_spoken
 import net.zodac.ludoplus.resources.game_player_pawns_home_spoken
 import net.zodac.ludoplus.resources.game_player_pawns_left_spoken
 import net.zodac.ludoplus.resources.game_player_place
+import net.zodac.ludoplus.resources.game_player_rank_spoken
+import net.zodac.ludoplus.resources.game_player_rank_tied_spoken
 import net.zodac.ludoplus.resources.game_player_team_spoken
 import net.zodac.ludoplus.resources.game_player_turn_spoken
 import net.zodac.ludoplus.resources.game_prompt_cpu_move
@@ -119,6 +126,8 @@ import net.zodac.ludoplus.resources.game_tutorial_coach_name
 import net.zodac.ludoplus.resources.game_tutorial_cpu_turn
 import net.zodac.ludoplus.resources.game_tutorial_next
 import net.zodac.ludoplus.resources.game_tutorial_part
+import kotlinx.coroutines.launch
+import net.zodac.ludoplus.ui.common.AppTooltip
 import net.zodac.ludoplus.ui.common.BackHandler
 import net.zodac.ludoplus.ui.common.LudoPlusDialog
 import net.zodac.ludoplus.ui.common.BoundedArt
@@ -128,6 +137,7 @@ import net.zodac.ludoplus.ui.common.groupReduceMotion
 import net.zodac.ludoplus.ui.common.joinClauses
 import net.zodac.ludoplus.ui.common.ordinal
 import net.zodac.ludoplus.ui.common.pluralStringResource
+import net.zodac.ludoplus.ui.common.rememberAppTooltipState
 import net.zodac.ludoplus.ui.common.spokenList
 import net.zodac.ludoplus.ui.common.stringResource
 import net.zodac.ludoplus.ui.icons.Symbols
@@ -213,6 +223,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
     val tutorialPart by viewModel.tutorialPart.collectAsStateWithLifecycle()
     val tutorialNextReady by viewModel.tutorialNextReady.collectAsStateWithLifecycle()
     TurnEndingBuzz((guestState as? GuestState.Playing)?.turnEnding == true)
+    val settled by viewModel.settled.collectAsStateWithLifecycle()
     val awaySeats by viewModel.awaySeats.collectAsStateWithLifecycle()
     SuperuserRollPicker(viewModel)
     val window = LocalWindowInfo.current.containerSize
@@ -231,6 +242,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
             onMove = { viewModel.move(it) },
             onBack = leave,
             onResults = { finishedView = FinishedView.RESULTS },
+            settled = settled,
             notice = netplayNotice(guestState, awaySeats, started),
             tutorial = if (isTutorial) {
                 TutorialView(
@@ -360,7 +372,8 @@ private fun GameFeedback(state: GameState) {
 
 /**
  * The game screen's content for [started]: rolling calls [onRoll], a tap on a movable pawn [onMove], the back arrow
- * [onBack], and the finished game's button [onResults].
+ * [onBack], and the finished game's button [onResults]. The die can't be rolled until the last action has played out
+ * ([settled]).
  */
 @Composable
 fun GameContent(
@@ -369,6 +382,7 @@ fun GameContent(
     onMove: (Move) -> Unit,
     onBack: () -> Unit,
     onResults: () -> Unit,
+    settled: Boolean = true,
     notice: String? = null,
     tutorial: TutorialView? = null,
 ) {
@@ -419,7 +433,7 @@ fun GameContent(
                     board(Modifier.size(minOf(height, width - SIDE_PANEL_WIDTH)))
                     Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         players(false)
-                        TurnPanel(started, allMoves, seatColours, onRoll, onMove, onResults, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
+                        TurnPanel(started, allMoves, seatColours, onRoll, onMove, onResults, settled = settled, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
                         MoveLogPanel(started, seatColours, tutorial = tutorial != null, modifier = Modifier.weight(1f))
                     }
                 }
@@ -435,7 +449,7 @@ fun GameContent(
                     board = { board(Modifier) },
                     turn = {
                         TurnPanel(
-                            started, allMoves, seatColours, onRoll, onMove, onResults, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
+                            started, allMoves, seatColours, onRoll, onMove, onResults, settled = settled, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
                         )
                     },
                     log = { MoveLogPanel(started, seatColours, tutorial = tutorial != null) },
@@ -627,17 +641,33 @@ private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier
     val place = state.placeOf(index).takeIf { if (lastStanding) side.pawnsLeft == 0 else side.isFinished(state.board) }
     val placeText = place?.let { stringResource(Res.string.game_player_place, ordinal(it)) }
     val team = teamNumber(state, index)
+    val ranks = remember(state) { state.ranks() }
+    val rank = ranks?.get(index)
+    // Once the game is over the rank is the place, said as one even where the card keeps its dots.
+    val spokenRank = when {
+        rank == null || placeText != null -> null
+        state.placeOf(index) != null -> stringResource(Res.string.game_player_place, ordinal(rank))
+        // Partners share a rank without being level.
+        state.players.indices.any { ranks[it] == rank && state.rules.teamOf(it) != state.rules.teamOf(index) } -> stringResource(Res.string.game_player_rank_tied_spoken, ordinal(rank))
+        else -> stringResource(Res.string.game_player_rank_spoken, ordinal(rank))
+    }
+    var nameCut by remember(player.name) { mutableStateOf(false) }
+    val nameTooltip = rememberAppTooltipState()
+    val scope = rememberCoroutineScope()
     val spoken = joinClauses(
         listOfNotNull(
             team?.let { stringResource(Res.string.game_player_team_spoken, it) },
             pluralStringResource(if (lastStanding) Res.plurals.game_player_pawns_left_spoken else Res.plurals.game_player_pawns_home_spoken, counted, counted),
             if (current) stringResource(Res.string.game_player_turn_spoken) else null,
             side.doubledRolls.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.game_player_doubled_spoken, it, it) },
-            placeText,
+            placeText ?: spokenRank,
         ),
     )
     Surface(
-        modifier = modifier.semantics(mergeDescendants = true) { stateDescription = spoken },
+        // Raw taps, not a button: TalkBack reads the whole name with the card, so it has nothing to ask for.
+        modifier = modifier
+            .semantics(mergeDescendants = true) { stateDescription = spoken }
+            .then(if (nameCut) Modifier.pointerInput(Unit) { detectTapGestures { scope.launch { nameTooltip.show() } } } else Modifier),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         border = if (current) BorderStroke(2.dp, colour) else null,
@@ -645,17 +675,28 @@ private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = cardPadding(compact)),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             if (team != null) TeamBadge(team, Modifier.clearAndSetSemantics { })
-            Surface(color = colour, shape = CircleShape, modifier = Modifier.size(14.dp)) {}
-            Text(
-                text = player.name,
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
+            RankDisc(rank, colour, Modifier.clearAndSetSemantics { })
+            // The box takes the room: a tooltip's own is only as wide as what's in it.
+            Box(modifier = Modifier.weight(1f)) {
+                // Not focusable: a tap elsewhere, on the die say, does its own job as the tooltip goes.
+                AppTooltip(
+                    body = { Text(text = player.name, style = MaterialTheme.typography.bodyMedium) },
+                    state = nameTooltip,
+                    enabled = false,
+                    focusable = false,
+                ) {
+                    Text(
+                        text = player.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        onTextLayout = { nameCut = it.hasVisualOverflow },
+                    )
+                }
+            }
             if (player.type == PlayerType.AI) CpuPlayerIcon(size = 16.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             if (side.doubledRolls > 0) DoubledBadge(side.doubledRolls, Modifier.clearAndSetSemantics { })
             if (placeText != null) {
@@ -666,6 +707,33 @@ private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier
         }
     }
 }
+
+/**
+ * The player's [colour], with their [rank] as the game stands on it ([GameState.ranks]), or none while everyone is level.
+ * It grows with the font, and no taller than the name's line. Drawn only; the card says the rank.
+ */
+@Composable
+private fun RankDisc(rank: Int?, colour: Color, modifier: Modifier) {
+    val size = with(LocalDensity.current) { RANK_DISC_SIZE.toDp() }
+    Surface(color = colour, shape = CircleShape, modifier = modifier.size(size)) {
+        if (rank == null) return@Surface
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                rank.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                maxLines = 1,
+                softWrap = false,
+                // A large font's line is taller than the disc: centred on it all the same.
+                modifier = Modifier.wrapContentSize(unbounded = true),
+            )
+        }
+    }
+}
+
+/** How wide a player card's rank disc is, in the font's own size. */
+private val RANK_DISC_SIZE = 16.sp
 
 /** [player]'s team as players see it, numbered from 1 in seat order, or null in a game without teams. */
 internal fun teamNumber(state: GameState, player: Int): Int? {
@@ -741,6 +809,7 @@ private fun TurnPanel(
     onMove: (Move) -> Unit,
     onResults: () -> Unit,
     dieSize: Dp,
+    settled: Boolean,
     tutorial: TutorialView? = null,
     rollStep: Boolean = false,
     dice: DiceChoice = DiceChoice(),
@@ -761,7 +830,7 @@ private fun TurnPanel(
     }
     val phase = state.phase
     val roll = (phase as? TurnPhase.AwaitingMove)?.roll ?: lastRoll(state.lastEvent)
-    val canRoll = phase == TurnPhase.AwaitingRoll && !game.currentIsCpu && (tutorial == null || rollStep)
+    val canRoll = phase == TurnPhase.AwaitingRoll && settled && !game.currentIsCpu && (tutorial == null || rollStep)
     val seat = state.currentPlayer.seat
     val turnColour = (seatColours.getOrNull(seat) ?: PlayerColour.defaultFor(seat)).color
     Row(

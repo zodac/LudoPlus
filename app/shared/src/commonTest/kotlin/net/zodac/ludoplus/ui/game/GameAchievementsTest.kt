@@ -1,5 +1,6 @@
 package net.zodac.ludoplus.ui.game
 
+import androidx.lifecycle.viewModelScope
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -9,13 +10,19 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import net.zodac.ludoplus.app.AchievementEvent
+import net.zodac.ludoplus.app.AchievementEvents
 import net.zodac.ludoplus.app.AchievementUnlocker
 import net.zodac.ludoplus.data.InMemoryPreferences
 import net.zodac.ludoplus.data.achievements.InMemoryAchievementStore
@@ -47,6 +54,7 @@ class GameAchievementsTest {
         saved: InProgressGameRepository = InProgressGameRepository(InMemoryPreferences(), backgroundScope),
         hour: Int = 14,
         tutorial: TutorialScript? = null,
+        pacing: GamePacing = GamePacing(thinkMillis = 700, pawnsAnimated = false, dieAnimated = false),
     ) = GameViewModel(
         SettingsRepository(InMemoryPreferences()),
         saved,
@@ -56,8 +64,9 @@ class GameAchievementsTest {
         tutorial = tutorial,
         achievements = AchievementUnlocker(store, now = { 1L }),
         localHour = { hour },
+        isDebugBuild = true,
     ).also {
-        it.setPacing(GamePacing(thinkMillis = 700, pawnsAnimated = false, dieAnimated = false))
+        it.setPacing(pacing)
         runCurrent()
     }
 
@@ -175,6 +184,70 @@ class GameAchievementsTest {
             // This mode, towards Grand Tour, with the Classic game recorded before.
             assertEquals(2, counters[AchievementCounter.MODES_FINISHED], "$mode")
         }
+    }
+
+    /** A game of player 1's, its first roll set to be a 6, and the banners it puts up from there. */
+    private fun TestScope.firstSix(store: InMemoryAchievementStore, pacing: GamePacing): Pair<GameViewModel, List<AchievementEvent>> {
+        val viewModel = viewModel(store, pacing = pacing)
+        viewModel.startGame { "Player $it" }
+        runCurrent()
+        val banners = mutableListOf<AchievementEvent>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { AchievementEvents.events.toList(banners) }
+        viewModel.onDieLongPressed()
+        viewModel.pickNextRoll(6)
+        return viewModel to banners
+    }
+
+    private val List<AchievementEvent>.unlocked get() = filterIsInstance<AchievementEvent.Unlocked>().map { it.achievement }
+
+    @Test
+    fun `a roll's achievement is stored at once - but its banner waits for the die to settle`() = runTest(dispatcher) {
+        val store = InMemoryAchievementStore()
+        val (viewModel, banners) = firstSix(store, GamePacing())
+        viewModel.roll()
+        runCurrent()
+        assertTrue(Achievement.OFF_THE_MARK in store.unlocked)
+        advanceTimeBy(DIE_TUMBLE_MILLIS - 1L)
+        runCurrent()
+        assertEquals(emptyList(), banners.unlocked)
+        advanceTimeBy(1)
+        runCurrent()
+        assertEquals(listOf(Achievement.OFF_THE_MARK), banners.unlocked)
+    }
+
+    @Test
+    fun `with the die's tumble off - a roll's banner is up at once`() = runTest(dispatcher) {
+        val (viewModel, banners) = firstSix(InMemoryAchievementStore(), GamePacing(dieAnimated = false))
+        viewModel.roll()
+        runCurrent()
+        assertEquals(listOf(Achievement.OFF_THE_MARK), banners.unlocked)
+    }
+
+    @Test
+    fun `a banner waiting for the die holds while the game is off screen`() = runTest(dispatcher) {
+        val (viewModel, banners) = firstSix(InMemoryAchievementStore(), GamePacing())
+        viewModel.roll()
+        runCurrent()
+        viewModel.setForeground(false)
+        advanceTimeBy(5_000)
+        runCurrent()
+        assertEquals(emptyList(), banners.unlocked)
+        viewModel.setForeground(true)
+        advanceTimeBy(DIE_TUMBLE_MILLIS.toLong())
+        runCurrent()
+        assertEquals(listOf(Achievement.OFF_THE_MARK), banners.unlocked)
+    }
+
+    @Test
+    fun `leaving the game as the die tumbles puts the banner up at once`() = runTest(dispatcher) {
+        val (viewModel, banners) = firstSix(InMemoryAchievementStore(), GamePacing())
+        viewModel.roll()
+        runCurrent()
+        // Off screen behind the leave confirmation, and then gone.
+        viewModel.setHeld(true)
+        viewModel.viewModelScope.cancel()
+        runCurrent()
+        assertEquals(listOf(Achievement.OFF_THE_MARK), banners.unlocked)
     }
 
     @Test

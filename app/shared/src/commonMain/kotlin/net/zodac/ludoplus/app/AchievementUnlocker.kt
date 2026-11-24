@@ -38,15 +38,29 @@ class AchievementUnlocker(
 
     /** Records and announces what [decide] makes of the stored achievements. Returns what was recorded. */
     suspend fun apply(decide: (AchievementsState) -> AchievementUpdate): AchievementUpdate = lock.withLock {
-        store.locked {
-            val update = decide(store.current())
-            if (!update.isEmpty) {
-                store.record(update.unlockedAt(), update.counters)
-                announce(update, ownsAllStyles.first())
-                // A new unlock reaches the online service at once, as it announces it; counters can wait for the game.
-                if (update.newlyUnlocked.isEmpty()) OnlineSyncRequests.requestOutsideGame() else OnlineSyncRequests.request()
-            }
-            update
-        }
+        store.locked { decideAndStore(decide).also { announceStored(it) } }
+    }
+
+    /**
+     * Records what [feats] earn, as [record] does, but leaves the announcing to the caller ([announceStored]): for one that
+     * has something to show first. Returns what was recorded.
+     */
+    suspend fun recordQuietly(feats: GameFeats): AchievementUpdate = if (feats.isEmpty) AchievementUpdate() else lock.withLock {
+        store.locked { decideAndStore { state -> AchievementEngine.evaluate(feats, state, now()) } }
+    }
+
+    /** Announces a recorded [update] ([announce]), here and to the online service. Nothing, for an empty one. */
+    suspend fun announceStored(update: AchievementUpdate) {
+        if (update.isEmpty) return
+        announce(update, ownsAllStyles.first())
+        // A new unlock reaches the online service at once, as it announces it; counters can wait for the game.
+        if (update.newlyUnlocked.isEmpty()) OnlineSyncRequests.requestOutsideGame() else OnlineSyncRequests.request()
+    }
+
+    /** Records what [decide] makes of the stored achievements. Only under both locks. */
+    private suspend fun decideAndStore(decide: (AchievementsState) -> AchievementUpdate): AchievementUpdate {
+        val update = decide(store.current())
+        if (!update.isEmpty) store.record(update.unlockedAt(), update.counters)
+        return update
     }
 }

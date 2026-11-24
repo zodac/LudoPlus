@@ -138,7 +138,7 @@ player, and the stars too after half as many again, so safety is asked of the st
 there as sudden death comes can be captured whole. No Home Roll, Out on a 1, Free Start, and Three Tries change nothing
 here, so are locked, saying so (`HouseRule.appliesTo`), and not played. The board is drawn with no home, and as sudden death comes without its
 start colours, then its stars (`BoardParts`), under `SurvivalArt.kt`'s arena: crossed swords, then flames, then a skull,
-with cracks on the squares no longer safe. Yards tally the fallen; cards' dots are the pawns left. The Leaderboard ranks
+with a red cross on the squares no longer safe. Yards tally the fallen; cards' dots are the pawns left. The Leaderboard ranks
 the most pawns left (`LeaderboardRanking`, from `timesCaptured`), then captures; its wins set no fewest turns, and it has
 no online board. TalkBack: "Red yard, 3 of 6 pawns lost", "3 pawns left, playing now"; the line over the board ("Start
 squares stop being safe in 3 rounds.") is live in the last three rounds before a stage and as it comes.
@@ -455,6 +455,9 @@ in `GameRecordRepository.statistics`, off the main thread. Each figure is read w
         unlocks it, and the last of the rest brings Completionist.
     - Every unlock goes through the app's one `AchievementUnlocker` (`AppContainer.achievementUnlocker`), whose locks
         (its own and the store's `locked`) serialise them all across screens, so nothing is announced twice.
+    - A roll's or move's feats are stored at once, but announced (banner and online) only once the screen has played it
+        out: the die settled, the pawn landed (`GamePacing.playOutMillis`, `GameViewModel.record`). Leaving the game
+        announces them at once.
 - **Modes and house rules** (the maintainer, 2026-11-24, as DiceFive). Every mode earns the ordinary achievements, but for
     those its rules make free, rule out, or turn into something else (`Achievement.notEarnableIn`, `impossibleIn`; the audit
     is in `GAME_MODES_AUDIT.md`). The Game Modes category has one for starting any mode but Classic, each mode's win and a

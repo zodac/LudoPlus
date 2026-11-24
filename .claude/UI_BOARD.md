@@ -33,15 +33,22 @@ The board, the player cards, the die, and the move log. The general rules are in
 
 ## The player cards
 
-`PlayerCard` (`GameScreen.kt`): the player's colour, their name, a CPU's icon, a badge for their team or a doubled roll,
+`PlayerCard` (`GameScreen.kt`): a disc of the player's colour with their rank on it, their name, a CPU's icon, a badge for their team or a doubled roll,
 and a dot for each pawn home (in Survival, each pawn left), or their place once they have one. The card of the player
 whose turn it is has an outline in their colour.
 
 - **Laid out as the yards are** round the board (`playerCardRows`, `PlayerCardRowsTest`): player 1 bottom left, and a yard
     straight above or below the middle on a row of its own. TalkBack reads them in player order, whatever the rows.
+- **Rank** (`GameState.ranks`, `RanksTest`; the maintainer, 2026-11-24): where the player stands now, in every mode. Those
+    placed keep their place; the rest go by pawns left in Survival (`lastStanding`), and otherwise by how far their pawns
+    have come in all (`stepsOf`), as a game stopped at its first winner places them. Partners share their team's, a tie
+    shares one, and nobody has one while everyone is level. TalkBack: "currently 2nd", "currently joint 2nd", or "4th place"
+    once placed (`PlayerCardTest`).
+- **A name too long for its card** is cut with an ellipsis, and a tap anywhere on the card shows all of it in a tooltip. It
+    isn't a button to TalkBack, which reads the whole name with the card.
 - **Names** are held to the most players' cap (`model/NameWidth.kt`: 8), in widths, not UTF-16 units: full-width
-    characters count two, combining marks none. CPU names are shorter, and never cut (`AiNameGenerator`,
-    `AiNameGeneratorTest`).
+    characters count two, combining marks none. CPU names are shorter, so the cap never
+    cuts one (`AiNameGenerator`, `AiNameGeneratorTest`), though a narrow card may.
 - **Sanitising** (`sanitizePlayerName`, `PlayerNameTest`) happens as names are typed and again in `startGame`. Nothing is
     censored.
     - Removed: control characters (whitespace collapses to one space), zero-width and bidi override/isolate characters,
@@ -53,7 +60,8 @@ whose turn it is has an outline in their colour.
 ## The die and its line
 
 - `GameDie` draws the player's die style, with a ring in the turn's colour: in full while it can be rolled, and faint the
-    rest of the turn. Two Dice draws two, at 0.8 of the size; a tap on one picks it for the next move (`TwoDice`).
+    rest of the turn. It can't be rolled until the last action has played out (`GameViewModel.settled`: the die's tumble, a
+    pawn's move, or a ghost's drift). Two Dice draws two, at 0.8 of the size; a tap on one picks it for the next move (`TwoDice`).
 - `StatusLines` says what to do now, names in their players' colours. It's a polite live region, and holds every legal
     move as a custom action, so TalkBack can make a move from there as well as from a pawn's square.
 
