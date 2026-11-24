@@ -39,6 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -57,6 +59,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -372,9 +375,9 @@ fun GameContent(
     val dice = DiceChoice(selectedDie, onSelect = pick.takeIf { dieValues.size > 1 })
     val moves = allMoves.filter { it.roll == null || it.roll == selectedDie }
     val rollStep = tutorial?.step is TutorialStep.Roll
-    val players = @Composable {
+    val players = @Composable { compact: Boolean ->
         if (notice != null) NetplayNotice(notice)
-        if (tutorial == null) PlayerCards(started) else TutorialCoachCard(tutorial)
+        if (tutorial == null) PlayerCards(started, compact) else TutorialCoachCard(tutorial)
         if (started.state.rules.suddenDeath && !started.state.isFinished) SuddenDeathNotice(started.state)
     }
     val background = LocalGameVisualTheme.current.background
@@ -400,22 +403,87 @@ fun GameContent(
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     board(Modifier.size(minOf(height, width - SIDE_PANEL_WIDTH)))
                     Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        players()
+                        players(false)
                         TurnPanel(started, allMoves, seatColours, onRoll, onMove, onResults, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
                         MoveLogPanel(started, seatColours, tutorial = tutorial != null, modifier = Modifier.weight(1f))
                     }
                 }
             } else {
-                Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    players()
-                    board(Modifier.fillMaxWidth())
-                    TurnPanel(started, allMoves, seatColours, onRoll, onMove, onResults, dieSize = 72.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
-                    MoveLogPanel(started, seatColours, tutorial = tutorial != null, modifier = Modifier.weight(1f))
-                }
+                // The tutorial's log keeps no room: its coach says what matters.
+                val (oneLine, twoLines) = if (tutorial == null) moveLogHeight(1) to moveLogHeight(2) else 0.dp to 0.dp
+                val rows = playerCardRows(BoardLayout.of(started.state.board), started.state.players.map { it.seat }).size
+                val compact = width + playerCardsHeight(rows, compact = false) + PORTRAIT_DIE_SIZE + PORTRAIT_GAP * 3 + twoLines > height
+                PortraitGame(
+                    oneLine = oneLine,
+                    twoLines = twoLines,
+                    players = { players(compact) },
+                    board = { board(Modifier) },
+                    turn = {
+                        TurnPanel(
+                            started, allMoves, seatColours, onRoll, onMove, onResults, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
+                        )
+                    },
+                    log = { MoveLogPanel(started, seatColours, tutorial = tutorial != null) },
+                )
             }
         }
     }
 }
+
+/**
+ * The game in portrait, top to bottom: the [players], the [board], the [turn]'s die and line, and the [log] in what's left.
+ * The board is the screen's width, less what it gives up where the screen is short for the log to show [twoLines], or
+ * where that would cost it more than [BOARD_FOR_SECOND_LINE] of its width, [oneLine]. Its size allows for the turn's die
+ * alone, so a longer prompt, or the winner at the end, takes its room from the log and never resizes the board.
+ */
+@Composable
+private fun PortraitGame(
+    oneLine: Dp,
+    twoLines: Dp,
+    players: @Composable () -> Unit,
+    board: @Composable () -> Unit,
+    turn: @Composable () -> Unit,
+    log: @Composable () -> Unit,
+) {
+    Layout(contents = listOf(players, board, turn, log), modifier = Modifier.fillMaxSize()) { (playerParts, boardParts, turnParts, logParts), constraints ->
+        val gap = PORTRAIT_GAP.roundToPx()
+        val (width, height) = constraints.maxWidth to constraints.maxHeight
+        val loose = Constraints(maxWidth = width)
+        val above = playerParts.map { it.measure(loose) }
+        val aboveHeight = above.sumOf { it.height + gap }
+        val room = height - aboveHeight - gap - PORTRAIT_DIE_SIZE.roundToPx() - gap
+        val side = portraitBoardSide(width, room, oneLine.roundToPx(), twoLines.roundToPx())
+        val boards = boardParts.map { it.measure(Constraints.fixed(side, side)) }
+        val turns = turnParts.map { it.measure(loose) }
+        val logTop = aboveHeight + side + gap + turns.sumOf { it.height + gap }
+        val logs = logParts.map { it.measure(Constraints(minWidth = width, maxWidth = width, maxHeight = (height - logTop).coerceAtLeast(0))) }
+        layout(width, height) {
+            var y = 0
+            above.forEach { it.placeRelative(0, y); y += it.height + gap }
+            boards.forEach { it.placeRelative((width - side) / 2, y); y += side + gap }
+            turns.forEach { it.placeRelative(0, y); y += it.height + gap }
+            logs.forEach { it.placeRelative(0, logTop) }
+        }
+    }
+}
+
+/**
+ * How wide the board is in portrait, [width] at most, where it shares [room] with the log, which needs [oneLine] for a
+ * line or [twoLines] for two: as [PortraitGame] says, and never under [SMALLEST_BOARD] of [width].
+ */
+internal fun portraitBoardSide(width: Int, room: Int, oneLine: Int, twoLines: Int): Int {
+    val side = minOf(width, maxOf(room - twoLines, (width * BOARD_FOR_SECOND_LINE).toInt()))
+    return if (room - side >= oneLine) side else (room - oneLine).coerceIn((width * SMALLEST_BOARD).toInt(), side)
+}
+
+/** The share of the screen's width the board keeps at least while the log's second line is the reason it gives any up. */
+private const val BOARD_FOR_SECOND_LINE = 0.9f
+
+/** The share of the screen's width the board always keeps. */
+private const val SMALLEST_BOARD = 0.6f
+
+private val PORTRAIT_DIE_SIZE = 72.dp
+private val PORTRAIT_GAP = 12.dp
 
 /** A Nearby game's [notice] over the players: TalkBack hears it as it comes and as it changes (a polite live region). */
 @Composable
@@ -494,20 +562,21 @@ private fun TutorialCoachCard(tutorial: TutorialView) {
 
 /**
  * The players, laid out as their yards are round the board ([playerCardRows]): the one whose turn it is outlined in their
- * colour. TalkBack reads them in player order, whatever the rows.
+ * colour. TalkBack reads them in player order, whatever the rows. [compact] on a short screen: closer together, for the
+ * log's sake.
  */
 @Composable
-private fun PlayerCards(game: StartedGame) {
+private fun PlayerCards(game: StartedGame, compact: Boolean) {
     val seats = game.state.players.map { it.seat }
     val rows = remember(game.state.board, seats) { playerCardRows(BoardLayout.of(game.state.board), seats) }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.semantics { isTraversalGroup = true }) {
+    Column(verticalArrangement = Arrangement.spacedBy(cardGap(compact)), modifier = Modifier.semantics { isTraversalGroup = true }) {
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { index ->
                     if (index == null) {
                         Box(Modifier.weight(1f))
                     } else {
-                        PlayerCard(game, index, Modifier.weight(1f).semantics { traversalIndex = index.toFloat() })
+                        PlayerCard(game, index, compact, Modifier.weight(1f).semantics { traversalIndex = index.toFloat() })
                     }
                 }
             }
@@ -515,8 +584,19 @@ private fun PlayerCards(game: StartedGame) {
     }
 }
 
+private fun cardGap(compact: Boolean): Dp = if (compact) 4.dp else 8.dp
+
+private fun cardPadding(compact: Boolean): Dp = if (compact) 4.dp else 8.dp
+
+/** How tall [rows] of player cards are. */
 @Composable
-private fun PlayerCard(game: StartedGame, index: Int, modifier: Modifier) {
+private fun playerCardsHeight(rows: Int, compact: Boolean): Dp {
+    val line = with(LocalDensity.current) { MaterialTheme.typography.titleSmall.lineHeight.toDp() }
+    return (line + cardPadding(compact) * 2) * rows + cardGap(compact) * (rows - 1)
+}
+
+@Composable
+private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier: Modifier) {
     val player = game.players[index]
     val state = game.state
     val side = state.players[index]
@@ -545,7 +625,7 @@ private fun PlayerCard(game: StartedGame, index: Int, modifier: Modifier) {
         border = if (current) BorderStroke(2.dp, colour) else null,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = cardPadding(compact)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {

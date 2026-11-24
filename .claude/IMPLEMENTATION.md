@@ -208,7 +208,10 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     (`MoveLogPanel.kt`, 2026-11-23): every move, roll with no move, and turn lost to a run of roll-again rolls, newest
     first, back to who went first, each after its time ("[14:05:09]", the phone's clock), in a card that scrolls back to
     its top as each comes. It's saved with the game, and left out of Nearby messages (a guest's phone builds its own
-    from the host's states, timed as they arrive). Where there's no room for the card, only its newest line shows.
+    from the host's states, timed as they arrive). In portrait the log always has room for a line, and for two where it
+    can (2026-11-24, `PortraitGame`; eight players on a 16:9 phone had a sliver): on a short screen the player cards
+    close up, the log drops its title, and the board gives up to a tenth of its width for the second line, and more
+    only for the first (`MoveLogRoomTest`). The board's size allows for the die alone, so a prompt never resizes it.
 - [x] Capture feedback: a burst on the square, and the captured pawn thrown back to its yard (2026-11-23), with a
     buzz (`Haptics.kt`); a tick for a move, the die's landing sound, a move click, and the fanfare (`SoundEffects.kt`,
     restored from `5423b6c`).

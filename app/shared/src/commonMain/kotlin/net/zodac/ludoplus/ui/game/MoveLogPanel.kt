@@ -18,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.CollectionItemInfo
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -27,6 +29,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import net.zodac.ludoplus.data.settings.MotionGroup
 import net.zodac.ludoplus.game.GameEvent
@@ -74,25 +77,45 @@ import net.zodac.ludoplus.ui.theme.color
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** Below this height the log has no room for a line under its title, so it shows its newest line alone. */
-private val MIN_LOG_HEIGHT = 56.dp
+private val LOG_LINE_PADDING = 2.dp
+private val LOG_TITLE_TOP = 8.dp
+private val LOG_TITLE_BOTTOM = 6.dp
+private val LOG_BOTTOM = 8.dp
+
+/** Over the first line where the log has no title. */
+private val UNTITLED_TOP = 4.dp
+
+/** How tall the move log's card is with no title, showing [lines] lines. */
+@Composable
+internal fun moveLogHeight(lines: Int): Dp = UNTITLED_TOP * 2 + logLineHeight() * lines
+
+/** How tall one of the log's lines is, where it doesn't wrap. */
+@Composable
+private fun logLineHeight(): Dp = with(LocalDensity.current) { MaterialTheme.typography.bodyMedium.lineHeight.toDp() } + LOG_LINE_PADDING * 2
+
+/** How tall the log's card is with its title and two lines under it. */
+@Composable
+private fun titledLogHeight(): Dp =
+    LOG_TITLE_TOP + with(LocalDensity.current) { MaterialTheme.typography.labelMedium.lineHeight.toDp() } + LOG_TITLE_BOTTOM + logLineHeight() * 2
 
 /**
  * The game's move log, under the die and the prompt: every move ([StartedGame.log]), newest first, back to who went
  * first (outside the tutorial), in a card that scrolls, brought back to its top as each move comes.
  * Each line starts with when it happened, "[14:05:09]", and names its players in their colours. TalkBack hears its title
  * as a heading, the lines as a list ("1 of 12") without their times, and the newest line as it comes (a polite live
- * region). Where there isn't room for the card (a short screen, a large font), the newest line alone.
+ * region). Where there isn't room for the title and two lines (a short screen, a large font), the card has no title; where
+ * there isn't room for a line, it isn't drawn, and TalkBack still hears the newest.
  */
 @Composable
 internal fun MoveLogPanel(game: StartedGame, seatColours: List<PlayerColour?>, tutorial: Boolean, modifier: Modifier = Modifier) {
     val count = game.log.size + if (tutorial) 0 else 1
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         if (count == 0) return@BoxWithConstraints
-        if (maxHeight < MIN_LOG_HEIGHT) {
-            LogLine(game, seatColours, entry = game.log.lastOrNull(), newest = true, Modifier)
+        if (maxHeight < moveLogHeight(1)) {
+            LogLine(game, seatColours, entry = game.log.lastOrNull(), newest = true, Modifier.drawWithContent { })
             return@BoxWithConstraints
         }
+        val titled = maxHeight >= titledLogHeight()
         val listState = rememberLazyListState()
         val glide = !groupReduceMotion(MotionGroup.MENUS)
         LaunchedEffect(count) { if (glide) listState.animateScrollToItem(0) else listState.scrollToItem(0) }
@@ -101,17 +124,19 @@ internal fun MoveLogPanel(game: StartedGame, seatColours: List<PlayerColour?>, t
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier.fillMaxSize(),
         ) {
-            Column(modifier = Modifier.padding(top = 8.dp)) {
-                Text(
-                    text = stringResource(Res.string.game_log_title),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 6.dp).semantics { heading() },
-                )
+            Column(modifier = Modifier.padding(top = if (titled) LOG_TITLE_TOP else 0.dp)) {
+                if (titled) {
+                    Text(
+                        text = stringResource(Res.string.game_log_title),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = LOG_TITLE_BOTTOM).semantics { heading() },
+                    )
+                }
                 Box {
                     LazyColumn(
                         state = listState,
-                        contentPadding = PaddingValues(start = 12.dp, end = 16.dp, bottom = 8.dp),
+                        contentPadding = PaddingValues(start = 12.dp, end = 16.dp, top = if (titled) 0.dp else UNTITLED_TOP, bottom = if (titled) LOG_BOTTOM else UNTITLED_TOP),
                         modifier = Modifier.fillMaxSize().semantics { collectionInfo = CollectionInfo(rowCount = count, columnCount = 1) },
                     ) {
                         // Newest first: the line at index i is the log's from its end, then who went first.
@@ -121,13 +146,13 @@ internal fun MoveLogPanel(game: StartedGame, seatColours: List<PlayerColour?>, t
                                 seatColours,
                                 entry = game.log.getOrNull(game.log.size - 1 - index),
                                 newest = index == 0,
-                                Modifier.padding(vertical = 2.dp).semantics {
+                                Modifier.padding(vertical = LOG_LINE_PADDING).semantics {
                                     collectionItemInfo = CollectionItemInfo(rowIndex = index, rowSpan = 1, columnIndex = 0, columnSpan = 1)
                                 },
                             )
                         }
                     }
-                    LazyListScrollbar(listState, modifier = Modifier.padding(end = 4.dp, bottom = 8.dp))
+                    LazyListScrollbar(listState, modifier = Modifier.padding(end = 4.dp, top = if (titled) 0.dp else UNTITLED_TOP, bottom = if (titled) LOG_BOTTOM else UNTITLED_TOP))
                 }
             }
         }
