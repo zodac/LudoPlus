@@ -2,7 +2,6 @@ package net.zodac.ludoplus.app
 
 import net.zodac.ludoplus.data.settings.savedStylesFlow
 import net.zodac.ludoplus.data.settings.SavedStyles
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.Flow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.annotation.VisibleForTesting
@@ -23,6 +22,7 @@ import net.zodac.ludoplus.data.achievements.AchievementStore
 import net.zodac.ludoplus.data.achievements.AchievementsRepository
 import net.zodac.ludoplus.data.createPreferencesDataStore
 import net.zodac.ludoplus.data.game.InProgressGameRepository
+import net.zodac.ludoplus.data.game.SavedGameDiscard
 import net.zodac.ludoplus.data.records.AppDatabase
 import net.zodac.ludoplus.data.records.GameRecordRepository
 import net.zodac.ludoplus.data.records.buildAppDatabase
@@ -122,13 +122,19 @@ class AppContainer(
     companion object {
         /**
          * Builds the container every platform shares: the game records database from the platform's [databaseBuilder]
-         * (its driver and path), and one DataStore per [PreferencesFile] in [dataDir].
+         * (its driver and path), and one DataStore per [PreferencesFile] in [dataDir]. A saved game [savedGameDiscard] asks to be
+         * removed goes first.
          */
-        fun create(dataDir: String, databaseBuilder: RoomDatabase.Builder<AppDatabase>, buildInfo: BuildInfo): AppContainer {
+        fun create(
+            dataDir: String,
+            databaseBuilder: RoomDatabase.Builder<AppDatabase>,
+            buildInfo: BuildInfo,
+            savedGameDiscard: SavedGameDiscard = SavedGameDiscard.None,
+        ): AppContainer {
             fun dataStore(file: PreferencesFile) = createPreferencesDataStore("$dataDir/${file.fileName}")
 
             val settings = SettingsRepository(dataStore(PreferencesFile.SETTINGS))
-            val inProgressGame = InProgressGameRepository(dataStore(PreferencesFile.IN_PROGRESS_GAME))
+            val inProgressGame = InProgressGameRepository(dataStore(PreferencesFile.IN_PROGRESS_GAME), discard = savedGameDiscard)
             val records = GameRecordRepository(databaseBuilder.buildAppDatabase().gameResultDao(), computeContext = Dispatchers.Default)
             val achievements = AchievementsRepository(dataStore(PreferencesFile.ACHIEVEMENTS))
             return AppContainer(

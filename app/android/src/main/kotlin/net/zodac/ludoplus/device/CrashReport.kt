@@ -35,7 +35,8 @@ internal class CrashReport(
 
     /**
      * A new issue on the app's repository with this report filled in, which the player reads and posts themselves. The
-     * trace is cut, from its end, to keep the link within [MAX_URL_LENGTH]: the whole of it is on the page to copy.
+     * trace is cut, from its end, to keep [signInUrl]'s link within [MAX_SIGN_IN_URL_LENGTH]: the whole of it is on the
+     * page to copy.
      */
     fun issueUrl(): String {
         val title = "[Crash] ${trace.lineSequence().first().take(MAX_TITLE_LENGTH)}"
@@ -49,7 +50,7 @@ internal class CrashReport(
         // The most of the trace's lines that fit, found by halving.
         while (low < high) {
             val middle = (low + high + 1) / 2
-            if (url(middle).length <= MAX_URL_LENGTH) low = middle else high = middle - 1
+            if (signInUrl(url(middle)).length <= MAX_SIGN_IN_URL_LENGTH) low = middle else high = middle - 1
         }
         return url(low)
     }
@@ -95,8 +96,18 @@ internal class CrashReport(
     companion object {
         private const val NEW_ISSUE_URL = "https://github.com/zodac/LudoPlus/issues/new"
 
-        /** The longest link GitHub is given: its own limit is a little over 8,000 characters. */
-        const val MAX_URL_LENGTH = 7_500
+        /**
+         * The longest [signInUrl]. GitHub sends a player who isn't signed in there, to come back to the issue after: over
+         * about 6,970 characters (measured 2026-11-24) that page fails, and over about 7,700 GitHub drops the way back.
+         */
+        const val MAX_SIGN_IN_URL_LENGTH = 6_800
+
+        /** What GitHub escapes that [Uri.encode] doesn't. */
+        private val GITHUB_ESCAPES = Regex("[!'()*]")
+
+        /** Where GitHub sends a player who opens [issueUrl] without being signed in: the link, escaped once more. */
+        fun signInUrl(issueUrl: String): String =
+            "https://github.com/login?return_to=" + Uri.encode(issueUrl).replace(GITHUB_ESCAPES) { "%%%02X".format(it.value.single().code) }
 
         private const val MAX_TITLE_LENGTH = 120
 

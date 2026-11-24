@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -23,6 +24,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import net.zodac.ludoplus.app.AppContainer
+import net.zodac.ludoplus.app.ResumeAttempt
 import net.zodac.ludoplus.app.LocalAppContainer
 import net.zodac.ludoplus.data.orNullOnFailure
 import net.zodac.ludoplus.model.Achievement
@@ -92,6 +94,9 @@ fun LudoPlusNavHost(navController: NavHostController = rememberNavController(), 
 }
 
 /** Each page, opened by a [change] of page under the cover. */
+/** How many frames of a resumed board still count as its [ResumeAttempt]: enough for it to be composed, laid out, and drawn. */
+private const val RESUME_ATTEMPT_FRAMES = 5
+
 private fun NavGraphBuilder.pages(navController: NavHostController, container: AppContainer, change: (() -> Unit) -> Unit) {
     val navigate = { route: String -> change { navController.navigate(route) } }
     val navigateUp: () -> Unit = { navController.navigateUp() }
@@ -157,9 +162,14 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
             val playGraphEntry = remember(backStackEntry) { navController.getBackStackEntry(Screen.PLAY_GRAPH) }
             val gameViewModel = viewModel<GameViewModel>(playGraphEntry, factory = GameViewModel.factory(container))
             // With no game in hand (Continue, or Android ended the app while it was in the background), the saved one
-            // comes back; with none to bring back, the menu.
+            // comes back; with none to bring back, the menu. One that can't be drawn takes the app to the crash page
+            // (ResumeAttempt), which removes it.
             LaunchedEffect(gameViewModel) {
-                if (gameViewModel.game.value == null && !gameViewModel.resumeGame()) backToMenu()
+                if (gameViewModel.game.value == null) {
+                    ResumeAttempt.during {
+                        if (gameViewModel.resumeGame()) repeat(RESUME_ATTEMPT_FRAMES) { withFrameNanos {} } else backToMenu()
+                    }
+                }
             }
             GameScreen(viewModel = gameViewModel, onBackToMenu = backToMenu)
         }

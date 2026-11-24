@@ -176,6 +176,7 @@ class GameViewModel(
         val logged = if (sameGame) game.copy(log = MoveLog.next(previous.log, previous.state, game.state, now())) else game
         val stepped = if (previous != null && previous.id == game.id && previous.state != game.state) logged.copy(steps = game.steps + 1) else logged
         val timed = withPlayTime(stepped)
+        GameBreadcrumbs.event(before = previous?.state?.lastEvent?.takeIf { sameGame }, event = timed.state.lastEvent)
         _game.value = timed
         // The tutorial keeps nothing.
         if (tutorial != null) return
@@ -295,6 +296,7 @@ class GameViewModel(
             customName = setup.customMode?.name,
             id = Uuid.random().toHexString(),
         )
+        GameBreadcrumbs.started(started)
         tracker = AchievementTracker(players)
         record(AchievementEngine.atGameStart(players, previousGame, localHour(startedAt), game = started.state))
         commit(started)
@@ -332,6 +334,7 @@ class GameViewModel(
         if (_game.value != null) return true
         playMark = elapsedMillis().takeIf { foreground.value }
         _game.value = game
+        GameBreadcrumbs.resumed(game)
         tracker = AchievementTracker(game.players)
         record(AchievementEngine.atGameResume().earnableIn(game.state))
         playCpuTurn()

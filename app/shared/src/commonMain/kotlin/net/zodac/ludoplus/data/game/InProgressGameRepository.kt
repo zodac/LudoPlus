@@ -5,14 +5,19 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -35,15 +40,26 @@ import net.zodac.ludoplus.ui.game.StartedGame
  * game is newest, and a finished game's clearing beats an older copy of it. A stamp is always later than the one before
  * it, even with the device's clock set back, and of two copies of the same game the one further on wins whatever their
  * stamps ([furtherOn]); a game finished here ([FINISHED_KEY]) is never taken from a merge again.
+ *
+ * A game the crash handler asked to be removed ([SavedGameDiscard]) goes before anything here reads or writes the save,
+ * so the menu never offers it, and like a finished game no copy of it is taken from a merge again.
  */
 class InProgressGameRepository(
     private val dataStore: DataStore<Preferences>,
     scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
     private val now: () -> Long = ::nowEpochMillis,
+    private val discard: SavedGameDiscard = SavedGameDiscard.None,
 ) {
 
+    /** Done once a removal the crash handler asked for has been made, or there was none to make. */
+    private val discardChecked: Deferred<Unit> =
+        if (discard === SavedGameDiscard.None) CompletableDeferred(Unit) else scope.async { discardIfAsked() }
+
     /** Whether a game is saved: only when that changes, not on every move saved. */
-    val hasInProgressGame: Flow<Boolean> = dataStore.data.map { it[GAME_KEY] != null }.distinctUntilChanged()
+    val hasInProgressGame: Flow<Boolean> = flow {
+        discardChecked.await()
+        emitAll(dataStore.data.map { it[GAME_KEY] != null }.distinctUntilChanged())
+    }
 
     /** What should be on disk next, or null before anything's asked. */
     private val pending = MutableStateFlow<Pending?>(null)
@@ -53,6 +69,7 @@ class InProgressGameRepository(
 
     init {
         scope.launch {
+            discardChecked.await()
             // A StateFlow's collector only ever sees the latest value, which is the conflation.
             pending.filterNotNull().collect { next ->
                 // One lost save costs Continue a move or two, not the app: the queue stays alive for the next.
@@ -71,6 +88,19 @@ class InProgressGameRepository(
                 }
                 written.value = next.sequence
             }
+        }
+    }
+
+    /** A removal that fails leaves the request standing, for the next start to try again. */
+    private suspend fun discardIfAsked() {
+        orNullOnFailure {
+            if (!discard.isRequested()) return
+            dataStore.edit { prefs ->
+                prefs[GAME_KEY]?.let(::readableGame)?.id?.let { prefs[FINISHED_KEY] = it }
+                prefs.remove(GAME_KEY)
+                prefs[STAMP_KEY] = nextStamp(prefs)
+            }
+            discard.done()
         }
     }
 
@@ -137,6 +167,7 @@ class InProgressGameRepository(
     }
 
     private suspend fun awaitWrites() {
+        discardChecked.await()
         pending.value?.let { queued -> written.first { it >= queued.sequence } }
     }
 
@@ -158,6 +189,25 @@ class InProgressGameRepository(
 
         /** The [StartedGame.id] of the last game finished here. */
         val FINISHED_KEY = stringPreferencesKey("finished_id")
+    }
+}
+
+/**
+ * The crash handler's request, which outlives the process it was made in, to remove a saved game that can't be resumed
+ * ([net.zodac.ludoplus.app.ResumeAttempt]).
+ */
+interface SavedGameDiscard {
+
+    fun isRequested(): Boolean
+
+    /** The saved game has gone: the request is over. */
+    fun done()
+
+    /** No such request is ever made. */
+    object None : SavedGameDiscard {
+        override fun isRequested(): Boolean = false
+
+        override fun done() = Unit
     }
 }
 

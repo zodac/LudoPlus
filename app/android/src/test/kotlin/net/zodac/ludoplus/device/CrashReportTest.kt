@@ -92,10 +92,18 @@ class CrashReportTest {
     fun `a trace too long for a link is cut from its end - saying so - and the link fits`() {
         val trace = "java.lang.StackOverflowError\n" + (1..2_000).joinToString("\n") { "\tat Game.recurse(Game.kt:$it)" }
         val link = report(trace = trace).issueUrl()
-        assertTrue(link.length <= CrashReport.MAX_URL_LENGTH)
+        assertTrue(CrashReport.signInUrl(link).length <= CrashReport.MAX_SIGN_IN_URL_LENGTH)
+        assertTrue("as much of the trace as fits", CrashReport.signInUrl(link).length > CrashReport.MAX_SIGN_IN_URL_LENGTH - 300)
         val body = checkNotNull(Uri.parse(link).getQueryParameter("body"))
         assertTrue("java.lang.StackOverflowError\n\tat Game.recurse(Game.kt:1)\n" in body)
         assertTrue("\t... cut to fit the link - the crash page's Copy details has it all\n```" in body)
+    }
+
+    @Test
+    fun `a trace that's mostly escaped is cut further - so a player who isn't signed in still comes back to it`() {
+        val link = report(trace = (1..2_000).joinToString("\n") { "| <lambda>(\"$it\") {} 日本語" }).issueUrl()
+        assertTrue(CrashReport.signInUrl(link).length <= CrashReport.MAX_SIGN_IN_URL_LENGTH)
+        assertTrue("**Stack trace**" in checkNotNull(Uri.parse(link).getQueryParameter("body")))
     }
 
     @Test
@@ -107,12 +115,12 @@ class CrashReportTest {
 
     @Test
     fun `a report made from an error has its thread, its trace and the breadcrumbs`() {
-        Breadcrumbs.record("Scored CHANCE, player 1")
+        Breadcrumbs.record("Rolled 6, player 1")
         val error = IllegalStateException("Boom")
         val report = CrashReport.of(ApplicationProvider.getApplicationContext(), Thread("game-worker"), error)
         assertEquals("game-worker", report.thread)
         assertEquals(error.stackTraceToString(), report.trace)
-        assertEquals("Scored CHANCE, player 1", report.lastActions.last())
+        assertEquals("Rolled 6, player 1", report.lastActions.last())
         assertTrue(report.app.startsWith("LudoPlus "))
     }
 
