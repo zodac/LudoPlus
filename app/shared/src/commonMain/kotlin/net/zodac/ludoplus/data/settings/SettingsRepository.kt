@@ -22,6 +22,7 @@ import net.zodac.ludoplus.model.CustomMode
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.HouseRule
+import net.zodac.ludoplus.model.ModePage
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerType
 import net.zodac.ludoplus.model.TeamMode
@@ -211,6 +212,16 @@ class SettingsRepository(
 
     suspend fun setLockedOnlyAchievements(lockedOnly: Boolean) = set(LOCKED_ONLY_ACHIEVEMENTS_KEY, lockedOnly)
 
+    /** The Leaderboard's board: the mode last picked from its drop-down, or the default for none or one nothing recognises. */
+    val leaderboardMode: Flow<GameMode> = read { prefs -> prefs[LEADERBOARD_CHOICE_KEY]?.let { storedIdOf<GameMode>(it) } ?: GameMode.DEFAULT }
+
+    suspend fun setLeaderboardMode(mode: GameMode) = set(LEADERBOARD_CHOICE_KEY, mode.id)
+
+    /** The Statistics page last picked from its drop-down ([ModePage.parse]). */
+    val statisticsPage: Flow<ModePage> = read { prefs -> ModePage.parse(prefs[STATISTICS_CHOICE_KEY]) }
+
+    suspend fun setStatisticsPage(page: ModePage) = set(STATISTICS_CHOICE_KEY, page.stored)
+
     val soundEnabled: Flow<Boolean> = read(SOUND_ENABLED_KEY, default = true)
 
     suspend fun setSoundEnabled(enabled: Boolean) = set(SOUND_ENABLED_KEY, enabled)
@@ -286,6 +297,8 @@ class SettingsRepository(
         val CONFIRM_BEFORE_LEAVING_GAME_KEY = booleanPreferencesKey("confirm_before_leaving_game")
         val STOP_AT_FIRST_WINNER_KEY = booleanPreferencesKey("stop_at_first_winner")
         val LOCKED_ONLY_ACHIEVEMENTS_KEY = booleanPreferencesKey("locked_only_achievements")
+        val LEADERBOARD_CHOICE_KEY = stringPreferencesKey("leaderboard_choice")
+        val STATISTICS_CHOICE_KEY = stringPreferencesKey("statistics_choice")
         val SOUND_ENABLED_KEY = booleanPreferencesKey("sound_enabled")
         val VIBRATION_ENABLED_KEY = booleanPreferencesKey("vibration_enabled")
         val ANIMATION_LEVEL_KEY = stringPreferencesKey("animation_level")
@@ -329,7 +342,7 @@ class SettingsRepository(
          */
         private val SYNCED: List<SyncedKey<*>> = buildList {
             listOf(
-                GAME_MODE_KEY, TEAM_MODE_KEY, CUSTOM_MODES_KEY, CUSTOM_MODE_KEY,
+                GAME_MODE_KEY, TEAM_MODE_KEY, CUSTOM_MODES_KEY, CUSTOM_MODE_KEY, LEADERBOARD_CHOICE_KEY, STATISTICS_CHOICE_KEY,
                 BOARD_STYLE_ID_KEY, PAWN_STYLE_ID_KEY, DICE_STYLE_ID_KEY, TABLE_BACKGROUND_ID_KEY,
             ).mapTo(this) { SyncedKey.Text(it) }
             for (slot in 1..BoardGeometry.MAX_PLAYERS) {

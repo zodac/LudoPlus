@@ -12,10 +12,21 @@ import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.LeaderboardRanking
 import net.zodac.ludoplus.model.PlayerType
 import net.zodac.ludoplus.model.playerNameKey
+import net.zodac.ludoplus.model.storedIdOf
 import net.zodac.ludoplus.ui.game.StartedGame
 
 /** How many Leaderboard rows make up one page. */
 const val LEADERBOARD_PAGE_SIZE = 100
+
+/** Where a Leaderboard reads its boards: the game records, or a warm-up's made-up ones. */
+interface LeaderboardSource {
+
+    /** Changes whenever a board read before might have. */
+    val writes: StateFlow<Long>
+
+    /** A page of [gameMode]'s Leaderboard for games of [playerCount], best first. */
+    suspend fun leaderboard(gameMode: GameMode, playerCount: Int, pageIndex: Int = 0, pageSize: Int = LEADERBOARD_PAGE_SIZE): List<GameResult>
+}
 
 /**
  * The game records: each finished game written once, and read back as each mode's Leaderboard and each player's
@@ -23,14 +34,14 @@ const val LEADERBOARD_PAGE_SIZE = 100
  */
 class GameRecordRepository(
     private val dao: GameResultDao,
-    /** Where [playerStatistics] adds up the rows it has read: off the main thread in the app. */
+    /** Where [statistics] adds up the rows it has read: off the main thread in the app. */
     private val computeContext: CoroutineContext = EmptyCoroutineContext,
-) {
+) : LeaderboardSource {
 
     private val writeCount = MutableStateFlow(0L)
 
     /** How many writes this has made since the app started: a screen showing the records reads them again when it changes. */
-    val writes: StateFlow<Long> = writeCount.asStateFlow()
+    override val writes: StateFlow<Long> = writeCount.asStateFlow()
 
     /**
      * Records the finished [game]'s people at this phone, in one write: each one's place (their team's, in a team game),
@@ -78,7 +89,7 @@ class GameRecordRepository(
      * Page [pageIndex] of [gameMode]'s Leaderboard for games of [playerCount]: its best wins, by its [GameMode.ranking]
      * (fewest turns, or most pawns left), then most captures. Each player count has its own, as a bigger board's lap is longer.
      */
-    suspend fun leaderboard(gameMode: GameMode, playerCount: Int, pageIndex: Int = 0, pageSize: Int = LEADERBOARD_PAGE_SIZE): List<GameResult> =
+    override suspend fun leaderboard(gameMode: GameMode, playerCount: Int, pageIndex: Int, pageSize: Int): List<GameResult> =
         when (gameMode.ranking) {
             LeaderboardRanking.FEWEST_TURNS -> dao.leaderboard(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
             LeaderboardRanking.MOST_PAWNS_LEFT -> dao.leaderboardByPawnsLeft(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
@@ -126,17 +137,48 @@ class GameRecordRepository(
         writeCount.update { it + 1 }
     }
 
-    /**
-     * Every player's Statistics, in name order: names differing only by case are one player, shown by the spelling of
-     * their latest game. Only games of [playerCount] and [mode] count, or of every count or mode for null, and never one with
-     * house rules.
-     */
-    suspend fun playerStatistics(playerCount: Int? = null, mode: GameMode? = null): List<PlayerStatistics> {
-        val rows = dao.allByPlayer().filter {
-            !it.houseRules && (playerCount == null || it.playerCount == playerCount) && (mode == null || it.gameModeId == mode.id)
-        }
-        return withContext(computeContext) { rows.groupBy { it.playerKey }.values.map(::statisticsOf) }
+    /** Every player's [Statistics], from one read of the records. A game with house rules is never in them. */
+    suspend fun statistics(): Statistics {
+        val rows = dao.allByPlayer()
+        return withContext(computeContext) { statisticsFrom(rows) }
     }
+}
+
+/** Every player's figures, already added up for each mode and player count there are games of, and for all of either. */
+class Statistics internal constructor(private val pages: Map<StatisticsPage, List<PlayerStatistics>>) {
+
+    /** Whether there are no games at all. */
+    val isEmpty: Boolean get() = pages.isEmpty()
+
+    /**
+     * Each player's figures, in name order, for games of [playerCount] and [mode], or of every count or mode for null:
+     * names differing only by case are one player, shown by the spelling of their latest of those games.
+     */
+    fun players(playerCount: Int? = null, mode: GameMode? = null): List<PlayerStatistics> = pages[StatisticsPage(playerCount, mode)].orEmpty()
+
+    companion object {
+        /** With no games. */
+        val NONE = Statistics(emptyMap())
+    }
+}
+
+/** The games of a player count and mode, or of every one for null. */
+internal data class StatisticsPage(val playerCount: Int?, val mode: GameMode?)
+
+/** [rows], each player's together and oldest first, added up once for every page they're on. */
+private fun statisticsFrom(rows: List<GameResult>): Statistics {
+    val pages = HashMap<StatisticsPage, MutableList<PlayerStatistics>>()
+    for (player in rows.filterNot { it.houseRules }.groupBy { it.playerKey }.values) {
+        val games = LinkedHashMap<StatisticsPage, MutableList<GameResult>>()
+        for (row in player) {
+            // A mode this build doesn't know is on the pages of every mode only.
+            for (mode in setOf(null, storedIdOf<GameMode>(row.gameModeId))) {
+                for (count in listOf(null, row.playerCount)) games.getOrPut(StatisticsPage(count, mode)) { mutableListOf() }.add(row)
+            }
+        }
+        games.forEach { (page, played) -> pages.getOrPut(page) { mutableListOf() }.add(statisticsOf(played)) }
+    }
+    return Statistics(pages)
 }
 
 /** The fewest [turns] of the wins not yet sent to an online leaderboard, and when the [newestEpochMillis] of those games ended. */

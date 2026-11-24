@@ -460,9 +460,8 @@
     <string name="stats_count_all">All</string>
     <!-- What a screen reader says for it. -->
     <string name="stats_count_all_spoken">All games</string>
-    <!-- The first of Statistics' modes (shown as stats_count_all), as a screen reader says it: every mode's games. -->
+    <!-- The last of Statistics' drop-down, after the modes: every mode's games, added together. -->
     <string name="stats_mode_all">All Modes</string>
-    <string name="stats_mode_all_description">Every mode's games, added together</string>
     <!-- Statistics with no games of the mode picked. %1$s is the mode's name (mode_*). -->
     <string name="stats_empty_mode">No %1$s games yet.</string>
     <!-- Statistics with no games of the mode and count picked. %1$s is the mode's name, %2$d the count (2 to 8). -->

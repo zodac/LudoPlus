@@ -275,9 +275,18 @@ the Styles page has been opened.
 
 ## The Leaderboard and Statistics
 
-What they show is in `DESIGN.md`, "Leaderboard and Statistics". Both open with a mode picker (`ModePicker`) and a row of
-player counts (`PlayerCountRow`), each number said as players.
+What they show is in `DESIGN.md`, "Leaderboard and Statistics". Both open with the modes' drop-down
+(`DropdownChoiceField`, in `ui/records/ModePicker.kt`) and a row of player counts (`PlayerCountRow`), each number said as
+players.
 
+- **The drop-down** stays at the top while the rest scrolls under it, and has a divider after Classic and, on Statistics,
+    before All Modes. Another mode's page starts at its top. It isn't there on Statistics with no games at all.
+    TalkBack: one drop-down ("Leaderboard, Classic"), with state Collapsed or Expanded; each menu row is a radio button,
+    the picked one "Selected", with its place in the set.
+- **Everything under it is one `LazyColumn`** (`RecordsList`): only what's on screen is built, so a pick costs the same on
+    a full board as on a short one. The Leaderboard's card is drawn a piece to each row (`TablePiece`).
+- **`LeaderboardWarmUp`**: 2s after the menu settles, it draws two boards once from made-up wins (no database), the same
+    way as `StylesWarmUp` (`LeaderboardWarmUpTest`).
 - **The Leaderboard** is one card: a heading row, then the ranked rows, 1st to 3rd in gold, silver, and bronze. Where a
     name hasn't room beside the number columns, the heading goes and each row is two lines. A row is one TalkBack item. A
     board with no rows shows a card saying how to get on it.

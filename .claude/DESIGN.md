@@ -363,14 +363,22 @@ can't is a page saying so, with the stack trace to report. The app never just cl
 
 ## Leaderboard and Statistics
 
-**By mode**: a picker at the top of each page (`ModePicker`, `ui/records/`), a field that opens a page of the modes. The
-Leaderboard opens at the mode New Game last started; Statistics opens on All Modes, every mode's games together.
+**By mode**: a drop-down at the top of each page (`ui/records/ModePicker.kt`), DiceFive's (the maintainer, 2026-11-24):
+every mode, Classic first and the one they open on, and on Statistics then **All Modes** (`ModePage`), every mode's games
+together. Each page's pick is a preference (`leaderboard_choice`, `statistics_choice`: the mode's id, or `all_modes`),
+loaded with the app container, restored on every open, and carried in the cloud save and progress files; a mode no longer
+known opens Classic's.
+
+- **The Leaderboard** reads a board the first time it's picked, and keeps it until a game is recorded. The board on view
+    stays up until the one picked is read, then gives way in one frame, name and rows together (`LeaderboardViewModel`).
+- **Statistics** reads the records once (again when a game is recorded) and adds up every mode and count then, off the
+    main thread (`Statistics`), so a pick reads nothing.
 
 **By player count** (Phase 8, 2026-11-18). Each record keeps its game's `playerCount`, and both pages have a row of
 counts under their heading (`ui/records/PlayerCountRow.kt`, TalkBack "4 players"). The Leaderboard has a board a count,
 2 to 8 (a bigger board's lap is longer, so turns only compare within a count), opening at the count New Game last
 started; Statistics opens on "All" (every game, spoken "All games") and can show one count's games. Filtered in the
-query and in `playerStatistics`, with no schema change. A team game records each player at their team's place, and
+query and in `statistics`, with no schema change. A team game records each player at their team's place, and
 stays off the Leaderboard (`playedUnmodified` false): a team's win is its players' together, not one player's race.
 A game with house rules is in neither (`GameResult.houseRules`; "Modifiers").
 
@@ -392,7 +400,7 @@ captures". While signed in to Play Games, a mode with an online board has a butt
 
 **Statistics** (`StatisticsScreen`) is a card for each person, by name (`playerKey`), in name order: games, wins, win rate,
 streaks, fewest turns to win, captures, times captured, and pawns home, less the race's figures in Survival. Added up
-in `GameRecordRepository.playerStatistics`, off the main thread. Each figure is read with its label as one.
+in `GameRecordRepository.statistics`, off the main thread. Each figure is read with its label as one.
 
 ## Achievements
 

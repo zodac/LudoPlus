@@ -28,6 +28,8 @@ import net.zodac.ludoplus.data.records.GameRecordRepository
 import net.zodac.ludoplus.data.records.buildAppDatabase
 import net.zodac.ludoplus.data.orNullOnFailure
 import net.zodac.ludoplus.data.settings.SettingsRepository
+import net.zodac.ludoplus.model.GameMode
+import net.zodac.ludoplus.model.ModePage
 import net.zodac.ludoplus.online.CloudSaveStore
 import net.zodac.ludoplus.online.LocalCloudSave
 import net.zodac.ludoplus.online.OnlineSettingsRepository
@@ -84,6 +86,12 @@ class AppContainer(
 
     /** The Styles page's Unlocked switch, loaded with the container so the page opens already filtered: null until then. */
     val unlockedOnlyStyles: StateFlow<Boolean?> = settingsRepository.unlockedOnlyStyles.stateIn(scope, SharingStarted.Eagerly, null)
+
+    /** The Leaderboard's board, loaded with the container so the page opens straight on it: null until then. */
+    val leaderboardMode: StateFlow<GameMode?> = settingsRepository.leaderboardMode.stateIn(scope, SharingStarted.Eagerly, null)
+
+    /** The Statistics page, loaded as [leaderboardMode] is. */
+    val statisticsPage: StateFlow<ModePage?> = settingsRepository.statisticsPage.stateIn(scope, SharingStarted.Eagerly, null)
 
     /**
      * The die every game rolls ([net.zodac.ludoplus.ui.game.GameViewModel]'s random). Replaced only by the store-asset

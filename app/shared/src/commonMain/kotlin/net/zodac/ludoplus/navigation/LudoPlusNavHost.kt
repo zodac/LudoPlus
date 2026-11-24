@@ -47,6 +47,7 @@ import net.zodac.ludoplus.ui.netplay.HostLobbyScreen
 import net.zodac.ludoplus.ui.netplay.JoinScreen
 import net.zodac.ludoplus.ui.records.LeaderboardScreen
 import net.zodac.ludoplus.ui.records.LeaderboardViewModel
+import net.zodac.ludoplus.ui.records.LeaderboardWarmUp
 import net.zodac.ludoplus.ui.records.StatisticsScreen
 import net.zodac.ludoplus.ui.records.StatisticsViewModel
 import net.zodac.ludoplus.ui.rules.RulesScreen
@@ -112,6 +113,8 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
             // Styles isn't the first time it runs - see StylesWarmUp. Never what the page cover waits on.
             CompositionLocalProvider(LocalPageCover provides null) {
                 StylesWarmUp(picks = savedStyles, width = maxWidth)
+                // The Leaderboard's, the same way, after it.
+                LeaderboardWarmUp(width = maxWidth)
             }
             MenuScreen(
                 hasInProgressGame = hasInProgressGame,

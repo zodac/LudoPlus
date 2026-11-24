@@ -59,7 +59,7 @@ Each of these fixed a reported stutter. New work must keep them.
     first roll.
 - **Warm a page up off screen with `OffscreenWarmUp`** (`ui/common`): a 1dp clipped box under an opaque screen,
     hidden from screen readers, that steps through passes a frame or two each once the screen above has settled.
-    `StylesWarmUp` and `StyleCategoriesWarmUp` are each one; a new warm-up is too. Tests see it by
+    `StylesWarmUp`, `StyleCategoriesWarmUp`, and `LeaderboardWarmUp` are each one; a new warm-up is too. Tests see it by
     `OFFSCREEN_WARM_UP_TAG`.
 - **Build a page behind the page cover** (`UI.md`, "Component conventions"). A page's first frames (composition, first
     paint, data arriving) are its costliest. They now land while the cover is opaque, and only one page is ever drawn at

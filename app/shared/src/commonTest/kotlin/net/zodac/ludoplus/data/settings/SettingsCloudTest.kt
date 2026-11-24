@@ -7,7 +7,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import net.zodac.ludoplus.data.InMemoryPreferences
 import net.zodac.ludoplus.data.Stamped
+import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.HouseRule
+import net.zodac.ludoplus.model.ModePage
 
 /** The settings' side of a merge: each synced setting stamped as it changes, and the later one kept. */
 class SettingsCloudTest {
@@ -33,6 +35,29 @@ class SettingsCloudTest {
         clock = 3_000L
         repository.setSoundEnabled(false)
         assertEquals(1_000L, repository.cloudSettings().getValue("sound_enabled").atEpochMillis)
+    }
+
+    @Test
+    fun `the drop-downs' picks go in the save - one no longer known reads as the default mode`() = runTest {
+        assertEquals(GameMode.CLASSIC, repository.leaderboardMode.first())
+        assertEquals(ModePage.Mode(GameMode.CLASSIC), repository.statisticsPage.first())
+        repository.setLeaderboardMode(GameMode.SURVIVAL)
+        repository.setStatisticsPage(ModePage.AllModes)
+        val save = repository.cloudSettings()
+        assertEquals(
+            mapOf(
+                "leaderboard_choice" to Stamped(SettingValue.Text("survival"), 1_000L),
+                "statistics_choice" to Stamped(SettingValue.Text("all_modes"), 1_000L),
+            ),
+            save,
+        )
+        val other = SettingsRepository(InMemoryPreferences(), now = { clock })
+        other.mergeCloud(save)
+        assertEquals(GameMode.SURVIVAL, other.leaderboardMode.first())
+        assertEquals(ModePage.AllModes, other.statisticsPage.first())
+        other.mergeCloud(save.keys.associateWith { Stamped(SettingValue.Text("a mode since removed"), 2_000L) })
+        assertEquals(GameMode.CLASSIC, other.leaderboardMode.first())
+        assertEquals(ModePage.Mode(GameMode.CLASSIC), other.statisticsPage.first())
     }
 
     @Test

@@ -43,7 +43,7 @@ private val SIGNED_IN = GameServicesState.SignedIn(OnlineAccount("Ann", null, "k
 class OnlineLinksTest : UiTest() {
 
     private fun showLeaderboard(services: GameServices, mode: GameMode = GameMode.CLASSIC, players: Int = 4) {
-        val viewModel = LeaderboardViewModel(GameRecordRepository(InMemoryGameResultDao())) { mode to players }
+        val viewModel = LeaderboardViewModel(GameRecordRepository(InMemoryGameResultDao()), MutableStateFlow(mode)) { players }
         compose.setContent {
             CompositionLocalProvider(LocalGameServices provides services) { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
         }

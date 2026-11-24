@@ -12,21 +12,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -79,52 +82,99 @@ private val MIN_NAME_WIDTH = 80.sp
 /** A row's padding and gaps besides its columns. */
 private val ROW_CHROME = 56.dp
 
+/** Between the list's parts. */
+private val PART_GAP = 16.dp
+
+/** Above the table's first row, and under its last. */
+private val TABLE_END_PADDING = 4.dp
+
 /**
- * The Leaderboard: the fastest wins for the mode and player count picked (2 to 8; at first, the mode and count New Game
- * last started), fewest turns first (or where the last standing wins, most pawns left) and then most captures, the top three ranked in gold, silver, and bronze. Where a name hasn't room beside the number columns (a large font), each row is two lines: the
- * rank and name, then its turns and captures. A screen reader reads each row as one: its rank, name, turns, and captures.
+ * The Leaderboard: the fastest wins for the mode and player count picked (2 to 8; at first, the mode last picked here and
+ * the count New Game last started), fewest turns first (or where the last standing wins, most pawns left) and then most
+ * captures, the top three ranked in gold, silver, and bronze. The mode's drop-down stays at the top while the rest scrolls.
+ * Where a name hasn't room beside the number columns (a large font), each row is two lines: the rank and name, then its
+ * turns and captures. A screen reader reads each row as one: its rank, name, turns, and captures.
+ *
+ * [driftingDice] is as [ScreenScaffold]'s.
  */
 @Composable
-fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit) {
-    val rows by viewModel.rows.collectAsStateWithLifecycle()
-    val mode by viewModel.mode.collectAsStateWithLifecycle()
-    val playerCount by viewModel.playerCount.collectAsStateWithLifecycle()
-    ScreenScaffold(title = stringResource(Res.string.leaderboard_title), onBack = onBack, scrollable = true) {
+fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit, driftingDice: Boolean = true) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    ScreenScaffold(title = stringResource(Res.string.leaderboard_title), onBack = onBack, driftingDice = driftingDice) {
         // Nothing until the board is read, so the empty card never flashes up before a board that has rows.
-        val board = rows ?: return@ScreenScaffold HoldPageCover()
-        val count = playerCount ?: return@ScreenScaffold HoldPageCover()
-        val shownMode = mode ?: return@ScreenScaffold HoldPageCover()
-        val modeName = stringResource(shownMode.displayName)
-        ModePicker(options = GameMode.entries, selected = shownMode, onSelect = { viewModel.selectMode(it!!) })
-        Text(
-            text = stringResource(if (shownMode.ranking == LeaderboardRanking.MOST_PAWNS_LEFT) Res.string.leaderboard_heading_pawns else Res.string.leaderboard_heading, modeName),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.semantics { heading() },
-        )
-        PlayerCountRow(options = PLAYER_COUNTS, selected = count, onSelect = { viewModel.selectPlayerCount(it!!) })
-        // The same board on the online service, while signed in to one: shown with or without rows here.
+        val (board, rows) = state ?: return@ScreenScaffold HoldPageCover()
+        val (mode, count) = board
+        LeaderboardModePicker(selected = mode, onSelect = viewModel::selectMode)
         val services = LocalGameServices.current
-        if (services.state.collectAsStateWithLifecycle().value is GameServicesState.SignedIn && services.canShowLeaderboardUi && shownMode.onlineLeaderboardKey != null) {
-            GlobalLeaderboardButton(shownMode, count, services)
-        }
-        if (board.isEmpty()) {
-            EmptyStateCard(pluralStringResource(Res.plurals.leaderboard_empty_players, count, modeName, count))
-            return@ScreenScaffold
-        }
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            // Columns while a name still has room beside the numbers; at a large font, two lines a row instead.
-            val compact = maxWidth < with(LocalDensity.current) { RANK_WIDTH.toDp() + NUMBER_WIDTH.toDp() * 2 + MIN_NAME_WIDTH.toDp() } + ROW_CHROME
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    if (!compact) HeaderRow(shownMode)
-                    board.forEachIndexed { index, row ->
-                        if (index > 0 || !compact) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                        LeaderboardRow(rank = index + 1, row = row, mode = shownMode, compact = compact)
+        // The same board on the online service, while signed in to one: shown with or without rows here.
+        val online = services.state.collectAsStateWithLifecycle().value is GameServicesState.SignedIn && services.canShowLeaderboardUi && mode.onlineLeaderboardKey != null
+        // The least width that holds a name beside the numbers; at a large font, each row is two lines instead.
+        val columnsWidth = with(LocalDensity.current) { RANK_WIDTH.toDp() + NUMBER_WIDTH.toDp() * 2 + MIN_NAME_WIDTH.toDp() } + ROW_CHROME
+        // Each mode's board its own list, so it starts at its top. A count is only picked from the top, where its row is, and
+        // keeps the list: a screen reader stays on the count it picked.
+        key(mode) {
+            RecordsList { width ->
+                val compact = width < columnsWidth
+                item(key = "heading") { BoardHeading(mode, modifier = Modifier.padding(bottom = PART_GAP)) }
+                item(key = "counts") {
+                    Box(modifier = Modifier.padding(bottom = PART_GAP)) {
+                        PlayerCountRow(options = PLAYER_COUNTS, selected = count, onSelect = { viewModel.selectPlayerCount(it!!) })
+                    }
+                }
+                if (online) {
+                    item(key = "global") {
+                        Box(modifier = Modifier.fillMaxWidth().padding(bottom = PART_GAP), contentAlignment = Alignment.Center) { GlobalLeaderboardButton(mode, count, services) }
+                    }
+                }
+                if (rows.isEmpty()) {
+                    item(key = "empty") { EmptyStateCard(pluralStringResource(Res.plurals.leaderboard_empty_players, count, stringResource(mode.displayName), count)) }
+                } else {
+                    // One card to look at, a piece of it to each row: only the rows on screen are built.
+                    if (!compact) {
+                        item(key = "header") { TablePiece(first = true, last = false) { HeaderRow(mode) } }
+                    }
+                    itemsIndexed(rows, key = { _, row -> row.uuid }) { index, row ->
+                        TablePiece(first = compact && index == 0, last = index == rows.lastIndex) {
+                            if (index > 0 || !compact) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                            LeaderboardRow(rank = index + 1, row = row, mode = mode, compact = compact)
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+/** What [mode]'s board ranks, a heading: "Classic: fastest wins". */
+@Composable
+private fun BoardHeading(mode: GameMode, modifier: Modifier) {
+    val heading = if (mode.ranking == LeaderboardRanking.MOST_PAWNS_LEFT) Res.string.leaderboard_heading_pawns else Res.string.leaderboard_heading
+    Text(
+        text = stringResource(heading, stringResource(mode.displayName)),
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.primary,
+        textAlign = TextAlign.Center,
+        modifier = modifier.fillMaxWidth().semantics { heading() },
+    )
+}
+
+/** A piece of the table's card: rounded at the top when it's the [first], and at the bottom when it's the [last]. */
+@Composable
+private fun TablePiece(first: Boolean, last: Boolean, content: @Composable ColumnScope.() -> Unit) {
+    val card = MaterialTheme.shapes.medium
+    val square = CornerSize(0.dp)
+    val shape = card.copy(
+        topStart = if (first) card.topStart else square,
+        topEnd = if (first) card.topEnd else square,
+        bottomStart = if (last) card.bottomStart else square,
+        bottomEnd = if (last) card.bottomEnd else square,
+    )
+    val colours = CardDefaults.cardColors()
+    Surface(modifier = Modifier.fillMaxWidth(), shape = shape, color = colours.containerColor, contentColor = colours.contentColor) {
+        Column(
+            modifier = Modifier.padding(top = if (first) TABLE_END_PADDING else 0.dp, bottom = if (last) TABLE_END_PADDING else 0.dp),
+            content = content,
+        )
     }
 }
 

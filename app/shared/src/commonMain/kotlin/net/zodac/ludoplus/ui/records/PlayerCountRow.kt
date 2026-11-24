@@ -4,15 +4,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import net.zodac.ludoplus.model.BoardGeometry
-import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.setup_player_count_spoken
 import net.zodac.ludoplus.resources.stats_count_all
 import net.zodac.ludoplus.resources.stats_count_all_spoken
-import net.zodac.ludoplus.resources.setup_game_mode
-import net.zodac.ludoplus.resources.stats_mode_all
-import net.zodac.ludoplus.resources.stats_mode_all_description
-import net.zodac.ludoplus.ui.common.ChoicePicker
 import net.zodac.ludoplus.ui.common.FittedSegmentedChoiceRow
 import net.zodac.ludoplus.ui.common.pluralStringResource
 import net.zodac.ludoplus.ui.common.stringResource
@@ -34,21 +29,5 @@ internal fun PlayerCountRow(options: List<Int?>, selected: Int?, onSelect: (Int?
         compactLabel = { count -> count?.toString() ?: stringResource(Res.string.stats_count_all) },
         spokenLabel = { count -> if (count == null) stringResource(Res.string.stats_count_all_spoken) else pluralStringResource(Res.plurals.setup_player_count_spoken, count, count) },
         modifier = Modifier.fillMaxWidth(),
-    )
-}
-
-/**
- * Which game mode's records a page shows: a picker of every mode of [options], each with its line, and null, where
- * offered, as all of them.
- */
-@Composable
-internal fun ModePicker(options: List<GameMode?>, selected: GameMode?, onSelect: (GameMode?) -> Unit) {
-    ChoicePicker(
-        title = stringResource(Res.string.setup_game_mode),
-        options = options,
-        selected = selected,
-        onSelect = onSelect,
-        label = { mode -> stringResource(mode?.displayName ?: Res.string.stats_mode_all) },
-        description = { mode -> stringResource(mode?.description ?: Res.string.stats_mode_all_description) },
     )
 }
