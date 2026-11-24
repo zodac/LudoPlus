@@ -6,9 +6,9 @@ commit `5423b6c`.
 
 ## What it is
 
-A game of Classic, the player (Red, seat 0) against one CPU (Green, seat 1), in four parts. Each part starts from a
-position of its own and teaches one thing; every roll and every move is fixed. A coach card in place of the player cards
-says what to do; only that action works.
+A game of Classic, the player (Red, seat 0) against one CPU (Green, seat 2, opposite as in any 2-player game), in four
+parts. Each part starts from a position of its own and teaches one thing; every roll and every move is fixed. A coach
+card in place of the player cards says what to do; only that action works.
 
 | Part | Position | What happens |
 | --- | --- | --- |
@@ -28,7 +28,7 @@ says what to do; only that action works.
 | --- | --- |
 | `game/Tutorial.kt` | Pure: `TutorialScript` (mode, parts, `start(part)`), `TutorialPart` (each side's pawns and the steps), `TutorialStep`, `TutorialMessage`. `TutorialScript.CLASSIC` is the script |
 | `ui/game/TutorialProgress.kt` | Where the game is: the part, the step waited for (`current`), and the step shown (`shown`) |
-| `ui/game/GameViewModel.kt` | `tutorial: TutorialScript?` (null in real games), `tutorialFactory`, `startTutorial`, `tutorialStep`, `tutorialPart`, `jumpToTutorialPart`, and the gates (below) |
+| `ui/game/GameViewModel.kt` | `tutorial: TutorialScript?` (null in real games), `tutorialFactory`, `startTutorial`, `tutorialStep`, `tutorialPart`, `jumpToTutorialPart`, `tutorialNext`, and the gates (below) |
 | `ui/game/TutorialGuide.kt` | `rememberTutorialPulse` and `Modifier.tutorialOutline`: the die's pulsing violet outline at a roll step |
 | `ui/game/CoachCard.kt` | `CoachCard` and `coachCardHeight`; the `TutorialMessage` → string map |
 | `ui/game/GameScreen.kt` | `TutorialView`; the card replaces `PlayerCards`; the moves and the die are gated on the shown step; the tutorial's leave and Game Over |
@@ -44,16 +44,21 @@ says what to do; only that action works.
 | --- | --- | --- |
 | `Roll(message, value)` | The player taps the die, which rolls `value` | at once |
 | `Move(message, pawn)` | The player moves that pawn, the only one offered | at once |
-| `CpuRoll(message, value)` | Green rolls `value`, at the CPU's pace | at once |
-| `CpuMove(message, pawn)` | Green moves that pawn | at once |
+| `CpuRoll(message, value)` | The player taps Next, and Green rolls `value` | at once |
+| `CpuMove(message, pawn)` | The player taps Next, and Green moves that pawn | at once |
+| `Next(message)` | The player taps Next: words alone, at the end of each part but the last | to the next part |
 
-A CPU step's message stays on the card while Green plays. There are no words-only steps: a card that explains ends
-"Tap the die", so one tap both carries on and acts.
+**Nothing carries on by itself** (the maintainer, 2026-11-24): every step waits for the player, so its words can be read
+however long that takes. No timed waits. A message ends with what to tap: the die, a pawn, or Next.
+
+**The Next button** is beside the die's line, shown at a step that `waitsForNext`, with the die's outline (a pill's).
+`GameViewModel.tutorialNext` takes it, once `tutorialNextReady`: the step's words are up and its action isn't taken yet.
+While Green's action plays out the button stays, off, so TalkBack's focus stays on it. The line beside it says "Green's
+turn." while Green waits to roll.
 
 **Timing.** What the player may do moves on as the action is taken (`TutorialProgress.current`). What they see (the card,
-the die's outline, the ringed pawn) moves on once the screen has played the action out (`shown`, after
-`GamePacing.waitAfter` less the think time). An action is taken only once its step is shown. After a part's last step, a
-beat later, the next part's position is set out (`startTutorialPart`).
+the die's outline, the ringed pawn, Next) moves on once the screen has played the action out (`shown`, after
+`GamePacing.waitAfter` less the think time). An action is taken only once its step is shown.
 
 ## Scripting rules
 
@@ -64,6 +69,8 @@ beat later, the next part's position is set out (`startTutorialPart`).
 - **The player's steps on the player's turn**, the CPU's on Green's: the script test replays every part through
     `LudoEngine` and checks each.
 - **Each part but the last ends with the turn passed to Green**; the last ends with the player's win.
+- **Explain first, then ask.** A message ends with what to tap, so its words are read before they're acted on.
+- **Each part but the last ends with a `Next`** (`TutorialScript` requires it).
 - **Keep the card short.** Its height is the longest message's, so trim the longest few.
 
 ## The coach card
@@ -94,12 +101,12 @@ through and checks there's no save and no record.
 
 ## Tests
 
-- `TutorialScriptTest` (pure): replays each part through `LudoEngine`; each part's lesson (the bonus rolls, the
-    capture, the pawn home, the win), and no unplanned capture.
+- `TutorialScriptTest` (pure): the two sides sit opposite; replays each part through `LudoEngine`; each part's lesson
+    (the bonus rolls, the capture, the pawn home, the win), and no unplanned capture.
 - `TutorialGameTest` (view model): plays it through to the win; only the step's action, and not before it's shown;
-    back and forward; nothing kept.
-- `TutorialScreenTest` (Robolectric): the card's words and live region; only the step's action offered to TalkBack; the
-    leave dialog.
+    nothing carries on by itself; Next plays one step; back and forward; nothing kept.
+- `TutorialScreenTest` (Robolectric): the card's words and live region; only the step's action offered to TalkBack; each
+    of Green's steps waiting for Next; a part's end; the leave dialog.
 - `RulesTextTest` (How to Play's button) and `SetupTextTest` (the link).
 - **Harness traps.** Give each screen its own `LeaveGameConfirmation`. The view model's waits run on the main looper:
     a scratch render steps both clocks (`compose.mainClock` and `ShadowLooper.idleMainLooper(ms, MILLISECONDS)`); the

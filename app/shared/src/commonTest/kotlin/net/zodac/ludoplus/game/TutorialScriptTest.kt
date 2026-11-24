@@ -17,6 +17,7 @@ class TutorialScriptTest {
         val states = mutableListOf(script.start(part))
         for (step in script.parts[part].steps) {
             val state = states.last()
+            if (step is TutorialStep.Next) continue
             val player = if (step is TutorialStep.Roll || step is TutorialStep.Move) YOU else CPU
             assertEquals(player, state.current, "$step on ${state.current}'s turn")
             states += when (step) {
@@ -30,12 +31,22 @@ class TutorialScriptTest {
                     assertTrue(phase.moves.any { it.pawn == pawn }, "$step isn't a legal move: ${phase.moves}")
                     LudoEngine.move(state, pawn)
                 }
+                is TutorialStep.Next -> error("A Next plays nothing")
             }
         }
         return states
     }
 
     private val List<GameState>.events get() = drop(1).map { it.lastEvent }
+
+    @Test
+    fun `every part seats the two opposite each other - as any 2-player game does`() {
+        script.parts.indices.forEach { part ->
+            val state = script.start(part)
+            assertEquals(listOf(0, 2), state.players.map { it.seat }, "part $part")
+            assertEquals(GameState.new(script.gameMode, playerCount = 2).players.map { it.seat }, state.players.map { it.seat }, "part $part")
+        }
+    }
 
     @Test
     fun `every part plays through the real rules - and each but the last ends with the turn passed on`() {
@@ -45,6 +56,17 @@ class TutorialScriptTest {
                 assertEquals(CPU, end.current, "part $part ends with the player's turn over")
                 assertEquals(TurnPhase.AwaitingRoll, end.phase)
             }
+        }
+    }
+
+    @Test
+    fun `every step but the player's own roll or move waits for Next - and each part but the last ends on one`() {
+        script.parts.flatMap { it.steps }.forEach { step ->
+            assertEquals(step !is TutorialStep.Roll && step !is TutorialStep.Move, step.waitsForNext, "$step")
+        }
+        script.parts.forEachIndexed { index, part ->
+            assertEquals(index < script.parts.lastIndex, part.steps.last() is TutorialStep.Next, "part $index")
+            assertEquals(part.steps.dropLast(1), part.steps.dropLast(1).filter { it !is TutorialStep.Next }, "part $index")
         }
     }
 

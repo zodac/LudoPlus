@@ -60,8 +60,8 @@ How it's built, its scripting rules, and how to add one for another mode: `TUTOR
 - **How it plays.** The real game screen and engine. `GameViewModel(tutorial = ...)` rolls the script's numbers and
     moves on step by step (`tutorialStep`, shown once the action before it has played out): only the step's own action is
     taken. At a roll step the die pulses in a violet outline (steady under reduced motion); at a move step only the step's
-    pawn is ringed and offered to TalkBack. The CPU plays its scripted steps at its usual pace. A part ends with its last
-    step, and the next is set out a beat later.
+    pawn is ringed and offered to TalkBack. The CPU plays each of its steps only when the player taps Next, and a part ends on one
+    too, so nothing carries on before its words are read (the maintainer, 2026-11-24).
 - **The coach card** (`CoachCard`) takes the player cards' place: "Coach" and "Part 2 of 4" over the step's words, with
     back and forward strips at its edges that jump between parts. It's as tall as the longest step needs at the font in
     use up to 130%; past that the words scroll inside it. The name and words are a polite live region, read out as each

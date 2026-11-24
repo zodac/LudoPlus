@@ -361,8 +361,8 @@ internal fun MacrobenchmarkScope.visitRules() {
 }
 
 /**
- * From the Rules' How to Play page: the whole tutorial, each of its steps taken as the coach card asks (the die, or the
- * one pawn offered), to its Game Over, then Done back to the page.
+ * From the Rules' How to Play page: the whole tutorial, each of its steps taken as the coach card asks (the die, the one
+ * pawn offered, or Next), to its Game Over, then Done back to the page.
  */
 internal fun MacrobenchmarkScope.playTutorial() {
     val start = By.text("Play the Tutorial")
@@ -372,11 +372,22 @@ internal fun MacrobenchmarkScope.playTutorial() {
     val deadline = System.currentTimeMillis() + TUTORIAL_MS
     while (!withShortIdleWait { device.hasObject(GAME_OVER) }) {
         if (System.currentTimeMillis() > deadline) error("Baseline Profile journey: the tutorial never ended (on screen: ${screenText()})")
-        if (takePlayersAction()) Thread.sleep(ACTION_SETTLE_MS) else Thread.sleep(POLL_MS)
+        if (takePlayersAction() || tapTutorialNext()) Thread.sleep(ACTION_SETTLE_MS) else Thread.sleep(POLL_MS)
     }
     // The celebration plays a moment before Done.
     Thread.sleep(CELEBRATION_MS)
     tapTextUntil("Done") { device.hasObject(start) }
+}
+
+/** Taps the tutorial's Next button, if it's there to tap. */
+private fun MacrobenchmarkScope.tapTutorialNext(): Boolean {
+    val next = withShortIdleWait { device.findObject(By.text("Next")) } ?: return false
+    return try {
+        next.click()
+        true
+    } catch (_: StaleObjectException) {
+        false
+    }
 }
 
 /**

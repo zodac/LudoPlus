@@ -17,6 +17,9 @@ internal class TutorialProgress(val script: TutorialScript) {
 
     val shown = MutableStateFlow<TutorialStep?>(null)
 
+    /** Whether a tap on Next is taken now: a step that waits for one is shown, and its action not yet taken. */
+    val nextReady = MutableStateFlow(false)
+
     /** The step waited for, or null once [part]'s last is done. */
     val current: TutorialStep?
         get() = script.parts[part.value].steps.getOrNull(step)
@@ -25,11 +28,18 @@ internal class TutorialProgress(val script: TutorialScript) {
     fun begin(part: Int) {
         this.part.value = part
         step = 0
-        shown.value = current
+        show()
     }
 
-    /** The step waited for is done; [shown] is the caller's to move on. */
+    /** Shows the step waited for. */
+    fun show() {
+        shown.value = current
+        nextReady.value = current?.waitsForNext == true
+    }
+
+    /** The step waited for is done; the caller [show]s the one after it. */
     fun next() {
         step++
+        nextReady.value = false
     }
 }

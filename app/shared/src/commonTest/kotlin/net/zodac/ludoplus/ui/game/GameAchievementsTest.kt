@@ -183,15 +183,17 @@ class GameAchievementsTest {
         val viewModel = viewModel(store, tutorial = TutorialScript.CLASSIC)
         viewModel.startTutorial(defaultName = "Player 1", cpuName = "Green")
         runCurrent()
-        // Through every step the script asks of the player, the CPU playing its own.
+        // Through every step the script asks of the player, the CPU playing its own as they tap Next.
         repeat(200) {
             when (val phase = viewModel.game.value?.state?.phase) {
                 is TurnPhase.AwaitingMove -> phase.moves.forEach { viewModel.move(it.pawn) }
                 else -> viewModel.roll()
             }
+            viewModel.tutorialNext()
             advanceTimeBy(2_000)
             runCurrent()
         }
+        assertEquals(TurnPhase.Finished, viewModel.game.value?.state?.phase, "the tutorial played out")
         assertEquals(emptySet(), store.unlocked)
         assertEquals(emptyMap(), store.mutableState.value.counters)
     }

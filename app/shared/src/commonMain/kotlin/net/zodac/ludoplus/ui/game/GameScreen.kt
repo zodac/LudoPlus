@@ -116,6 +116,8 @@ import net.zodac.ludoplus.resources.game_sudden_death_nowhere
 import net.zodac.ludoplus.resources.game_sudden_death_stars
 import net.zodac.ludoplus.resources.game_sudden_death_starts
 import net.zodac.ludoplus.resources.game_tutorial_coach_name
+import net.zodac.ludoplus.resources.game_tutorial_cpu_turn
+import net.zodac.ludoplus.resources.game_tutorial_next
 import net.zodac.ludoplus.resources.game_tutorial_part
 import net.zodac.ludoplus.ui.common.BackHandler
 import net.zodac.ludoplus.ui.common.LudoPlusDialog
@@ -209,6 +211,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
     }
     val tutorialStep by viewModel.tutorialStep.collectAsStateWithLifecycle()
     val tutorialPart by viewModel.tutorialPart.collectAsStateWithLifecycle()
+    val tutorialNextReady by viewModel.tutorialNextReady.collectAsStateWithLifecycle()
     TurnEndingBuzz((guestState as? GuestState.Playing)?.turnEnding == true)
     val awaySeats by viewModel.awaySeats.collectAsStateWithLifecycle()
     SuperuserRollPicker(viewModel)
@@ -230,7 +233,10 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
             onResults = { finishedView = FinishedView.RESULTS },
             notice = netplayNotice(guestState, awaySeats, started),
             tutorial = if (isTutorial) {
-                TutorialView(tutorialStep, tutorialPart, viewModel.tutorialParts, viewModel.tutorialSteps, viewModel::jumpToTutorialPart)
+                TutorialView(
+                    tutorialStep, tutorialPart, viewModel.tutorialParts, viewModel.tutorialSteps, viewModel::jumpToTutorialPart,
+                    nextReady = tutorialNextReady, onNext = viewModel::tutorialNext,
+                )
             } else {
                 null
             },
@@ -295,9 +301,18 @@ private fun SuperuserRollPicker(viewModel: GameViewModel) {
 
 /**
  * What the game screen shows of the tutorial: the [step] shown (null between parts), the [part] (from 0) of [parts], every
- * one of its [steps] (for the coach card's height), and [onJump] to the part before (-1) or after (+1).
+ * one of its [steps] (for the coach card's height), and [onJump] to the part before (-1) or after (+1). At a step that
+ * waits for the Next button, [onNext] carries on, once [nextReady].
  */
-class TutorialView(val step: TutorialStep?, val part: Int, val parts: Int, val steps: List<TutorialStep>, val onJump: (Int) -> Unit)
+class TutorialView(
+    val step: TutorialStep?,
+    val part: Int,
+    val parts: Int,
+    val steps: List<TutorialStep>,
+    val onJump: (Int) -> Unit,
+    val nextReady: Boolean = false,
+    val onNext: () -> Unit = {},
+)
 
 /**
  * The sounds and vibrations for each thing that happens: the die landing; a pawn's steps square by square, in time with
@@ -484,6 +499,9 @@ private const val SMALLEST_BOARD = 0.6f
 
 private val PORTRAIT_DIE_SIZE = 72.dp
 private val PORTRAIT_GAP = 12.dp
+
+// M3's button is a 40dp pill.
+private val NEXT_CORNER = 20.dp
 
 /** A Nearby game's [notice] over the players: TalkBack hears it as it comes and as it changes (a polite live region). */
 @Composable
@@ -769,6 +787,14 @@ private fun TurnPanel(
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             StatusLines(game, moves, seatColours, onMove, tutorial = tutorial != null, selectedDie = dice.selected)
         }
+        // Kept, but off, while the action it asked for plays out, so a screen reader's focus stays on it.
+        if (tutorial?.step?.waitsForNext == true) {
+            Button(
+                onClick = tutorial.onNext,
+                enabled = tutorial.nextReady,
+                modifier = if (tutorial.nextReady) Modifier.tutorialOutline(rememberTutorialPulse(), NEXT_CORNER) else Modifier,
+            ) { Text(stringResource(Res.string.game_tutorial_next)) }
+        }
     }
 }
 
@@ -798,6 +824,7 @@ private fun ColumnScope.StatusLines(
         phase is TurnPhase.AwaitingMove && phase.moves.all { it.owner != null } -> stringResource(Res.string.game_prompt_move_partner, current, phase.roll)
         phase is TurnPhase.AwaitingMove -> stringResource(Res.string.game_prompt_move, current, phase.roll)
         game.currentIsCpu && state.rollingAgain -> stringResource(Res.string.game_prompt_cpu_roll_again, current)
+        game.currentIsCpu && tutorial -> stringResource(Res.string.game_tutorial_cpu_turn, current)
         game.currentIsCpu -> stringResource(Res.string.game_prompt_cpu_roll, current)
         state.rollingAgain && state.rules.dice > 1 -> stringResource(Res.string.game_prompt_roll_again_dice, current)
         state.rollingAgain -> stringResource(Res.string.game_prompt_roll_again, current)

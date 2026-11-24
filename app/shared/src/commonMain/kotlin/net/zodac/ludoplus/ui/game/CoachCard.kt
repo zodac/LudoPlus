@@ -45,7 +45,9 @@ import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.app_name
 import net.zodac.ludoplus.resources.game_tutorial_welcome
 import net.zodac.ludoplus.resources.game_tutorial_watch_green
+import net.zodac.ludoplus.resources.game_tutorial_green_comes_out
 import net.zodac.ludoplus.resources.game_tutorial_green_rolls_again
+import net.zodac.ludoplus.resources.game_tutorial_green_moves_on
 import net.zodac.ludoplus.resources.game_tutorial_your_turn_out
 import net.zodac.ludoplus.resources.game_tutorial_bring_out
 import net.zodac.ludoplus.resources.game_tutorial_six_rolls_again
@@ -62,6 +64,7 @@ import net.zodac.ludoplus.resources.game_tutorial_win_intro
 import net.zodac.ludoplus.resources.game_tutorial_too_many
 import net.zodac.ludoplus.resources.game_tutorial_win_roll
 import net.zodac.ludoplus.resources.game_tutorial_win
+import net.zodac.ludoplus.resources.game_tutorial_part_done
 import net.zodac.ludoplus.resources.game_tutorial_next_part_cd
 import net.zodac.ludoplus.resources.game_tutorial_previous_part_cd
 import net.zodac.ludoplus.ui.common.SoraFontFamily
@@ -215,6 +218,8 @@ private val TutorialMessage.resource: StringResource
     get() = when (this) {
         TutorialMessage.WELCOME -> Res.string.game_tutorial_welcome
         TutorialMessage.WATCH_GREEN -> Res.string.game_tutorial_watch_green
+        TutorialMessage.GREEN_COMES_OUT -> Res.string.game_tutorial_green_comes_out
+        TutorialMessage.GREEN_MOVES_ON -> Res.string.game_tutorial_green_moves_on
         TutorialMessage.GREEN_ROLLS_AGAIN -> Res.string.game_tutorial_green_rolls_again
         TutorialMessage.YOUR_TURN_OUT -> Res.string.game_tutorial_your_turn_out
         TutorialMessage.BRING_OUT -> Res.string.game_tutorial_bring_out
@@ -232,4 +237,5 @@ private val TutorialMessage.resource: StringResource
         TutorialMessage.TOO_MANY -> Res.string.game_tutorial_too_many
         TutorialMessage.WIN_ROLL -> Res.string.game_tutorial_win_roll
         TutorialMessage.WIN -> Res.string.game_tutorial_win
+        TutorialMessage.PART_DONE -> Res.string.game_tutorial_part_done
     }

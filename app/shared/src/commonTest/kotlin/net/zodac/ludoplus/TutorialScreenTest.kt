@@ -7,6 +7,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -102,6 +103,45 @@ class TutorialScreenTest : UiTest() {
         compose.onAllNodes(movable)[0].performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         compose.onNodeWithText("Captured! A capture earns another roll. Tap the die.").assertExists()
+    }
+
+    @Test
+    fun `Green waits for Next - its words read out first and each step its own`() = uiTest(TestScreen(411, 891)) {
+        showTutorial()
+        compose.onAllNodes(hasText("Next")).assertCountEquals(0)
+        compose.onNodeWithContentDescription("Die").performSemanticsAction(SemanticsActions.OnClick)
+        // Each step's words, the line beside Next, and Next itself.
+        listOf(
+            "Only a 6 brings a pawn out of the yard, so your turn passed. Tap Next to watch Green." to "Green's turn.",
+            "Green rolled a 6, so it can bring a pawn out. Tap Next." to "Green rolled 6.",
+            "Green's pawn is out. A 6 also earns another roll. Tap Next." to "Green rolls again.",
+            "Green moves a pawn by the number it rolled. Tap Next." to "Green rolled 2.",
+        ).forEach { (words, line) ->
+            compose.waitForIdle()
+            compose.onNodeWithText(words).assertExists()
+            compose.onNodeWithContentDescription(line).assertExists()
+            compose.onNodeWithText("Next").assertIsEnabled().performClick()
+        }
+        compose.waitForIdle()
+        compose.onNodeWithText("Your turn. Tap the die.").assertExists()
+        compose.onAllNodes(hasText("Next")).assertCountEquals(0)
+    }
+
+    @Test
+    fun `a part ends on its own words - and Next sets out the one after`() = uiTest(TestScreen(411, 891)) {
+        val viewModel = showTutorial()
+        viewModel.jumpToTutorialPart(1)
+        viewModel.jumpToTutorialPart(1)
+        repeat(2) {
+            viewModel.roll()
+            compose.waitForIdle()
+            viewModel.move(it)
+            compose.waitForIdle()
+        }
+        compose.onNodeWithText("Part 3 of 4").assertExists()
+        compose.onNodeWithText("Well done! Tap Next to carry on.").assertExists()
+        compose.onNodeWithText("Next").performClick()
+        compose.onNodeWithText("Part 4 of 4").assertExists()
     }
 
     @Test

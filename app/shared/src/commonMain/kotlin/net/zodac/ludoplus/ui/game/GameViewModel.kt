@@ -495,7 +495,7 @@ class GameViewModel(
 
     private var tutorialShow: Job? = null
 
-    /** On to the tutorial's next step, shown once the action just taken has played out; at a part's end, the next part. */
+    /** On to the tutorial's next step, shown once the action just taken has played out. */
     private fun advanceTutorial() {
         val progress = tutorialProgress ?: return
         progress.next()
@@ -505,24 +505,33 @@ class GameViewModel(
         tutorialShow?.cancel()
         tutorialShow = viewModelScope.launch {
             pausableDelay(playOut)
-            val step = progress.current
-            when {
-                step != null -> progress.shown.value = step
-                progress.part.value < progress.script.parts.lastIndex -> {
-                    // A beat on the part's last move before the board is set out for the next.
-                    pausableDelay(pacing.thinkMillis)
-                    startTutorialPart(progress.part.value + 1)
-                }
-            }
+            if (progress.current != null) progress.show()
         }
     }
+
+    /**
+     * The tutorial's Next button: the CPU takes the step shown, or at a part's end the next part is set out. The CPU plays
+     * only by it, so the player has always read the coach's words first.
+     */
+    fun tutorialNext() {
+        val progress = tutorialProgress ?: return
+        val game = _game.value ?: return
+        if (!progress.nextReady.value) return
+        when (val step = progress.current) {
+            is TutorialStep.CpuRoll -> update(LudoEngine.applyRoll(game.state, step.value))
+            is TutorialStep.CpuMove -> update(LudoEngine.move(game.state, step.pawn))
+            is TutorialStep.Next -> startTutorialPart(progress.part.value + 1)
+            is TutorialStep.Roll, is TutorialStep.Move, null -> return
+        }
+    }
+
+    /** Whether a tap on the tutorial's Next button is taken ([tutorialNext]). */
+    val tutorialNextReady: StateFlow<Boolean> = tutorialProgress?.nextReady ?: MutableStateFlow(false)
 
     /** Sets the board out for [tutorial]'s part [part], from its first step. */
     private fun startTutorialPart(part: Int) {
         val progress = tutorialProgress ?: return
         val game = _game.value ?: return
-        cpuTurn?.cancel()
-        cpuTurn = null
         tutorialShow?.cancel()
         progress.begin(part)
         commit(game.copy(state = progress.script.start(part)))
@@ -576,9 +585,11 @@ class GameViewModel(
 
     /**
      * While a CPU player has the turn, it rolls, then moves with its strategy, each once the screen has caught up. While
-     * anyone else has it, a move with no choice is made for them ([playAutomaticMove]).
+     * anyone else has it, a move with no choice is made for them ([playAutomaticMove]). Never in the tutorial, whose CPU
+     * plays by [tutorialNext].
      */
     private fun playCpuTurn() {
+        if (tutorial != null) return
         val game = _game.value ?: return
         if (!computerPlays(game)) {
             playAutomaticMove(game)
@@ -591,18 +602,6 @@ class GameViewModel(
             // A guest back in its seat plays it again.
             if (!computerPlays(now)) {
                 cpuTurn = null
-                return@launch
-            }
-            val progress = tutorialProgress
-            if (progress != null) {
-                // In the tutorial, the CPU plays only its scripted steps.
-                val next = when (val step = progress.current) {
-                    is TutorialStep.CpuRoll -> LudoEngine.applyRoll(now.state, step.value)
-                    is TutorialStep.CpuMove -> LudoEngine.move(now.state, step.pawn)
-                    else -> return@launch
-                }
-                cpuTurn = null
-                update(next)
                 return@launch
             }
             val next = when (val phase = now.state.phase) {

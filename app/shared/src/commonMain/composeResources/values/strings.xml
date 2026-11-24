@@ -378,8 +378,10 @@
     <!-- The confirmation before leaving a game that isn't over. It stays saved, for the menu's Continue. -->
     <!-- The guided tutorial (game/Tutorial.kt, ui/game/CoachCard.kt): the coach card's words at each step, in order. You're Red, against Green (a CPU). Markup: **bold** for a number. Keep them short: the card is as tall as the longest. %1$s in the welcome is the app's name. -->
     <string name="game_tutorial_welcome">Welcome to %1$s! You're Red, racing Green. First, getting out of your yard. Tap the die to roll.</string>
-    <string name="game_tutorial_watch_green">Only a **6** brings a pawn out of the yard, so your turn passed. Watch Green.</string>
-    <string name="game_tutorial_green_rolls_again">Green rolled a **6** and came out. A **6** also earns another roll.</string>
+    <string name="game_tutorial_watch_green">Only a **6** brings a pawn out of the yard, so your turn passed. Tap Next to watch Green.</string>
+    <string name="game_tutorial_green_comes_out">Green rolled a **6**, so it can bring a pawn out. Tap Next.</string>
+    <string name="game_tutorial_green_rolls_again">Green's pawn is out. A **6** also earns another roll. Tap Next.</string>
+    <string name="game_tutorial_green_moves_on">Green moves a pawn by the number it rolled. Tap Next.</string>
     <string name="game_tutorial_your_turn_out">Your turn. Tap the die.</string>
     <string name="game_tutorial_bring_out">A **6**! Tap a pawn in your yard to bring it out onto your start square.</string>
     <string name="game_tutorial_six_rolls_again">Your **6** earns another roll. Tap the die.</string>
@@ -387,15 +389,19 @@
     <string name="game_tutorial_capture_intro">Next, captures. Green's pawn is **4** squares ahead of yours. Tap the die.</string>
     <string name="game_tutorial_capture">A **4**! Tap your pawn to land on Green's and send it back to its yard.</string>
     <string name="game_tutorial_capture_rolls_again">Captured! A capture earns another roll. Tap the die.</string>
-    <string name="game_tutorial_capture_move_on">Tap your pawn to move on. Green can capture you too, but nobody can on a star or a start square.</string>
+    <string name="game_tutorial_capture_move_on">Green can capture you too, but nobody can on a star or a start square. Tap your pawn to move on.</string>
     <string name="game_tutorial_home_intro">Next, home. Your pawn in the home column is **2** squares from home. Tap the die.</string>
     <string name="game_tutorial_home">Exactly **2**! Tap that pawn to bring it home.</string>
     <string name="game_tutorial_home_rolls_again">Home! That earns another roll too. Tap the die.</string>
     <string name="game_tutorial_home_move_on">Tap your other pawn to move it on.</string>
     <string name="game_tutorial_win_intro">Last, winning. Three pawns are home, and the last needs exactly **4**. Tap the die.</string>
-    <string name="game_tutorial_too_many">A **5** is too many: a pawn needs the exact roll home, so your turn passed.</string>
+    <string name="game_tutorial_too_many">A **5** is too many: a pawn needs the exact roll home, so your turn passed. Tap Next.</string>
     <string name="game_tutorial_win_roll">Your turn again. Tap the die.</string>
     <string name="game_tutorial_win">Exactly **4**! Tap your last pawn to bring it home and win.</string>
+    <string name="game_tutorial_part_done">Well done! Tap Next to carry on.</string>
+    <!-- The button that carries on from the coach's words (named in them), and the line beside it while Green waits for it. %1$s is the CPU's name. -->
+    <string name="game_tutorial_next">Next</string>
+    <string name="game_tutorial_cpu_turn">%1$s's turn.</string>
     <!-- The coach card's name, and which part of the tutorial this is: "Part 2 of 4". -->
     <string name="game_tutorial_coach_name">Coach</string>
     <string name="game_tutorial_part">Part %1$d of %2$d</string>

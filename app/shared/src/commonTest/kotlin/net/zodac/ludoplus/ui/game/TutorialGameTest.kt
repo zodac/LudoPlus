@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -60,7 +61,7 @@ class TutorialGameTest {
 
     private val GameViewModel.state get() = assertNotNull(game.value).state
 
-    /** Waits out the screen's animations and the CPU's turn, until the next step is shown. */
+    /** Waits out the screen's animations, until the next step is shown. */
     private fun TestScope.settle() = advanceUntilIdle()
 
     /** Takes the step shown, as the player would. */
@@ -68,7 +69,7 @@ class TutorialGameTest {
         when (val step = assertNotNull(tutorialStep.value)) {
             is TutorialStep.Roll -> roll()
             is TutorialStep.Move -> move(step.pawn)
-            else -> error("The CPU's step $step is the CPU's to play")
+            is TutorialStep.CpuRoll, is TutorialStep.CpuMove, is TutorialStep.Next -> tutorialNext()
         }
     }
 
@@ -106,8 +107,12 @@ class TutorialGameTest {
         // The first roll: a 3, as written, whatever the die would have said.
         viewModel.roll()
         assertEquals(3, (viewModel.state.lastEvent as? GameEvent.NoMove)?.roll)
+        // Green plays its 6 and its 2, a Next for each roll and move; the player's 6 is next.
+        repeat(4) {
+            settle()
+            viewModel.tutorialNext()
+        }
         settle()
-        // Green has played its 6 and its 2; the player's 6 is next.
         assertEquals(TutorialScript.YOU, viewModel.state.current)
         viewModel.roll()
         assertTrue(viewModel.state.phase is TurnPhase.AwaitingMove)
@@ -122,6 +127,46 @@ class TutorialGameTest {
         assertEquals(rolled, viewModel.state, "no roll at a move step")
         viewModel.move(0)
         assertEquals(listOf(0, -1, -1, -1), viewModel.state.players[TutorialScript.YOU].pawns)
+    }
+
+    @Test
+    fun `nothing carries on by itself - every step stays until the player acts however long they take`() = runTest(dispatcher) {
+        val viewModel = started().viewModel
+        var steps = 0
+        while (!viewModel.state.isFinished) {
+            check(steps++ < 100) { "The tutorial never ended" }
+            settle()
+            val (state, step, part) = Triple(viewModel.state, viewModel.tutorialStep.value, viewModel.tutorialPart.value)
+            advanceTimeBy(600_000)
+            settle()
+            assertEquals(state, viewModel.state, "$step")
+            assertEquals(step, viewModel.tutorialStep.value)
+            assertEquals(part, viewModel.tutorialPart.value)
+            assertEquals(step?.waitsForNext, viewModel.tutorialNextReady.value, "$step")
+            viewModel.play()
+        }
+        assertEquals(TutorialScript.CLASSIC.parts.sumOf { it.steps.size }, steps)
+    }
+
+    @Test
+    fun `Next plays one step - and no more until its words are shown`() = runTest(dispatcher) {
+        val viewModel = started().viewModel
+        // Not at the player's own step.
+        val start = viewModel.state
+        viewModel.tutorialNext()
+        assertEquals(start, viewModel.state)
+        viewModel.roll()
+        // The player's 3 is still tumbling, so Green's step isn't shown.
+        viewModel.tutorialNext()
+        assertFalse(viewModel.tutorialNextReady.value)
+        assertEquals(GameEvent.NoMove(TutorialScript.YOU, 3), viewModel.state.lastEvent)
+        settle()
+        assertTrue(viewModel.tutorialNextReady.value)
+        viewModel.tutorialNext()
+        // A second tap does nothing while Green's 6 tumbles.
+        viewModel.tutorialNext()
+        assertFalse(viewModel.tutorialNextReady.value)
+        assertEquals(GameEvent.Rolled(TutorialScript.CPU, 6), viewModel.state.lastEvent)
     }
 
     @Test
