@@ -31,7 +31,7 @@ class PawnMoveBenchmark {
         setupBlock = {
             pressHome()
             startActivityAndWait()
-            openFromMenu("Rules")
+            openRules()
             selectTab("How to Play")
         },
     ) {

@@ -183,38 +183,42 @@ private val MENU = By.text("LudoPlus")
 /** The die, whatever it shows: on screen means the board is. */
 private val DIE = By.desc(Pattern.compile("Die( showing \\d)?"))
 
-/** The die while it can be rolled: a button only then (GameDie). */
-private val ROLLABLE_DIE = By.clickable(true).desc(Pattern.compile("Die( showing \\d)?"))
-
 /**
- * A square with a pawn that can be moved: the board's squares are buttons only then (BoardSemantics) - a yard, a track
- * square, or a home column square, in any colour.
+ * What the player can act on: the die while it can be rolled (a button only then, GameDie), or a square with a pawn that
+ * can be moved (the board's squares are buttons only then, BoardSemantics) - a yard, a track square, or a home column
+ * square, in any colour. One selector, as each lookup reads the whole screen.
  */
-private val MOVABLE_SQUARE = By.clickable(true).desc(Pattern.compile("(.* yard|Square \\d+|.* home column).*", Pattern.DOTALL))
+private val PLAYERS_ACTION = By.clickable(true).desc(Pattern.compile("Die( showing \\d)?|(.* yard|Square \\d+|.* home column).*", Pattern.DOTALL))
 
 private val GAME_OVER = By.text("Game Over")
 
 /**
- * Taps the menu's [label] button until the menu has gone. A tap can be dropped - one that lands while a dialog's dim
- * layer is still fading out over the menu, or that a slow emulator doesn't take - and the steps after it would then run
- * on the menu: their back press leaves the app.
+ * Taps the menu's [label] button until its page is up, told by [page], which the pages its neighbours open don't show. A
+ * tap can be dropped - one that lands while a dialog's dim layer is still fading out over the menu, or that a slow emulator
+ * doesn't take - and the steps after it would then run on the menu: their back press leaves the app. It can also open
+ * another page: the ad banner's slot comes as AdMob starts, soon after a launch, and the menu moves up under the tap. That
+ * page is left, and the button tapped again.
  */
-internal fun MacrobenchmarkScope.openFromMenu(label: String) {
-    await(By.text(label), label)
+internal fun MacrobenchmarkScope.openFromMenu(label: String, page: BySelector) {
     repeat(CLOSE_ATTEMPTS) { attempt ->
         // Tapped again only if the menu is still up once the screen is idle: a slow tap may have opened the page late.
-        if (attempt > 0 && settledHolds { !device.hasObject(MENU) }) return
-        try {
-            device.findObject(By.text(label))?.click()
-        } catch (_: StaleObjectException) {
-            // Re-composed between the lookup and the tap - look again.
+        if (attempt == 0 || settledHolds { device.hasObject(MENU) }) {
+            await(By.text(label), label)
+            try {
+                device.findObject(By.text(label))?.click()
+            } catch (_: StaleObjectException) {
+                // Re-composed between the lookup and the tap - look again.
+            }
         }
         if (device.wait(Until.gone(MENU), TIMEOUT_MS)) {
-            device.waitForIdle()
-            return
+            if (device.wait(Until.hasObject(page), TIMEOUT_MS)) {
+                device.waitForIdle()
+                return
+            }
+            backToMenu()
         }
     }
-    error("Baseline Profile journey: '$label' never opened from the menu")
+    error("Baseline Profile journey: '$label' never opened from the menu (on screen: ${screenText()})")
 }
 
 /**
@@ -276,7 +280,7 @@ private fun MacrobenchmarkScope.topmost(text: String): UiObject2 {
  * a pawn to move (the first, in a real game). False while it's a CPU's turn, or the screen is still playing a move out.
  */
 private fun MacrobenchmarkScope.takePlayersAction(): Boolean {
-    val target = withShortIdleWait { device.findObject(ROLLABLE_DIE) ?: device.findObject(MOVABLE_SQUARE) } ?: return false
+    val target = withShortIdleWait { device.findObject(PLAYERS_ACTION) } ?: return false
     return try {
         target.click()
         true
@@ -292,7 +296,7 @@ private fun MacrobenchmarkScope.takePlayersAction(): Boolean {
  */
 internal fun MacrobenchmarkScope.playATurn() {
     await(By.text(Pattern.compile("Play|New Game")), "the menu's Play or New Game")
-    openFromMenu(if (hasText("New Game")) "New Game" else "Play")
+    openFromMenu(if (hasText("New Game")) "New Game" else "Play", By.text("Start Game"))
     tapTextUntil("Start Game") { device.hasObject(DIE) }
     repeat(PLAYER_ACTIONS) {
         if (!waitUntil(CPU_TURNS_MS) { takePlayersAction() }) error("Baseline Profile journey: the player's turn never came (on screen: ${screenText()})")
@@ -347,9 +351,12 @@ private fun MacrobenchmarkScope.cancelLeaving() {
     }
 }
 
+/** The Rules from the menu, on whichever of their pages they open. */
+internal fun MacrobenchmarkScope.openRules() = openFromMenu("Rules", By.text(RULES_PAGE))
+
 /** The Rules: every tab, each page scrolled to its diagram, then the tutorial from How to Play, and back to the menu. */
 internal fun MacrobenchmarkScope.visitRules() {
-    openFromMenu("Rules")
+    openRules()
     for (tab in RULES_TABS.drop(1)) {
         selectTab(tab)
         scrollDown(1)
@@ -362,17 +369,28 @@ internal fun MacrobenchmarkScope.visitRules() {
 
 /**
  * From the Rules' How to Play page: the whole tutorial, each of its steps taken as the coach card asks (the die, the one
- * pawn offered, or Next), to its Game Over, then Done back to the page.
+ * pawn offered, or Next), to its Game Over, then Done back to the page. Each step has a budget of its own
+ * ([TUTORIAL_STEP_MS]), as a slow runner's tutorial is long but goes on. The outline round what to tap redraws the screen
+ * all the time, and a lookup of a screen doing that takes six or seven seconds on a runner, so each step makes as few as
+ * it can: the player's action, then Next, and the Game Over only when there's neither.
  */
 internal fun MacrobenchmarkScope.playTutorial() {
     val start = By.text("Play the Tutorial")
     // Under the page's text, which a short screen can push below the fold.
     if (!device.wait(Until.hasObject(start), CLOSE_WAIT_MS)) scrollDown(1)
     tapTextUntil("Play the Tutorial") { device.hasObject(DIE) }
-    val deadline = System.currentTimeMillis() + TUTORIAL_MS
-    while (!withShortIdleWait { device.hasObject(GAME_OVER) }) {
-        if (System.currentTimeMillis() > deadline) error("Baseline Profile journey: the tutorial never ended (on screen: ${screenText()})")
-        if (takePlayersAction() || tapTutorialNext()) Thread.sleep(ACTION_SETTLE_MS) else Thread.sleep(POLL_MS)
+    var taps = 0
+    var deadline = System.currentTimeMillis() + TUTORIAL_STEP_MS
+    while (true) {
+        if (takePlayersAction() || tapTutorialNext()) {
+            if (++taps > MAX_TUTORIAL_TAPS) error("Baseline Profile journey: the tutorial never ended after $MAX_TUTORIAL_TAPS taps (on screen: ${screenText()})")
+            deadline = System.currentTimeMillis() + TUTORIAL_STEP_MS
+            Thread.sleep(ACTION_SETTLE_MS)
+            continue
+        }
+        if (withShortIdleWait { device.hasObject(GAME_OVER) }) break
+        if (System.currentTimeMillis() > deadline) error("Baseline Profile journey: the tutorial's next step never came (on screen: ${screenText()})")
+        Thread.sleep(POLL_MS)
     }
     // The celebration plays a moment before Done.
     Thread.sleep(CELEBRATION_MS)
@@ -392,11 +410,10 @@ private fun MacrobenchmarkScope.tapTutorialNext(): Boolean {
 
 /**
  * Achievements from the menu: the list scrolled through its groups, a group header's Next category button tapped once
- * if it shows, and back. Waits on the earned count, which only this screen shows (the menu's button shares its title).
+ * if it shows, and back. Known by the earned count, which only this screen shows (the menu's button shares its title).
  */
 internal fun MacrobenchmarkScope.visitAchievements() {
-    openFromMenu("Achievements")
-    await(By.textContains(" earned"), "the Achievements' earned count")
+    openFromMenu("Achievements", By.textContains(" earned"))
     scrollDown(ACHIEVEMENT_SCROLLS)
     // Nothing later relies on it, so one tap and no retry.
     device.findObject(By.desc("Next category"))?.click()
@@ -406,11 +423,9 @@ internal fun MacrobenchmarkScope.visitAchievements() {
 
 /** The Leaderboard, then Statistics, each from the menu and back. */
 internal fun MacrobenchmarkScope.visitRecords() {
-    openFromMenu("Leaderboard")
-    await(By.text("Leaderboard"), "the Leaderboard's title")
+    openFromMenu("Leaderboard", By.text("Leaderboard"))
     backToMenu()
-    openFromMenu("Statistics")
-    await(By.text("Statistics"), "the Statistics title")
+    openFromMenu("Statistics", By.text("Statistics"))
     backToMenu()
 }
 
@@ -419,7 +434,7 @@ internal fun MacrobenchmarkScope.visitRecords() {
  * the next lap profiles the full animations), then the Licences and About dialogs.
  */
 internal fun MacrobenchmarkScope.visitSettings() {
-    openFromMenu("Settings")
+    openFromMenu("Settings", By.text("Sound effects"))
     val sound = By.text("Sound effects")
     val soundOn = isChecked("Sound effects")
     setChecked(sound, "Sound effects", !soundOn)
@@ -468,6 +483,9 @@ private inline fun <T> withShortIdleWait(block: () -> T): T {
 /** The Rules' tabs, in order (RulesContent). */
 private val RULES_TABS = listOf("How to Play", "The Board", "Your Turn", "Captures", "Winning")
 
+/** The Rules' tabs, one of which is in the row wherever it's scrolled to. "Captures" isn't among them: Statistics can show it. */
+private val RULES_PAGE = Pattern.compile("How to Play|The Board|Your Turn|Winning")
+
 private const val POLL_MS = 250L
 private const val SCREEN_TEXT_CHARS = 400
 /** The player's own rolls and moves in [playATurn]. */
@@ -476,10 +494,12 @@ private const val PLAYER_ACTIONS = 4
 private const val CPU_TURNS_MS = 60_000L
 private const val ACTION_SETTLE_MS = 1_500L
 /**
- * The whole tutorial: four parts, about twenty steps, each played out on the board. Six minutes: an emulator starved to
- * under two frames a second (two cores, two busy loops) was still in its second part after three.
+ * One of the tutorial's steps, from the last tap: its action played out on the board and the next one found. A hosted
+ * runner took up to a minute with the three or four lookups a step then made.
  */
-private const val TUTORIAL_MS = 360_000L
+private const val TUTORIAL_STEP_MS = 180_000L
+/** The tutorial's taps: about twenty steps, with room for a slow runner's dropped and repeated ones. */
+private const val MAX_TUTORIAL_TAPS = 80
 private const val CELEBRATION_MS = 1_000L
 private const val CLOSE_ATTEMPTS = 4
 private const val TAP_ATTEMPTS = 4

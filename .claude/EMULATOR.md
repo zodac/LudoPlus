@@ -87,8 +87,14 @@ profile it makes.
 - Journey taps confirm they took (`tapUntil` and its kin in `Journeys.kt`), tapping again only after `TIMEOUT_MS` without
     their effect: a starved runner drops taps.
 - Gradle passing with no `baseline-prof.txt` counts as a failed install.
-- Limits: 190 min for the step, 210 for the job, sized from DiceFive's ~4.5 min lap (3x+ that on a runner). Ludo's lap
-    (a game's first turns, the whole tutorial, and every page) hasn't been timed yet.
+- Limits: 190 min for the step, 210 for the job. 1.0.1's ten laps (a game's first turns, the whole tutorial, and every
+    page) took 52 minutes. The tutorial has grown since: its Next steps took it past six minutes on a runner (2026-11-24).
+- **Budget each step, never a whole run of them** (DiceFive's `TURN_WAIT_MS`): a slow runner is slow, not stuck. The
+    tutorial's one six-minute budget failed 1.1.0's release while it was still going; `TUTORIAL_STEP_MS` starts again at
+    each tap.
+- **A lookup of a screen that redraws all the time** (the tutorial's pulsing outline) takes six or seven seconds on a
+    runner, and almost as long here, against a tenth of a second elsewhere. It's a cost to UiAutomator alone: the pulse
+    sends no accessibility events (counted with `adb shell uiautomator events`). Make few of them.
 - The `baseline-profile-report` artifact holds the report, the emulator log and every logcat buffer, and the screen and
     UI hierarchy the journey saved as it failed (`journey-failure-lap<N>.png`/`.xml`, from `captureFailure`).
 
