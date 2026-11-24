@@ -241,6 +241,7 @@ class SavedGameJsonTest {
     fun `every state of random Chaos games comes back as it was saved - power-ups - shields - and doubled rolls - and plays on the same`() {
         val random = Random(29)
         val effects = mutableSetOf<PowerUp>()
+        var swapping = 0
         repeat(6) { index ->
             var state = GameState.new(GameMode.CHAOS, 4, seed = index - 3L)
             while (!state.isFinished) {
@@ -248,6 +249,7 @@ class SavedGameJsonTest {
                 val back = SavedGameJson.decode(SavedGameJson.encode(saved))
                 assertEquals(saved, back)
                 (state.lastEvent as? GameEvent.Moved)?.effect?.let { effects += it.powerUp }
+                if ((state.phase as? TurnPhase.AwaitingMove)?.swapping == true) swapping++
                 state = when (val phase = state.phase) {
                     is TurnPhase.AwaitingMove -> phase.moves.random(random).let { move ->
                         LudoEngine.move(state, move).also { assertEquals(it, LudoEngine.move(back.state, move)) }
@@ -257,6 +259,20 @@ class SavedGameJsonTest {
             }
         }
         assertEquals(PowerUp.entries.toSet(), effects)
+        assertTrue(swapping > 0, "No game was saved with a swap to pick")
+    }
+
+    @Test
+    fun `a swap to pick comes back with the roll its landing's capture earned - and none that no move landed on`() {
+        val new = GameState.new(GameMode.CHAOS, 4)
+        val pawns = listOf(listOf(1, -1, -1, -1), listOf(42, -1, -1, -1), listOf(9, -1, -1, -1))
+        val start = new.copy(players = new.players.mapIndexed { i, it -> pawns.getOrNull(i)?.let { at -> it.copy(pawns = at) } ?: it }, powerUps = mapOf(3 to PowerUp.SWAP))
+        val landed = LudoEngine.move(LudoEngine.applyRoll(start, 2), 0)
+        val saved = game(landed).copy(mode = GameMode.CHAOS)
+        assertTrue((landed.phase as TurnPhase.AwaitingMove).earned)
+        val json = SavedGameJson.encode(saved)
+        assertEquals(saved, SavedGameJson.decode(json))
+        assertFailsWith<IllegalArgumentException> { SavedGameJson.decode(json.replace("\"kind\":\"swap\"", "\"kind\":\"shield\"")) }
     }
 
     @Test

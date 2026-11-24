@@ -91,10 +91,25 @@ class ShieldMotionTest : UiTest() {
         val rolled = LudoEngine.applyRoll(start, 2)
         val state = show(rolled)
         val from = assertNotNull(shieldAt(), "Before")
-        state.value = LudoEngine.move(rolled, 0, swap = PawnRef(3, 0))
-        val along = frames(2 * PAWN_STEP_MILLIS + PORTAL_WARP_MILLIS + CAPTURE_FLIGHT_MILLIS + 100)
+        val landed = LudoEngine.move(rolled, 0)
+        state.value = landed
+        frames(2 * PAWN_STEP_MILLIS + 100)
+        // It waits where it is while the swap is picked.
+        assertEquals(from, shieldAt())
+        state.value = LudoEngine.move(landed, 0, swap = PawnRef(3, 0))
+        val along = frames(PORTAL_WARP_MILLIS + CAPTURE_FLIGHT_MILLIS + 100)
         assertTrue(along.all { it != null }, "Gone on a frame: $along")
         assertTrue((along.last()!! - from).getDistance() > 0.1f, "Swapped: ${along.last()}, from $from")
+    }
+
+    @Test
+    fun `a pawn that keeps its place on a Swap stays there on every frame`() = uiTest {
+        val start = game(listOf(1, Y, Y, Y), listOf(9, Y, Y, Y), shielded = PawnRef(0, 0), powerUps = mapOf(3 to PowerUp.SWAP))
+        val landed = LudoEngine.move(LudoEngine.applyRoll(start, 2), 0)
+        val state = show(landed)
+        val at = assertNotNull(shieldAt(), "Landed")
+        state.value = LudoEngine.move(landed, 0, swap = PawnRef(0, 0))
+        assertEquals(setOf<Offset?>(at), frames(200).toSet())
     }
 
     @Test

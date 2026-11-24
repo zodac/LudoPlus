@@ -183,8 +183,10 @@ object SavedGameJson {
         if (waiting != null && state.rules.dice > 1) {
             put("dice", jsonInts(waiting.dice))
             put("rolled", jsonInts(waiting.rolled))
-            if (waiting.earned) put("earned", true)
         }
+        if (waiting != null && (state.rules.dice > 1 || waiting.swapping) && waiting.earned) put("earned", true)
+        // Landed on a Swap by the last event's move, and whose to swap with yet to pick.
+        if (waiting?.swapping == true) put("swapping", true)
         put("rollAgainRun", state.rollAgainRun)
         if (state.rollingAgain) put("rollingAgain", true)
         if (state.yardTriesUsed > 0) put("yardTriesUsed", state.yardTriesUsed)
@@ -364,13 +366,25 @@ object SavedGameJson {
         val roll = obj.intOrNull("roll") ?: return waiting
         val dice = if (rules.dice > 1) obj.array("dice").ints() else listOf(roll)
         require(dice.isNotEmpty() && dice.size <= rules.dice && dice.first() == roll && dice.all { it in 1..rules.dieFaces }) { "A roll of $dice" }
-        val moves = LudoEngine.movesForDice(waiting, dice)
+        val swapping = obj.flag("swapping")
+        val moves = if (swapping) swapMoves(waiting, dice) else LudoEngine.movesForDice(waiting, dice)
         require(moves.isNotEmpty()) { "A roll of $dice waiting for a move has none" }
-        // One die's roll has earned another if it's a roll-again roll; two dice say so.
-        val earned = if (rules.dice > 1) obj.flag("earned") else roll in rules.rollAgainRolls
+        // One die's roll has earned another if it's a roll-again roll; two dice say so, as does a Swap, whose landing may have captured.
+        val earned = if (rules.dice > 1 || swapping) obj.flag("earned") else roll in rules.rollAgainRolls
         val rolled = if (rules.dice > 1) obj.array("rolled").ints() else dice
         require(rolled.size == rules.dice && dice.all { it in rolled }) { "Dice $dice aren't of the roll $rolled" }
-        return waiting.copy(phase = TurnPhase.AwaitingMove(roll, moves, dice = dice, earned = earned, rolled = rolled))
+        return waiting.copy(phase = TurnPhase.AwaitingMove(roll, moves, dice = dice, earned = earned, rolled = rolled, swapping = swapping))
+    }
+
+    /** The choices of the pawn that [state]'s last event landed on a Swap, with [dice] still to move. */
+    private fun swapMoves(state: GameState, dice: List<Int>): List<Move> {
+        val landed = state.lastEvent as? GameEvent.Moved
+        require(state.rules.powerUps && landed != null && landed.player == state.current && landed.effect == PowerUpEffect(PowerUp.SWAP)) { "A Swap that no move landed on" }
+        val owner = landed.move.ownerIn(state)
+        val at = state.players[owner].pawns.getOrNull(landed.move.pawn)
+        require(at == landed.move.to && at in 0..<state.board.trackSteps) { "The pawn to swap isn't where it landed" }
+        require(if (state.rules.dice > 1) landed.move.roll in dice else landed.move.roll == null) { "A Swap by a die not of $dice" }
+        return LudoEngine.swapMoves(state, owner, landed.move.pawn, landed.move.roll)
     }
 
     private fun encodeLogEntry(entry: LogEntry): JsonObject = buildJsonObject {

@@ -5,6 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import net.zodac.ludoplus.model.GameMode
+import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.model.TeamMode
 
 class MoveLogTest {
@@ -33,6 +34,19 @@ class MoveLogTest {
         // Each at the time it happened: the state that brought it.
         assertEquals(states.indices.filter { i -> states[i].lastEvent.let { it != null && it !is GameEvent.Rolled } }.map { it * 1_000L }, log.map { it.atEpochMillis })
         assertTrue(log.any { it.event is GameEvent.NoMove } && log.any { it.event is GameEvent.Moved })
+    }
+
+    @Test
+    fun `a Swap's landing and its swap are a line each - and keeping its place is none`() {
+        val new = GameState.new(GameMode.CHAOS, 4)
+        val pawns = listOf(listOf(1, -1, -1, -1), listOf(9, -1, -1, -1))
+        val start = new.copy(players = new.players.mapIndexed { i, it -> pawns.getOrNull(i)?.let { at -> it.copy(pawns = at) } ?: it }, powerUps = mapOf(3 to PowerUp.SWAP))
+        val rolled = LudoEngine.applyRoll(start, 2)
+        val landed = LudoEngine.move(rolled, 0)
+        val swapped = LudoEngine.move(landed, 0, swap = PawnRef(1, 0))
+        assertEquals(listOf(landed.lastEvent, swapped.lastEvent), logOf(listOf(start, rolled, landed, swapped)).map { it.event })
+        val kept = LudoEngine.move(landed, 0, swap = PawnRef(0, 0))
+        assertEquals(listOf(landed.lastEvent), logOf(listOf(start, rolled, landed, kept)).map { it.event })
     }
 
     @Test

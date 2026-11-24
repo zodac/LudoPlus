@@ -19,7 +19,7 @@ import net.zodac.ludoplus.model.storedIdOf
  * could read all of the other's messages. Bumped by any change an older app couldn't read. A new message an older app can
  * do without ([NetMessage.TurnEnding]) needs none: [NetCodec] reads one it doesn't know as nothing.
  */
-const val PROTOCOL_VERSION = 2
+const val PROTOCOL_VERSION = 3
 
 /** One message between a host and a guest, as [NetCodec] sends it. See `.claude/NETPLAY.md`, "Design". */
 sealed interface NetMessage {
@@ -35,7 +35,7 @@ sealed interface NetMessage {
     /** The guest's player rolls, on their turn. */
     data object Roll : NetMessage
 
-    /** The guest's player moves [pawn] (of seat [owner], a partner's; null: their own) with [die] (null: the only one), swapping with [swap], if it can (null: with nobody). */
+    /** The guest's player moves [pawn] (of seat [owner], a partner's; null: their own) with [die] (null: the only one); or that pawn, landed on a Swap, swaps with [swap] (itself: with nobody). */
     data class Move(val pawn: Int, val owner: Int?, val die: Int?, val swap: PawnRef? = null) : NetMessage
 
     /** The guest is leaving: its seat opens again, or (once the game has started) is played by the CPU. */

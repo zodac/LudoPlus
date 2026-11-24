@@ -36,6 +36,7 @@ internal object GameBreadcrumbs {
                     move.via?.let { "by the portal at $it" },
                     move.bouncedFrom?.let { "bounced from $it" },
                     event.effect?.let { "took ${it.powerUp.name}" },
+                    move.swap?.let { "swapped with pawn ${it.pawn + 1} of player ${it.player + 1}".takeUnless { event.keptPlace } ?: "kept its place" },
                     event.allCaptures.takeIf { it.isNotEmpty() }?.let { "captured ${it.size}" },
                 ).joinToString(", ")
             }

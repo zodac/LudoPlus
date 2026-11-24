@@ -247,36 +247,42 @@ class BoardSemanticsTest : UiTest() {
     }
 
     @Test
-    fun `a Swap is made in two picks - the pawn that moves - then whose to swap with - or nobody's`() = uiTest(TestScreen(411, 891)) {
+    fun `a Swap is made once its pawn has landed - with the pawn picked - or nobody's`() = uiTest(TestScreen(411, 891)) {
         val new = GameState.new(GameMode.CHAOS, 4)
         val pawns = listOf(listOf(1, 40, Y, Y), listOf(9, Y, Y, Y), listOf(Y, 35, Y, Y))
         val state = new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }) }, powerUps = mapOf(3 to PowerUp.SWAP))
         val made = mutableListOf<Move>()
-        fun show() = showcase.show {
-            val rolled = LudoEngine.applyRoll(state, 2)
+        fun show(shown: GameState, settled: Boolean = true) = showcase.show {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
-                LudoPlusTheme { GameContent(StartedGame(GameMode.CHAOS, players, rolled, first = 0), onRoll = {}, onMove = { made += it }, onBack = {}, onResults = {}) }
+                LudoPlusTheme { GameContent(StartedGame(GameMode.CHAOS, players, shown, first = 0), onRoll = {}, onMove = { made += it }, onBack = {}, onResults = {}, settled = settled) }
             }
         }
-        show()
+        val rolled = LudoEngine.applyRoll(state, 2)
+        show(rolled)
         // A pawn that doesn't land on it moves at once.
         compose.onNode(onClickLabel("Move Red pawn 2 2 squares")).performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(listOf(Move(1, 40, 42)), made)
         made.clear()
+        // Nor is one that does asked about first: it lands.
         compose.onNode(onClickLabel("Move Red pawn 1 2 squares, taking Swap")).performSemanticsAction(SemanticsActions.OnClick)
-        compose.waitForIdle()
-        assertEquals(emptyList(), made)
+        assertEquals(listOf(Move(0, 1, 3)), made)
+        made.clear()
+        val landed = LudoEngine.move(rolled, 0)
+        // Nothing is asked till it has.
+        show(landed, settled = false)
+        compose.onNodeWithContentDescription("Alex rolled 2.").assertExists()
+        compose.onNodeWithText("Don't swap").assertDoesNotExist()
+        compose.onNode(onClickLabel("Swap places with Green pawn 1")).assertDoesNotExist()
+        show(landed)
+        compose.onNodeWithContentDescription("Square 4, Red pawn 1, 53 squares from home").assertExists()
         val prompt = compose.onNodeWithContentDescription("Alex, pick a pawn to swap with.").fetchSemanticsNode()
         assertEquals(listOf("Swap places with Green pawn 1", "Swap places with Yellow pawn 2"), prompt.config[SemanticsActions.CustomActions].map { it.label })
         assertEquals(LiveRegionMode.Polite, prompt.config[SemanticsProperties.LiveRegion])
         compose.onNodeWithContentDescription("Square 23, Green pawn 1, 47 squares from home").assert(onClickLabel("Swap places with Green pawn 1")).performSemanticsAction(SemanticsActions.OnClick)
-        assertEquals(listOf(Move(0, 1, 3, swap = PawnRef(1, 0))), made)
+        assertEquals(listOf(Move(0, 3, 3, swap = PawnRef(1, 0))), made)
         made.clear()
-        show()
-        compose.onNode(onClickLabel("Move Red pawn 1 2 squares, taking Swap")).performSemanticsAction(SemanticsActions.OnClick)
-        compose.waitForIdle()
         compose.onNodeWithText("Don't swap").performSemanticsAction(SemanticsActions.OnClick)
-        assertEquals(listOf(Move(0, 1, 3)), made)
+        assertEquals(listOf(Move(0, 3, 3, swap = PawnRef(0, 0))), made)
     }
 
     @Test
@@ -288,7 +294,10 @@ class BoardSemanticsTest : UiTest() {
             moved(PowerUpEffect(PowerUp.SHIELD)) to "Alex moved a pawn 2 squares. Alex took Shield.",
             moved(PowerUpEffect(PowerUp.CALL_UP, calledUp = 2)) to "Alex moved a pawn 2 squares. Alex called up a pawn.",
             moved(PowerUpEffect(PowerUp.CALL_UP)) to "Alex moved a pawn 2 squares. Alex took Call Up.",
-            moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0))) to "Alex moved a pawn 2 squares. Alex swapped places with Sam.",
+            moved(PowerUpEffect(PowerUp.SWAP)) to "Alex moved a pawn 2 squares. Alex took Swap.",
+            moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)), Move(0, 3, 3, swap = PawnRef(2, 0))) to "Alex swapped places with Sam.",
+            // As 1.1.0's games logged it: the landing and its swap in one.
+            moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)), Move(0, 1, 3, swap = PawnRef(2, 0))) to "Alex moved a pawn 2 squares. Alex swapped places with Sam.",
             moved(PowerUpEffect(PowerUp.ROLL_AGAIN), Move(0, 1, 3, listOf(PawnRef(1, 0)))) to "Alex captured 1 of Gambit's pawns. Alex took Roll Again.",
             moved(null, Move(0, 1, 2, bouncedFrom = 3, brokenShields = listOf(PawnRef(1, 0)))) to "Alex moved a pawn 2 squares and bounced off Gambit's shield.",
         )) {

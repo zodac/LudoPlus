@@ -92,6 +92,20 @@ class GamePacingTest {
         assertEquals(listOf(0L to MoveSound.CAPTURE), moveSoundCues(Move(0, 10, 12, listOf(PawnRef(1, 0))), homeProgress = HOME, animated = false))
     }
 
+    @Test
+    fun `a Swap's landing is played out on its own - then the swap - and a pawn that keeps its place takes no time and makes no sound`() {
+        val step = PAWN_STEP_MILLIS.toLong()
+        val landing = GameEvent.Moved(1, 2, Move(0, 1, 3), finished = false, effect = PowerUpEffect(PowerUp.SWAP))
+        assertEquals(2 * step, pacing.playOutMillis(landing, HOME))
+        assertEquals(listOf(step to MoveSound.STEP, 2 * step to MoveSound.STEP), moveSoundCues(landing.move, HOME, animated = true, landing.effect))
+        val swap = GameEvent.Moved(1, 2, Move(0, 3, 3, swap = PawnRef(2, 0)), finished = false, effect = PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)))
+        assertEquals(0L + PORTAL_WARP_MILLIS + CAPTURE_FLIGHT_MILLIS, pacing.playOutMillis(swap, HOME))
+        assertEquals(listOf(PORTAL_WARP_MILLIS.toLong() to MoveSound.STEP), moveSoundCues(swap.move, HOME, animated = true, swap.effect))
+        val kept = GameEvent.Moved(1, 2, Move(0, 3, 3, swap = PawnRef(1, 0)), finished = false)
+        assertEquals(0L, pacing.playOutMillis(kept, HOME))
+        assertEquals(emptyList(), moveSoundCues(kept.move, HOME, animated = true))
+    }
+
     private companion object {
         const val HOME = 56
     }

@@ -293,6 +293,8 @@ private fun eventLine(game: StartedGame, entry: LogEntry): String {
         is GameEvent.Moved -> {
             val effect = event.effect
             val line = movedLine(game, entry, event)
+            // A swap made once its pawn has landed is all its event did: the landing is the line before.
+            if (effect != null && event.move.swap != null && event.move.squares == 0) return effectLine(game, event, effect)
             if (effect == null || event.finished) line else stringResource(Res.string.game_event_and, line, effectLine(game, event, effect))
         }
         // A roll waiting for its move isn't logged (MoveLog.next): the move is.

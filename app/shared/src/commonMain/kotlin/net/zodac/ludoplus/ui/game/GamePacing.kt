@@ -108,6 +108,8 @@ enum class MoveSound { STEP, CAPTURE, HOME }
  * pawn lands back in its yard. [effect] is what a power-up it ended on did.
  */
 fun moveSoundCues(move: Move, homeProgress: Int, animated: Boolean, effect: PowerUpEffect? = null): List<Pair<Long, MoveSound>> {
+    // A pawn that keeps its place (GameEvent.Moved.keptPlace) goes nowhere.
+    if (move.squares == 0 && move.bouncedFrom == null && effect == null) return emptyList()
     // Coming out of a portal is a landing of its own, after its hops.
     val hopped = (1..hops(move) + hopsBack(move)).map { it * PAWN_STEP_MILLIS.toLong() }
     val warps = move.via != null || effect?.movedTo != null

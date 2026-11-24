@@ -188,11 +188,17 @@ move, at once: a pawn moved onto another leaves it there.
     sharing a square that isn't safe, nor where either would stand on the one square its way never takes it over. Each
     counts its place from its own start, as through a portal; a shield goes with its pawn; nothing is captured.
 
-A swap is part of the move (`Move.swap`: `LudoEngine` offers the move with each pawn it can swap with, `PowerUps.swapTargets`,
-and with none), so the CPU weighs it, and a Nearby guest sends it, as any move. A person makes it in two picks: the pawn, then
-the other's, ringed, with the rest of the board faded (`UI_BOARD.md`), or Don't swap (the first is made already where there's
-only one move). The prompt is "Alex, pick a pawn to swap with."; TalkBack's actions, there and on each pawn's square, are
-"Swap places with Green pawn 2".
+The pawn lands on the Swap first, which takes it, and then its player picks (the maintainer, 2026-11-25): two actions, each
+saved, sent, logged, and played out on its own. The landing is a move like any other; it leaves the game awaiting a move
+still (`TurnPhase.AwaitingMove.swapping`), whose moves each go nowhere (`from` is `to`) and say whose pawn to swap with
+(`Move.swap`, `LudoEngine.swapMoves`), its own to keep its place (`GameEvent.Moved.keptPlace`, which isn't logged): so a tap
+come late on the pawn that landed is no pick. With nobody to swap with, nothing is asked. What the roll and the landing
+earned is kept until the pick (`earned`); with two dice, so is the other die. The pick is never made for a person. The CPU
+weighs a landing by its best swap (`LudoEngine.swapsAfter`), then picks in its turn, as does one for a Nearby guest whose
+time is up. A person picks once the landing has played out: the pawns to swap with ringed, with the rest of the board faded
+(`UI_BOARD.md`), or Don't swap. The prompt is "Alex, pick a pawn to swap with."; TalkBack's actions, there and on each pawn's
+square, are "Swap places with Green pawn 2". The log has a line for each: "Alex moved a pawn 2 squares. Alex took Swap.",
+then "Alex swapped places with Sam."; a log of 1.1.0's has them in one.
 
 Every chance is drawn from `GameState.seed`, which each draw moves on, so a saved game and a Nearby one play on the same;
 the CPU weighs a move with its power-up left alone (`LudoEngine.moveWithoutChances`), so it never sees what a chance will

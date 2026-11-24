@@ -25,10 +25,11 @@ Connections: no server, no accounts. This file is the plan and the one source on
 - **The protocol** (`netplay/NetMessage.kt`): small JSON messages, each with a type, over Nearby's byte payloads.
     The host's game is sent as `SavedGameJson`, the format that already round-trips every state.
     - Guest to host: `Hello` (protocol version, the player's name and colour, and, coming back, its seat's token),
-        `Roll`, `Move` (pawn, owner, die), `Leave`.
+        `Roll`, `Move` (pawn, owner, die, and once it has landed on a Swap, whose pawn to swap with), `Leave`.
     - Host to guest: `Welcome` (the seat it took, and the token that takes it back) or `Refused` (full, started,
         another version), `Lobby` (the seats and who has taken them), `Game` (the whole game, numbered), `Ended`.
-    - A version mismatch is refused at `Hello`, with "update the app".
+    - A version mismatch is refused at `Hello`, with "update the app". Version 3 (2026-11-25): a Swap's landing and its pick
+        are two moves.
 - **Sessions** (`HostSession`, `GuestSession`): the lobby and the game's messages as pure state machines over a
     `NetLink` (send, receive, connected): tested without radios.
 - **The transport seam** (`netplay/Nearby.kt`): advertise, discover, connect, accept, send, receive, disconnect;

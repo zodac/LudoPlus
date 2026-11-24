@@ -74,6 +74,7 @@ import net.zodac.ludoplus.data.settings.MotionGroup
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.Move
+import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.game.TutorialStep
 import net.zodac.ludoplus.model.PlayerColour
@@ -371,6 +372,7 @@ private fun GameFeedback(state: GameState) {
         when (event) {
             is GameEvent.Rolled, is GameEvent.NoMove, is GameEvent.RollAgainLimit -> sounds.playDieLanding()
             is GameEvent.Moved -> {
+                if (event.keptPlace) return@LaunchedEffect
                 if (event.allCaptures.isEmpty()) haptics.playMoveTick() else haptics.playCaptureBuzz()
                 var elapsed = 0L
                 for ((at, sound) in moveSoundCues(event.move, state.board.homeProgress, animated, event.effect)) {
@@ -410,7 +412,9 @@ fun GameContent(
     val phase = started.state.phase
     // A move with no choice makes itself: nothing to pick, so nothing is ringed (the tutorial makes none).
     val picks = tutorial != null || started.automaticMove == null
-    val humanMoves = if (phase is TurnPhase.AwaitingMove && !started.currentIsCpu && picks) phase.moves else emptyList()
+    // A Swap's pick isn't asked for until the pawn has landed on it.
+    val landed = phase !is TurnPhase.AwaitingMove || !phase.swapping || settled
+    val humanMoves = if (phase is TurnPhase.AwaitingMove && !started.currentIsCpu && picks && landed) phase.moves else emptyList()
     // In the tutorial, only the step's own move: its pawn alone is ringed, and the only one a tap or TalkBack can move.
     val allMoves = if (tutorial == null) humanMoves else humanMoves.filter { it.pawn == (tutorial.step as? TutorialStep.Move)?.pawn }
     // With two dice, the die a tap on a pawn moves by: the one tapped, or at first the first with a move. The board rings
@@ -420,16 +424,11 @@ fun GameContent(
     val selectedDie = pickedDie?.takeIf { it in dieValues } ?: dieValues.firstOrNull()
     val pick: (Int) -> Unit = { pickedDie = it }
     val dice = DiceChoice(selectedDie, onSelect = pick.takeIf { dieValues.size > 1 })
-    // A move that ends on a Swap with pawns to swap with is made in two picks: its pawn, then the other's (or none). The
-    // first is made already where there's only the one move.
-    val swapsOf = { move: Move -> allMoves.filter { it.swap != null && it.copy(swap = null) == move } }
-    val plainMoves = allMoves.filter { it.swap == null }
-    var swapFor by remember(phase) { mutableStateOf<Move?>(null) }
-    val swapMove = swapFor ?: plainMoves.singleOrNull()?.takeIf { swapsOf(it).isNotEmpty() }
-    val offered = swapMove?.let(swapsOf) ?: plainMoves
+    // Landed on a Swap: whose to swap with, or nobody, by the pawn's swap with itself.
+    val keepPlace = allMoves.firstOrNull { it.swap == PawnRef(it.ownerIn(started.state), it.pawn) }
+    val offered = allMoves - setOfNotNull(keepPlace)
     val moves = offered.filter { it.roll == null || it.roll == selectedDie }
-    val makeMove: (Move) -> Unit = { move -> if (swapMove == null && swapsOf(move).isNotEmpty()) swapFor = move else onMove(move) }
-    val declineSwap: (() -> Unit)? = swapMove?.let { move -> { onMove(move) } }
+    val declineSwap: (() -> Unit)? = keepPlace?.let { move -> { onMove(move) } }
     val rollStep = tutorial?.step is TutorialStep.Roll
     val players = @Composable { compact: Boolean ->
         if (notice != null) NetplayNotice(notice)
@@ -451,9 +450,9 @@ fun GameContent(
                     state = started.state,
                     seatColours = seatColours,
                     moves = moves,
-                    onMove = makeMove,
+                    onMove = onMove,
                     modifier = modifier.clip(RoundedCornerShape(8.dp)),
-                    swapping = swapMove != null,
+                    swapping = keepPlace != null,
                 )
             }
             if (width > height) {
@@ -461,7 +460,7 @@ fun GameContent(
                     board(Modifier.size(minOf(height, width - SIDE_PANEL_WIDTH)))
                     Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         players(false)
-                        TurnPanel(started, offered, seatColours, onRoll, makeMove, onResults, settled = settled, onDeclineSwap = declineSwap, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
+                        TurnPanel(started, offered, seatColours, onRoll, onMove, onResults, settled = settled, onDeclineSwap = declineSwap, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
                         MoveLogPanel(started, seatColours, tutorial = tutorial != null, shown = showLog, modifier = Modifier.weight(1f))
                     }
                 }
@@ -476,7 +475,7 @@ fun GameContent(
                     board = { board(Modifier) },
                     turn = {
                         TurnPanel(
-                            started, offered, seatColours, onRoll, makeMove, onResults, settled = settled, onDeclineSwap = declineSwap, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
+                            started, offered, seatColours, onRoll, onMove, onResults, settled = settled, onDeclineSwap = declineSwap, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
                         )
                     },
                     log = { MoveLogPanel(started, seatColours, tutorial = tutorial != null, shown = showLog) },
@@ -929,8 +928,8 @@ private fun ColumnScope.StatusLines(
     val phase = state.phase
     val current = name(state.current)
     val twoDice = phase is TurnPhase.AwaitingMove && state.rules.dice > 1
-    // A move that makes itself is told as the computer's is: no pick asked for.
-    val movesItself = game.currentIsCpu || (!tutorial && game.automaticMove != null)
+    // A move that makes itself is told as the computer's is, no pick asked for, and so is one onto a Swap until it has landed.
+    val movesItself = game.currentIsCpu || (!tutorial && game.automaticMove != null) || (phase is TurnPhase.AwaitingMove && phase.swapping)
     val prompt = when {
         swapping -> stringResource(Res.string.game_prompt_swap, current)
         // Two dice: the roll, or the die left, and the die a pawn moves by.

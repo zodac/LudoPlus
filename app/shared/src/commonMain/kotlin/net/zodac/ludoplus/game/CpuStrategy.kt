@@ -8,7 +8,7 @@ import net.zodac.ludoplus.model.PawnPosition
 fun interface CpuStrategy {
     /**
      * One of [moves] (never empty) for the current player of [state], which is awaiting one of them; any tie broken
-     * with [random].
+     * with [random]. A move that lands on a Swap is weighed with the best swap that could follow it.
      */
     fun choose(state: GameState, moves: List<Move>, random: Random): Move
 
@@ -45,7 +45,7 @@ object HeuristicStrategy : CpuStrategy {
     private const val CLAIM = 45.0
 
     override fun choose(state: GameState, moves: List<Move>, random: Random): Move =
-        moves.shuffled(random).maxBy { score(state, it) }
+        moves.shuffled(random).maxBy { move -> withSwaps(state, move).maxOf { score(state, it) } }
 
     internal fun score(state: GameState, move: Move): Double {
         val board = state.board
@@ -116,7 +116,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
     )
 
     override fun choose(state: GameState, moves: List<Move>, random: Random): Move =
-        moves.shuffled(random).maxBy { value(state, it) }
+        moves.shuffled(random).maxBy { move -> withSwaps(state, move).maxOf { value(state, it) } }
 
     internal fun value(state: GameState, move: Move): Double {
         // Nobody knows what a power-up's chances will be, so it's worth the same whatever it is.
@@ -205,6 +205,9 @@ private fun isSafe(state: GameState, seat: Int, progress: Int): Boolean {
     if (!state.rules.blockades) return false
     return player.pawns.count { it in 0..<board.trackSteps && board.trackSquare(seat, it) == square } >= 2
 }
+
+/** [move], alone and with each swap that could follow it ([LudoEngine.swapsAfter]). */
+private fun withSwaps(state: GameState, move: Move): List<Move> = listOf(move) + LudoEngine.swapsAfter(state, move).map { move.copy(swap = it) }
 
 /** Whether [owner]'s [move] ends on a power-up. */
 private fun takesPowerUp(state: GameState, owner: Int, move: Move): Boolean =

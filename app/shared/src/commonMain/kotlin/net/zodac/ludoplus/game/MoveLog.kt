@@ -14,12 +14,12 @@ object MoveLog {
 
     /**
      * [log], the log up to [before], carried on to [after]: empty at a game's start (no event yet), as it was where
-     * [after]'s event is [before]'s or only a roll waiting for its move, and otherwise with [after]'s event added, as
+     * [after]'s event is [before]'s, only a roll waiting for its move, or the choice not to swap, and otherwise with [after]'s event added, as
      * happening [at] (epoch millis).
      */
     fun next(log: List<LogEntry>, before: GameState?, after: GameState, at: Long): List<LogEntry> {
         val event = after.lastEvent ?: return emptyList()
-        if (event is GameEvent.Rolled || event == before?.lastEvent) return log
+        if (event is GameEvent.Rolled || event == before?.lastEvent || (event is GameEvent.Moved && event.keptPlace)) return log
         val place = (event as? GameEvent.Moved)?.takeIf { it.finished }?.let { after.placeOf(it.move.owner ?: it.player) }
         return log + LogEntry(event, at, place, after.ghostMove?.caught.orEmpty(), after.justLost.size, after.players[event.player].turns)
     }

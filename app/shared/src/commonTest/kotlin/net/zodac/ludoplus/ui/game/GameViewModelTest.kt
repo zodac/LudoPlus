@@ -30,8 +30,10 @@ import net.zodac.ludoplus.data.records.InMemoryGameResultDao
 import net.zodac.ludoplus.data.records.playerStatistics
 import net.zodac.ludoplus.data.settings.SettingsRepository
 import net.zodac.ludoplus.game.GameEvent
+import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
+import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.CustomMode
@@ -39,7 +41,9 @@ import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PawnPosition.Companion.YARD_PROGRESS
+import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
+import net.zodac.ludoplus.model.PowerUp
 
 private const val Y = YARD_PROGRESS
 private const val HOME = 56
@@ -271,6 +275,37 @@ class GameViewModelTest {
         advanceTimeBy(5_000)
         runCurrent()
         assertEquals(listOf(13, Y, Y, Y), viewModel.state.players[player].pawns)
+    }
+
+    @Test
+    fun `a pawn lands on a Swap before whose to swap with is picked - a second tap on it picks nobody - and the game comes back there`() = runTest(dispatcher) {
+        val saved = InProgressGameRepository(InMemoryPreferences(), backgroundScope)
+        val new = GameState.new(GameMode.CHAOS, 4)
+        val pawns = listOf(listOf(1, 30, Y, Y), listOf(9, Y, Y, Y))
+        val state = new.copy(players = new.players.mapIndexed { i, it -> it.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }) }, powerUps = mapOf(3 to PowerUp.SWAP), turnsToPowerUp = 5)
+        val game = assertNotNull(started(0, humans = true, saved = saved).game.value)
+        saved.save(game.copy(mode = GameMode.CHAOS, players = List(4) { PlayerConfig(it + 1, PlayerType.HUMAN, "P$it") }, state = LudoEngine.applyRoll(state, 2)))
+        fun resumed() = GameViewModel(SettingsRepository(InMemoryPreferences()), saved, GameRecordRepository(InMemoryGameResultDao()), Random(0), elapsedMillis = { 0L })
+        val viewModel = resumed()
+        runCurrent()
+        assertTrue(viewModel.resumeGame())
+        viewModel.move(pawn = 0)
+        val landed = viewModel.state
+        assertEquals(3, landed.players[0].pawns[0])
+        // Not until it has landed on screen.
+        assertFalse(viewModel.settled.value)
+        advanceTimeBy(5_000)
+        runCurrent()
+        assertTrue(viewModel.settled.value)
+        viewModel.move(pawn = 0)
+        assertEquals(landed, viewModel.state)
+        val again = resumed()
+        runCurrent()
+        assertTrue(again.resumeGame())
+        assertEquals(landed, again.state)
+        again.move(pawn = 0, swap = PawnRef(1, 0))
+        assertEquals(22, again.state.players[0].pawns[0])
+        assertEquals(1, again.state.current)
     }
 
     @Test

@@ -118,7 +118,7 @@ class BoardPiecesTest {
     fun `a pawn swapped off a shared square leaves from its share - and the pawn it shared with keeps its own`() {
         // Red ends on a Swap on square 10, and swaps with green's pawn on the star on square 8, shared with yellow's.
         val before = state(listOf(10, Y, Y, Y), listOf(47, Y, Y, Y), listOf(34, Y, Y, Y))
-        val swap = Move(pawn = 0, from = 7, to = 10, swap = PawnRef(1, 0))
+        val swap = Move(pawn = 0, from = 10, to = 10, swap = PawnRef(1, 0))
         val effect = PowerUpEffect(PowerUp.SWAP, movedTo = 8, swapped = PawnRef(1, 0))
         val after = before.copy(players = before.players.mapIndexed { i, p -> p.copy(pawns = listOf(listOf(8, 49, 34, Y)[i], Y, Y, Y)) })
         val marks = moveMarks(after, GameEvent.Moved(0, 3, swap, finished = false, effect = effect))

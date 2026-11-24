@@ -37,9 +37,10 @@ internal object PowerUps {
 
     /**
      * [state] with the power-up that [owner]'s pawn [pawn] has ended a move on taken, and what it did; as it is, and null,
-     * with none there. One a move: a pawn a power-up moves onto another leaves it there. A Swap is with [swap].
+     * with none there. One a move: a pawn a power-up moves onto another leaves it there. A Swap does nothing, taken so: it's
+     * only with nobody to swap with that nobody is asked ([LudoEngine.swapMoves]).
      */
-    fun take(state: GameState, owner: Int, pawn: Int, swap: PawnRef? = null): Pair<GameState, PowerUpEffect?> {
+    fun take(state: GameState, owner: Int, pawn: Int): Pair<GameState, PowerUpEffect?> {
         val progress = state.players[owner].pawns[pawn]
         if (progress !in 0..<state.board.trackSteps) return state to null
         val square = state.board.trackSquare(state.players[owner].seat, progress)
@@ -51,7 +52,7 @@ internal object PowerUps {
             PowerUp.SHIELD -> taken.copy(players = taken.players.replace(owner) { it.copy(shielded = it.shielded + pawn) }) to PowerUpEffect(powerUp)
             PowerUp.ROLL_AGAIN -> taken to PowerUpEffect(powerUp)
             PowerUp.CALL_UP -> callUp(taken, owner)
-            PowerUp.SWAP -> swap(taken, owner, pawn, swap)
+            PowerUp.SWAP -> taken to PowerUpEffect(powerUp)
         }
     }
 
@@ -89,9 +90,9 @@ internal object PowerUps {
             .map { it.first }
     }
 
-    /** [state] with [owner]'s pawn [pawn] and [other] in each other's places, any shields with them; as it is with none. */
-    private fun swap(state: GameState, owner: Int, pawn: Int, other: PawnRef?): Pair<GameState, PowerUpEffect> {
-        if (other == null) return state to PowerUpEffect(PowerUp.SWAP)
+    /** [state] with [owner]'s pawn [pawn] and [other] in each other's places, any shields with them, and what that did; as it is, and null, where [other] is that pawn itself. */
+    fun swap(state: GameState, owner: Int, pawn: Int, other: PawnRef): Pair<GameState, PowerUpEffect?> {
+        if (other == PawnRef(owner, pawn)) return state to null
         val board = state.board
         val (mine, theirs) = state.players[owner] to state.players[other.player]
         val to = checkNotNull(board.progressAt(mine.seat, board.trackSquare(theirs.seat, theirs.pawns[other.pawn])))

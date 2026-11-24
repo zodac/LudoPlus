@@ -269,7 +269,8 @@ sealed interface TurnPhase {
      * The current player to pick one of [moves] for their [roll]. Never empty: a roll with no move passes. With two dice,
      * [dice] are those still to be moved, [roll] the first of them, and each move says which it uses ([Move.roll]).
      * [earned] is whether the roll has earned another already: a roll-again roll, or a capture or a pawn home with a die
-     * already moved. [rolled] is the whole roll, every die, for the screen to show.
+     * already moved. [rolled] is the whole roll, every die, for the screen to show. While [swapping], a pawn has landed on a Swap,
+     * and each of [moves] is it swapping with a pawn, or keeping its place ([Move.swap]): its die is still one of [dice].
      */
     data class AwaitingMove(
         val roll: Int,
@@ -277,6 +278,7 @@ sealed interface TurnPhase {
         val dice: List<Int> = listOf(roll),
         val earned: Boolean = false,
         val rolled: List<Int> = dice,
+        val swapping: Boolean = false,
     ) : TurnPhase
 
     /** Every placing is decided. */
@@ -300,7 +302,10 @@ data class Move(
     val via: Int? = null,
     /** The progress of the shielded pawn it lands on and bounces off, settling at [to]; null for a move that meets none. */
     val bouncedFrom: Int? = null,
-    /** Where it ends on a Swap ([PowerUp.SWAP]), the pawn it then swaps places with: null to leave every pawn where it is. */
+    /**
+     * For a pawn that has landed on a Swap ([TurnPhase.AwaitingMove.swapping]), [from] and [to] being where it stands, the pawn it
+     * swaps places with: itself to leave every pawn where it is. Null for any other move. (A game of 1.1.0's logged the landing and its swap as one move.)
+     */
     val swap: PawnRef? = null,
     /** The progress of each lost square it steps over ([GameState.lostSquares]), in order. */
     val skipped: List<Int> = emptyList(),
@@ -371,6 +376,9 @@ sealed interface GameEvent {
     ) : GameEvent {
         /** Where the pawn ended up, by its progress: where the move took it, or a power-up from there. */
         val endedAt: Int get() = effect?.movedTo ?: move.to
+
+        /** Whether it's no more than the choice not to swap: its pawn, landed on a Swap, keeps its place ([Move.swap]). */
+        val keptPlace: Boolean get() = move.swap == PawnRef(move.owner ?: player, move.pawn)
 
         /** Every pawn captured, by the move and by a power-up it ended on. */
         val allCaptures: List<PawnRef> get() = move.captures + effect?.captures.orEmpty()

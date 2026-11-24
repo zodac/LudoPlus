@@ -394,7 +394,7 @@ class GameViewModel(
     }
 
     /**
-     * The current player moves [pawn] (a partner's, [owner]'s, when they roll for one; with two dice, by [die]; ending on a Swap, with [swap]), if it's a
+     * The current player moves [pawn] (a partner's, [owner]'s, when they roll for one; with two dice, by [die]; landed on a Swap, with [swap]), if it's a
      * person's turn and that pawn has a legal move. In the tutorial, only the move step's own pawn, once the step is shown.
      */
     fun move(pawn: Int, owner: Int? = null, die: Int? = null, swap: PawnRef? = null) {

@@ -342,7 +342,7 @@ class GuestSession(private val onRejoinRefused: () -> Unit = {}, private val sen
         if (playing.game.state.current == playing.seat && playing.game.state.phase == TurnPhase.AwaitingRoll) send(NetMessage.Roll)
     }
 
-    /** Moves [pawn] (of [owner], a partner's) with [die], swapping with [swap], while it's this guest's player's turn to. */
+    /** Moves [pawn] (of [owner], a partner's) with [die], or landed on a Swap, swaps it with [swap], while it's this guest's player's turn to. */
     fun move(pawn: Int, owner: Int? = null, die: Int? = null, swap: PawnRef? = null) {
         val playing = mutableState.value as? GuestState.Playing ?: return
         if (playing.game.state.current == playing.seat && playing.game.state.phase is TurnPhase.AwaitingMove) send(NetMessage.Move(pawn, owner, die, swap))

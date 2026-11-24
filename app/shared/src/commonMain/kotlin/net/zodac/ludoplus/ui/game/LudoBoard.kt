@@ -106,7 +106,7 @@ private const val HOME_SPARKS = 10
  * the player whose turn it is has a ring round its inside edge. The pawns that [moves] can move
  * are ringed (a partner's too, when the player rolls for one), and a tap near one, or a screen reader's action on its
  * square ([BoardSemantics]), makes its move ([onMove]). While [swapping], the pawns ringed and tapped are those the move
- * ([Move.swap]) can swap with.
+ * ([Move.swap]) can swap with, once the pawn has landed on the Swap.
  *
  * A move hops square by square (out of the yard, it glides to the start square). The pawns it comes to share a square with
  * make room as it comes onto the square, not before. A shield goes with its pawn. A pawn it captures is knocked out
@@ -157,7 +157,7 @@ fun LudoBoard(
             with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, pawnColours[mark.player], ringed) }
             if (mark.pawns.size > 1) drawCount(textMeasurer, mark.pawns.size, mark, unit)
         }
-        // A Swap's pawn and those it can be with, once no move is playing out: drawn over the rest, not with it.
+        // A Swap's pawn, landed on it, and those it can be with, once no move is playing out: drawn over the rest, not with it.
         val pickedOut = if (swapping && motion.moving == null) {
             val swappers = moves.mapNotNull { it.picked(state, swapping = false) }
             marks.filter { mark -> mark.pawns.any { pawn -> PawnRef(mark.player, pawn).let { it in movable || it in swappers } } }
@@ -530,7 +530,7 @@ private fun rememberMoveMotion(state: GameState): MoveMotion {
     val event = (state.lastEvent as? GameEvent.Moved)?.also { latest[0] = it } ?: latest[0]
     val reduce = groupReduceMotion(MotionGroup.PAWN_MOVE)
     val shown = remember { arrayOf(state) }
-    val moving = remember(event) { if (event == null || event === firstSeen || reduce) null else movingPawn(state, event, before = shown[0]) }
+    val moving = remember(event) { if (event == null || event === firstSeen || reduce || event.keptPlace) null else movingPawn(state, event, before = shown[0]) }
     SideEffect { shown[0] = state }
     val clock = remember(event) { Animatable(0f) }
     var done by remember(event) { mutableStateOf(moving == null) }
