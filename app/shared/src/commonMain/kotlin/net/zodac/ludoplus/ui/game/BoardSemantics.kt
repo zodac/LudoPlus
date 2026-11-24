@@ -9,7 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
@@ -36,6 +38,7 @@ import net.zodac.ludoplus.resources.game_square_empty_spoken
 import net.zodac.ludoplus.resources.game_square_ghost_spoken
 import net.zodac.ludoplus.resources.game_square_home_spoken
 import net.zodac.ludoplus.resources.game_square_portal_spoken
+import net.zodac.ludoplus.resources.game_square_power_up_action
 import net.zodac.ludoplus.resources.game_square_power_up_spoken
 import net.zodac.ludoplus.resources.game_square_safe_for_spoken
 import net.zodac.ludoplus.resources.game_square_safe_spoken
@@ -49,8 +52,8 @@ import net.zodac.ludoplus.ui.common.joinClauses
 import net.zodac.ludoplus.ui.common.pluralStringResource
 import net.zodac.ludoplus.ui.common.stringResource
 
-/** A place on the board a screen reader stops at: where it is, in board units, and what's said and offered there. */
-private class Spot(val bounds: Rect, val description: String, val move: Move?, val moveLabel: String?)
+/** A place on the board a screen reader stops at: where it is, in board units, and what's said and offered there ([powerUp]: its square, and the action that describes it). */
+private class Spot(val bounds: Rect, val description: String, val move: Move?, val moveLabel: String?, val powerUp: Pair<Int, String>? = null)
 
 /** The unit box round a square's centre: a turned square's own box would overlap its neighbours'. */
 private fun BoardSquare.spotBounds(): Rect = Rect(centre - Offset(0.5f, 0.5f), Size(1f, 1f))
@@ -61,10 +64,11 @@ private fun List<Offset>.bounds(): Rect = Rect(minOf { it.x }, minOf { it.y }, m
  * The board for a screen reader, laid over the drawn one: a node for each yard, each track square (numbered from red's
  * start), each home-column square, and home (none on an endless board), saying what's on it ("Square 14, Red pawn 2, 43 squares from home"). A
  * square holding a pawn the current player can move (theirs, or a partner's they roll for) is a button whose action
- * moves it ([moves], [onMove]), or while [swapping], one holding a pawn the move can swap with, whose action swaps them.
+ * moves it ([moves], [onMove]), or while [swapping], one holding a pawn the move can swap with, whose action swaps them. One with a power-up
+ * has an action that shows what it does ([onDescribe]).
  */
 @Composable
-fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>, onMove: (Move) -> Unit, modifier: Modifier = Modifier, swapping: Boolean = false) {
+fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: List<Move>, onMove: (Move) -> Unit, modifier: Modifier = Modifier, swapping: Boolean = false, onDescribe: (square: Int) -> Unit = {}) {
     val spots = boardSpots(state, seatColours, moves, swapping)
     BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
         val unit: Dp = maxWidth / BoardLayout.of(state.board).size
@@ -78,6 +82,7 @@ fun BoardSemantics(state: GameState, seatColours: List<PlayerColour?>, moves: Li
                         traversalIndex = index.toFloat()
                         val move = spot.move
                         if (move != null) onClick(label = spot.moveLabel) { onMove(move); true }
+                        spot.powerUp?.let { (square, label) -> customActions = listOf(CustomAccessibilityAction(label) { onDescribe(square); true }) }
                     },
             )
         }
@@ -145,7 +150,8 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
             blockade,
         ) + portalClauses(state, square) + powerUpClauses(state, square) + ghostClauses(state, square) + here.map { it.second }.ifEmpty { listOf(empty) }
         val move = state.players.indices.firstNotNullOfOrNull { player -> movableAt(player, here.filter { it.first.first == player }.map { it.first.second }) }
-        spots += Spot(layout.trackSquare(square).spotBounds(), joinClauses(clauses), move, move?.let(moveLabels::get))
+        val powerUp = state.powerUps[square]?.let { square to stringResource(Res.string.game_square_power_up_action, stringResource(it.title)) }
+        spots += Spot(layout.trackSquare(square).spotBounds(), joinClauses(clauses), move, move?.let(moveLabels::get), powerUp)
     }
     // Each home column, then home, where there's one.
     if (board.endless) return spots

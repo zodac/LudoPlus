@@ -29,6 +29,12 @@ The board, the player cards, the die, and the move log. The general rules are in
     blockade, and a shield each have their mark.
 - **A movable pawn is ringed** in violet. A tap on its square makes the move; where a square holds more than one, a tap
     asks which. The player whose turn it is has a white ring, edged in ink, inside their yard.
+- **A mode's own tiles** (`BoardTiles.kt`, `BoardTilesTest`; the maintainer, 2026-11-24). While a portal is pressed, it and
+    its pair are bigger and ringed in gold, and everything else on the board fades to a fifth.
+    A tap on a power-up shows its name in a tooltip, and a long
+    press what it does too, up until a tap anywhere (never timed out), or until it's taken. A tap on a tile is the tile's,
+    not a move, unless a movable pawn stands on it or is nearer (`pawnTakesTap`); a portal held is never a move. TalkBack: a
+    power-up's square has the action "What Shield does", whose tooltip is a live region; a portal's square says its pair.
 - **Moves** are played square by square (`GamePacing`, "Sound, haptics and motion" in `DESIGN.md`).
 
 ## The player cards

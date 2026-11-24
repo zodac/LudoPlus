@@ -45,6 +45,9 @@ import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.model.PawnPosition
+import net.zodac.ludoplus.model.Portal
+import net.zodac.ludoplus.model.portalAt
+import net.zodac.ludoplus.model.portals
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.ui.common.BoundedArt
@@ -104,6 +107,9 @@ private const val HOME_SPARKS = 10
  * A move hops square by square (out of the yard, it glides to the start square). A pawn it captures is knocked out
  * in a burst on its square and thrown back to its yard; a pawn that reaches home pops in a ring of sparks. None of it
  * plays while the Pawn moves motion is off ([MotionGroup.PAWN_MOVE]).
+ *
+ * While a portal is pressed, it and its pair are picked out, and everything else on the board fades. A tap on a power-up shows its name, and a
+ * long press what it does too, until a tap puts it away.
  */
 @Composable
 fun LudoBoard(
@@ -124,6 +130,9 @@ fun LudoBoard(
     val currentState by rememberUpdatedState(state)
     val currentOnMove by rememberUpdatedState(onMove)
     val currentSwapping by rememberUpdatedState(swapping)
+    // The portal being pressed, and the power-up whose popup is up.
+    var pressedPortal by remember { mutableStateOf<Portal?>(null) }
+    var tip by remember { mutableStateOf<PowerUpTip?>(null) }
     val motion = rememberMoveMotion(state)
     val ghostMotion = rememberGhostMotion(state)
     val vanish = rememberVanishMotion(state)
@@ -133,77 +142,116 @@ fun LudoBoard(
     val pawns = state.rules.pawnsPerPlayer
     val pawnColours = remember(state.players, colours) { state.players.map { colours.getOrNull(it.seat) ?: BoardEmptySeat } }
     Box(modifier = modifier.aspectRatio(1f)) {
-        // The board, painted once (off the main thread) into an image for its style, seats' colours, pawn count, and size,
-        // on a layer of its own: a frame of a move or a turn's ring never draws it again.
-        val lastStanding = state.rules.lastStanding
-        val stage = state.suddenDeathStage
-        val parts = if (lastStanding) BoardParts(starts = stage < 1, stars = stage < 2, homes = false) else BoardParts()
-        // A last-standing yard's spots are its tally, drawn with the pawns.
-        val spots = if (lastStanding) 0 else pawns
-        val surface = BoardSurface(theme.board, layout, colours, spots, parts)
-        PaintedSurface(surface, modifier = Modifier.fillMaxSize().graphicsLayer { }) {
-            with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours, spots, parts) }
-        }
-        // The arena, drawn again only as sudden death comes on, or takes squares.
-        if (lastStanding) {
-            val lost = state.lostSquares - vanish.squares
-            Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawArena(layout, size.minDimension / layout.size, stage, lost) }
-            if (vanish.squares.isNotEmpty()) BoundedArt(modifier = Modifier.fillMaxSize()) { with(vanish) { drawVanishing(layout, size.minDimension / layout.size, stage) } }
-        }
-        // The portals, under the pawns: drawn once.
-        if (state.rules.portals) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPortals(layout, size.minDimension / layout.size) }
-        // The power-ups, under the pawns: drawn again as one comes or goes.
-        if (state.rules.powerUps) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPowerUps(layout, size.minDimension / layout.size, state.powerUps) }
-        // On a layer of its own too, drawn again only as the turn passes.
-        val turnSeat = if (state.isFinished) null else state.currentPlayer.seat
-        if (turnSeat != null) {
-            Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawTurnYard(layout, size.minDimension / layout.size, turnSeat) }
-        }
-        // The pawns standing still, on a layer of their own: drawn again as a move starts and ends, not on its frames.
-        val animating = motion.moving
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { }
-                .pointerInput(layout) {
-                    detectTapGestures { tap ->
-                        val unit = size.width.toFloat() / layout.size
-                        val picked = pawnAt(tap / unit, currentMarks, currentMovable)
-                        currentMoves.firstOrNull { picked != null && it.picked(currentState, currentSwapping) == picked }?.let(currentOnMove)
-                    }
-                },
-        ) {
-            val unit = size.minDimension / layout.size
-            if (lastStanding) drawFallen(state, layout, unit, { pawnColours[it] }, theme.pawns) { player, pawn -> animating != null && motion.isAnimated(player, pawn) }
-            for (mark in marks) {
-                // The moving pawn and any it captured are drawn on their way, below; the rest of their mark stays.
-                val pawns = mark.pawns.filterNot { motion.isAnimated(mark.player, it) || ghostMotion.isCaught(PawnRef(mark.player, it)) }
-                if (pawns.isEmpty()) continue
-                val colour = pawnColours[mark.player]
-                val ringed = animating == null && pawns.any { PawnRef(mark.player, it) in movable }
-                if (pawns.any { state.isShielded(mark.player, it) || (animating != null && PawnRef(mark.player, it) in animating.brokenShields) }) drawShieldBubble(mark.centre * unit, mark.radius * unit)
-                if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
-                with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, colour, ringed) }
-                if (pawns.size > 1) drawCount(textMeasurer, pawns.size, mark, unit)
+        // All that's drawn, faded together while a portal is pressed: read by the layer alone, so a press redraws none of it.
+        Box(modifier = Modifier.matchParentSize().graphicsLayer { alpha = if (pressedPortal == null) 1f else PORTAL_PRESSED_FADE }) {
+            // The board, painted once (off the main thread) into an image for its style, seats' colours, pawn count, and size,
+            // on a layer of its own: a frame of a move or a turn's ring never draws it again.
+            val lastStanding = state.rules.lastStanding
+            val stage = state.suddenDeathStage
+            val parts = if (lastStanding) BoardParts(starts = stage < 1, stars = stage < 2, homes = false) else BoardParts()
+            // A last-standing yard's spots are its tally, drawn with the pawns.
+            val spots = if (lastStanding) 0 else pawns
+            val surface = BoardSurface(theme.board, layout, colours, spots, parts)
+            PaintedSurface(surface, modifier = Modifier.fillMaxSize().graphicsLayer { }) {
+                with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours, spots, parts) }
             }
-        }
-        // The ghosts over the pawns, the drifting one and any it's catching on a layer of their own.
-        if (state.rules.ghosts) {
-            Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { with(ghostMotion) { drawStill(state, layout, size.minDimension / layout.size) } }
-            if (ghostMotion.drifting != null) {
+            // The arena, drawn again only as sudden death comes on, or takes squares.
+            if (lastStanding) {
+                val lost = state.lostSquares - vanish.squares
+                Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawArena(layout, size.minDimension / layout.size, stage, lost) }
+                if (vanish.squares.isNotEmpty()) BoundedArt(modifier = Modifier.fillMaxSize()) { with(vanish) { drawVanishing(layout, size.minDimension / layout.size, stage) } }
+            }
+            // The portals, under the pawns: drawn once.
+            if (state.rules.portals) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPortals(layout, size.minDimension / layout.size) }
+            // The power-ups, under the pawns: drawn again as one comes or goes.
+            if (state.rules.powerUps) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPowerUps(layout, size.minDimension / layout.size, state.powerUps) }
+            // On a layer of its own too, drawn again only as the turn passes.
+            val turnSeat = if (state.isFinished) null else state.currentPlayer.seat
+            if (turnSeat != null) {
+                Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawTurnYard(layout, size.minDimension / layout.size, turnSeat) }
+            }
+            // The pawns standing still, on a layer of their own: drawn again as a move starts and ends, not on its frames.
+            val animating = motion.moving
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { }
+                    .pointerInput(layout) {
+                        fun point(at: Offset) = at / (size.width.toFloat() / layout.size)
+                        // A tile's tap is its own, not a move, unless it's for a pawn.
+                        fun tap(point: Offset) {
+                            val now = currentState
+                            val tile = tileAt(point, layout, specialSquares(now))?.takeUnless { pawnTakesTap(point, layout, it, currentMarks, currentMovable) }
+                            if (tile != null) {
+                                tip = if (tip == null && tile in now.powerUps) PowerUpTip(tile, detailed = false) else null
+                                return
+                            }
+                            val picked = pawnAt(point, currentMarks, currentMovable)
+                            currentMoves.firstOrNull { picked != null && it.picked(now, currentSwapping) == picked }?.let(currentOnMove)
+                        }
+                        detectTapGestures(
+                            onPress = { at ->
+                                if (currentState.rules.portals) {
+                                    pressedPortal = tileAt(point(at), layout, specialSquares(currentState))?.let(layout.geometry::portalAt)
+                                    try {
+                                        awaitRelease()
+                                    } finally {
+                                        pressedPortal = null
+                                    }
+                                }
+                            },
+                            onLongPress = { at ->
+                                val tile = tileAt(point(at), layout, specialSquares(currentState))
+                                when {
+                                    tile == null -> tap(point(at))
+                                    tile in currentState.powerUps -> tip = PowerUpTip(tile, detailed = true)
+                                    // A portal held to be looked at: a pawn on it isn't moved.
+                                    else -> Unit
+                                }
+                            },
+                            onTap = { tap(point(it)) },
+                        )
+                    },
+            ) {
+                val unit = size.minDimension / layout.size
+                if (lastStanding) drawFallen(state, layout, unit, { pawnColours[it] }, theme.pawns) { player, pawn -> animating != null && motion.isAnimated(player, pawn) }
+                for (mark in marks) {
+                    // The moving pawn and any it captured are drawn on their way, below; the rest of their mark stays.
+                    val pawns = mark.pawns.filterNot { motion.isAnimated(mark.player, it) || ghostMotion.isCaught(PawnRef(mark.player, it)) }
+                    if (pawns.isEmpty()) continue
+                    val colour = pawnColours[mark.player]
+                    val ringed = animating == null && pawns.any { PawnRef(mark.player, it) in movable }
+                    if (pawns.any { state.isShielded(mark.player, it) || (animating != null && PawnRef(mark.player, it) in animating.brokenShields) }) drawShieldBubble(mark.centre * unit, mark.radius * unit)
+                    if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
+                    with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, colour, ringed) }
+                    if (pawns.size > 1) drawCount(textMeasurer, pawns.size, mark, unit)
+                }
+            }
+            // The ghosts over the pawns, the drifting one and any it's catching on a layer of their own.
+            if (state.rules.ghosts) {
+                Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { with(ghostMotion) { drawStill(state, layout, size.minDimension / layout.size) } }
+                if (ghostMotion.drifting != null) {
+                    BoundedArt(modifier = Modifier.fillMaxSize()) {
+                        with(ghostMotion) { drawDrift(size.minDimension / layout.size, theme.pawns, { pawnColours[it] }, moving = animating?.let { PawnRef(it.player, it.pawn) }) }
+                    }
+                }
+            }
+            // The move under way: only this is drawn again on its frames, reading the move's clock as it draws, and only
+            // over the board.
+            if (animating != null) {
                 BoundedArt(modifier = Modifier.fillMaxSize()) {
-                    with(ghostMotion) { drawDrift(size.minDimension / layout.size, theme.pawns, { pawnColours[it] }, moving = animating?.let { PawnRef(it.player, it.pawn) }) }
+                    with(motion) { drawMotion(size.minDimension / layout.size, theme.pawns) { pawnColours[it] } }
                 }
             }
         }
-        // The move under way: only this is drawn again on its frames, reading the move's clock as it draws, and only
-        // over the board.
-        if (animating != null) {
-            BoundedArt(modifier = Modifier.fillMaxSize()) {
-                with(motion) { drawMotion(size.minDimension / layout.size, theme.pawns) { pawnColours[it] } }
-            }
+        // The pair pressed, bright over the rest.
+        pressedPortal?.let { pressed -> Canvas(modifier = Modifier.fillMaxSize()) { drawPressedPortal(layout, size.minDimension / layout.size, pressed) } }
+        // Gone once its power-up is taken, for good.
+        LaunchedEffect(state.powerUps) { if (tip?.square !in state.powerUps) tip = null }
+        tip?.let { shown ->
+            state.powerUps[shown.square]?.let { PowerUpTooltip(layout, shown, it, onDismiss = { tip = null }, Modifier.matchParentSize()) }
         }
-        BoardSemantics(state, seatColours, moves, onMove, Modifier.fillMaxSize(), swapping)
+        BoardSemantics(state, seatColours, moves, onMove, Modifier.fillMaxSize(), swapping, onDescribe = { tip = PowerUpTip(it, detailed = true) })
     }
 }
 
@@ -240,6 +288,10 @@ private class MovingPawn(
  * its yard spot, or one a power-up moves ([taken] false).
  */
 private class SentPawn(val ref: PawnRef, val from: Offset, val to: Offset, val fromRadius: Float, val toRadius: Float, val taken: Boolean)
+
+/** The squares of [state]'s board with something of the mode's own on them to tap: portals, or power-ups. */
+private fun specialSquares(state: GameState): Collection<Int> =
+    if (state.rules.portals) state.board.portals.flatMap { listOf(it.first, it.second) } else state.powerUps.keys
 
 /**
  * The pawn move under way on the board, if any, and its [clock] (milliseconds from its start), read only while drawing,

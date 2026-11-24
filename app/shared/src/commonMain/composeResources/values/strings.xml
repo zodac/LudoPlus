@@ -169,6 +169,8 @@
     <string name="game_square_portal_spoken">portal to square %1$d</string>
     <!-- Chaos: a power-up on a square. %1$s is its name (power_up_*). Then, after a pawn with a shield round it. -->
     <string name="game_square_power_up_spoken">%1$s power-up</string>
+    <!-- A screen reader's action on such a square: it shows what the power-up does. %1$s is its name. -->
+    <string name="game_square_power_up_action">What %1$s does</string>
     <string name="game_pawn_shielded_spoken">shielded</string>
     <!-- Haunted House: a ghost on a square. -->
     <string name="game_square_ghost_spoken">ghost</string>

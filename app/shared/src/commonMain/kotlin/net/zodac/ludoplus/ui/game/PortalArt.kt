@@ -17,10 +17,14 @@ import net.zodac.ludoplus.model.Portal
 import net.zodac.ludoplus.model.portals
 import net.zodac.ludoplus.ui.theme.BoardInk
 import net.zodac.ludoplus.ui.theme.BoardIvory
+import net.zodac.ludoplus.ui.theme.BoardSparkGold
 import net.zodac.ludoplus.ui.theme.PortalColours
 
 /** How big a portal is, across from its centre, in squares. */
 private const val PORTAL_RADIUS = 0.46f
+
+/** How big one is while it, or its pair, is pressed. */
+private const val PRESSED_RADIUS = 0.56f
 
 /** How many symbols a portal's pair may be told by: a symbol and a form (a long pair's ring is split) name a pair. */
 private const val SYMBOLS = 8
@@ -34,11 +38,22 @@ internal fun portalSymbol(board: BoardGeometry, portal: Portal): Int =
  * split ring.
  */
 internal fun DrawScope.drawPortals(layout: BoardLayout, unit: Float) {
-    val board = layout.geometry
-    for (portal in board.portals) {
-        val symbol = portalSymbol(board, portal)
-        for (square in listOf(portal.first, portal.second)) drawPortal(layout.trackSquare(square).centre * unit, unit * PORTAL_RADIUS, symbol, portal.long)
+    for (portal in layout.geometry.portals) drawPair(layout, unit, portal, PORTAL_RADIUS)
+}
+
+/** [portal]'s two ends, bigger and ringed in gold: picked out while it's pressed. */
+internal fun DrawScope.drawPressedPortal(layout: BoardLayout, unit: Float, portal: Portal) {
+    for (square in listOf(portal.first, portal.second)) {
+        val centre = layout.trackSquare(square).centre * unit
+        drawCircle(BoardInk, unit * PRESSED_RADIUS * 1.4f, centre)
+        drawCircle(BoardSparkGold, unit * PRESSED_RADIUS * 1.28f, centre)
     }
+    drawPair(layout, unit, portal, PRESSED_RADIUS)
+}
+
+private fun DrawScope.drawPair(layout: BoardLayout, unit: Float, portal: Portal, radius: Float) {
+    val symbol = portalSymbol(layout.geometry, portal)
+    for (square in listOf(portal.first, portal.second)) drawPortal(layout.trackSquare(square).centre * unit, unit * radius, symbol, portal.long)
 }
 
 private fun DrawScope.drawPortal(centre: Offset, radius: Float, symbol: Int, long: Boolean) {
