@@ -48,7 +48,7 @@ class SettingsRowsTest : UiTest() {
             }
         }
         // The page names every switch - and its version and two links.
-        listOf("Settings", "Sound effects", "Vibration", "Confirm leaving game", "About", "Licences").forEach { compose.onNodeWithText(it).assertExists() }
+        listOf("Settings", "Sound effects", "Vibration", "Move log", "Confirm leaving game", "About", "Licences").forEach { compose.onNodeWithText(it).assertExists() }
         compose.onNode(hasText("Version ", substring = true)).assertExists()
 
         // Compact rows: a switch row is the 48dp touch target's height, where a ListItem would make it 56dp.
@@ -59,6 +59,12 @@ class SettingsRowsTest : UiTest() {
         vibration.assertIsOn()
         vibration.performClick()
         vibration.assertIsOff()
+
+        val moveLog = compose.onNode(hasText("Move log") and isToggleable())
+        moveLog.assertIsOn()
+        moveLog.performClick()
+        moveLog.assertIsOff()
+        moveLog.assertHeightIsEqualTo(48.dp)
 
         // Graphics - the Orientation, Animations and Advanced graphics settings - is one button row, the 48dp touch target's height,
         // opening its page; none of those settings is on this one.

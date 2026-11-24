@@ -255,6 +255,9 @@ class GameViewModel(
     val confirmBeforeLeavingGame: StateFlow<Boolean> =
         settingsRepository.confirmBeforeLeavingGame.stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    /** Whether the game screen shows its move log (Settings' "Move log"). */
+    val showMoveLog: StateFlow<Boolean> = settingsRepository.showMoveLog.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
     /** Whether a game started now stops at its first winner (Settings' "Stop at first winner"). */
     private val stopAtFirstWinner: StateFlow<Boolean> =
         settingsRepository.stopAtFirstWinner.stateIn(viewModelScope, SharingStarted.Eagerly, false)

@@ -34,6 +34,7 @@ import net.zodac.ludoplus.ui.common.formatTimestamp
 data class SettingsToggles(
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
+    val showMoveLog: Boolean = true,
     val confirmBeforeLeavingGame: Boolean = true,
     val stopAtFirstWinner: Boolean = false,
 )
@@ -59,6 +60,7 @@ class SettingsViewModel(
     val toggles: StateFlow<SettingsToggles?> = combine(
         settingsRepository.soundEnabled,
         settingsRepository.vibrationEnabled,
+        settingsRepository.showMoveLog,
         settingsRepository.confirmBeforeLeavingGame,
         settingsRepository.stopAtFirstWinner,
         ::SettingsToggles,
@@ -66,6 +68,10 @@ class SettingsViewModel(
 
     fun setConfirmBeforeLeavingGame(confirm: Boolean) {
         viewModelScope.launch { settingsRepository.setConfirmBeforeLeavingGame(confirm) }
+    }
+
+    fun setShowMoveLog(show: Boolean) {
+        viewModelScope.launch { settingsRepository.setShowMoveLog(show) }
     }
 
     fun setStopAtFirstWinner(stop: Boolean) {

@@ -67,12 +67,14 @@ class SettingsCloudTest {
             mapOf(
                 "sound_enabled" to Stamped(SettingValue.Flag(true), 500L),
                 "vibration_enabled" to Stamped(SettingValue.Flag(false), 600L),
+                "show_move_log" to Stamped(SettingValue.Flag(false), 600L),
                 "animation_level" to Stamped(SettingValue.Text("off"), 9_000L),
                 "player_count" to Stamped(SettingValue.Text("not a number"), 9_000L),
             ),
         )
         assertEquals(false, repository.soundEnabled.first())
         assertEquals(false, repository.vibrationEnabled.first())
+        assertEquals(false, repository.showMoveLog.first())
         assertEquals(Stamped(SettingValue.Flag(false), 600L), repository.cloudSettings()["vibration_enabled"])
         assertNull(repository.cloudSettings()["animation_level"])
         assertNull(repository.cloudSettings()["player_count"])

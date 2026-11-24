@@ -4,7 +4,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -67,11 +69,13 @@ class MoveLogRoomTest : UiTest() {
     /** The newest turn in the log shown. */
     private var newestTurn = 0
 
-    private suspend fun show(game: StartedGame, fontScale: Float = 1f) {
+    private suspend fun show(game: StartedGame, fontScale: Float = 1f, showLog: Boolean? = null) {
         newestTurn = game.log.last().turn!!
         val inProgress = InProgressGameRepository(InMemoryPreferences())
         inProgress.save(game)
-        val viewModel = GameViewModel(SettingsRepository(InMemoryPreferences()), inProgress, GameRecordRepository(InMemoryGameResultDao()))
+        val settings = SettingsRepository(InMemoryPreferences())
+        showLog?.let { settings.setShowMoveLog(it) }
+        val viewModel = GameViewModel(settings, inProgress, GameRecordRepository(InMemoryGameResultDao()))
         assertTrue(viewModel.resumeGame())
         showcase.show {
             val density = LocalDensity.current
@@ -150,6 +154,28 @@ class MoveLogRoomTest : UiTest() {
             // The nearest heading over the line.
             assertEquals(entry.turn, turns.filter { heading("Turn $it") < y }.maxBy { heading("Turn $it") }, "line $index")
         }
+    }
+
+    /** How tall the board is: from the top of its highest place to the foot of its lowest. */
+    private fun boardHeight(): Float {
+        val places = compose.onAllNodes(hasContentDescription("Square ", substring = true)).fetchSemanticsNodes().map { it.boundsInRoot }
+        return places.maxOf { it.bottom } - places.minOf { it.top }
+    }
+
+    @Test
+    fun `with the log off in Settings nothing of it is on screen - its newest line still heard - and the board has its room`() = uiTest(TestScreen(360, 640)) {
+        val game = game(8)
+        show(game, showLog = true)
+        compose.onNode(isLog).assertExists()
+        val withLog = boardHeight()
+        show(game, showLog = false)
+        compose.onNode(isLog).assertDoesNotExist()
+        compose.onNode(hasText("Turn $newestTurn")).assertDoesNotExist()
+        assertTrue(boardHeight() > withLog, "the board is $withLog tall with the log and ${boardHeight()} without")
+        // The newest line, as a polite live region, and none of the others.
+        val heard = compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite)).fetchSemanticsNodes()
+        assertTrue(heard.any { node -> node.config.getOrNull(SemanticsProperties.ContentDescription)?.single()?.contains("moved a pawn") == true })
+        compose.onNode(hasContentDescription("Alex goes first.")).assertDoesNotExist()
     }
 
     private val isTitle = hasText("Moves") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)

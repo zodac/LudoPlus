@@ -78,9 +78,10 @@ whose turn it is has an outline in their colour.
 Each round is under a heading ("Turn 3", `LogEntry.turn`: which of its player's turns each move was in), and who went first
 under "Start". A roll again's moves are lines of the same turn. Where there isn't room for the title, a heading, and two
 lines, the card has no title; where there isn't room for a line under the heading, it has no heading; where there isn't room
-for a line, nothing is drawn, and TalkBack still hears the newest. A game saved before entries kept their turns (1.1.0) has
-them counted back as it's loaded (`MoveLog.withTurns`). To TalkBack the headings are headings, and the lines a list ("1 of
-12"), read without their times.
+for a line, or with Settings' **Move log** off (`show_move_log`, on by default), nothing is drawn, and TalkBack still hears
+the newest; with it off, the board has the log's room. Every move is logged either way. A game saved before entries kept
+their turns (1.1.0) has them counted back as it's loaded (`MoveLog.withTurns`). To TalkBack the headings are headings, and
+the lines a list ("1 of 12"), read without their times.
 
 ## What TalkBack hears
 

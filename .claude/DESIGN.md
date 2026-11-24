@@ -648,8 +648,8 @@ Each category is two lists in the same order:
 ## Settings
 
 - **Contents.** The online account card (the play app) or the progress files card (the github app), at the top; switches
-    for Sound effects, Vibration, Confirm leaving game, and Stop at first winner; the **Graphics** row; and in the play
-    app, Remove ads and the ad privacy choices (`ADS.md`).
+    for Sound effects, Vibration, Move log, Confirm leaving game, and Stop at first winner; the **Graphics** row; and in
+    the play app, Remove ads and the ad privacy choices (`ADS.md`).
 - **Graphics** (`GraphicsScreen`, `GraphicsViewModel`, route `settings/graphics`): a page of its own, opened by a button
     row with an onward arrow. The Orientation, then the Animations level, each under its title, in one card; then the
     Advanced graphics settings, under their own heading in three cards, each collapsed until opened (`UI.md`, "Reduced

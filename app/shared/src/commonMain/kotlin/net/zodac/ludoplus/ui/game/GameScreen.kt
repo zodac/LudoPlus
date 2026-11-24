@@ -238,6 +238,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
     LaunchedEffect(sideways) { if (sideways) viewModel.onShownSideways() }
     // The player's picks on the Styles page, or the defaults until they've loaded.
     val picks by viewModel.savedStyles.collectAsStateWithLifecycle()
+    val showLog by viewModel.showMoveLog.collectAsStateWithLifecycle()
     val theme = remember(picks) { picks?.visualTheme ?: GameVisualTheme() }
     CompositionLocalProvider(
         LocalDieLongPress provides viewModel::onDieLongPressed.takeIf { viewModel.hasSuperuserMode },
@@ -251,6 +252,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
             onResults = { finishedView = FinishedView.RESULTS },
             settled = settled,
             notice = netplayNotice(guestState, awaySeats, started),
+            showLog = showLog,
             tutorial = if (isTutorial) {
                 TutorialView(
                     tutorialStep, tutorialPart, viewModel.tutorialParts, viewModel.tutorialSteps, viewModel::jumpToTutorialPart,
@@ -388,7 +390,7 @@ private fun GameFeedback(state: GameState) {
 /**
  * The game screen's content for [started]: rolling calls [onRoll], a tap on a movable pawn [onMove], the back arrow
  * [onBack], and the finished game's button [onResults]. The die can't be rolled until the last action has played out
- * ([settled]).
+ * ([settled]). The move log is on screen with [showLog]; without it, TalkBack still hears its newest line.
  */
 @Composable
 fun GameContent(
@@ -400,6 +402,7 @@ fun GameContent(
     settled: Boolean = true,
     notice: String? = null,
     tutorial: TutorialView? = null,
+    showLog: Boolean = true,
 ) {
     val seatColours = List(started.state.board.seats) { seat ->
         started.state.players.indexOfFirst { it.seat == seat }.takeIf { it >= 0 }?.let { started.players[it].colour }
@@ -459,12 +462,12 @@ fun GameContent(
                     Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         players(false)
                         TurnPanel(started, offered, seatColours, onRoll, makeMove, onResults, settled = settled, onDeclineSwap = declineSwap, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
-                        MoveLogPanel(started, seatColours, tutorial = tutorial != null, modifier = Modifier.weight(1f))
+                        MoveLogPanel(started, seatColours, tutorial = tutorial != null, shown = showLog, modifier = Modifier.weight(1f))
                     }
                 }
             } else {
-                // The tutorial's log keeps no room: its coach says what matters.
-                val logHeight = if (tutorial == null) shortestLogHeight() else 0.dp
+                // The tutorial's log keeps no room: its coach says what matters. Nor does one not shown.
+                val logHeight = if (tutorial == null && showLog) shortestLogHeight() else 0.dp
                 val rows = playerCardRows(BoardLayout.of(started.state.board), started.state.players.map { it.seat }).size
                 val compact = width + playerCardsHeight(rows, compact = false) + PORTRAIT_DIE_SIZE + PORTRAIT_GAP * 3 + logHeight > height
                 PortraitGame(
@@ -476,7 +479,7 @@ fun GameContent(
                             started, offered, seatColours, onRoll, makeMove, onResults, settled = settled, onDeclineSwap = declineSwap, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
                         )
                     },
-                    log = { MoveLogPanel(started, seatColours, tutorial = tutorial != null) },
+                    log = { MoveLogPanel(started, seatColours, tutorial = tutorial != null, shown = showLog) },
                 )
             }
         }

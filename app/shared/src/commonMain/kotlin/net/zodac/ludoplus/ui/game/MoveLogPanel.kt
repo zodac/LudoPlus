@@ -141,14 +141,14 @@ private fun logRows(log: List<LogEntry>, first: Boolean): List<LogRow> = buildLi
  * and each turn's as headings, the lines as a list ("1 of 12") without their times, and the newest line as it comes (a
  * polite live region). Where there isn't room for the title, the newest turn's heading, and two lines (a short screen, a
  * large font), the card has no title; where there isn't room for a line under that heading, it isn't shown; where there
- * isn't room for a line, it isn't drawn, and TalkBack still hears the newest.
+ * isn't room for a line, or the log isn't [shown] (Settings' "Move log"), it isn't drawn, and TalkBack still hears the newest.
  */
 @Composable
-internal fun MoveLogPanel(game: StartedGame, seatColours: List<PlayerColour?>, tutorial: Boolean, modifier: Modifier = Modifier) {
+internal fun MoveLogPanel(game: StartedGame, seatColours: List<PlayerColour?>, tutorial: Boolean, shown: Boolean, modifier: Modifier = Modifier) {
     val count = game.log.size + if (tutorial) 0 else 1
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         if (count == 0) return@BoxWithConstraints
-        if (maxHeight < UNTITLED_TOP * 2 + logLineHeight()) {
+        if (!shown || maxHeight < UNTITLED_TOP * 2 + logLineHeight()) {
             LogLine(game, seatColours, entry = game.log.lastOrNull(), newest = true, Modifier.drawWithContent { })
             return@BoxWithConstraints
         }

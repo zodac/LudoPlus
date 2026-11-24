@@ -60,6 +60,7 @@ import net.zodac.ludoplus.resources.settings_graphics
 import net.zodac.ludoplus.resources.settings_import_progress_confirm
 import net.zodac.ludoplus.resources.settings_import_progress_message
 import net.zodac.ludoplus.resources.settings_import_progress_title
+import net.zodac.ludoplus.resources.settings_move_log
 import net.zodac.ludoplus.resources.settings_remove_ads
 import net.zodac.ludoplus.resources.settings_remove_ads_action
 import net.zodac.ludoplus.resources.settings_remove_ads_dialog_message
@@ -220,6 +221,7 @@ fun SettingsScreen(
             CompactSettingsCard {
                 SwitchSetting(Symbols.VolumeUp, stringResource(Res.string.settings_sound), toggles.soundEnabled, viewModel::setSoundEnabled)
                 SwitchSetting(Symbols.Vibration, stringResource(Res.string.settings_vibration), toggles.vibrationEnabled, viewModel::setVibrationEnabled)
+                SwitchSetting(Symbols.FormatListNumbered, stringResource(Res.string.settings_move_log), toggles.showMoveLog, viewModel::setShowMoveLog)
                 SwitchSetting(
                     Symbols.CheckCircle,
                     stringResource(Res.string.settings_confirm_leaving),

@@ -211,6 +211,11 @@ class SettingsRepository(
 
     suspend fun setConfirmBeforeLeavingGame(confirm: Boolean) = set(CONFIRM_BEFORE_LEAVING_GAME_KEY, confirm)
 
+    /** Whether the game screen shows its move log. */
+    val showMoveLog: Flow<Boolean> = read(SHOW_MOVE_LOG_KEY, default = true)
+
+    suspend fun setShowMoveLog(show: Boolean) = set(SHOW_MOVE_LOG_KEY, show)
+
     /** Whether a new game ends as soon as one player has every pawn home ([net.zodac.ludoplus.model.GameRules.stopAtFirstWinner]). */
     val stopAtFirstWinner: Flow<Boolean> = read(STOP_AT_FIRST_WINNER_KEY, default = false)
 
@@ -304,6 +309,7 @@ class SettingsRepository(
 
     private companion object {
         val CONFIRM_BEFORE_LEAVING_GAME_KEY = booleanPreferencesKey("confirm_before_leaving_game")
+        val SHOW_MOVE_LOG_KEY = booleanPreferencesKey("show_move_log")
         val STOP_AT_FIRST_WINNER_KEY = booleanPreferencesKey("stop_at_first_winner")
         val LOCKED_ONLY_ACHIEVEMENTS_KEY = booleanPreferencesKey("locked_only_achievements")
         val LEADERBOARD_CHOICE_KEY = stringPreferencesKey("leaderboard_choice")
@@ -362,7 +368,7 @@ class SettingsRepository(
             add(SyncedKey.Number(PAWNS_KEY))
             listOf(
                 PARTNER_CAPTURES_KEY, ROLL_FOR_PARTNERS_KEY, CONFIRM_BEFORE_LEAVING_GAME_KEY, STOP_AT_FIRST_WINNER_KEY, SOUND_ENABLED_KEY,
-                VIBRATION_ENABLED_KEY,
+                VIBRATION_ENABLED_KEY, SHOW_MOVE_LOG_KEY,
             ).mapTo(this) { SyncedKey.Flag(it) }
             add(SyncedKey.TextSet(HOUSE_RULES_KEY))
         }

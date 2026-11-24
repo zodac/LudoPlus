@@ -742,6 +742,8 @@
     <!-- The fastest frame rate: as fast as the screen draws. Drawn, then spoken. -->
     <string name="settings_frame_rate_max">Max</string>
     <string name="settings_frame_rate_max_spoken">Maximum</string>
+    <!-- Whether the game screen shows its list of every move (game_log_title). -->
+    <string name="settings_move_log">Move log</string>
     <string name="settings_confirm_leaving">Confirm leaving game</string>
     <!-- Ends a new game as soon as one player has every pawn home; the others are placed as they stand. -->
     <string name="settings_stop_at_first_winner">Stop at first winner</string>
