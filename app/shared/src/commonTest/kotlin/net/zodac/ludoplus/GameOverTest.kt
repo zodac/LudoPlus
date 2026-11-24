@@ -89,8 +89,8 @@ class GameOverTest : UiTest() {
                 LudoPlusTheme { GameOverScreen(over, onBackToMenu = {}, onPlayAgain = {}, onReviewBoard = {}, celebrate = false) }
             }
         }
-        compose.onNode(hasText("Winner") and hasText("Alex") and hasText("Survived 15m 0s") and hasText("2 of 6 pawns left, 9 captures, 4 captured")).assertExists()
-        compose.onNode(hasText("4th") and hasText("Sam") and hasText("Survived 5m 0s") and hasText("0 of 6 pawns left, 0 captures, 6 captured")).assertExists()
+        compose.onNode(hasText("Winner") and hasText("Alex") and hasText("Survived 15m 0s") and hasText("2 of 6 pawns left, 9 captures")).assertExists()
+        compose.onNode(hasText("4th") and hasText("Sam") and hasText("Survived 5m 0s") and hasText("0 of 6 pawns left, 0 captures")).assertExists()
     }
 
     private fun showResults(onMenu: () -> Unit = {}, onAgain: () -> Unit = {}, onReview: () -> Unit = {}) {

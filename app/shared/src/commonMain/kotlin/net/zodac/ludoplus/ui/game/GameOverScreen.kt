@@ -218,7 +218,7 @@ fun GameOverScreen(
     }
 }
 
-/** What [player] did: their turns and captures, or, if they never finished, how many pawns they brought home; where the last standing wins, how many they had left. */
+/** What [player] did: their turns and captures, or, if they never finished, how many pawns they brought home; where the last standing wins, how many they had left, and their captures alone. */
 @Composable
 private fun resultLine(game: StartedGame, player: Int): String {
     val side = game.state.players[player]
@@ -232,10 +232,11 @@ private fun resultLine(game: StartedGame, player: Int): String {
         pluralStringResource(Res.plurals.gameover_pawns_home, total, side.pawnsHome(board), total)
     }
     return joinClauses(
-        listOf(
+        listOfNotNull(
             first,
             pluralStringResource(Res.plurals.gameover_captures, side.captures, side.captures),
-            pluralStringResource(Res.plurals.gameover_captured, side.timesCaptured, side.timesCaptured),
+            // Where the last standing wins, the pawns left already say it.
+            if (game.state.rules.lastStanding) null else pluralStringResource(Res.plurals.gameover_captured, side.timesCaptured, side.timesCaptured),
         ),
     )
 }
