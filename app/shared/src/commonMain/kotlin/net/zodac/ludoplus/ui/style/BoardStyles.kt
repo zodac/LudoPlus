@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.cos
@@ -18,7 +19,7 @@ import net.zodac.ludoplus.ui.theme.BoardEmptySeat
 import net.zodac.ludoplus.ui.theme.BoardInk
 import net.zodac.ludoplus.ui.theme.BoardIvory
 
-/** The default [BoardStyle]: ivory squares ruled in ink, the seats' colours, and ink stars on the safe squares. */
+/** The default [BoardStyle]: ivory squares ruled in ink, the seats' colours, and ink stars on the safe squares, which are shaded. */
 object ClassicBoardStyle : BoardStyle, Swatched {
     override val id: String = DefaultStyleIds.BOARD
     override val swatch: Color = BoardIvory
@@ -38,8 +39,9 @@ object ClassicBoardStyle : BoardStyle, Swatched {
         for (square in 0..<board.trackLength) {
             val cell = layout.trackSquare(square)
             val startOf = if (parts.starts && square % board.seatSpacing == 0) square / board.seatSpacing else null
-            shape(cell.corners, startOf?.let { seatColours.colourOf(it) } ?: BoardIvory)
-            if (parts.stars && square % board.seatSpacing == board.starOffset) drawStar(cell.centre * unit, unit * 0.36f, BoardInk.copy(alpha = 0.55f))
+            val star = parts.stars && square % board.seatSpacing == board.starOffset
+            shape(cell.corners, startOf?.let { seatColours.colourOf(it) } ?: if (star) SafeShade else BoardIvory)
+            if (star) drawStar(cell.centre * unit, unit * 0.36f, BoardInk.copy(alpha = 0.8f))
         }
         for (seat in 0..<board.seats) {
             val colour = seatColours.colourOf(seat)
@@ -68,6 +70,9 @@ object ClassicBoardStyle : BoardStyle, Swatched {
         drawCircle(BoardInk.copy(alpha = 0.6f), radius * 1.12f, spot, style = Stroke(maxOf(0.75.dp.toPx(), radius * 0.07f)))
     }
 }
+
+/** A star square's fill, so it's told from a plain one with a pawn over its star. */
+private val SafeShade = lerp(BoardIvory, BoardInk, 0.3f)
 
 private fun List<Color?>.colourOf(seat: Int): Color = getOrNull(seat) ?: BoardEmptySeat
 

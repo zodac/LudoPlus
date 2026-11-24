@@ -32,6 +32,9 @@ The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and
     order they're drawn: `ground`, `drawSquare` (every track and home-column square), `drawYard`, `drawHomeTriangle`,
     `drawSafeMark`, and `drawFinish` over the lot. Classic (`BoardStyles.kt`) is drawn on its own and is what the Rules
     diagrams use.
+- **A star square is shaded as well as marked** (the maintainer, 2026-11-24), so it shows with a pawn over its mark:
+    `drawSquare` is given `safeFill` there, darker than `plain`, or lighter on a darker board, and a family whose plain
+    squares ignore their `fill` (Disco, Groovy's rings, Paper) must still show it. `StarSquareTest` holds every board to it.
 - **One yard for every layout.** A new family extends `ShapedYardBoardStyle` (`PlayfulBoardFamilies.kt`), which draws the
     classic yard and a star board's through the same `drawYardGround`, `drawCourt`, and `drawSpot`, each cut to its shape.
 - **Many dots are one draw**: `drawDots` (`drawPoints`), as Comic's halftone.

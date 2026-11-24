@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.cos
@@ -48,7 +49,7 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
     /** Under everything, [extent] wide. */
     protected open fun DrawScope.ground(extent: Size) = drawRect(plain, size = extent)
 
-    /** One square, [unit] across from [topLeft], in [fill]: a plain square's, or a seat's when [seat]. */
+    /** One square, [unit] across from [topLeft], in [fill]: a plain square's or a star square's ([safeFill]), or a seat's when [seat]. */
     protected abstract fun DrawScope.drawSquare(topLeft: Offset, unit: Float, fill: Color, seat: Boolean)
 
     /** A safe square's mark, on the square centred on [centre]. */
@@ -76,6 +77,9 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
         for (spot in spots) drawCircle(colour.copy(alpha = 0.45f), spotRadius, spot)
     }
 
+    /** A star square's fill, so that it's told from a plain one with a pawn over its mark: darker, or on a darker board lighter. */
+    protected open val safeFill: Color get() = if (plain.luminance() > SAFE_FILL_LIGHT) lerp(plain, Color.Black, 0.3f) else lerp(plain, Color.White, 0.36f)
+
     /** A yard's court: the inner four squares, rounded. */
     protected fun DrawScope.drawRoundRectCourt(topLeft: Offset, unit: Float, colour: Color = court) =
         drawRoundRect(colour, topLeft + Offset(unit, unit), Size(4 * unit, 4 * unit), CornerRadius(unit * 0.5f))
@@ -98,7 +102,8 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
         if (disc != null) clipPath(disc) { ground(extent) } else ground(extent)
         for (square in 0..<board.trackLength) {
             val startOf = if (parts.starts && square % board.seatSpacing == 0) square / board.seatSpacing else null
-            drawBoardSquare(layout.trackSquare(square), unit) { drawSquare(it, unit, startOf?.let(::seat) ?: plain, seat = startOf != null) }
+            val unowned = if (parts.stars && square % board.seatSpacing == board.starOffset) safeFill else plain
+            drawBoardSquare(layout.trackSquare(square), unit) { drawSquare(it, unit, startOf?.let(::seat) ?: unowned, seat = startOf != null) }
         }
         for (s in 0..<board.seats) {
             if (parts.homes) for (index in 0..<board.homeColumnLength) {
@@ -129,6 +134,9 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
         drawCircle(line, radius * 1.12f, spot, style = Stroke(maxOf(0.75.dp.toPx(), radius * 0.07f)))
     }
 }
+
+/** How light a board's plain squares are, at least, for its star squares to be darker than them rather than lighter. */
+private const val SAFE_FILL_LIGHT = 0.5f
 
 /**
  * Draws [square] with [draw], which draws a whole square [unit] across from the top-left it's given: turned to the
@@ -378,7 +386,7 @@ class NeonBoardStyle(id: String, private val dark: Color, private val tube: Colo
     override fun DrawScope.drawSquare(topLeft: Offset, unit: Float, fill: Color, seat: Boolean) {
         val inner = squareRect(topLeft, unit).deflate(unit * 0.1f)
         val tubeColour = if (seat) fill else tube
-        drawRect(if (seat) fill.copy(alpha = 0.32f) else plain, inner.topLeft, inner.size)
+        drawRect(if (seat) fill.copy(alpha = 0.32f) else fill, inner.topLeft, inner.size)
         glow(unit, tubeColour) { stroke, colour -> drawRect(colour, inner.topLeft, inner.size, style = stroke) }
     }
 
@@ -672,7 +680,11 @@ class PaperBoardStyle(id: String, private val paper: Color, private val pencil: 
 
     override fun DrawScope.drawSquare(topLeft: Offset, unit: Float, fill: Color, seat: Boolean) {
         val rect = squareRect(topLeft, unit)
-        if (seat) hatch(rect, unit, fill)
+        when {
+            seat -> hatch(rect, unit, fill)
+            // A star square, washed over: a plain one is bare paper.
+            fill != plain -> drawRect(fill, rect.topLeft, rect.size)
+        }
         pencilRect(rect, unit)
     }
 
@@ -739,6 +751,8 @@ private const val RETRO_PIXELS = 10
  */
 class RetroBoardStyle(id: String, private val block: Color, private val screen: Color) : LayeredBoardStyle(id, screen) {
     override val plain: Color = block
+    // Between the block and its star, so both show.
+    override val safeFill: Color = lerp(block, screen, 0.27f)
     override val court: Color = screen
     override val line: Color = Color.Black
 

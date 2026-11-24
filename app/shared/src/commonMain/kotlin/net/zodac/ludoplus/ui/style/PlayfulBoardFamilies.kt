@@ -438,7 +438,12 @@ class DiscoBoardStyle(id: String, private val dark: Color, private val lights: L
         } else {
             val light = lights[(topLeft.x / unit * 3 + topLeft.y / unit * 5).toInt().mod(lights.size)]
             drawRoundRect(
-                Brush.radialGradient(listOf(lerp(dark, light, 0.62f), lerp(dark, light, 0.22f)), center = panel.center, radius = unit * 0.66f),
+                // A star square's panel is white light, dimmed.
+                if (fill == plain) {
+                    Brush.radialGradient(listOf(lerp(dark, light, 0.62f), lerp(dark, light, 0.22f)), center = panel.center, radius = unit * 0.66f)
+                } else {
+                    Brush.radialGradient(listOf(lerp(fill, Color.White, 0.4f), fill), center = panel.center, radius = unit * 0.66f)
+                },
                 panel.topLeft, panel.size, round,
             )
         }
@@ -518,7 +523,12 @@ class GroovyBoardStyle(id: String, private val cream: Color, private val bands: 
         val square = Path().apply { addRect(squareRect(topLeft, unit)) }
         clipPath(square) {
             bands.forEachIndexed { i, band ->
-                val tone = if (seat) lerp(fill, Color.White, 0.16f + 0.14f * i) else lerp(band, cream, 0.35f)
+                val tone = when {
+                    seat -> lerp(fill, Color.White, 0.16f + 0.14f * i)
+                    fill == plain -> lerp(band, cream, 0.35f)
+                    // A star square's rings sink into its fill.
+                    else -> lerp(band, fill, 0.8f)
+                }
                 drawCircle(tone, unit * (0.82f - 0.22f * i), corner)
             }
         }
