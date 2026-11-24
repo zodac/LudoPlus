@@ -150,11 +150,12 @@ The sole holder can relicense later.
 - **Sora stays OFL-1.1.** Condition 5: modified or not, it must be distributed under the OFL only. Our `sora.ttf` is a
     modified weight-700 instance. `README.md`, the listings and any EULA must never claim "all files" without that
     carve-out.
-- **A cut-down font with Reserved Font Names** (DiceFive shipped MathJax's and Andika's for dice faces) is renamed, as
-    the OFL requires of a modified font. None ships yet.
+- **A cut-down font with Reserved Font Names** (MathJax's and Andika's, for dice faces) is renamed, as the OFL requires
+    of a modified font.
 - **The OFL forbids selling the font on its own.** Bundling it in a paid app is fine.
 - **Audio.**
-    - CC0 needs nothing.
+    - CC0 needs nothing. Every sound effect is CC0, and so is the promo video's music, which the app doesn't ship: it's
+        credited in the generated `video-description.txt` and in `LICENSE`, and has no `asset-sources.json` entry.
     - CC-BY needs a credit and can't take added restrictions, so it stays outside the all-rights-reserved scope.
     - CC-BY-SA adaptations stay CC-BY-SA.
     - **NC licences are incompatible with the purchase.**

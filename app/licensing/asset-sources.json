@@ -42,20 +42,20 @@
     ]
   },
   "app/android/src/main/res/drawable/ic_launcher_background.xml": {
-    "description": "Launcher icon background layer: flat brand navy (placeholder)",
-    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721",
+    "description": "Launcher icon background layer: the tilted Ludo board",
+    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721 (redrawn in commit 37ef865)",
     "copyright": "Copyright 2026 zodac.net",
     "license": "LicenseRef-LudoPlus-AllRightsReserved"
   },
   "app/android/src/main/res/drawable/ic_launcher_foreground.xml": {
-    "description": "Launcher icon artwork: an ivory pawn (placeholder)",
-    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721",
+    "description": "Launcher icon artwork: four pawns in the players' colours, red in focus at the front",
+    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721 (redrawn in commit 37ef865)",
     "copyright": "Copyright 2026 zodac.net",
     "license": "LicenseRef-LudoPlus-AllRightsReserved"
   },
   "app/android/src/main/res/drawable/ic_launcher_monochrome.xml": {
-    "description": "Themed-icon (monochrome) layer of the launcher icon: the pawn of ic_launcher_foreground as one flat silhouette",
-    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721",
+    "description": "Themed-icon (monochrome) layer of the launcher icon: the pawns of ic_launcher_foreground as flat silhouettes",
+    "source": "Created for LudoPlus in Claude Code session https://claude.ai/code/session_01FqpTvNEKmfU5eA4vLNn721 (redrawn in commit 37ef865)",
     "copyright": "Copyright 2026 zodac.net",
     "license": "LicenseRef-LudoPlus-AllRightsReserved"
   },
