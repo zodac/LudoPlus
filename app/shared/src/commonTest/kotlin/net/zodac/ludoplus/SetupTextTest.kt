@@ -1,5 +1,6 @@
 package net.zodac.ludoplus
 
+import net.zodac.ludoplus.model.CustomMode
 import net.zodac.ludoplus.model.GameMode
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.runtime.CompositionLocalProvider
@@ -11,7 +12,6 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasSetTextAction
@@ -193,17 +193,25 @@ class SetupTextTest : UiTest() {
     }
 
     @Test
-    fun `a custom mode - made with a name and a house rule - picked - its rules said on the House Rules card - and deleted after asking`() = uiTest(SCREEN) {
+    fun `no custom mode can be made - one made before is picked - edited with a name and a house rule - its rules said on the House Rules card - and deleted after asking`() = uiTest(SCREEN) {
         val viewModel = gameViewModel(records = GameRecordRepository(InMemoryGameResultDao(finishedGame = true)))
         show(viewModel)
-        compose.onNodeWithText("New Custom Mode").performScrollTo().performClick()
+        compose.onAllNodesWithText("New Custom Mode").assertCountEquals(0)
+        compose.onAllNodesWithText("Edit").assertCountEquals(0)
+
+        viewModel.saveCustomMode(CustomMode("custom_1", "House", GameMode.CLASSIC, setOf(HouseRule.FREE_START)))
         compose.waitForIdle()
+        compose.onNodeWithText("Edit").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Edit Custom Mode").assertExists()
         // Nothing to save until it has a name and a house rule.
+        compose.onNode(hasSetTextAction() and hasText("Name")).performTextReplacement(" ")
         compose.onNodeWithText("Give it a name.").assertExists()
         compose.onNode(hasText("Save") and hasClickAction()).assertIsNotEnabled()
-        compose.onNode(hasSetTextAction() and hasText("Name")).performTextInput("Classic")
+        compose.onNode(hasSetTextAction() and hasText("Name")).performTextReplacement("Classic")
         compose.onNodeWithText("There's a mode by that name already.").assertExists()
         compose.onNode(hasSetTextAction() and hasText("Name")).performTextReplacement("Cut-Throat")
+        compose.onNode(hasText("Free Start") and isToggleable()).performScrollTo().performClick()
         compose.onNodeWithText("Switch on a house rule: without one, it's just Classic.").assertExists()
         compose.onNode(hasText("Must Capture") and isToggleable()).performScrollTo().performClick()
         compose.onNode(hasText("Blockades") and isToggleable()).performScrollTo().performClick()

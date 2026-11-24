@@ -15,7 +15,7 @@ achievement audit (what each mode or house rule blocks or guards) is in `GAME_MO
 | `HAUNTED_HOUSE` | `haunted_house` | Ghosts on the track (`ghosts = true`, `game/Ghosts.kt`) | Its own, and all but a few |
 
 **Custom modes** (`model/CustomMode.kt`) are the player's own: a built-in base and house rules, saved under a name
-(`DESIGN.md`, "Game modes"). They are data in the settings, not `GameMode` entries: a game of one is its base mode's,
+(`DESIGN.md`, "Game modes"); no new ones can be made (2026-11-24). They are data in the settings, not `GameMode` entries: a game of one is its base mode's,
 with the house rules on.
 
 ## The one rule: a mode is data

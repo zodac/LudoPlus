@@ -562,14 +562,12 @@
     <string name="setup_house_rules_custom">Set by %1$s: %2$s.</string>
     <!-- Custom modes (model/CustomMode.kt), on the Game Mode card once house rules are unlocked. A custom mode's line in the picker: %1$s is its base mode, %2$s its house rules' names as a list. -->
     <string name="setup_custom_mode_description">%1$s, with %2$s</string>
-    <string name="setup_custom_new">New Custom Mode</string>
     <string name="setup_custom_edit">Edit</string>
     <string name="setup_custom_delete">Delete</string>
     <!-- Asked before a custom mode is deleted: %1$s is its name. -->
     <string name="setup_custom_delete_title">Delete %1$s?</string>
     <string name="setup_custom_delete_message">It goes from New Game for good.</string>
-    <!-- The page that makes or changes a custom mode. -->
-    <string name="setup_custom_editor_new_title">New Custom Mode</string>
+    <!-- The page that changes a custom mode. -->
     <string name="setup_custom_editor_edit_title">Edit Custom Mode</string>
     <string name="setup_custom_name">Name</string>
     <string name="setup_custom_name_hint">My Rules</string>

@@ -422,7 +422,7 @@ count but 4 has a board of its own; one player on two colours was dropped.
     the ordinary ones opened to every mode, each audited in each (`GAME_MODES_AUDIT.md`).
 - [x] Custom game modes (the maintainer, 2026-11-18): a base mode and at least one house rule, named and saved, listed
     in New Game's mode picker after the built-in modes, with New, Edit, and Delete on the card. As any game with house
-    rules, their games count towards nothing (`DESIGN.md`, "Custom modes").
+    rules, their games count towards nothing (`DESIGN.md`, "Custom modes"). New was removed (the maintainer, 2026-11-24).
 
 ## Phase 10: Google Play
 

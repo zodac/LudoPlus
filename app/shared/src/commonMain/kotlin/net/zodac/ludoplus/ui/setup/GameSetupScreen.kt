@@ -69,7 +69,6 @@ import net.zodac.ludoplus.resources.setup_custom_delete_message
 import net.zodac.ludoplus.resources.setup_custom_delete_title
 import net.zodac.ludoplus.resources.setup_custom_edit
 import net.zodac.ludoplus.resources.setup_custom_mode_description
-import net.zodac.ludoplus.resources.setup_custom_new
 import net.zodac.ludoplus.resources.setup_difficulty_easy
 import net.zodac.ludoplus.resources.setup_difficulty_hard
 import net.zodac.ludoplus.resources.setup_difficulty_medium
@@ -690,8 +689,8 @@ private sealed interface ModeOption {
 
 /**
  * The mode picker: every built-in mode, then (once house rules are unlocked) the player's custom modes, each a name and
- * one line (a custom mode's: its base and house rules). Under it, a button that makes a custom mode, and while one is
- * picked, its Edit and Delete; Delete asks first.
+ * one line (a custom mode's: its base and house rules). Under it, while a custom mode is picked, its Edit and Delete; Delete
+ * asks first. New ones can't be made: these are those made before that went.
  */
 @Composable
 private fun GameModeChoice(setup: GameSetupState, viewModel: GameViewModel) {
@@ -721,25 +720,23 @@ private fun GameModeChoice(setup: GameSetupState, viewModel: GameViewModel) {
             }
         },
     )
-    if (!setup.houseRulesUnlocked) return
-    // The custom mode being made or changed (null for none), and the one waiting to be deleted.
-    var editing by remember { mutableStateOf<EditorOpen?>(null) }
+    // The custom mode being changed (null for none), and the one waiting to be deleted.
+    var editing by remember { mutableStateOf<CustomMode?>(null) }
     var deleting by remember { mutableStateOf<CustomMode?>(null) }
-    // Wrapping at a large font rather than running off the card.
-    FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
-        if (custom != null) {
-            TextButton(onClick = { editing = EditorOpen(custom) }) { Text(stringResource(Res.string.setup_custom_edit)) }
+    if (custom != null) {
+        // Wrapping at a large font rather than running off the card.
+        FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
+            TextButton(onClick = { editing = custom }) { Text(stringResource(Res.string.setup_custom_edit)) }
             TextButton(onClick = { deleting = custom }) { Text(stringResource(Res.string.setup_custom_delete)) }
         }
-        TextButton(onClick = { editing = EditorOpen(null) }) { Text(stringResource(Res.string.setup_custom_new)) }
     }
-    editing?.let { open ->
+    editing?.let { mode ->
         CustomModeEditor(
-            editing = open.mode,
+            editing = mode,
             existing = setup.customModes,
-            onSave = { mode ->
+            onSave = { changed ->
                 editing = null
-                viewModel.saveCustomMode(mode)
+                viewModel.saveCustomMode(changed)
             },
             onDismiss = { editing = null },
         )
@@ -760,9 +757,6 @@ private fun GameModeChoice(setup: GameSetupState, viewModel: GameViewModel) {
         )
     }
 }
-
-/** The editor, open on [mode] (null for a new one). */
-private class EditorOpen(val mode: CustomMode?)
 
 /** [houseRules]' names as a list ("Blockades, Must Capture, and Free Start"), in [HouseRule]'s order. */
 @Composable

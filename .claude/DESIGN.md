@@ -191,7 +191,8 @@ TalkBack: "Square 2, ghost, empty"; the log adds "A ghost caught Sam!" to the tu
 built-in modes', whatever its case; at most 24 characters), a base mode, and at least one house rule (without one it
 would be its base). Kept as JSON in the `custom_modes` setting (`CustomModesJson`; one that can't be read is dropped),
 the one picked as `custom_mode`. New Game's mode picker lists them after the built-in modes, each with its base and
-house rules as its line; under it, New Custom Mode, and while one is picked, Edit and Delete (Delete asks first). The
+house rules as its line; under it, while one is picked, Edit and Delete (Delete asks first). **No new ones can be made**
+(the maintainer, 2026-11-24): those a player made before, in 1.0.1, still play, and can be changed or deleted. The
 editor is a page of its own: the name, Based On (the same picker as New Game's), and a switch a house rule, with Save offered once it
 can be. While one is picked, the House Rules card says "Set by Cut-Throat: Blockades and Must Capture." in place of the
 switches, which keep their own picks for the built-in modes. A game plays its base with its house rules, titled by its

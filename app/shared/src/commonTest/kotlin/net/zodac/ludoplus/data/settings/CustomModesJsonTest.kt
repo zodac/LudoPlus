@@ -49,7 +49,5 @@ class CustomModesJsonTest {
         assertEquals(setOf(HouseRule.FREE_START), rules.houseRules)
         assertTrue(CustomMode.nameTaken("cut-throat ", modes))
         assertFalse(CustomMode.nameTaken("Cut-Throat", modes, except = "custom_1"))
-        assertEquals("custom_3", CustomMode.nextId(modes))
-        assertEquals("custom_1", CustomMode.nextId(emptyList()))
     }
 }

@@ -17,7 +17,7 @@ them all home first. Releasing from 1.0.0 (2026-11-18).
     rather than writing it again, then make it Ludo's. All of it is back (2026-11-24 for the last of
     it); a doc that mentions DiceFive does so for its history.
 - **Players.** 2-8 per game: any mix of pass-and-play, CPU opponents, and, in the play app, phones nearby (`NETPLAY.md`).
-- **Content.** Custom game modes, house-rule modifiers, Nearby netplay, achievements, styles for the board, pawns and
+- **Content.** Game modes, house-rule modifiers, Nearby netplay, achievements, styles for the board, pawns and
     die, and in-app purchases, all built through Phase 12 (`IMPLEMENTATION.md`).
 - **Aims.**
     - A polished, offline-first game for the Play Store: no account needed, and play never waits on the network; data

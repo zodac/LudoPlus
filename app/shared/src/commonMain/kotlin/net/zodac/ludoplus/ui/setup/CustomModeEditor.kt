@@ -34,7 +34,6 @@ import net.zodac.ludoplus.model.sanitizePlayerName
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.setup_custom_base
 import net.zodac.ludoplus.resources.setup_custom_editor_edit_title
-import net.zodac.ludoplus.resources.setup_custom_editor_new_title
 import net.zodac.ludoplus.resources.setup_custom_name
 import net.zodac.ludoplus.resources.setup_custom_name_hint
 import net.zodac.ludoplus.resources.setup_custom_name_taken
@@ -50,22 +49,22 @@ import net.zodac.ludoplus.ui.common.fullScreenDialogProperties
 import net.zodac.ludoplus.ui.common.stringResource
 
 /**
- * Makes a custom mode, or changes [editing]: a page over New Game with its name, the mode it's based on, and a switch for
- * each house rule. Save ([onSave], handed the mode, its id kept when editing) is offered once it has a name of its own
+ * Changes the custom mode [editing]: a page over New Game with its name, the mode it's based on, and a switch for
+ * each house rule. Save ([onSave], handed the mode, its id kept) is offered once it has a name of its own
  * and a house rule; until then the reason shows under the form, and on the name field for TalkBack. Back, or the back
  * arrow, leaves without saving ([onDismiss]).
  *
  * A name is taken if one of [existing] has it, or a built-in mode, whatever its case.
  */
 @Composable
-internal fun CustomModeEditor(editing: CustomMode?, existing: List<CustomMode>, onSave: (CustomMode) -> Unit, onDismiss: () -> Unit) {
-    var name by remember { mutableStateOf(editing?.name.orEmpty()) }
-    var base by remember { mutableStateOf(editing?.base ?: GameMode.DEFAULT) }
-    var pickedRules by remember { mutableStateOf(editing?.houseRules.orEmpty()) }
+internal fun CustomModeEditor(editing: CustomMode, existing: List<CustomMode>, onSave: (CustomMode) -> Unit, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf(editing.name) }
+    var base by remember { mutableStateOf(editing.base) }
+    var pickedRules by remember { mutableStateOf(editing.houseRules) }
     // Only those that change anything in the mode it's based on.
     val houseRules = pickedRules.filter { it.appliesTo(base.rules) }.toSet()
     val builtInNames = GameMode.entries.map { stringResource(it.displayName) }
-    val nameTaken = CustomMode.nameTaken(name, existing, except = editing?.id) || builtInNames.any { it.equals(name.trim(), ignoreCase = true) }
+    val nameTaken = CustomMode.nameTaken(name, existing, except = editing.id) || builtInNames.any { it.equals(name.trim(), ignoreCase = true) }
     val problem = when {
         name.isBlank() -> stringResource(Res.string.setup_custom_need_name)
         nameTaken -> stringResource(Res.string.setup_custom_name_taken)
@@ -74,8 +73,7 @@ internal fun CustomModeEditor(editing: CustomMode?, existing: List<CustomMode>, 
     }
     val nameProblem = problem.takeIf { name.isBlank() || nameTaken }
     Dialog(onDismissRequest = onDismiss, properties = fullScreenDialogProperties()) {
-        val title = stringResource(if (editing == null) Res.string.setup_custom_editor_new_title else Res.string.setup_custom_editor_edit_title)
-        ScreenScaffold(title = title, onBack = onDismiss) {
+        ScreenScaffold(title = stringResource(Res.string.setup_custom_editor_edit_title), onBack = onDismiss) {
             ScrollingColumn(modifier = Modifier.weight(1f, fill = false).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = name,
@@ -123,7 +121,7 @@ internal fun CustomModeEditor(editing: CustomMode?, existing: List<CustomMode>, 
                 Text(problem, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
             }
             Button(
-                onClick = { onSave(CustomMode(editing?.id ?: CustomMode.nextId(existing), name.trim(), base, houseRules)) },
+                onClick = { onSave(editing.copy(name = name.trim(), base = base, houseRules = houseRules)) },
                 enabled = problem == null,
                 modifier = Modifier.fillMaxWidth().heightIn(min = MAIN_ACTION_HEIGHT),
             ) {
