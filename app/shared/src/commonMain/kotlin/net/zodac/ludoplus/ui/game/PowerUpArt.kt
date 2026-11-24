@@ -1,5 +1,6 @@
 package net.zodac.ludoplus.ui.game
 
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -8,10 +9,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import net.zodac.ludoplus.model.PowerUp
+import net.zodac.ludoplus.ui.style.toPath
 import net.zodac.ludoplus.ui.theme.BoardInk
 import net.zodac.ludoplus.ui.theme.BoardSparkGold
 import net.zodac.ludoplus.ui.theme.ShieldBlue
@@ -54,23 +57,48 @@ internal fun DrawScope.drawPowerUp(powerUp: PowerUp, centre: Offset, radius: Flo
             lines(-0.2f to -0.12f, -0.6f to 0.32f)
             lines(0.06f to -0.22f, 0.18f to -0.42f, 0.42f to -0.42f, 0.54f to -0.2f, 0.46f to 0f, 0.06f to 0.4f, 0.58f to 0.4f)
         }
-        PowerUp.SHIELD -> drawShieldShape(centre, radius)
-        PowerUp.ROLL_AGAIN -> {
-            drawArc(Color.White, -50f, 290f, false, at(-0.42f, -0.42f), Size(radius * 0.84f, radius * 0.84f), style = Stroke(radius * 0.15f, cap = StrokeCap.Round))
-            lines(0.02f to -0.62f, 0.3f to -0.36f, 0f to -0.12f)
-        }
+        PowerUp.SHIELD -> drawShieldShape(centre, radius, powerUp.color)
+        PowerUp.ROLL_AGAIN -> drawRoundArrow(centre, radius)
         PowerUp.CALL_UP -> {
-            lines(0f to 0.5f, 0f to -0.45f)
-            lines(-0.35f to -0.12f, 0f to -0.48f, 0.35f to -0.12f)
+            // A pawn coming up out of its yard.
+            drawPawnSign(at(0f, -0.16f), radius * 0.56f)
+            lines(-0.56f to 0.1f, -0.56f to 0.5f, 0.56f to 0.5f, 0.56f to 0.1f)
         }
-        PowerUp.SWAP -> {
-            lines(-0.45f to -0.2f, 0.45f to -0.2f, 0.2f to -0.45f)
-            lines(0.45f to 0.22f, -0.45f to 0.22f, -0.2f to 0.47f)
+        PowerUp.SWAP -> for (way in listOf(1f, -1f)) {
+            // One each way, the same turned half round.
+            drawLine(Color.White, at(-0.58f * way, -0.26f * way), at(0.16f * way, -0.26f * way), radius * 0.18f)
+            drawHead(at(0.13f * way, -0.54f * way), at(0.13f * way, 0.02f * way), at(0.58f * way, -0.26f * way))
         }
     }
 }
 
-private fun DrawScope.drawShieldShape(centre: Offset, radius: Float) {
+/** An arrow most of the way round [centre], clockwise, on a power-up of [radius]. */
+private fun DrawScope.drawRoundArrow(centre: Offset, radius: Float) {
+    val ring = radius * 0.46f
+    drawArc(Color.White, ROUND_ARROW_START, ROUND_ARROW_SWEEP, false, centre - Offset(ring, ring), Size(ring * 2, ring * 2), style = Stroke(radius * 0.18f))
+    val end = (ROUND_ARROW_START + ROUND_ARROW_SWEEP) * PI / 180
+    val out = Offset(cos(end).toFloat(), sin(end).toFloat())
+    val tip = centre + out * ring
+    val half = radius * 0.26f
+    drawHead(tip + out * half, tip - out * half, tip + Offset(-out.y, out.x) * (half * 1.35f))
+}
+
+private const val ROUND_ARROW_START = -40f
+private const val ROUND_ARROW_SWEEP = 285f
+
+/** An arrow's head, [a] and [b] its back corners, its point at [point]. */
+private fun DrawScope.drawHead(a: Offset, b: Offset, point: Offset) = drawPath(listOf(a, b, point).toPath(), Color.White)
+
+/** A pawn's outline, filled white, about [radius] from [centre]: a sign for one, whatever the player's pawn style. */
+private fun DrawScope.drawPawnSign(centre: Offset, radius: Float) {
+    fun at(x: Float, y: Float) = centre + Offset(x * radius, y * radius)
+    drawCircle(Color.White, radius * 0.36f, at(0f, -0.5f))
+    drawPath(listOf(at(-0.17f, -0.35f), at(0.17f, -0.35f), at(0.5f, 0.6f), at(-0.5f, 0.6f)).toPath(), Color.White)
+    drawRoundRect(Color.White, at(-0.64f, 0.5f), Size(radius * 1.28f, radius * 0.34f), CornerRadius(radius * 0.12f))
+}
+
+/** A white shield on a power-up of [radius], its right half shaded towards [colour]. */
+private fun DrawScope.drawShieldShape(centre: Offset, radius: Float, colour: Color) {
     fun at(x: Float, y: Float) = centre + Offset(x * radius, y * radius)
     val shield = Path().apply {
         at(0f, -0.55f).let { moveTo(it.x, it.y) }
@@ -80,6 +108,13 @@ private fun DrawScope.drawShieldShape(centre: Offset, radius: Float) {
         close()
     }
     drawPath(shield, Color.White)
+    val shade = Path().apply {
+        at(0f, -0.4f).let { moveTo(it.x, it.y) }
+        at(0.31f, -0.28f).let { lineTo(it.x, it.y) }
+        (at(0.31f, 0.22f) to at(0f, 0.43f)).let { (bend, end) -> quadraticTo(bend.x, bend.y, end.x, end.y) }
+        close()
+    }
+    drawPath(shade, lerp(colour, Color.White, 0.55f))
 }
 
 /** The bubble round a shielded pawn [pawnRadius] across at [centre], under it. */
