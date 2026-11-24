@@ -26,7 +26,8 @@ The board, the player cards, the die, and the move log. The general rules are in
     under the pawns: portals (`PortalArt.kt`), power-ups (`PowerUpArt.kt`), Survival's arena (`SurvivalArt.kt`), and
     ghosts (`GhostArt.kt`).
 - **Pawns on one square** share it, smaller; two or more of a colour are one pawn with a count. A safe square, a
-    blockade, and a shield each have their mark.
+    blockade, and a shield each have their mark. They make room as the pawn joining them comes onto the square, in its last
+    half hop, and it lands on its own share of it (`moveMarks`; the maintainer, 2026-11-25).
 - **A movable pawn is ringed** in violet. A tap on its square makes the move; where a square holds more than one, a tap
     asks which. The player whose turn it is has a white ring, edged in ink, inside their yard.
 - **A mode's own tiles** (`BoardTiles.kt`, `BoardTilesTest`; the maintainer, 2026-11-24). While a portal is pressed, it and

@@ -74,6 +74,9 @@ internal const val HOP_HEIGHT = 0.42f
 /** How much a hopping pawn swells at the top of its hop, as if nearer. */
 internal const val HOP_SWELL = 0.08f
 
+/** How long the pawns on a square take to make room for one landing on it, ending as it lands: half a hop, from the square's edge on. */
+private const val MAKE_ROOM_MILLIS = PAWN_STEP_MILLIS / 2
+
 /** How small a pawn going through a portal gets, of its size. */
 private const val MIN_WARP_SIZE = 0.08f
 
@@ -104,7 +107,8 @@ private const val HOME_SPARKS = 10
  * square ([BoardSemantics]), makes its move ([onMove]). While [swapping], the pawns ringed and tapped are those the move
  * ([Move.swap]) can swap with.
  *
- * A move hops square by square (out of the yard, it glides to the start square). A pawn it captures is knocked out
+ * A move hops square by square (out of the yard, it glides to the start square). The pawns it comes to share a square with
+ * make room as it comes onto the square, not before. A pawn it captures is knocked out
  * in a burst on its square and thrown back to its yard; a pawn that reaches home pops in a ring of sparks. None of it
  * plays while the Pawn moves motion is off ([MotionGroup.PAWN_MOVE]).
  *
@@ -175,6 +179,13 @@ fun LudoBoard(
             if (turnSeat != null) {
                 Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawTurnYard(layout, size.minDimension / layout.size, turnSeat) }
             }
+            fun DrawScope.drawMark(mark: PawnMark, unit: Float, ringed: Boolean) {
+                val shielded = mark.pawns.any { state.isShielded(mark.player, it) || PawnRef(mark.player, it) in motion.moving?.brokenShields.orEmpty() }
+                if (shielded) drawShieldBubble(mark.centre * unit, mark.radius * unit)
+                if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
+                with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, pawnColours[mark.player], ringed) }
+                if (mark.pawns.size > 1) drawCount(textMeasurer, mark.pawns.size, mark, unit)
+            }
             // The pawns standing still, on a layer of their own: drawn again as a move starts and ends, not on its frames.
             val animating = motion.moving
             Canvas(
@@ -222,14 +233,10 @@ fun LudoBoard(
                 if (lastStanding) drawFallen(state, layout, unit, { pawnColours[it] }, theme.pawns) { player, pawn -> animating != null && motion.isAnimated(player, pawn) }
                 for (mark in marks) {
                     // The moving pawn and any it captured are drawn on their way, below; the rest of their mark stays.
-                    val pawns = mark.pawns.filterNot { motion.isAnimated(mark.player, it) || ghostMotion.isCaught(PawnRef(mark.player, it)) }
+                    // So are those making room for it.
+                    val pawns = mark.pawns.filterNot { motion.isAnimated(mark.player, it) || motion.isShifting(mark.player, it) || ghostMotion.isCaught(PawnRef(mark.player, it)) }
                     if (pawns.isEmpty()) continue
-                    val colour = pawnColours[mark.player]
-                    val ringed = animating == null && pawns.any { PawnRef(mark.player, it) in movable }
-                    if (pawns.any { state.isShielded(mark.player, it) || (animating != null && PawnRef(mark.player, it) in animating.brokenShields) }) drawShieldBubble(mark.centre * unit, mark.radius * unit)
-                    if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
-                    with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, colour, ringed) }
-                    if (pawns.size > 1) drawCount(textMeasurer, pawns.size, mark, unit)
+                    drawMark(mark.copy(pawns = pawns), unit, ringed = animating == null && pawns.any { PawnRef(mark.player, it) in movable })
                 }
             }
             // The ghosts over the pawns, the drifting one and any it's catching on a layer of their own.
@@ -245,7 +252,11 @@ fun LudoBoard(
             // over the board.
             if (animating != null) {
                 BoundedArt(modifier = Modifier.fillMaxSize()) {
-                    with(motion) { drawMotion(size.minDimension / layout.size, theme.pawns) { pawnColours[it] } }
+                    val unit = size.minDimension / layout.size
+                    with(motion) {
+                        drawShifting { drawMark(it, unit, ringed = false) }
+                        drawMotion(unit, theme.pawns) { pawnColours[it] }
+                    }
                 }
             }
         }
@@ -262,8 +273,9 @@ fun LudoBoard(
 
 /**
  * A move being shown: [player]'s pawn (its owner's, a partner's if one was rolled for) on [path] (board-unit centres,
- * square by square), hopping along it unless it's leaving its yard, and [landingRadius] across where it lands (home's
- * smaller spot when it reaches [home]), sending [sent]. Through a portal, [path] ends where it goes in, and it
+ * square by square), hopping along it unless it's leaving its yard, and [landingRadius] across where it lands (smaller on
+ * its spot when it reaches [home], or on a square it comes to share), sending [sent], and the pawns in [shifts] making
+ * room. Through a portal, [path] ends where it goes in, and it
  * comes out at [warpTo].
  */
 private class MovingPawn(
@@ -274,6 +286,7 @@ private class MovingPawn(
     val landingRadius: Float,
     val home: Boolean,
     val sent: List<SentPawn>,
+    val shifts: List<PawnShift>,
     val totalMillis: Int,
     val warpTo: Offset? = null,
     /** The power-up it takes, there till it lands. */
@@ -286,6 +299,15 @@ private class MovingPawn(
     /** How long it hops for, before any portal. */
     val hopMillis: Int get() = (path.size - 1) * PAWN_STEP_MILLIS
     val travelMillis: Int get() = hopMillis + if (warpTo != null) PORTAL_WARP_MILLIS else 0
+
+    /** How far [shift]'s pawns have made room (0 to 1), [millis] from the move's start: all of it as the pawn they make it for lands. */
+    fun shifted(shift: PawnShift, millis: Float): Float {
+        val isMover = shift.arriving == PawnRef(player, pawn)
+        val end = if (isMover) travelMillis else totalMillis
+        // From when it starts to come out of a portal, if it goes through one.
+        val length = if (isMover && warpTo != null) PORTAL_WARP_MILLIS / 2 else MAKE_ROOM_MILLIS
+        return ((millis - (end - length)) / length).coerceIn(0f, 1f)
+    }
 }
 
 /**
@@ -307,6 +329,18 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
 
     fun isAnimated(player: Int, pawn: Int): Boolean =
         moving != null && ((moving.player == player && moving.pawn == pawn) || moving.sent.any { it.ref == PawnRef(player, pawn) })
+
+    /** Whether [player]'s [pawn] makes room for the move: drawn by [drawShifting], not with the pawns standing still. */
+    fun isShifting(player: Int, pawn: Int): Boolean = moving != null && moving.shifts.any { it.to.player == player && pawn in it.to.pawns }
+
+    /** The pawns making room at this moment, each drawn by [draw]. */
+    fun drawShifting(draw: (PawnMark) -> Unit) {
+        val moving = moving!!
+        for (shift in moving.shifts) {
+            val shifted = moving.shifted(shift, clock.value)
+            draw(shift.to.copy(centre = lerp(shift.from.centre, shift.to.centre, shifted), radius = shift.from.radius + (shift.to.radius - shift.from.radius) * shifted))
+        }
+    }
 
     /**
      * The move at this moment, on a board of [unit] per square, in [pawns]' style and each player's colour ([colourOf]):
@@ -351,12 +385,13 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
         if (moving.warpTo != null && millis >= moving.hopMillis) {
             // In at one portal, shrinking away, and out at the other, growing back.
             val warp = ((millis - moving.hopMillis) / PORTAL_WARP_MILLIS).coerceIn(0f, 1f)
-            return Triple(if (warp < 0.5f) path.last() else moving.warpTo, 0f, PAWN_RADIUS * abs(1f - 2f * warp).coerceAtLeast(MIN_WARP_SIZE))
+            val radius = if (warp < 0.5f) PAWN_RADIUS else moving.landingRadius
+            return Triple(if (warp < 0.5f) path.last() else moving.warpTo, 0f, radius * abs(1f - 2f * warp).coerceAtLeast(MIN_WARP_SIZE))
         }
         val step = (millis / PAWN_STEP_MILLIS).coerceIn(0f, (path.size - 1).toFloat())
         val index = step.toInt().coerceAtMost(path.size - 2)
         val fraction = step - index
-        val last = index == path.size - 2
+        val last = index == path.size - 2 && moving.warpTo == null
         val radius = if (last) PAWN_RADIUS + (moving.landingRadius - PAWN_RADIUS) * fraction else PAWN_RADIUS
         if (!moving.hops) {
             return Triple(lerp(path[index], path[index + 1], fraction), 0f, radius * (1f + YARD_EXIT_SWELL * sin(PI * fraction).toFloat()))
@@ -479,40 +514,39 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved): MovingPawn {
     val owner = move.owner ?: event.player
     val seat = state.players[owner].seat
     val fromYard = move.from == PawnPosition.YARD_PROGRESS
-    val path = if (fromYard) {
+    val marks = moveMarks(state, event)
+    val landing = marks.after(PawnRef(owner, move.pawn))
+    val squares = if (fromYard) {
         listOf(layout.yardSpotOf(seat, move.pawn, state.rules.pawnsPerPlayer), layout.centreOf(seat, PawnPosition.of(0, state.board), 0))
     } else {
         // On to where the roll takes it, over any lost squares, and where that's onto a shield, back to where it settles.
         ((move.from..move.rolledTo) - move.skipped.toSet() + (move.bouncedFrom?.let { it - 1 downTo move.to } ?: IntRange.EMPTY)).map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn, state.rules.pawnsPerPlayer) }
     }
     val effect = event.effect
-    fun centre(player: Int, pawn: Int, progress: Int) = layout.centreOf(state.players[player].seat, PawnPosition.of(progress, state.board), pawn, state.rules.pawnsPerPlayer)
-    val endedAt = centre(owner, move.pawn, event.endedAt)
-    val moveEnd = centre(owner, move.pawn, move.to)
+    val warps = move.via != null || effect?.movedTo != null
+    // Onto its own share of the square it lands on.
+    val path = if (warps) squares else squares.dropLast(1) + landing.centre
     val home = event.endedAt == state.board.homeProgress
-    val yardPawn = layout.yardPawnRadiusOf(state.rules.pawnsPerPlayer)
-    fun yard(ref: PawnRef) = layout.yardSpotOf(state.players[ref.player].seat, ref.pawn, state.rules.pawnsPerPlayer)
-    val called = effect?.calledUp?.let { PawnRef(owner, it) }
-    val start = centre(owner, 0, 0)
-    val sent = move.captures.map { SentPawn(it, moveEnd, yard(it), PAWN_RADIUS, yardPawn, taken = true) } +
-        // Taken where a power-up landed the pawn, or the one it called up.
-        effect?.captures.orEmpty().map { SentPawn(it, if (called != null) start else endedAt, yard(it), PAWN_RADIUS, yardPawn, taken = true) } +
-        listOfNotNull(
-            effect?.swapped?.let { SentPawn(it, endedAt, moveEnd, PAWN_RADIUS, PAWN_RADIUS, taken = false) },
-            called?.let { SentPawn(it, yard(it), start, yardPawn, PAWN_RADIUS, taken = false) },
-        )
+    fun sent(ref: PawnRef, taken: Boolean): SentPawn {
+        val (from, to) = marks.before(ref) to marks.after(ref)
+        return SentPawn(ref, from.centre, to.centre, from.radius, to.radius, taken)
+    }
+    val sent = event.allCaptures.map { sent(it, taken = true) } +
+        listOfNotNull(effect?.swapped, effect?.calledUp?.let { PawnRef(owner, it) }).map { sent(it, taken = false) }
+    val travelling = sent.map { it.ref }.toSet() + PawnRef(owner, move.pawn)
     return MovingPawn(
         player = owner,
         pawn = move.pawn,
         path = path,
         hops = !fromYard,
-        landingRadius = if (home) layout.homePawnRadiusOf(state.rules.pawnsPerPlayer) else PAWN_RADIUS,
+        landingRadius = landing.radius,
         home = home,
         sent = sent,
+        shifts = marks.shifts { it in travelling },
         totalMillis = travelMillis(move, effect) + afterLandingMillis(move, state.board.homeProgress, effect),
         powerUp = effect?.powerUp,
         brokenShields = move.brokenShields + effect?.brokenShields.orEmpty(),
-        warpTo = if (move.via != null || effect?.movedTo != null) endedAt else null,
+        warpTo = if (warps) landing.centre else null,
     )
 }
 

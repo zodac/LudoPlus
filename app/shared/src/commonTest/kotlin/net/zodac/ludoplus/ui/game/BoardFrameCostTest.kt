@@ -86,6 +86,48 @@ class BoardFrameCostTest : UiTest() {
     }
 
     @Test
+    fun `a pawn makes room for another colour's only as it comes onto its square`() = uiTest {
+        // The board is 330dp, not the 300dp whose painting the test above counts.
+        val new = GameState.new(GameMode.CLASSIC, 4)
+        // Red's pawn three short of the star on square 8, where green's stands.
+        val start = new.copy(current = 0, players = new.players.mapIndexed { i, p -> p.copy(pawns = listOf(listOf(5, 47, -1, -1)[i], -1, -1, -1)) })
+        val rolled = LudoEngine.applyRoll(start, 3)
+        var state by mutableStateOf(rolled)
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            LudoPlusTheme {
+                LudoBoard(state, List(4) { PlayerColour.defaultFor(it) }, emptyList(), {}, Modifier.size(330.dp).testTag(BOARD))
+            }
+        }
+        compose.mainClock.advanceTimeByFrame()
+        capture()
+        val green = PlayerColour.defaultFor(1).color
+        val layout = BoardLayout.of(start.board)
+        val square = layout.trackSquare(8).centre
+        // In green's pawn while it has the square to itself, but between the two once they share it.
+        val whole = square / layout.size
+        // In the middle of the shares each has in the end.
+        val landed = LudoEngine.move(rolled, 0)
+        fun share(player: Int) = pawnMarks(landed).single { it.player == player && it.square == square }.centre / layout.size
+        assertClose(green, capture().at(whole), "Before: green's pawn has the square")
+        state = landed
+        // Through its first two hops, and a little of the third.
+        var frames = 0
+        while (frames * 16 < 2 * PAWN_STEP_MILLIS + PAWN_STEP_MILLIS / 4) {
+            val shown = capture()
+            assertClose(green, shown.at(whole), "Frame $frames: green's pawn hasn't moved")
+            compose.mainClock.advanceTimeByFrame()
+            frames++
+        }
+        compose.mainClock.advanceTimeBy(1_000L)
+        val end = capture()
+        assertTrue(abs(end.at(whole).green - green.green) > 0.3f, "Landed: green's pawn has made room, was ${end.at(whole)}")
+        // Each in its shading, so by the colour it mostly is.
+        assertTrue(end.at(share(0)).let { it.red > it.green + 0.2f }, "Landed: red's pawn on its share, was ${end.at(share(0))}")
+        assertTrue(end.at(share(1)).let { it.green > it.red + 0.2f }, "Landed: green's on its own, was ${end.at(share(1))}")
+    }
+
+    @Test
     fun `a tumbling die recomposes as each face flicks past, not every frame, with each face's own art held still`() = uiTest {
         val style = CountingDice()
         var roll by mutableIntStateOf(0)

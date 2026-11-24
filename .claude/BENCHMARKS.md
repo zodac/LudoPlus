@@ -39,7 +39,8 @@ Each of these fixed a reported stutter. New work must keep them.
     - the board itself, painted once into an image per style, seats' colours, pawn count, squares claimed, size, and density
         (`PaintedSurface`, off the main thread), on a layer of its own;
     - the turn's yard ring, on a layer, drawn again as the turn passes;
-    - the pawns standing still, on a layer, drawn again as a move starts and ends (the moving and captured pawns left out);
+    - the pawns standing still, on a layer, drawn again as a move starts and ends (the moving and captured pawns, and any
+        making room on the square it lands on, left out);
     - the move itself in `BoundedArt`, which alone reads the move's clock. The board doesn't recompose on a move's frames.
     - A `Canvas` is not a layer: three of them side by side all re-record together when one changes.
     - `BoardFrameCostTest` holds the board painted once through a move.
