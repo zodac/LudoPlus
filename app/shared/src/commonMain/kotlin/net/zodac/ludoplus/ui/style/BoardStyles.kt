@@ -71,12 +71,6 @@ object ClassicBoardStyle : BoardStyle, Swatched {
 
 private fun List<Color?>.colourOf(seat: Int): Color = getOrNull(seat) ?: BoardEmptySeat
 
-private fun List<Offset>.toPath(): Path = Path().apply {
-    moveTo(first().x, first().y)
-    drop(1).forEach { lineTo(it.x, it.y) }
-    close()
-}
-
 /** A five-pointed star, point up, its points [radius] from [centre]: a safe square's mark. */
 private fun DrawScope.drawStar(centre: Offset, radius: Float, colour: Color) {
     val path = Path()

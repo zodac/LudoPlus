@@ -503,17 +503,21 @@ board or pawn tile on the Styles page is a corner of the board (`BoardCornerPrev
 seat 0) with three pawns, one on its start square, and the next seat's pawn on the track, in the default seat colours, the tile's style drawn
 with the player's pick of the other.
 
-The boards are Classic, Wood, Ocean, Retro, Paper, Starry, Stone, and Neon. Every family but Classic is a
-`LayeredBoardStyle` (`ui/style/BoardFamilies.kt`): a ground, the squares, the yards, the home triangles, the safe
-squares' marks, and a finish over it all (grain, speckle), each the family's own, with the seats' colours drawn through
-its `seatTone` (tinted towards the material, never so far that two seats look alike). `LudoBoard` draws the board on a
+The boards are Classic, Wood, Ocean, Comic, Patchwork, Candy, Obsidian, Disco, Retro, Paper, Starry, Groovy, Stone,
+Meadow, Circuit, Bestagons, and Neon. Every family but Classic is a `LayeredBoardStyle` (`ui/style/BoardFamilies.kt`,
+and `PlayfulBoardFamilies.kt`, 2026-11-24): a ground, the squares, the yards, the home triangles, the safe squares'
+marks, and a finish over it all (grain, speckle), each the family's own, with the seats' colours drawn through its
+`seatTone` (tinted towards the material, never so far that two seats look alike). `LudoBoard` draws the board on a
 Canvas of its own under the pawns, which reads only the style and the seat colours, so a texture isn't redrawn on every
 frame of a move.
 
-The pawns are Classic, Counter, Cone, Peg, Glass, Animal (Cat and Duck), and Gems. Every family but Classic is a
-`GridPawnStyle` (`ui/style/PawnFamilies.kt`), which draws the shadow and the movable ring on one footprint for all of
-them and leaves the family its body. Gems takes the Gems die's lock; the rest open at 5, 20, 25, 30, and 40
-achievements.
+The pawns are Classic, Counter, Chess (Rook, Knight, and Queen), Shapes (Star, Heart, and Cube), Cone, Peg, Glass,
+Monster (Cyclops and Horned), Animal (Cat, Duck, Frog, and Penguin), Retro, Toadstool, Cake, Gems, Space (Rocket and
+Saucer), Robot, Neon, Googly, and Devil. Every family but Classic is a `GridPawnStyle` (`ui/style/PawnFamilies.kt`, and
+`PlayfulPawnFamilies.kt`, 2026-11-24), which draws the shadow and the movable ring on one footprint for all of them and
+leaves the family its body. Retro, Cake, Gems, Neon, Googly, and Devil take the lock of the die of their name. The rest
+open at a count of their own: Counter 5, Chess 10, Shapes 20, Cone 20, Peg 25, Glass 30, Monster 35, Animal 40,
+Toadstool 50, Space 70, and Robot 80.
 
 **The die** has 35 families, D20 included (drawn showing 1-6). `GameDie` draws the style's face, turning
 through random faces as it tumbles; a style that tumbles itself (the D20, the Egg, the Bestagon) is handed the tumble's
@@ -541,7 +545,8 @@ Each category is two lists in the same order:
     glossy pawns, the ivory die, and the navy felt.
 - **A style with a counterpart of the same name is unlocked by the same thing** in every category that has one:
     Stone opens at 65 achievements, Neon and RGB at 100, the water set (the Ocean board, die, and background) at
-    15 (`WATER_SET_UNLOCK`). A board family locks with the die of its name; Paper, which has none, opens at 50.
+    15 (`WATER_SET_UNLOCK`). A board family locks with the die or background of its name; those with neither
+    open at a count of their own: Comic 20, Patchwork 25, Candy 30, Disco 40, Paper 50, and Groovy 60.
     `StyleRegistryTest` checks every family name across the categories.
 - **Locks.** Every other family is locked behind a count of achievements (`StyleUnlock.AchievementCount`) or one
     achievement (`SpecificAchievement`).
@@ -549,10 +554,10 @@ Each category is two lists in the same order:
         maintainer, 2026-11-23), unlike the Achievements page's total, which leaves the Easter Eggs out. No count lock
         is above 100, and every one is within the achievements there are (`StyleRegistryTest`).
     - The styles DiceFive locked behind its own achievements (2026-11-17): the Starry die and background open with
-        Midnight Run; Devil with Too Much Of A Good Thing; Maths with Counting Up (Number Cruncher's until it was
+        Midnight Run; Devil (and its pawn) with Too Much Of A Good Thing; Maths with Counting Up (Number Cruncher's until it was
         removed, 2026-11-23); D20 and the Floating Dice background at 55, the one count no other style uses
         (`D20_UNLOCK`). The Irish, golden Egg, and D20 colours
-        that DiceFive kept secret are ordinary colours of their families. Googly (Completionist), Glitch (Big Fan), and
+        that DiceFive kept secret are ordinary colours of their families. Googly (and its pawn; Completionist), Glitch (Big Fan), and
         Wireframe (Are You A Developer?) keep their achievements.
     - A colour can still be secret (`StyleVariant.secretAchievement`): not offered at all until earned. None is yet.
     - Every lock takes a `StyleAccess`: the achievements, and `ownsAllStyles`, which meets every lock. Until the

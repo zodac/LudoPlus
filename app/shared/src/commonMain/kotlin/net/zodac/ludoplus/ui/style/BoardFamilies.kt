@@ -163,7 +163,7 @@ internal fun DrawScope.drawBoardSquare(square: BoardSquare, unit: Float, draw: D
 private const val CLASSIC_SPOT_RADIUS = 0.62f
 
 /** How much bigger (or smaller) a yard's spots are than the classic yard's, [spotRadius] being theirs in pixels. */
-private fun spotScale(spotRadius: Float, unit: Float): Float = spotRadius / (CLASSIC_SPOT_RADIUS * unit)
+internal fun spotScale(spotRadius: Float, unit: Float): Float = spotRadius / (CLASSIC_SPOT_RADIUS * unit)
 
 /**
  * The convex [outline] (pixels) in [fill], its rim [depth] deep lit from the top left: [light] where a side faces up or
@@ -183,7 +183,7 @@ private fun DrawScope.drawBevelledShape(outline: List<Offset>, depth: Float, fil
     }
 }
 
-private fun List<Offset>.toPath(): Path = Path().apply {
+internal fun List<Offset>.toPath(): Path = Path().apply {
     moveTo(first().x, first().y)
     drop(1).forEach { lineTo(it.x, it.y) }
     close()
@@ -201,7 +201,7 @@ internal fun starPath(centre: Offset, radius: Float, points: Int = 5, inner: Flo
 }
 
 /** The square [unit] across from [topLeft]. */
-private fun squareRect(topLeft: Offset, unit: Float) = Rect(topLeft, Size(unit, unit))
+internal fun squareRect(topLeft: Offset, unit: Float) = Rect(topLeft, Size(unit, unit))
 
 // ---------------------------------------------------------------------------------------------
 // Wood

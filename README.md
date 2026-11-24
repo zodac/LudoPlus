@@ -22,7 +22,7 @@ and be the first to get all four home. Land on a rival to send them back to the 
 - **A guided tutorial** that teaches the game in four short parts, and the rules with a diagram for each idea
 - **A Leaderboard** of the best wins, and **Statistics** for every player: wins, streaks, and captures
 - **Achievements** to chase: over 100 of them, for captures, comebacks, close finishes, and a few hidden surprises
-- **Styles** they unlock: 8 boards, 7 sets of pawns, 35 dice, and 20 backgrounds for the table
+- **Styles** they unlock: 17 boards, 18 sets of pawns, 35 dice, and 20 backgrounds for the table
 - Built for **TalkBack** and large fonts, with no accounts: your games stay on your phone
 - The Google Play version shows a small ad banner, which an optional purchase removes; this GitHub version has no ads
 

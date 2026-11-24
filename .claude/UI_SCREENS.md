@@ -154,12 +154,12 @@ A lock is on the style (`StyleGroup.unlock`, in the registry), not the colour: o
 available. `StyleRegistryTest` keeps the counts within what can be earned.
 
 - **Behind a specific achievement**, shown padlocked:
-    - Googly die (Completionist);
+    - Googly die and pawn (Completionist);
     - Glitch die and background (Big Fan);
     - Maths die (Counting Up);
     - Wireframe die (Are You A Developer?);
-    - Devil die (Too Much Of A Good Thing);
-    - Starry die and background (Midnight Run).
+    - Devil die and pawn (Too Much Of A Good Thing);
+    - Starry board, die, and background (Midnight Run).
 - **Secret colours** (`StyleVariant.secretAchievement`) are left out entirely until earned. None yet.
 - **On the Achievements screen**, a row whose achievement unlocks a style reads the reward's sentence with the row
     ("Earn this to unlock the 'Maths' die style"; one style's items named once, as the unlock banner does: "'Starry'

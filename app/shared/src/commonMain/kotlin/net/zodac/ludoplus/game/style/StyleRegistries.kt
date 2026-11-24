@@ -152,6 +152,41 @@ import net.zodac.ludoplus.resources.style_family_text
 import net.zodac.ludoplus.resources.style_family_wireframe
 import net.zodac.ludoplus.resources.style_family_wood
 import net.zodac.ludoplus.resources.style_family_world
+import net.zodac.ludoplus.resources.style_colour_blob
+import net.zodac.ludoplus.resources.style_colour_bubblegum
+import net.zodac.ludoplus.resources.style_colour_cotton
+import net.zodac.ludoplus.resources.style_colour_cube
+import net.zodac.ludoplus.resources.style_colour_cupcake
+import net.zodac.ludoplus.resources.style_colour_cyclops
+import net.zodac.ludoplus.resources.style_colour_denim
+import net.zodac.ludoplus.resources.style_colour_frog
+import net.zodac.ludoplus.resources.style_colour_heart
+import net.zodac.ludoplus.resources.style_colour_horned
+import net.zodac.ludoplus.resources.style_colour_imp
+import net.zodac.ludoplus.resources.style_colour_knight
+import net.zodac.ludoplus.resources.style_colour_mint
+import net.zodac.ludoplus.resources.style_colour_noir
+import net.zodac.ludoplus.resources.style_colour_penguin
+import net.zodac.ludoplus.resources.style_colour_pixel
+import net.zodac.ludoplus.resources.style_colour_pop
+import net.zodac.ludoplus.resources.style_colour_queen
+import net.zodac.ludoplus.resources.style_colour_rocket
+import net.zodac.ludoplus.resources.style_colour_rook
+import net.zodac.ludoplus.resources.style_colour_saucer
+import net.zodac.ludoplus.resources.style_colour_spotted
+import net.zodac.ludoplus.resources.style_colour_star
+import net.zodac.ludoplus.resources.style_colour_tin
+import net.zodac.ludoplus.resources.style_family_candy
+import net.zodac.ludoplus.resources.style_family_chess
+import net.zodac.ludoplus.resources.style_family_comic
+import net.zodac.ludoplus.resources.style_family_disco
+import net.zodac.ludoplus.resources.style_family_groovy
+import net.zodac.ludoplus.resources.style_family_monster
+import net.zodac.ludoplus.resources.style_family_patchwork
+import net.zodac.ludoplus.resources.style_family_robot
+import net.zodac.ludoplus.resources.style_family_shapes
+import net.zodac.ludoplus.resources.style_family_space
+import net.zodac.ludoplus.resources.style_family_toadstool
 import net.zodac.ludoplus.resources.style_noun_background
 import net.zodac.ludoplus.resources.style_noun_dice
 
@@ -668,7 +703,7 @@ object BoardStyleRegistry : StyleRegistry(
             Res.string.style_family_classic,
             listOf(StyleVariant(DefaultStyleIds.BOARD, Res.string.style_colour_cream)),
         ),
-        // Each family but Paper shares its lock with the die and background of the same name.
+        // A family with a die or background of the same name shares its lock.
         StyleGroup(
             Res.string.style_family_wood,
             listOf(
@@ -686,13 +721,53 @@ object BoardStyleRegistry : StyleRegistry(
             unlock = AchievementCount(WATER_SET_UNLOCK),
         ),
         StyleGroup(
+            Res.string.style_family_comic,
+            listOf(
+                StyleVariant("comic_pop", Res.string.style_colour_pop),
+                StyleVariant("comic_noir", Res.string.style_colour_noir),
+            ),
+            unlock = AchievementCount(20),
+        ),
+        StyleGroup(
+            Res.string.style_family_patchwork,
+            listOf(
+                StyleVariant("patchwork_cotton", Res.string.style_colour_cotton),
+                StyleVariant("patchwork_denim", Res.string.style_colour_denim),
+            ),
+            unlock = AchievementCount(25),
+        ),
+        StyleGroup(
+            Res.string.style_family_candy,
+            listOf(
+                StyleVariant("candy_bubblegum", Res.string.style_colour_bubblegum),
+                StyleVariant("candy_mint", Res.string.style_colour_mint),
+            ),
+            unlock = AchievementCount(30),
+        ),
+        StyleGroup(
+            Res.string.style_family_obsidian,
+            listOf(
+                StyleVariant("obsidian_lava", Res.string.style_colour_lava),
+                StyleVariant("obsidian_blue", Res.string.style_colour_blue),
+            ),
+            unlock = AchievementCount(35),
+        ),
+        StyleGroup(
+            Res.string.style_family_disco,
+            listOf(StyleVariant("disco_night", Res.string.style_colour_night)),
+            unlock = AchievementCount(40),
+        ),
+        StyleGroup(
             Res.string.style_family_retro,
             listOf(StyleVariant("retro_blue", Res.string.style_colour_blue)),
             unlock = AchievementCount(45),
         ),
         StyleGroup(
             Res.string.style_family_paper,
-            listOf(StyleVariant("paper_pencil", Res.string.style_colour_pencil)),
+            listOf(
+                StyleVariant("paper_pencil", Res.string.style_colour_pencil),
+                StyleVariant("paper_blueprint", Res.string.style_colour_blueprint),
+            ),
             unlock = AchievementCount(50),
         ),
         StyleGroup(
@@ -701,12 +776,41 @@ object BoardStyleRegistry : StyleRegistry(
             unlock = StyleUnlock.SpecificAchievement(Achievement.MIDNIGHT_RUN),
         ),
         StyleGroup(
+            Res.string.style_family_groovy,
+            listOf(
+                StyleVariant("groovy_amber", Res.string.style_colour_amber),
+                StyleVariant("groovy_purple", Res.string.style_colour_purple),
+            ),
+            unlock = AchievementCount(60),
+        ),
+        StyleGroup(
             Res.string.style_family_stone,
             listOf(
                 StyleVariant("stone_slate", Res.string.style_colour_slate),
                 StyleVariant("stone_sandstone", Res.string.style_colour_sandstone),
             ),
             unlock = AchievementCount(65),
+        ),
+        StyleGroup(
+            Res.string.style_family_meadow,
+            listOf(StyleVariant("meadow_green", Res.string.style_colour_green)),
+            unlock = AchievementCount(75),
+        ),
+        StyleGroup(
+            Res.string.style_family_circuit,
+            listOf(
+                StyleVariant("circuit_green", Res.string.style_colour_green),
+                StyleVariant("circuit_black", Res.string.style_colour_black),
+            ),
+            unlock = AchievementCount(80),
+        ),
+        StyleGroup(
+            Res.string.style_family_bestagons,
+            listOf(
+                StyleVariant("bestagons_honey", Res.string.style_colour_honey),
+                StyleVariant("bestagons_charcoal", Res.string.style_colour_charcoal),
+            ),
+            unlock = AchievementCount(85),
         ),
         StyleGroup(
             Res.string.style_family_neon,
@@ -733,6 +837,24 @@ object PawnStyleRegistry : StyleRegistry(
             unlock = AchievementCount(5),
         ),
         StyleGroup(
+            Res.string.style_family_chess,
+            listOf(
+                StyleVariant("chess_rook", Res.string.style_colour_rook),
+                StyleVariant("chess_knight", Res.string.style_colour_knight),
+                StyleVariant("chess_queen", Res.string.style_colour_queen),
+            ),
+            unlock = AchievementCount(10),
+        ),
+        StyleGroup(
+            Res.string.style_family_shapes,
+            listOf(
+                StyleVariant("shapes_star", Res.string.style_colour_star),
+                StyleVariant("shapes_heart", Res.string.style_colour_heart),
+                StyleVariant("shapes_cube", Res.string.style_colour_cube),
+            ),
+            unlock = AchievementCount(20),
+        ),
+        StyleGroup(
             Res.string.style_family_cone,
             listOf(StyleVariant("cone_painted", Res.string.style_colour_painted)),
             unlock = AchievementCount(20),
@@ -748,18 +870,74 @@ object PawnStyleRegistry : StyleRegistry(
             unlock = AchievementCount(30),
         ),
         StyleGroup(
+            Res.string.style_family_monster,
+            listOf(
+                StyleVariant("monster_cyclops", Res.string.style_colour_cyclops),
+                StyleVariant("monster_horned", Res.string.style_colour_horned),
+            ),
+            unlock = AchievementCount(35),
+        ),
+        StyleGroup(
             Res.string.style_family_animal,
             listOf(
                 StyleVariant("animal_cat", Res.string.style_colour_cat),
                 StyleVariant("animal_duck", Res.string.style_colour_duck),
+                StyleVariant("animal_frog", Res.string.style_colour_frog),
+                StyleVariant("animal_penguin", Res.string.style_colour_penguin),
             ),
             unlock = AchievementCount(40),
+        ),
+        // With the Retro die and board, and opened with them.
+        StyleGroup(
+            Res.string.style_family_retro,
+            listOf(StyleVariant("retro_pixel", Res.string.style_colour_pixel)),
+            unlock = AchievementCount(45),
+        ),
+        StyleGroup(
+            Res.string.style_family_toadstool,
+            listOf(StyleVariant("toadstool_spotted", Res.string.style_colour_spotted)),
+            unlock = AchievementCount(50),
+        ),
+        // With the Cake die, and opened with it.
+        StyleGroup(
+            Res.string.style_family_cake,
+            listOf(StyleVariant("cake_cupcake", Res.string.style_colour_cupcake)),
+            unlock = AchievementCount(60),
         ),
         // With the Gems die, and opened with it.
         StyleGroup(
             Res.string.style_family_gems,
             listOf(StyleVariant("gems_cut", Res.string.style_colour_cut)),
             unlock = AchievementCount(65),
+        ),
+        StyleGroup(
+            Res.string.style_family_space,
+            listOf(
+                StyleVariant("space_rocket", Res.string.style_colour_rocket),
+                StyleVariant("space_saucer", Res.string.style_colour_saucer),
+            ),
+            unlock = AchievementCount(70),
+        ),
+        StyleGroup(
+            Res.string.style_family_robot,
+            listOf(StyleVariant("robot_tin", Res.string.style_colour_tin)),
+            unlock = AchievementCount(80),
+        ),
+        // The rest go with the dice of the same names, and open with them.
+        StyleGroup(
+            Res.string.style_family_neon,
+            listOf(StyleVariant("neon_night", Res.string.style_colour_night)),
+            unlock = AchievementCount(100),
+        ),
+        StyleGroup(
+            Res.string.style_family_googly,
+            listOf(StyleVariant("googly_blob", Res.string.style_colour_blob)),
+            unlock = StyleUnlock.SpecificAchievement(Achievement.COMPLETIONIST),
+        ),
+        StyleGroup(
+            Res.string.style_family_devil,
+            listOf(StyleVariant("devil_imp", Res.string.style_colour_imp)),
+            unlock = StyleUnlock.SpecificAchievement(Achievement.TOO_MUCH_OF_A_GOOD_THING),
         ),
     ),
     variantNoun = Res.string.style_variant_finish,

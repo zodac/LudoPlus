@@ -32,6 +32,9 @@ The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and
     order they're drawn: `ground`, `drawSquare` (every track and home-column square), `drawYard`, `drawHomeTriangle`,
     `drawSafeMark`, and `drawFinish` over the lot. Classic (`BoardStyles.kt`) is drawn on its own and is what the Rules
     diagrams use.
+- **One yard for every layout.** A new family extends `ShapedYardBoardStyle` (`PlayfulBoardFamilies.kt`), which draws the
+    classic yard and a star board's through the same `drawYardGround`, `drawCourt`, and `drawSpot`, each cut to its shape.
+- **Many dots are one draw**: `drawDots` (`drawPoints`), as Comic's halftone.
 - **The seats' colours stay readable.** A family may tint them towards its material through `seatTone` (Wood, Stone),
     or draw them as light (Neon) or crayon (Paper), but every seat must stay unlike the others and unlike a plain square.
     Check all four in one render.
@@ -65,7 +68,11 @@ The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and
 - **Outlines** are ink, round-joined (`outline`): a mitred join spikes at sharp corners, as the gem's girdle did.
 - **Check the small sizes.** Pawns sharing a square are drawn at `SHARED_PAWN_RADIUS`, about half size. A detail that
     vanishes there is fine; one that turns to noise isn't.
-- **A family with several shapes** (Animal) takes the shape as a constructor value, one colour of the family each.
+- **A figure stands on something**: `drawPawnBase`, its own feet, or a `drawShadow` of its own footprint (the cube).
+- **Not a mode's art.** A ghost is Haunted House's, so no pawn is one.
+- **`BoardAndPawnArtTest`** draws every family: a pawn mostly its player's colour and within its footprint; a board
+    showing each seat's colour on every layout, the same every time.
+- **A family with several shapes** (Animal, Chess, Shapes, Monster, and Space) takes the shape as a constructor value, one colour of the family each.
 
 ## Drawing techniques that worked
 

@@ -119,7 +119,7 @@ until the player signs in.
     - the house rules under "House rules", all nine, and custom modes;
     - "Play together nearby" (the play app's Nearby games, `NETPLAY.md`);
     - "Over 100 achievements" (110 today: 100 count towards completion, plus 10 Easter Eggs);
-    - the style counts (8 boards, 7 sets of pawns, 35 dice, and 20 backgrounds), as `README.md` gives them;
+    - the style counts (17 boards, 18 sets of pawns, 35 dice, and 20 backgrounds), as `README.md` gives them;
     - what "Google Play Games" says sign-in brings (`PLAY_GAMES.md`);
     - the purchases ("Unlock all styles", "Remove ads"; `PURCHASES.md`) and the ad banner (`ADS.md`).
 - **The banned-word rule applies.** Play also rejects listings that lean on another product's trademark.

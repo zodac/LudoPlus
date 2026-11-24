@@ -355,6 +355,11 @@ Decided with the maintainer (2026-11-17):
     - [x] Pawn families (2026-11-18, approved from renders): Counter (Ridged), Cone (Painted), Peg (Stained), Glass
         (Clear), Animal (Cat, Duck), and Gems (Cut), drawn as `GridPawnStyle`s (`ui/style/PawnFamilies.kt`). Locks at 5,
         20, 25, 30, and 40 achievements; Gems, named for the Gems die, shares its 65.
+    - [x] More boards and pawns (2026-11-24, approved from renders): nine board families
+        (Comic, Patchwork, Candy, Obsidian, Disco, Groovy, Meadow, Circuit, and Bestagons) and Paper's Blueprint, in
+        `PlayfulBoardFamilies.kt`; eleven pawn families (Chess, Shapes, Monster, Retro, Toadstool, Cake, Space, Robot,
+        Neon, Googly, and Devil) and Animal's Frog and Penguin, in `PlayfulPawnFamilies.kt`. Locks in `DESIGN.md`,
+        "Table art". `BoardAndPawnArtTest` draws every board and pawn.
 - [x] The Styles screen's previews show a corner of the board with pawns (`BoardCornerPreview`).
 - [x] `STYLE_ART.md` rewritten for board and pawn art (2026-11-18).
 

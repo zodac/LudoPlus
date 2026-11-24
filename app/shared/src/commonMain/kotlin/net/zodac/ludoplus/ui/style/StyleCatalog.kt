@@ -100,14 +100,47 @@ object BoardStyles : StyleCatalog<BoardStyle>(
             colour(OceanBoardStyle("ocean_lagoon", sand = Color(0xFFF3E4BE), shore = Color(0xFF1B6F7A), water = Color(0xFF3CC3BE), starfish = Color(0xFFFF8A65))),
             colour(OceanBoardStyle("ocean_deep", sand = Color(0xFFD3E9F2), shore = Color(0xFF0D3B66), water = Color(0xFF15507E), starfish = Color(0xFFFFB74D))),
         ),
+        listOf(
+            colour(ComicBoardStyle("comic_pop", paper = Color(0xFFFFF8E1), ink = Color(0xFF15151F), dots = Color(0xFF7FD3F0), burst = Color(0xFFFFE23D))),
+            colour(ComicBoardStyle("comic_noir", paper = Color(0xFFF3F3F0), ink = Color(0xFF0D0D10), dots = Color(0xFFB4B4B8), burst = Color(0xFFFFFFFF))),
+        ),
+        listOf(
+            colour(PatchworkBoardStyle("patchwork_cotton", cloth = Color(0xFFF5E9D6), print = Color(0xFFD9C2B0), thread = Color(0xFF8A6D5A), button = Color(0xFF8D5A97))),
+            colour(PatchworkBoardStyle("patchwork_denim", cloth = Color(0xFF3F587F), print = Color(0xFF587299), thread = Color(0xFFE8B968), button = Color(0xFFD08A4A))),
+        ),
+        listOf(
+            colour(CandyBoardStyle("candy_bubblegum", icing = Color(0xFFFFC4DD), sugar = Color(0xFFFFF6FA), swirl = Color(0xFFE8488B))),
+            colour(CandyBoardStyle("candy_mint", icing = Color(0xFFC0EBDD), sugar = Color(0xFFF7FFFB), swirl = Color(0xFF1FA38A))),
+        ),
+        listOf(
+            colour(ObsidianBoardStyle("obsidian_lava", rock = Color(0xFF2A2228), glow = Color(0xFFFF6A1F), flame = Color(0xFFFFD24A))),
+            colour(ObsidianBoardStyle("obsidian_blue", rock = Color(0xFF20242E), glow = Color(0xFF2E9BFF), flame = Color(0xFFA6E6FF))),
+        ),
+        listOf(colour(DiscoBoardStyle("disco_night", dark = Color(0xFF1B1430), lights = listOf(Color(0xFFB04CFF), Color(0xFF3E7BFF), Color(0xFFFF3FA4), Color(0xFF22C7C7))))),
         listOf(colour(RetroBoardStyle("retro_blue", block = Color(0xFFC2C3C7), screen = Color(0xFF1D2B53)))),
-        listOf(colour(PaperBoardStyle("paper_pencil", paper = Color(0xFFFBF8EF), pencil = Color(0xFF3C3C40), ruling = Color(0x407FA7D9)))),
+        listOf(
+            colour(PaperBoardStyle("paper_pencil", paper = Color(0xFFFBF8EF), pencil = Color(0xFF3C3C40), ruling = Color(0x407FA7D9))),
+            colour(PaperBoardStyle("paper_blueprint", paper = Color(0xFF1D4480), pencil = Color(0xFFEAF3FF), ruling = Color(0x40A9CCF5))),
+        ),
         listOf(
             colour(StarryBoardStyle("starry_midnight", sky = Color(0xFF232B5C), night = Color(0xFF0E1233), silver = Color(0xFFC3CCE8), gold = Color(0xFFFFD45C))),
         ),
         listOf(
+            colour(GroovyBoardStyle("groovy_amber", cream = Color(0xFFFFF0CF), bands = listOf(Color(0xFFE8A33D), Color(0xFFD9652B), Color(0xFF7A3B1E)), daisy = Color(0xFFF2A51A))),
+            colour(GroovyBoardStyle("groovy_purple", cream = Color(0xFFFCEBF6), bands = listOf(Color(0xFFE58ACB), Color(0xFF9B5FD0), Color(0xFF4A2C82)), daisy = Color(0xFF1FB5B0))),
+        ),
+        listOf(
             colour(StoneBoardStyle("stone_slate", slab = Color(0xFF7D8A96), mortar = Color(0xFF3A424A), fleck = Color(0xFF2A3036))),
             colour(StoneBoardStyle("stone_sandstone", slab = Color(0xFFDCC394), mortar = Color(0xFF8C7250), fleck = Color(0xFF7A5E3A))),
+        ),
+        listOf(colour(MeadowBoardStyle("meadow_green", grass = Color(0xFF6FA64A), stone = Color(0xFFD8D3C4)))),
+        listOf(
+            colour(CircuitBoardStyle("circuit_green", mask = Color(0xFF14503A), copper = Color(0xFFD9A84A))),
+            colour(CircuitBoardStyle("circuit_black", mask = Color(0xFF1B1E23), copper = Color(0xFF3FCFE6))),
+        ),
+        listOf(
+            colour(BestagonBoardStyle("bestagons_honey", cell = Color(0xFFFFF0C4), wax = Color(0xFFC98A22), comb = Color(0xFFFFDF8E), edge = Color(0xFF6E430B))),
+            colour(BestagonBoardStyle("bestagons_charcoal", cell = Color(0xFF454A53), wax = Color(0xFF1B1D21), comb = Color(0xFF2C3037), edge = Color(0xFFD9A040))),
         ),
         listOf(colour(NeonBoardStyle("neon_night", dark = Color(0xFF0A0A1C), tube = Color(0xFF3FD8FF), star = Color(0xFFFF4FD8)))),
     ),
@@ -119,11 +152,35 @@ object PawnStyles : StyleCatalog<PawnStyle>(
     listOf(
         listOf(colour(ClassicPawnStyle)),
         listOf(colour(CounterPawnStyle("counter_ridged"))),
+        listOf(
+            colour(ChessPawnStyle("chess_rook", PawnChessPiece.ROOK)),
+            colour(ChessPawnStyle("chess_knight", PawnChessPiece.KNIGHT)),
+            colour(ChessPawnStyle("chess_queen", PawnChessPiece.QUEEN)),
+        ),
+        listOf(
+            colour(ShapePawnStyle("shapes_star", PawnShape.STAR)),
+            colour(ShapePawnStyle("shapes_heart", PawnShape.HEART)),
+            colour(ShapePawnStyle("shapes_cube", PawnShape.CUBE)),
+        ),
         listOf(colour(ConePawnStyle("cone_painted"))),
         listOf(colour(PegPawnStyle("peg_stained"))),
         listOf(colour(GlassPawnStyle("glass_clear"))),
-        listOf(colour(AnimalPawnStyle("animal_cat", PawnAnimal.CAT)), colour(AnimalPawnStyle("animal_duck", PawnAnimal.DUCK))),
+        listOf(colour(MonsterPawnStyle("monster_cyclops", PawnMonster.CYCLOPS)), colour(MonsterPawnStyle("monster_horned", PawnMonster.HORNED))),
+        listOf(
+            colour(AnimalPawnStyle("animal_cat", PawnAnimal.CAT)),
+            colour(AnimalPawnStyle("animal_duck", PawnAnimal.DUCK)),
+            colour(AnimalPawnStyle("animal_frog", PawnAnimal.FROG)),
+            colour(AnimalPawnStyle("animal_penguin", PawnAnimal.PENGUIN)),
+        ),
+        listOf(colour(RetroPawnStyle("retro_pixel"))),
+        listOf(colour(ToadstoolPawnStyle("toadstool_spotted"))),
+        listOf(colour(CakePawnStyle("cake_cupcake"))),
         listOf(colour(GemPawnStyle("gems_cut"))),
+        listOf(colour(SpacePawnStyle("space_rocket", PawnSpacecraft.ROCKET)), colour(SpacePawnStyle("space_saucer", PawnSpacecraft.SAUCER))),
+        listOf(colour(RobotPawnStyle("robot_tin"))),
+        listOf(colour(NeonPawnStyle("neon_night"))),
+        listOf(colour(GooglyPawnStyle("googly_blob"))),
+        listOf(colour(DevilPawnStyle("devil_imp"))),
     ),
 )
 

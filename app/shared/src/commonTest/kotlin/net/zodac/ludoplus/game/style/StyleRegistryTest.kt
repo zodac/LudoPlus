@@ -63,36 +63,59 @@ class StyleRegistryTest {
     }
 
     @Test
-    fun `the boards are the plan's eight families - each but Paper locked with the die of its name`() {
+    fun `the boards are seventeen families - each with a die or background of its name locked with it`() {
         assertEquals(
-            listOf("classic", "wood", "ocean", "retro", "paper", "starry", "stone", "neon"),
+            listOf(
+                "classic", "wood", "ocean", "comic", "patchwork", "candy", "obsidian", "disco", "retro", "paper", "starry", "groovy", "stone", "meadow",
+                "circuit", "bestagons", "neon",
+            ),
             BoardStyleRegistry.groups.map { it.name.key.removePrefix("style_family_") },
         )
         assertEquals(
-            listOf("classic_cream", "wood_oak", "wood_walnut", "ocean_lagoon", "ocean_deep", "retro_blue", "paper_pencil", "starry_midnight", "stone_slate", "stone_sandstone", "neon_night"),
+            listOf(
+                "classic_cream", "wood_oak", "wood_walnut", "ocean_lagoon", "ocean_deep", "comic_pop", "comic_noir", "patchwork_cotton", "patchwork_denim",
+                "candy_bubblegum", "candy_mint", "obsidian_lava", "obsidian_blue", "disco_night", "retro_blue", "paper_pencil", "paper_blueprint",
+                "starry_midnight", "groovy_amber", "groovy_purple", "stone_slate", "stone_sandstone", "meadow_green", "circuit_green", "circuit_black",
+                "bestagons_honey", "bestagons_charcoal", "neon_night",
+            ),
             BoardStyleRegistry.ids,
         )
-        for (family in listOf("wood", "ocean", "retro", "starry", "stone", "neon")) {
+        for (family in listOf("wood", "ocean", "obsidian", "retro", "starry", "stone", "meadow", "neon")) {
             assertEquals(group(DiceStyleRegistry, family).unlock, group(BoardStyleRegistry, family).unlock, family)
         }
-        assertEquals(StyleUnlock.AchievementCount(50), group(BoardStyleRegistry, "paper").unlock)
+        for (family in listOf("circuit", "bestagons")) {
+            assertEquals(group(TableBackgroundRegistry, family).unlock, group(BoardStyleRegistry, family).unlock, family)
+        }
+        val ownLocks = mapOf("comic" to 20, "patchwork" to 25, "candy" to 30, "disco" to 40, "paper" to 50, "groovy" to 60)
+        for ((family, count) in ownLocks) assertEquals(StyleUnlock.AchievementCount(count), group(BoardStyleRegistry, family).unlock, family)
     }
 
     @Test
-    fun `the pawns are the plan's seven families - Gems locked with the Gems die`() {
+    fun `the pawns are eighteen families - each with a die of its name locked with it`() {
         assertEquals(
-            listOf("classic", "counter", "cone", "peg", "glass", "animal", "gems"),
+            listOf(
+                "classic", "counter", "chess", "shapes", "cone", "peg", "glass", "monster", "animal", "retro", "toadstool", "cake", "gems", "space",
+                "robot", "neon", "googly", "devil",
+            ),
             PawnStyleRegistry.groups.map { it.name.key.removePrefix("style_family_") },
         )
         assertEquals(
-            listOf("classic_gloss", "counter_ridged", "cone_painted", "peg_stained", "glass_clear", "animal_cat", "animal_duck", "gems_cut"),
+            listOf(
+                "classic_gloss", "counter_ridged", "chess_rook", "chess_knight", "chess_queen", "shapes_star", "shapes_heart", "shapes_cube",
+                "cone_painted", "peg_stained", "glass_clear", "monster_cyclops", "monster_horned", "animal_cat", "animal_duck", "animal_frog",
+                "animal_penguin", "retro_pixel", "toadstool_spotted", "cake_cupcake", "gems_cut", "space_rocket", "space_saucer", "robot_tin",
+                "neon_night", "googly_blob", "devil_imp",
+            ),
             PawnStyleRegistry.ids,
         )
-        assertEquals(group(DiceStyleRegistry, "gems").unlock, group(PawnStyleRegistry, "gems").unlock)
-        assertEquals(
-            listOf(5, 20, 25, 30, 40, 65).map { StyleUnlock.AchievementCount(it) },
-            PawnStyleRegistry.groups.drop(1).map { it.unlock },
+        for (family in listOf("retro", "cake", "gems", "neon", "googly", "devil")) {
+            assertEquals(group(DiceStyleRegistry, family).unlock, group(PawnStyleRegistry, family).unlock, family)
+        }
+        val ownLocks = mapOf(
+            "counter" to 5, "chess" to 10, "shapes" to 20, "cone" to 20, "peg" to 25, "glass" to 30, "monster" to 35, "animal" to 40, "toadstool" to 50,
+            "space" to 70, "robot" to 80,
         )
+        for ((family, count) in ownLocks) assertEquals(StyleUnlock.AchievementCount(count), group(PawnStyleRegistry, family).unlock, family)
     }
 
     @Test

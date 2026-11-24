@@ -28,10 +28,13 @@ abstract class GridPawnStyle(override val id: String, override val swatch: Color
     /** The pawn itself in [colour], on the grid of [g]. */
     protected abstract fun DrawScope.drawBody(g: PawnGrid, colour: Color)
 
+    /** The shadow at its foot: an oval, unless its footprint is another shape. */
+    protected open fun DrawScope.drawShadow(g: PawnGrid) = drawOval(Color.Black.copy(alpha = 0.25f), g.at(-0.8f, 0.72f), g.size(1.6f, 0.36f))
+
     final override fun DrawScope.drawPawn(centre: Offset, radius: Float, colour: Color, ringed: Boolean) {
         val g = PawnGrid(centre, radius)
         if (ringed) drawCircle(MovableRing, radius * 1.3f, g.at(0f, -0.04f), style = Stroke(radius * 0.2f))
-        drawOval(Color.Black.copy(alpha = 0.25f), g.at(-0.8f, 0.72f), Size(1.6f * radius, 0.36f * radius))
+        drawShadow(g)
         drawBody(g, colour)
     }
 }
@@ -47,19 +50,30 @@ class PawnGrid(val centre: Offset, val r: Float) {
         close()
     }
 
+    /** A smooth curve through the grid points [xy] (x, y, x, y...), closed unless it's a line. */
+    fun smooth(vararg xy: Float, closed: Boolean = true): Path = smoothPath(xy.toList().chunked(2) { at(it[0], it[1]) }, closed)
+
     /** The oval [width] by [height] across centred on ([x], [y]). */
     fun ovalTopLeft(x: Float, y: Float, width: Float, height: Float) = at(x - width / 2, y - height / 2)
 }
 
 /** The ink outline round a pawn of [g]'s size. */
-private fun DrawScope.outline(g: PawnGrid) = Stroke(width = maxOf(1.dp.toPx(), g.r * 0.09f), join = StrokeJoin.Round)
+internal fun DrawScope.outline(g: PawnGrid) = Stroke(width = maxOf(1.dp.toPx(), g.r * 0.09f), join = StrokeJoin.Round)
 
 /** [colour], lit from the left across the pawn's width. */
-private fun lit(g: PawnGrid, colour: Color, light: Float = 0.35f, shade: Float = 0.28f): Brush = Brush.horizontalGradient(
+internal fun lit(g: PawnGrid, colour: Color, light: Float = 0.35f, shade: Float = 0.28f): Brush = Brush.horizontalGradient(
     listOf(lerp(colour, Color.White, light), colour, lerp(colour, Color.Black, shade)),
     startX = g.centre.x - 0.75f * g.r,
     endX = g.centre.x + 0.75f * g.r,
 )
+
+/** The round base a figure stands on: its player's [colour], darker than the figure. */
+internal fun DrawScope.drawPawnBase(g: PawnGrid, colour: Color) {
+    val topLeft = g.at(-0.78f, 0.52f)
+    val size = g.size(1.56f, 0.34f)
+    drawRoundRect(lit(g, lerp(colour, Color.Black, 0.25f)), topLeft, size, CornerRadius(0.16f * g.r))
+    drawRoundRect(BoardInk, topLeft, size, CornerRadius(0.16f * g.r), style = outline(g))
+}
 
 // ---------------------------------------------------------------------------------------------
 // Counter
@@ -258,20 +272,25 @@ class GlassPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFB3E5FC)) {
 // ---------------------------------------------------------------------------------------------
 
 /** Which animal an [AnimalPawnStyle] is. */
-enum class PawnAnimal { CAT, DUCK }
+enum class PawnAnimal(val swatch: Color) {
+    CAT(Color(0xFFFFB74D)),
+    DUCK(Color(0xFFFFEB3B)),
+    FROG(Color(0xFF7CB342)),
+    PENGUIN(Color(0xFF455A64)),
+}
 
 /** A little animal sitting on a round base, in its player's colour, outlined in ink. */
-class AnimalPawnStyle(id: String, private val animal: PawnAnimal) : GridPawnStyle(id, if (animal == PawnAnimal.CAT) Color(0xFFFFB74D) else Color(0xFFFFEB3B)) {
+class AnimalPawnStyle(id: String, private val animal: PawnAnimal) : GridPawnStyle(id, animal.swatch) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val ink = BoardInk
         val stroke = outline(g)
         val fill = lit(g, colour)
-        val base = g.at(-0.78f, 0.52f)
-        drawRoundRect(lit(g, lerp(colour, Color.Black, 0.25f)), base, g.size(1.56f, 0.34f), CornerRadius(0.16f * g.r))
-        drawRoundRect(ink, base, g.size(1.56f, 0.34f), CornerRadius(0.16f * g.r), style = stroke)
+        drawPawnBase(g, colour)
         when (animal) {
             PawnAnimal.CAT -> drawCat(g, colour, fill, ink, stroke)
             PawnAnimal.DUCK -> drawDuck(g, fill, ink, stroke)
+            PawnAnimal.FROG -> drawFrog(g, colour, fill, ink, stroke)
+            PawnAnimal.PENGUIN -> drawPenguin(g, colour, fill, ink, stroke)
         }
     }
 
@@ -320,5 +339,52 @@ class AnimalPawnStyle(id: String, private val animal: PawnAnimal) : GridPawnStyl
             g.at(0f, 0.55f).let { c -> g.at(0.3f, 0.2f).let { quadraticTo(c.x, c.y, it.x, it.y) } }
         }
         drawPath(wing, ink, style = Stroke(g.r * 0.07f, cap = StrokeCap.Round))
+    }
+
+    private fun DrawScope.drawFrog(g: PawnGrid, colour: Color, fill: Brush, ink: Color, stroke: Stroke) {
+        // The haunches either side, then the body, the eyes' bulges, and the wide head over them.
+        for (side in listOf(-1f, 1f)) {
+            drawOval(fill, g.ovalTopLeft(side * 0.5f, 0.36f, 0.56f, 0.5f), g.size(0.56f, 0.5f))
+            drawOval(ink, g.ovalTopLeft(side * 0.5f, 0.36f, 0.56f, 0.5f), g.size(0.56f, 0.5f), style = stroke)
+        }
+        drawOval(fill, g.ovalTopLeft(0f, 0.24f, 0.84f, 0.8f), g.size(0.84f, 0.8f))
+        drawOval(ink, g.ovalTopLeft(0f, 0.24f, 0.84f, 0.8f), g.size(0.84f, 0.8f), style = stroke)
+        drawOval(lerp(colour, Color.White, 0.6f), g.ovalTopLeft(0f, 0.34f, 0.5f, 0.48f), g.size(0.5f, 0.48f))
+        for (side in listOf(-1f, 1f)) {
+            val bulge = g.at(side * 0.4f, -0.62f)
+            drawCircle(fill, 0.27f * g.r, bulge)
+            drawCircle(ink, 0.27f * g.r, bulge, style = stroke)
+        }
+        drawOval(fill, g.ovalTopLeft(0f, -0.26f, 1.36f, 0.84f), g.size(1.36f, 0.84f))
+        drawOval(ink, g.ovalTopLeft(0f, -0.26f, 1.36f, 0.84f), g.size(1.36f, 0.84f), style = stroke)
+        for (side in listOf(-1f, 1f)) {
+            drawCircle(fill, 0.22f * g.r, g.at(side * 0.4f, -0.6f))
+            drawCircle(Color.White, 0.17f * g.r, g.at(side * 0.4f, -0.64f))
+            drawCircle(ink, 0.09f * g.r, g.at(side * 0.38f, -0.63f))
+        }
+        drawPath(g.smooth(-0.46f, -0.2f, -0.24f, -0.06f, 0f, -0.02f, 0.24f, -0.06f, 0.46f, -0.2f, closed = false), ink, style = Stroke(g.r * 0.08f, cap = StrokeCap.Round))
+    }
+
+    private fun DrawScope.drawPenguin(g: PawnGrid, colour: Color, fill: Brush, ink: Color, stroke: Stroke) {
+        val orange = Color(0xFFFF9800)
+        for (side in listOf(-1f, 1f)) {
+            val flipper = g.smooth(side * 0.46f, -0.2f, side * 0.82f, 0.24f, side * 0.72f, 0.4f, side * 0.44f, 0.24f)
+            drawPath(flipper, lerp(colour, Color.Black, 0.2f))
+            drawPath(flipper, ink, style = stroke)
+        }
+        val body = g.smooth(0f, -0.96f, 0.4f, -0.74f, 0.5f, -0.2f, 0.58f, 0.3f, 0.36f, 0.6f, -0.36f, 0.6f, -0.58f, 0.3f, -0.5f, -0.2f, -0.4f, -0.74f)
+        drawPath(body, fill)
+        drawPath(body, ink, style = stroke)
+        // The white front: two rounds for the face, one for the belly.
+        for (x in listOf(-0.15f, 0.15f)) drawCircle(Color.White, 0.2f * g.r, g.at(x, -0.5f))
+        drawOval(Color.White, g.ovalTopLeft(0f, 0.12f, 0.72f, 0.88f), g.size(0.72f, 0.88f))
+        for (x in listOf(-0.15f, 0.15f)) drawCircle(ink, 0.07f * g.r, g.at(x, -0.54f))
+        val beak = g.polygon(-0.13f, -0.42f, 0.13f, -0.42f, 0f, -0.22f)
+        drawPath(beak, orange)
+        drawPath(beak, ink, style = Stroke(stroke.width * 0.7f, join = StrokeJoin.Round))
+        for (x in listOf(-0.24f, 0.24f)) {
+            drawOval(orange, g.ovalTopLeft(x, 0.62f, 0.36f, 0.18f), g.size(0.36f, 0.18f))
+            drawOval(ink, g.ovalTopLeft(x, 0.62f, 0.36f, 0.18f), g.size(0.36f, 0.18f), style = Stroke(stroke.width * 0.7f))
+        }
     }
 }
