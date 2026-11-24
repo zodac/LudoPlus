@@ -428,8 +428,7 @@ count but 4 has a board of its own; one player on two colours was dropped.
     - [x] The icon and feature graphic (`StoreArtGeneratorTest`), approved 2026-11-18. The icon follows the launcher
         icon: the placeholder pawn until 2026-11-23, then the tilted board with the red pawn in focus. The feature
         graphic's GIF heads the README from 2026-11-19 (`readme-assets.yml`).
-    - [x] The promo video: a turn, a capture, the Rules' diagram, a pawn home and the win, Game Over, the Leaderboard,
-        and an achievement unlocking, then the end card; no tutorial (the maintainer, 2026-11-18). Approved 2026-11-18
+    - [x] The promo video, approved 2026-11-18: no tutorial (the maintainer). New scenes and music 2026-11-24
         (`STORE_ASSETS.md`).
 - [ ] Play Games Services: achievements, the fastest-win leaderboards, cloud save, and sign-in (`PLAY_GAMES.md`).
     The Console's achievements and leaderboards wait for the maintainer's review of them (2026-11-23).

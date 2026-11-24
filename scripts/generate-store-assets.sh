@@ -71,17 +71,17 @@ FELT_MIDDLE="#1E2A4A"
 FELT_DEEP="#0C1124"
 GOLD="#F2C46A"
 
-# The video's default music: "Happy Vibes" by Ruskerdax, CC0 (public domain - no credit required), chosen by the
+# The video's default music: "Wednesday Night" by Zane Little Music, CC0 (public domain - no credit required), chosen by the
 # maintainer. Not in the repo: fetched once into the ignored assets/music/, and checked against its known checksum.
-DEFAULT_MUSIC_URL="https://opengameart.org/sites/default/files/ruskerdax_-_happy_vibes.mp3"
-DEFAULT_MUSIC_SHA256="0213de5247b59c468cf7484bb9b7482a2b07558c9302ffa7a1ceb1bae05fd112"
+DEFAULT_MUSIC_URL="https://opengameart.org/sites/default/files/wednesday_night_0.mp3"
+DEFAULT_MUSIC_SHA256="6187f62385f94db5feda3360da6309d90664c5410dda1351f837f978df2c5861"
 # CC0 needs no credit; the video's description gives one anyway.
-DEFAULT_MUSIC_CREDIT="Happy Vibes by Ruskerdax (https://opengameart.org/node/160228)"
+DEFAULT_MUSIC_CREDIT="Wednesday Night by Zane Little Music (https://opengameart.org/node/156526)"
 MUSIC_CREDIT=""
 if ! ${USE_MUSIC}; then
     MUSIC=""
 elif [[ -z "${MUSIC}" ]] && [[ ",${PARTS}," == *",video,"* ]]; then
-    MUSIC="${ROOT}/assets/music/happy-vibes.mp3"
+    MUSIC="${ROOT}/assets/music/wednesday-night.mp3"
     MUSIC_CREDIT="${DEFAULT_MUSIC_CREDIT}"
     if [[ ! -f "${MUSIC}" ]]; then
         echo "==> Fetching the video's music"

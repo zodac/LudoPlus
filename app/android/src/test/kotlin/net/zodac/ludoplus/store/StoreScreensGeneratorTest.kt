@@ -136,7 +136,7 @@ class StoreScreensGeneratorTest {
         }
         leaveGame()
 
-        // A ghost catching a pawn, on the six-player board.
+        // A ghost catching a pawn, on the eight-player board.
         StoreState.applyStyles(container, Scenes.CRYPT)
         resume(Scenes.hauntedHouse())
         FrameRecorder(compose, File(root, "4-haunted-house")).apply {

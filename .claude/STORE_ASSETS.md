@@ -21,9 +21,10 @@ alone by default; `--parts icon,feature,video` the rest.
     unlocking on the Achievements page. Rolls are dealt through `AppContainer.diceRandom` (`DealtRandom`). Every
     achievement but `Scenes.LOCKED` is earned first, quietly, so no banner covers a scene but the last's, and the page
     reads "94 of 100" (an Easter egg would count past the total). The sound is the app's own clips, logged at their
-    frames (`RecordingSoundPool`, `SoundLog`) and mixed in, under CC0 music ("Happy Vibes" by Ruskerdax, fetched by the
-    script), with `video-description.txt` for YouTube. No tutorial: it's not important enough for the video (the
-    maintainer, 2026-11-18).
+    frames (`RecordingSoundPool`, `SoundLog`) and mixed in, under CC0 music ("Wednesday Night" by Zane Little Music,
+    fetched by the script; the maintainer's pick, 2026-11-24, as "Happy Vibes" is DiceFive's), with
+    `video-description.txt` for YouTube. No tutorial: it's not important enough for the video (the maintainer,
+    2026-11-18).
 
 ## Output (`assets/<version>/`, gitignored)
 
@@ -59,10 +60,10 @@ landscape (`w1280dp-h800dp-land-xhdpi`); the phone is 9:16 (`w412dp-h732dp-xxhdp
     A new screen needs a caption, and the README's gallery and `readme-assets.yml` name each file.
 - **Staged games**: `Scenes` in `StoreAssets.kt`. Each is a real game, played by the Medium CPU for every seat up to the
     moment shown, found by a seed search: `midGame` (Sam to choose between moves, one a capture, everyone out on the
-    track), `portals` (one of Sam's moves through a portal), `hauntedHouse` (six players and three ghosts, one of them
+    track), `portals` (one of Sam's moves through a portal), `hauntedHouse` (eight players and four ghosts, one of them
     catching a pawn as Ada's turn ends: a ghost moves after every second turn, so never after Sam's), and `lastMove`
     (Sam's last pawn a move from home, stopping at the first winner so the move ends the game). Each brings its own move
-    log. Six players, not eight: eight leave the phone only a sliver of the log.
+    log.
 - **Dressed tables**: `Scenes.POND` (Portals) and `Scenes.CRYPT` (Haunted House). A style still locked by
     `Scenes.LOCKED` (the Starry and Neon ones) is drawn as the default.
 - **The history** is `StoreState.seed`: 24 finished games over seven weeks for Sam, Jo, and Alex and the CPU Ada, each

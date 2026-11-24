@@ -117,10 +117,12 @@ internal object Cast {
         PlayerConfig(slot = 4, type = PlayerType.HUMAN, name = FRIENDS[1]),
     )
 
-    /** [TABLE], and two more, on a bigger board: with six, the phone still has room for the move log. */
-    val BIG_TABLE: List<PlayerConfig> = TABLE + listOf(
+    /** The most players a game takes: [TABLE], and four more. */
+    val FULL_TABLE: List<PlayerConfig> = TABLE + listOf(
         PlayerConfig(slot = 5, type = PlayerType.HUMAN, name = "Kim"),
         PlayerConfig(slot = 6, type = PlayerType.HUMAN, name = "Max"),
+        PlayerConfig(slot = 7, type = PlayerType.HUMAN, name = "Zoe"),
+        PlayerConfig(slot = 8, type = PlayerType.HUMAN, name = "Leo"),
     )
 }
 
@@ -255,11 +257,11 @@ internal object Scenes {
     }
 
     /**
-     * A six-player Haunted House game, with its three ghosts, Sam to move with a choice. Their turn ends with the move,
+     * An eight-player Haunted House game, with its four ghosts, Sam to move with a choice. Their turn ends with the move,
      * and whichever they pick, a ghost catches a pawn as Ada's ends (a ghost moves after every second turn, so never
      * after Sam's).
      */
-    fun hauntedHouse(): StartedGame = search(GameMode.HAUNTED_HOUSE, Cast.BIG_TABLE, maxActions = 900) { state ->
+    fun hauntedHouse(): StartedGame = search(GameMode.HAUNTED_HOUSE, Cast.FULL_TABLE, maxActions = 900) { state ->
         val phase = state.phase as? TurnPhase.AwaitingMove ?: return@search false
         state.current == 0 && phase.moves.size >= 2 && state.livedIn(pawns = 1) && phase.moves.all { move ->
             val moved = LudoEngine.move(state, move.pawn, move.owner)
