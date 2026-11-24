@@ -52,6 +52,8 @@ BANNER_DESCRIPTION = re.compile(r"(Achievement earned|Styles? unlocked): ")
 SENTENCE = re.compile(r"[.!?]$")
 # The move log (MoveLogPanel): its title, and the time that starts each line, a text of its own before the line's.
 LOG_TITLE_LABELS = ("Moves",)
+# The headings over its turns, and over who went first.
+LOG_HEADING = re.compile(r"(Turn \d+|Start)$")
 LOG_TIME = re.compile(r"\[\d{2}:\d{2}:\d{2}\]\s*$")
 # TEMPORARY: releases with no move log, whose game can't be compared by it. Once 1.1.0 is released no upgrade check starts
 # from one of these: remove this, and what it's used for in play_on_old_app and differences.
@@ -167,8 +169,8 @@ def numbers_in(text):
 
 
 def is_name(text):
-    """True for a text on the board that names something in the game: not a sentence, nor the move log's title or times."""
-    return bool(text) and not SENTENCE.search(text) and text not in LOG_TITLE_LABELS and not LOG_TIME.match(text)
+    """True for a text on the board that names something in the game: not a sentence, nor the move log's title, headings, or times."""
+    return bool(text) and not SENTENCE.search(text) and text not in LOG_TITLE_LABELS and not LOG_HEADING.match(text) and not LOG_TIME.match(text)
 
 
 def find_log(nodes):

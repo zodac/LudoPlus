@@ -7,8 +7,8 @@ The board, the player cards, the die, and the move log. The general rules are in
 
 - **Portrait** (`PortraitGame`, `GameScreen.kt`), top to bottom: the player cards, the board, the die and its line
     (`TurnPanel`), and the move log in what's left.
-    - The board is the screen's width, less what it gives up on a short screen: up to a tenth for the log's second line,
-        and more only for its first, never under 60% (`portraitBoardSide`). Its size allows for the die alone, so a long
+    - The board is the screen's width, less what it gives up on a short screen: what the log needs for its newest turn's
+        heading and a line, never under 60% (`portraitBoardSide`). Its size allows for the die alone, so a long
         prompt, or the winner's line, takes its room from the log and never resizes the board.
     - On a screen too short for it all, the player cards close up (`compact`).
 - **Landscape**: the board at the screen's height, and beside it, at least 280dp wide, the cards, the die, and the log.
@@ -75,8 +75,12 @@ whose turn it is has an outline in their colour.
 ## The move log
 
 `MoveLogPanel`: every move, newest first, back to who went first, in a card that scrolls back to its top as each comes.
-Where there isn't room for the title and two lines, the card has no title; where there isn't room for a line, nothing is
-drawn, and TalkBack still hears the newest. The lines are a list to TalkBack ("1 of 12"), read without their times.
+Each round is under a heading ("Turn 3", `LogEntry.turn`: which of its player's turns each move was in), and who went first
+under "Start". A roll again's moves are lines of the same turn. Where there isn't room for the title, a heading, and two
+lines, the card has no title; where there isn't room for a line under the heading, it has no heading; where there isn't room
+for a line, nothing is drawn, and TalkBack still hears the newest. A game saved before entries kept their turns (1.1.0) has
+them counted back as it's loaded (`MoveLog.withTurns`). To TalkBack the headings are headings, and the lines a list ("1 of
+12"), read without their times.
 
 ## What TalkBack hears
 

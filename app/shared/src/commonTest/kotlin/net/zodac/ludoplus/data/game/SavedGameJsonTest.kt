@@ -423,6 +423,14 @@ class SavedGameJsonLogTest {
     }
 
     @Test
+    fun `a log saved without its turns comes back with them`() {
+        val game = played()
+        val turnless = SavedGameJson.encode(game.copy(log = game.log.map { it.copy(turn = null) }))
+        assertFalse("\"turn\"" in turnless)
+        assertEquals(game, SavedGameJson.decode(turnless))
+    }
+
+    @Test
     fun `a log that can't be read is dropped - the game still comes back`() {
         val game = played()
         val broken = SavedGameJson.encode(game).replace("\"log\":[", "\"log\":[{\"event\":7},")

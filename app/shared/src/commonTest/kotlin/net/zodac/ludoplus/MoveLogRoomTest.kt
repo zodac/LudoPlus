@@ -35,7 +35,7 @@ import net.zodac.ludoplus.ui.game.StartedGame
 import net.zodac.ludoplus.ui.game.portraitBoardSide
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
 
-/** The room the move log gets in portrait, however many are playing: two lines where it can, one line at least, and the rest a scroll away. */
+/** The room the move log gets in portrait, however many are playing: its newest turn's heading and a line at least, and the rest a scroll away. */
 class MoveLogRoomTest : UiTest() {
 
     private val showcase = Showcase { compose }
@@ -64,7 +64,11 @@ class MoveLogRoomTest : UiTest() {
         )
     }
 
+    /** The newest turn in the log shown. */
+    private var newestTurn = 0
+
     private suspend fun show(game: StartedGame, fontScale: Float = 1f) {
+        newestTurn = game.log.last().turn!!
         val inProgress = InProgressGameRepository(InMemoryPreferences())
         inProgress.save(game)
         val viewModel = GameViewModel(SettingsRepository(InMemoryPreferences()), inProgress, GameRecordRepository(InMemoryGameResultDao()))
@@ -93,6 +97,9 @@ class MoveLogRoomTest : UiTest() {
 
     private fun assertLines(screen: TestScreen, players: Int, atLeast: Int, fontScale: Float = 1f) {
         val lines = fullLines()
+        val heading = compose.onNode(hasText("Turn ${newestTurn}") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).fetchSemanticsNode()
+        val log = compose.onNode(isLog).fetchSemanticsNode().boundsInRoot
+        assertTrue(heading.boundsInRoot.top >= log.top && heading.positionInRoot.y + heading.size.height <= log.bottom, "$players players on ${screen.widthDp}x${screen.heightDp} at $fontScale: no heading")
         assertTrue(lines >= atLeast, "$players players on ${screen.widthDp}x${screen.heightDp} at $fontScale: $lines lines, not $atLeast")
     }
 
@@ -101,11 +108,11 @@ class MoveLogRoomTest : UiTest() {
         assertLines(screen, players, atLeast, fontScale)
     }
 
-    @Test fun `eight players leave the log two lines on a 16 by 9 phone`() = linesOn(TestScreen(411, 731), players = 8, atLeast = 2)
+    @Test fun `eight players leave the log a heading and a line on a 16 by 9 phone`() = linesOn(TestScreen(411, 731), players = 8, atLeast = 1)
 
-    @Test fun `and one on a small one`() = linesOn(TestScreen(360, 640), players = 8, atLeast = 1)
+    @Test fun `and on a small one`() = linesOn(TestScreen(360, 640), players = 8, atLeast = 1)
 
-    @Test fun `and one line on a small one less its system bars`() = linesOn(TestScreen(360, 568), players = 8, atLeast = 1)
+    @Test fun `and on a small one less its system bars`() = linesOn(TestScreen(360, 568), players = 8, atLeast = 1)
 
     @Test fun `eight leave two on a taller phone`() = linesOn(TestScreen(360, 800), players = 8, atLeast = 2)
 
@@ -113,38 +120,62 @@ class MoveLogRoomTest : UiTest() {
 
     @Test fun `eight leave one at a large font`() = linesOn(TestScreen(411, 731), players = 8, atLeast = 1, fontScale = 1.3f)
 
-    @Test fun `four players keep theirs`() = linesOn(TestScreen(360, 640), players = 4, atLeast = 2)
+    @Test fun `four players have a line too on a small one`() = linesOn(TestScreen(360, 640), players = 4, atLeast = 1)
 
     @Test
     fun `the log scrolls back to who went first where it shows only a line or two`() = uiTest(TestScreen(411, 731)) {
         val game = game(8)
         show(game)
-        compose.onNode(isLog).performScrollToIndex(game.log.size)
+        // Every line, and a heading over each turn and the start.
+        compose.onNode(isLog).performScrollToIndex(game.log.size + newestTurn + 1)
         compose.onNode(hasContentDescription("Alex goes first.")).assertExists()
+        compose.onNode(hasText("Start") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).assertExists()
     }
 
     @Test
-    fun `the log has its title where there's room for it and two lines - and not where there isn't`() = uiTest(TestScreen(411, 731)) {
+    fun `each turn's lines are under its heading - newest first - and the headings aren't lines of the list`() = uiTest(TestScreen(411, 2400)) {
+        val game = game(4).let { it.copy(log = it.log.take(14)) }
+        show(game)
+        val top = { matcher: SemanticsMatcher -> compose.onNode(matcher).fetchSemanticsNode().positionInRoot.y }
+        val heading = { text: String -> top(hasText(text) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)) }
+        val turns = game.log.map { it.turn!! }.distinct()
+        val headings = turns.map { heading("Turn $it") }
+        assertEquals(headings.sortedDescending(), headings)
+        assertTrue(heading("Start") > headings.first() && top(hasContentDescription("Alex goes first.")) > heading("Start"))
+        val lines = compose.onAllNodes(isLine).fetchSemanticsNodes().associate { it.config[SemanticsProperties.CollectionItemInfo].rowIndex to it.positionInRoot.y }
+        assertEquals((0..game.log.size).toSet(), lines.keys)
+        assertEquals(game.log.size + 1, compose.onNode(isLog).fetchSemanticsNode().config[SemanticsProperties.CollectionInfo].rowCount)
+        game.log.asReversed().forEachIndexed { index, entry ->
+            val y = lines.getValue(index)
+            // The nearest heading over the line.
+            assertEquals(entry.turn, turns.filter { heading("Turn $it") < y }.maxBy { heading("Turn $it") }, "line $index")
+        }
+    }
+
+    private val isTitle = hasText("Moves") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)
+
+    @Test
+    fun `the log has its title where there's room for it - a heading - and two lines`() = uiTest(TestScreen(411, 891)) {
         show(game(4))
-        compose.onNode(hasText("Moves") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).assertExists()
+        compose.onNode(isTitle).assertExists()
+    }
+
+    @Test
+    fun `and not where there isn't`() = uiTest(TestScreen(411, 731)) {
         show(game(8))
-        compose.onNode(hasText("Moves") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).assertDoesNotExist()
+        compose.onNode(isTitle).assertDoesNotExist()
     }
 
     @Test
-    fun `the board is the screen's width where the log has room for two lines beside it`() {
-        assertEquals(400, portraitBoardSide(width = 400, room = 456, oneLine = 32, twoLines = 56))
-        assertEquals(400, portraitBoardSide(width = 400, room = 900, oneLine = 32, twoLines = 56))
+    fun `the board is the screen's width where the log has its room beside it`() {
+        assertEquals(400, portraitBoardSide(width = 400, room = 456, logHeight = 56))
+        assertEquals(400, portraitBoardSide(width = 400, room = 900, logHeight = 56))
     }
 
     @Test
-    fun `the board gives up to a tenth for the log's second line and more only for its first`() {
-        assertEquals(384, portraitBoardSide(width = 400, room = 440, oneLine = 32, twoLines = 56))
-        assertEquals(360, portraitBoardSide(width = 400, room = 416, oneLine = 32, twoLines = 56))
-        // A second line would take more: the log keeps its first.
-        assertEquals(360, portraitBoardSide(width = 400, room = 400, oneLine = 32, twoLines = 56))
-        assertEquals(328, portraitBoardSide(width = 400, room = 360, oneLine = 32, twoLines = 56))
-        // And never under its smallest.
-        assertEquals(240, portraitBoardSide(width = 400, room = 100, oneLine = 32, twoLines = 56))
+    fun `the board gives up what the log needs - and never goes under its smallest`() {
+        assertEquals(384, portraitBoardSide(width = 400, room = 440, logHeight = 56))
+        assertEquals(304, portraitBoardSide(width = 400, room = 360, logHeight = 56))
+        assertEquals(240, portraitBoardSide(width = 400, room = 100, logHeight = 56))
     }
 }

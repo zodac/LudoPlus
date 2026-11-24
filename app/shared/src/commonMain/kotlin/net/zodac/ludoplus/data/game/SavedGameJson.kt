@@ -29,6 +29,7 @@ import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.GhostMove
 import net.zodac.ludoplus.game.Ghosts
 import net.zodac.ludoplus.game.LogEntry
+import net.zodac.ludoplus.game.MoveLog
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
@@ -133,7 +134,9 @@ object SavedGameJson {
             customName = obj.stringOrNull("customName"),
             id = obj.stringOrNull("id"),
             steps = obj.intOrNull("steps")?.also { require(it >= 0) { "Negative steps" } } ?: 0,
-            log = runCatching { if ("log" in obj) obj.objectList("log").map { decodeLogEntry(it, players.size) } else emptyList() }.getOrDefault(emptyList()),
+            log = runCatching {
+                if ("log" in obj) MoveLog.withTurns(obj.objectList("log").map { decodeLogEntry(it, players.size) }, state) else emptyList()
+            }.getOrDefault(emptyList()),
         )
     }
 
@@ -376,6 +379,7 @@ object SavedGameJson {
         entry.place?.let { put("place", it) }
         if (entry.haunted.isNotEmpty()) put("haunted", encodePawns(entry.haunted))
         if (entry.vanished > 0) put("vanished", entry.vanished)
+        entry.turn?.let { put("turn", it) }
     }
 
     private fun decodeLogEntry(obj: JsonObject, playerCount: Int): LogEntry = LogEntry(
@@ -384,6 +388,7 @@ object SavedGameJson {
         place = obj.intOrNull("place")?.also { require(it in 1..playerCount) { "No place $it" } },
         haunted = decodePawnsIn(obj, "haunted").also { pawns -> require(pawns.all { it.player in 0..<playerCount }) { "No player in $pawns" } },
         vanished = obj.intOrNull("vanished") ?: 0,
+        turn = obj.intOrNull("turn")?.also { require(it > 0) { "No turn $it" } },
     )
 
     private fun encodeEvent(event: GameEvent): JsonObject = buildJsonObject {

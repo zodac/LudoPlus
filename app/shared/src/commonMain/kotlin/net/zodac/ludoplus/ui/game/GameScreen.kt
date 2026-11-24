@@ -464,12 +464,11 @@ fun GameContent(
                 }
             } else {
                 // The tutorial's log keeps no room: its coach says what matters.
-                val (oneLine, twoLines) = if (tutorial == null) moveLogHeight(1) to moveLogHeight(2) else 0.dp to 0.dp
+                val logHeight = if (tutorial == null) shortestLogHeight() else 0.dp
                 val rows = playerCardRows(BoardLayout.of(started.state.board), started.state.players.map { it.seat }).size
-                val compact = width + playerCardsHeight(rows, compact = false) + PORTRAIT_DIE_SIZE + PORTRAIT_GAP * 3 + twoLines > height
+                val compact = width + playerCardsHeight(rows, compact = false) + PORTRAIT_DIE_SIZE + PORTRAIT_GAP * 3 + logHeight > height
                 PortraitGame(
-                    oneLine = oneLine,
-                    twoLines = twoLines,
+                    logHeight = logHeight,
                     players = { players(compact) },
                     board = { board(Modifier) },
                     turn = {
@@ -486,14 +485,12 @@ fun GameContent(
 
 /**
  * The game in portrait, top to bottom: the [players], the [board], the [turn]'s die and line, and the [log] in what's left.
- * The board is the screen's width, less what it gives up where the screen is short for the log to show [twoLines], or
- * where that would cost it more than [BOARD_FOR_SECOND_LINE] of its width, [oneLine]. Its size allows for the turn's die
- * alone, so a longer prompt, or the winner at the end, takes its room from the log and never resizes the board.
+ * The board is the screen's width, less what it gives up where the screen is short for the log to have [logHeight]. Its size
+ * allows for the turn's die alone, so a longer prompt, or the winner at the end, takes its room from the log and never resizes the board.
  */
 @Composable
 private fun PortraitGame(
-    oneLine: Dp,
-    twoLines: Dp,
+    logHeight: Dp,
     players: @Composable () -> Unit,
     board: @Composable () -> Unit,
     turn: @Composable () -> Unit,
@@ -506,7 +503,7 @@ private fun PortraitGame(
         val above = playerParts.map { it.measure(loose) }
         val aboveHeight = above.sumOf { it.height + gap }
         val room = height - aboveHeight - gap - PORTRAIT_DIE_SIZE.roundToPx() - gap
-        val side = portraitBoardSide(width, room, oneLine.roundToPx(), twoLines.roundToPx())
+        val side = portraitBoardSide(width, room, logHeight.roundToPx())
         val boards = boardParts.map { it.measure(Constraints.fixed(side, side)) }
         val turns = turnParts.map { it.measure(loose) }
         val logTop = aboveHeight + side + gap + turns.sumOf { it.height + gap }
@@ -522,16 +519,10 @@ private fun PortraitGame(
 }
 
 /**
- * How wide the board is in portrait, [width] at most, where it shares [room] with the log, which needs [oneLine] for a
- * line or [twoLines] for two: as [PortraitGame] says, and never under [SMALLEST_BOARD] of [width].
+ * How wide the board is in portrait, [width] at most, where it shares [room] with the log, which needs [logHeight]: as
+ * [PortraitGame] says, and never under [SMALLEST_BOARD] of [width].
  */
-internal fun portraitBoardSide(width: Int, room: Int, oneLine: Int, twoLines: Int): Int {
-    val side = minOf(width, maxOf(room - twoLines, (width * BOARD_FOR_SECOND_LINE).toInt()))
-    return if (room - side >= oneLine) side else (room - oneLine).coerceIn((width * SMALLEST_BOARD).toInt(), side)
-}
-
-/** The share of the screen's width the board keeps at least while the log's second line is the reason it gives any up. */
-private const val BOARD_FOR_SECOND_LINE = 0.9f
+internal fun portraitBoardSide(width: Int, room: Int, logHeight: Int): Int = (room - logHeight).coerceIn((width * SMALLEST_BOARD).toInt(), width)
 
 /** The share of the screen's width the board always keeps. */
 private const val SMALLEST_BOARD = 0.6f

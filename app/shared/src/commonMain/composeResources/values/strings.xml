@@ -346,6 +346,10 @@
     <string name="game_event_haunted">A ghost caught %1$s!</string>
     <!-- The move log's title. -->
     <string name="game_log_title">Moves</string>
+    <!-- A heading in the move log, over the moves of one round of turns: %1$d counts the rounds from 1. -->
+    <string name="game_log_turn">Turn %1$d</string>
+    <!-- The move log's last heading, over who went first. -->
+    <string name="game_log_start">Start</string>
     <!-- A line of the move log: %1$s is when it happened (in game_log_time_pattern), %2$s what happened. -->
     <string name="game_log_line">[%1$s] %2$s</string>
     <!-- When a line of the move log happened, as a CLDR time pattern: hours (24-hour), minutes, and seconds. -->

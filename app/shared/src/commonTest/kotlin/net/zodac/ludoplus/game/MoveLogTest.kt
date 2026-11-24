@@ -36,6 +36,45 @@ class MoveLogTest {
     }
 
     @Test
+    fun `every player still in has their moves in each turn - in the same order round the table`() {
+        for ((players, first) in listOf(2 to 1, 4 to 0, 4 to 2, 8 to 5)) {
+            val log = logOf(play(GameState.new(GameMode.CLASSIC, players, first = first, rules = GameMode.CLASSIC.rules.forPlayers(players)), Random(7)))
+            val turns = log.map { it.turn!! }
+            assertEquals(turns.sorted(), turns, "a turn's entries are together")
+            assertEquals((1..turns.last()).toList(), turns.distinct())
+            // Until someone is home, all of them, from who went first round.
+            val order = List(players) { (first + it) % players }
+            val allIn = log.takeWhile { (it.event as? GameEvent.Moved)?.finished != true }.groupBy { it.turn }.values.toList().dropLast(1)
+            assertTrue(allIn.size > 5)
+            for (round in allIn) assertEquals(order, round.map { it.event.player }.distinct())
+        }
+    }
+
+    @Test
+    fun `a roll again's moves are the same turn`() {
+        val log = logOf(play(GameState.new(GameMode.CLASSIC, 4), Random(3)))
+        val again = log.zipWithNext().filter { (a, b) -> a.event.player == b.event.player }
+        assertTrue(again.isNotEmpty())
+        for ((one, next) in again) assertEquals(one.turn, next.turn)
+    }
+
+    @Test
+    fun `entries saved without a turn are counted back from the game`() {
+        val teams = GameMode.CLASSIC.rules.copy(teams = TeamMode.TWO_TEAMS.teamsFor(4))
+        for (start in listOf(GameState.new(GameMode.CLASSIC, 4), GameState.new(GameMode.CLASSIC, 4, rules = teams))) {
+            val states = play(start, Random(11))
+            for (length in listOf(1, 2, 30, 31, 32, 33, 34, 35, 200, states.size)) {
+                val log = logOf(states.take(length))
+                val state = states[length - 1]
+                assertEquals(log, MoveLog.withTurns(log.map { it.copy(turn = null) }, state), "$length states")
+                // A log that doesn't go back to the game's start, and one that kept turns only lately.
+                assertEquals(log.drop(9), MoveLog.withTurns(log.drop(9).map { it.copy(turn = null) }, state), "$length states, less the first entries")
+                assertEquals(log, MoveLog.withTurns(log.mapIndexed { i, entry -> if (i < 9) entry.copy(turn = null) else entry }, state), "$length states, the first entries' turns not kept")
+            }
+        }
+    }
+
+    @Test
     fun `a state seen again adds nothing - and a game back at its start has an empty log`() {
         val states = play(GameState.new(GameMode.CLASSIC, 2), Random(5)).take(40)
         val log = logOf(states)

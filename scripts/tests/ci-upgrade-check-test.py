@@ -79,6 +79,17 @@ class UpgradeCheckTest(unittest.TestCase):
         logged = board(*LEFT, ("Moves", "", "false"), ("[08:48:51] ", "", "false"), ("Player 1 goes first.", "", "false"))
         self.assertEqual(["Joker", "Player 1"], check.snapshot(logged)["names"])
 
+    def test_the_move_logs_headings_are_not_names(self):
+        logged = board(*LEFT, ("Turn 12", "", "false"), ("Start", "", "false"))
+        self.assertEqual(["Joker", "Player 1"], check.snapshot(logged)["names"])
+
+    def test_the_move_logs_headings_are_not_lines(self):
+        screen = log_screen(*LOG)
+        log = check.find_log(screen)
+        for position, heading in ((2, "Start"), (1, "Turn 1"), (0, "Turn 2")):
+            log.insert(position, check.parse_screen(f'<hierarchy><node text="{heading}" /></hierarchy>')[0])
+        self.assertEqual(LOG, check.log_lines(log))
+
     def test_the_log_is_the_scrolling_list_of_times_and_what_happened_then(self):
         self.assertEqual(LOG, check.log_lines(check.find_log(log_screen(*LOG))))
         self.assertIsNone(check.find_log(board(*LEFT)))
