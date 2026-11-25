@@ -79,18 +79,16 @@ whose turn it is has an outline in their colour.
     shares one, drawn with an equals sign as DiceFive's is ("=2", `game_player_rank_tied`, on a pill as wide as it needs;
     the maintainer, 2026-11-25), and nobody has one while everyone is level. TalkBack: "currently 2nd", "currently joint 2nd", or "4th place"
     once placed (`PlayerCardTest`).
-- **A tap anywhere on the card** shows a tooltip (the maintainer, 2026-11-25): "3 captures" and "1 captured", this game's
-    counts as Game Over words them (`PlayerState.captures`, `timesCaptured`: a ghost's aren't captures). A name too long for
-    its card is cut with an ellipsis, and the tooltip has all of it above them; one that fits isn't repeated. It stays until
-    a tap elsewhere, which does its own job too. It isn't a button to TalkBack, which reads the whole name with the card, and
-    the two counts last ("3 captures, 1 captured"), neither while both are 0.
-- **A long press on the card** shows both counts against each opponent (`CaptureBars`, `PlayerCardTest`; the maintainer,
-    2026-11-25): the totals, then a bar either side of each opponent's name, in their colour, all on one scale. Partners are
-    left out unless they capture each other. A tap anywhere only closes it, as a power-up's. TalkBack: the card has the action
-    "Captures by opponent", and the popup reads "Lucky, 3 captures, 1 captured", then "Alex, 2 captures, 0 captured" for each.
+- **A tap anywhere on the card** shows their captures and times captured, in all and against each opponent (`CaptureBars`,
+    `PlayerCardTest`; the maintainer, 2026-11-26, in place of a tap's summary and a long press): the totals, headed "Captures" and
+    "Captured by", then a bar either side of each opponent's name, in their colour, all on one scale. Partners are left out
+    unless they capture each other, and a ghost's aren't captures. A name too long for its card is cut with an ellipsis, and the
+    popup has all of it above the totals; one that fits isn't repeated. A tap anywhere only closes it, as a power-up's.
+    TalkBack: the card is a button, "Show captures by opponent", and the popup reads "Lucky, 3 captures, captured by 1", then "Alex, 2
+    captures, captured by 0" for each. The card itself doesn't say the counts.
     - The counts are `PlayerState.capturesOf`, kept in the saved game (`capturesOf`, absent with none). A game saved before it
         was kept has its totals, and rows for the captures since.
-    - The card whose tooltip is up (a tap's or a long press's) has a dashed outline in its player's colour, as DiceFive's viewed
+    - The card whose popup is up has a dashed outline in its player's colour, as DiceFive's viewed
         tab had (the maintainer, 2026-11-25), in place of the solid one if it's also their turn. Its spoken twin is the name the popup's
         totals start with.
     - `AppTooltip(wide = true)`: a rich tooltip's width, 8dp clear of the screen's edges. It scrolls where a large font makes it

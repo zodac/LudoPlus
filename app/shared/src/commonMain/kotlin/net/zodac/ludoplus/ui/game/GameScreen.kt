@@ -2,7 +2,7 @@ package net.zodac.ludoplus.ui.game
 
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import net.zodac.ludoplus.ui.style.visualTheme
 import net.zodac.ludoplus.ui.style.TableBackground
 import net.zodac.ludoplus.ui.style.LocalGameVisualTheme
@@ -49,11 +49,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
@@ -104,8 +104,6 @@ import net.zodac.ludoplus.resources.game_die_used_spoken
 import net.zodac.ludoplus.resources.game_over_results
 import net.zodac.ludoplus.resources.game_over_team_winner
 import net.zodac.ludoplus.resources.game_over_winner
-import net.zodac.ludoplus.resources.gameover_captured
-import net.zodac.ludoplus.resources.gameover_captures
 import net.zodac.ludoplus.resources.gameover_squares
 import net.zodac.ludoplus.resources.game_player_pawns_home_spoken
 import net.zodac.ludoplus.resources.game_player_pawns_left_spoken
@@ -665,7 +663,7 @@ private fun playerCardsHeight(rows: Int, compact: Boolean): Dp {
     return (line + cardPadding(compact) * 2) * rows + cardGap(compact) * (rows - 1)
 }
 
-/** A player's card: a tap on it shows how many captures they have made and had made of them, and a long press each against each opponent ([CaptureBars]), under their whole name where the card cuts it. It's outlined in dashes while either is up. */
+/** A player's card: a tap on it shows how many captures they have made and had made of them, in all and against each opponent ([CaptureBars]), under their whole name where the card cuts it. It's outlined in dashes while that's up. */
 @Composable
 private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolean, modifier: Modifier) {
     val player = game.players[index]
@@ -691,19 +689,11 @@ private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolea
         tied -> stringResource(Res.string.game_player_rank_tied_spoken, ordinal(rank))
         else -> stringResource(Res.string.game_player_rank_spoken, ordinal(rank))
     }
-    val captures = pluralStringResource(Res.plurals.gameover_captures, side.captures, side.captures)
-    val captured = pluralStringResource(Res.plurals.gameover_captured, side.timesCaptured, side.timesCaptured)
     var nameCut by remember(player.name) { mutableStateOf(false) }
     // Up until a tap elsewhere: there's more on it than its usual time is enough to read.
     val tooltip = rememberAppTooltipState(persistent = true)
-    var detailed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val showTooltip = { withOpponents: Boolean ->
-        detailed = withOpponents
-        scope.launch { tooltip.show() }
-        Unit
-    }
-    val detailAction = stringResource(Res.string.game_captures_action)
+    val tapAction = stringResource(Res.string.game_captures_action)
     val spoken = joinClauses(
         listOfNotNull(
             team?.let { stringResource(Res.string.game_player_team_spoken, it) },
@@ -711,36 +701,27 @@ private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolea
             if (state.rules.claims) state.squaresOf(index).let { pluralStringResource(Res.plurals.gameover_squares, it, it) } else null,
             if (current) stringResource(Res.string.game_player_turn_spoken) else null,
             placeText ?: spokenRank,
-        ) + if (side.captures > 0 || side.timesCaptured > 0) listOf(captures, captured) else emptyList(),
+        ),
     )
-    // Focusable only for a long press's, as a power-up's is, so that TalkBack reads on into it. Otherwise a tap elsewhere, on
-    // the die say, does its own job as the tooltip goes.
+    // Focusable, as a power-up's is, so that TalkBack reads on into it.
     // The box takes the weight: a tooltip's modifier is its content's alone, not its own.
     Box(modifier) {
         AppTooltip(
-            body = {
-                if (detailed) CaptureBars(game, index, named = nameCut) else Column {
-                    if (nameCut) Text(player.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = colour)
-                    Text(captures, style = MaterialTheme.typography.bodyMedium)
-                    Text(captured, style = MaterialTheme.typography.bodyMedium)
-                }
-            },
+            body = { CaptureBars(game, index, named = nameCut) },
             state = tooltip,
             enabled = false,
-            focusable = detailed,
-            wide = detailed,
+            wide = true,
         ) {
             Surface(
-                // Raw taps, not a button: TalkBack reads all a tap's tooltip says with the card, and has an action for a long press's.
                 modifier = Modifier
                     .fillMaxWidth()
                     .openedOutline(tooltip.isVisible, colour)
                     .semantics(mergeDescendants = true) {
                         stateDescription = spoken
                         traversalIndex = index.toFloat()
-                        customActions = listOf(CustomAccessibilityAction(detailAction) { showTooltip(true); true })
                     }
-                    .pointerInput(Unit) { detectTapGestures(onLongPress = { showTooltip(true) }, onTap = { showTooltip(false) }) },
+                    .clip(RoundedCornerShape(CARD_CORNER))
+                    .clickable(onClickLabel = tapAction, role = Role.Button) { scope.launch { tooltip.show() } },
                 shape = RoundedCornerShape(CARD_CORNER),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 border = if (current && !tooltip.isVisible) BorderStroke(2.dp, colour) else null,

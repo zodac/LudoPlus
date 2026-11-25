@@ -1,6 +1,7 @@
 package net.zodac.ludoplus
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -10,9 +11,9 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
@@ -105,47 +106,20 @@ class PlayerCardTest : UiTest() {
     private fun drawn(text: String): Int = compose.onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes().size
 
     @Test
-    fun `a card says its player's captures and times captured last - neither while there are none of either`() = uiTest(TestScreen(411, 891)) {
+    fun `a card doesn't say its player's captures - its popup does`() = uiTest(TestScreen(411, 891)) {
         show(game(listOf(6, 6, 6, 6), names, ::withCaptures))
-        assertEquals("6 pawns left, playing now", spoken("Alex"))
-        assertEquals("6 pawns left, 3 captures, 1 captured", spoken("Lucky"))
-        assertEquals("6 pawns left, 0 captures, 2 captured", spoken("Ace"))
-    }
-
-    @Test
-    fun `a tap on a card shows its player's captures and times captured - until a tap on another shows theirs`() = uiTest(TestScreen(411, 891)) {
-        show(game(listOf(6, 6, 6, 6), names, ::withCaptures))
-        assertEquals(listOf(0, 0), listOf("3 captures", "1 captured").map(::drawn))
-        card("Lucky").performTouchInput { click() }
-        compose.waitForIdle()
-        assertEquals(listOf(1, 1), listOf("3 captures", "1 captured").map(::drawn))
-        // It outlasts a plain tooltip's time.
-        compose.mainClock.advanceTimeBy(10_000)
-        compose.waitForIdle()
-        assertEquals(listOf(1, 1), listOf("3 captures", "1 captured").map(::drawn))
-
-        card("Alex").performTouchInput { click() }
-        compose.waitForIdle()
-        assertEquals(listOf(0, 0), listOf("3 captures", "1 captured").map(::drawn))
-        assertEquals(listOf(1, 1), listOf("0 captures", "0 captured").map(::drawn))
+        assertEquals("6 pawns left", spoken("Lucky"))
     }
 
     @Test
     fun `a tap on a name too long for its card shows the whole of it - and one that fits is not repeated`() = uiTest(TestScreen(360, 800)) {
-        show(game(listOf(6, 6, 6, 6), listOf("Alex", "WWWWWWWW", "Ace", "Bo")))
-        val before = drawn("WWWWWWWW")
-        // All the tooltip says is read with the card, so TalkBack is handed no button for it.
-        assertEquals(false, SemanticsActions.OnClick in card("WWWWWWWW").fetchSemanticsNode().config)
-        card("WWWWWWWW").performTouchInput { click() }
-        compose.waitForIdle()
-        assertEquals(before + 1, drawn("WWWWWWWW"))
-
-        show(game(listOf(6, 6, 6, 6), listOf("Alex", "WWWWWWWW", "Ace", "Bo")))
-        val short = drawn("Bo")
-        card("Bo").performTouchInput { click() }
-        compose.waitForIdle()
-        assertEquals(1, drawn("0 captures"))
-        assertEquals(short, drawn("Bo"))
+        // The name is read with the totals, so it's told by the room it takes over them in the popup.
+        fun above(name: String): Float {
+            show(game(listOf(6, 6, 6, 6), listOf("Alex", "WWWWWWWW", "Ace", "Bo")))
+            tap(name)
+            return compose.onNodeWithContentDescription("$name, 0 captures, captured by 0").fetchSemanticsNode().positionInRoot.y
+        }
+        assertTrue(above("WWWWWWWW") > above("Bo") + 10)
     }
 
     /** Lucky has captured Alex's pawns twice and Ace's once, and been captured by Ace once. */
@@ -162,30 +136,39 @@ class PlayerCardTest : UiTest() {
 
     private fun says(text: String): Int = compose.onAllNodesWithContentDescription(text).fetchSemanticsNodes().size
 
-    private fun act(name: String) {
-        val actions = card(name).fetchSemanticsNode().config[SemanticsActions.CustomActions]
-        assertEquals(listOf("Captures by opponent"), actions.map { it.label })
-        compose.runOnIdle { actions.single().action() }
+    private fun tap(name: String) {
+        card(name).performTouchInput { click() }
         compose.waitForIdle()
     }
 
     @Test
-    fun `a long press on a card shows its player's captures and times captured by each opponent`() = uiTest(TestScreen(411, 891)) {
+    fun `a tap on a card shows its player's captures and times captured by each opponent - until it's closed`() = uiTest(TestScreen(411, 891)) {
         show(game(listOf(6, 6, 6, 6), names, ::withOpponents))
-        card("Lucky").performTouchInput { longClick() }
+        val popup = listOf("Lucky, 3 captures, captured by 1", "Alex, 2 captures, captured by 0", "Ace, 1 capture, captured by 1", "Fluke, 0 captures, captured by 0")
+        assertEquals(listOf(0, 0, 0, 0), popup.map(::says))
+        tap("Lucky")
+        assertEquals(listOf(1, 1, 1, 1), popup.map(::says))
+        assertEquals(0, says("Lucky, 0 captures, captured by 0"))
+        assertEquals(listOf(1, 1), listOf("Captures", "Captured by").map(::drawn))
+        // It outlasts a plain tooltip's time.
+        compose.mainClock.advanceTimeBy(10_000)
         compose.waitForIdle()
-        assertEquals(listOf(1, 1, 1, 1), listOf("Lucky, 3 captures, 1 captured", "Alex, 2 captures, 0 captured", "Ace, 1 capture, 1 captured", "Fluke, 0 captures, 0 captured").map(::says))
-        assertEquals(0, says("Lucky, 0 captures, 0 captured"))
+        assertEquals(listOf(1, 1, 1, 1), popup.map(::says))
         // Each says its place among them, as a large font can leave some out of view.
-        val row = compose.onNodeWithContentDescription("Ace, 1 capture, 1 captured").fetchSemanticsNode().config
+        val row = compose.onNodeWithContentDescription("Ace, 1 capture, captured by 1").fetchSemanticsNode().config
         assertEquals(1, row[SemanticsProperties.CollectionItemInfo].rowIndex)
     }
 
     @Test
-    fun `TalkBack has an action for a card's captures by opponent`() = uiTest(TestScreen(411, 891)) {
+    fun `TalkBack's activation shows a card's captures by opponent - and there's no long press or other action`() = uiTest(TestScreen(411, 891)) {
         show(game(listOf(6, 6, 6, 6), names, ::withOpponents))
-        act("Ace")
-        assertEquals(listOf(1, 1, 1), listOf("Ace, 1 capture, 1 captured", "Alex, 0 captures, 0 captured", "Lucky, 1 capture, 1 captured").map(::says))
+        val config = card("Ace").fetchSemanticsNode().config
+        assertEquals(Role.Button, config[SemanticsProperties.Role])
+        assertEquals("Show captures by opponent", config[SemanticsActions.OnClick].label)
+        assertTrue(SemanticsActions.OnLongClick !in config && SemanticsActions.CustomActions !in config)
+        card("Ace").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        assertEquals(listOf(1, 1, 1), listOf("Ace, 1 capture, captured by 1", "Alex, 0 captures, captured by 0", "Lucky, 1 capture, captured by 1").map(::says))
     }
 
     @Test
@@ -193,27 +176,27 @@ class PlayerCardTest : UiTest() {
         fun team(partnerCaptures: Boolean) =
             game(listOf(6, 6, 6, 6), names) { it.copy(rules = it.rules.copy(teams = listOf(0, 1, 0, 1), partnerCaptures = partnerCaptures)) }
         show(team(partnerCaptures = false))
-        act("Alex")
-        assertEquals(listOf(1, 0, 1), listOf("Lucky", "Ace", "Fluke").map { says("$it, 0 captures, 0 captured") })
+        tap("Alex")
+        assertEquals(listOf(1, 0, 1), listOf("Lucky", "Ace", "Fluke").map { says("$it, 0 captures, captured by 0") })
         show(team(partnerCaptures = true))
-        act("Alex")
-        assertEquals(listOf(1, 1, 1), listOf("Lucky", "Ace", "Fluke").map { says("$it, 0 captures, 0 captured") })
+        tap("Alex")
+        assertEquals(listOf(1, 1, 1), listOf("Lucky", "Ace", "Fluke").map { says("$it, 0 captures, captured by 0") })
     }
 
     @Test
     fun `a game saved before captures were kept by opponent shows its totals all the same`() = uiTest(TestScreen(411, 891)) {
         show(game(listOf(6, 6, 6, 6), names, ::withCaptures))
-        act("Lucky")
-        assertEquals(listOf(1, 1), listOf("Lucky, 3 captures, 1 captured", "Alex, 0 captures, 0 captured").map(::says))
+        tap("Lucky")
+        assertEquals(listOf(1, 1), listOf("Lucky, 3 captures, captured by 1", "Alex, 0 captures, captured by 0").map(::says))
     }
 
     @Test
     fun `captures by opponent are whole on the smallest phone - and under a name its card cuts`() = uiTest(TestScreen(320, 640)) {
         show(game(listOf(6, 6, 6, 6), listOf("Alex", "WWWWWWWW", "Ace", "Bo"), ::withOpponents))
-        act("WWWWWWWW")
+        tap("WWWWWWWW")
         // The name over them is read with the totals.
-        assertEquals(1, says("WWWWWWWW, 3 captures, 1 captured"))
-        compose.onNodeWithContentDescription("Bo, 0 captures, 0 captured").assertIsDisplayed()
+        assertEquals(1, says("WWWWWWWW, 3 captures, captured by 1"))
+        compose.onNodeWithContentDescription("Bo, 0 captures, captured by 0").assertIsDisplayed()
     }
 
     @Test
@@ -227,19 +210,20 @@ class PlayerCardTest : UiTest() {
         show(game)
         val closed = coloured("Lucky", lucky)
         val current = coloured("Alex", game.players[0].colour.color)
-        card("Lucky").performTouchInput { click() }
+        // Not by touch: the press's ripple fades on a clock of its own, over the pixels counted.
+        card("Lucky").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         val opened = coloured("Lucky", lucky)
         assertTrue(opened > closed + 100, "$closed closed, $opened opened")
         // Dashes: far less of an outline than a whole one.
         assertTrue(opened - closed < current, "$opened opened, $current current")
         // The current player's card has dashes in place of its solid outline, until it's closed.
-        card("Alex").performTouchInput { click() }
+        card("Alex").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         assertEquals(closed, coloured("Lucky", lucky))
         val dashed = coloured("Alex", game.players[0].colour.color)
         assertTrue(dashed < current - 100, "$current solid, $dashed opened")
-        card("Lucky").performTouchInput { click() }
+        card("Lucky").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         assertEquals(current, coloured("Alex", game.players[0].colour.color))
     }

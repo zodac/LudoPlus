@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.sp
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.game_captures_captured
-import net.zodac.ludoplus.resources.gameover_captured
+import net.zodac.ludoplus.resources.game_captures_captured_spoken
 import net.zodac.ludoplus.resources.gameover_captures
 import net.zodac.ludoplus.resources.leaderboard_captures
 import net.zodac.ludoplus.ui.common.SoraFontFamily
@@ -56,7 +56,7 @@ internal fun captureOpponents(state: GameState, player: Int): List<Int> =
  * [player]'s captures and times captured, in all and against each opponent ([captureOpponents]): a bar either side of the
  * opponent's name, in their colour, as long as its count is to the biggest. Under [player]'s own name where it's [named].
  * It scrolls where a large font makes it taller than the screen. A screen reader reads whose it is and the totals as one, then each row as
- * one, with its place in the list: "Alex, 2 captures, 1 captured".
+ * one, with its place in the list: "Alex, 2 captures, captured by 1".
  */
 @Composable
 internal fun CaptureBars(game: StartedGame, player: Int, named: Boolean, modifier: Modifier = Modifier) {
@@ -88,7 +88,8 @@ internal fun CaptureBars(game: StartedGame, player: Int, named: Boolean, modifie
                 modifier = Modifier.fillMaxWidth().clearAndSetSemantics { },
             )
         }
-        Row(modifier = Modifier.clearAndSetSemantics { contentDescription = totalsSpoken }) {
+        // A heading that wraps at a large font leaves the totals in line.
+        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.clearAndSetSemantics { contentDescription = totalsSpoken }) {
             Total(stringResource(Res.string.leaderboard_captures), side.captures, Alignment.Start, TextAlign.Start, Modifier.weight(1f))
             Total(stringResource(Res.string.game_captures_captured), side.timesCaptured, Alignment.End, TextAlign.End, Modifier.weight(1f))
         }
@@ -124,10 +125,10 @@ internal fun CaptureBars(game: StartedGame, player: Int, named: Boolean, modifie
     }
 }
 
-/** "2 captures, 1 captured". */
+/** "2 captures, captured by 1". */
 @Composable
 private fun countsSpoken(made: Int, had: Int): String = joinClauses(
-    listOf(pluralStringResource(Res.plurals.gameover_captures, made, made), pluralStringResource(Res.plurals.gameover_captured, had, had)),
+    listOf(pluralStringResource(Res.plurals.gameover_captures, made, made), stringResource(Res.string.game_captures_captured_spoken, had)),
 )
 
 @Composable
