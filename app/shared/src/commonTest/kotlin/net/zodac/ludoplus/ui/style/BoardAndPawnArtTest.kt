@@ -9,6 +9,8 @@ import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import kotlin.math.abs
+import kotlin.math.sqrt
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -59,6 +61,30 @@ class BoardAndPawnArtTest : UiTest() {
                 val y = (i / PAWN_SIDE - PAWN_SIDE / 2f) / PAWN_RADIUS
                 assertTrue(x in -1.06f..1.06f && y in -1.1f..1.12f, "${style.id} draws at ($x, $y)")
             }
+        }
+    }
+
+    @Test
+    fun `every pawn is in the middle of a square on its corner - or no higher than one wide at its top can be`() = uiTest {
+        // The eight-seat board's second arm is turned an eighth.
+        val square = BoardLayout.of(BoardGeometry.forPlayers(8)).homeColumnSquare(1, 2)
+        for (style in PawnStyles.all) {
+            val lift = (square.centre.y - square.stand(style.lift).y) / LONE_PAWN_RADIUS
+            val drawn = pawn(style, PlayerColour.RED)
+            // How far it reaches towards the square's lower sides, and its upper ones, in its radii: its shadow aside.
+            var under = 0f
+            var over = 0f
+            for (i in drawn.indices) {
+                if (drawn[i] ushr 24 <= 0x90) continue
+                val x = abs(i % PAWN_SIDE + 0.5f - PAWN_SIDE / 2f) / PAWN_RADIUS
+                val y = (i / PAWN_SIDE + 0.5f - PAWN_SIDE / 2f) / PAWN_RADIUS - lift
+                under = maxOf(under, x + y)
+                over = maxOf(over, x - y)
+            }
+            val inside = sqrt(0.5f) / LONE_PAWN_RADIUS
+            assertTrue(under < inside && over < inside, "${style.id} is off its square: $under under, $over over, of $inside")
+            if (style.lift < 1f) assertTrue(under <= over + 0.12f, "${style.id} is too low: $under under, $over over")
+            if (style.lift > 0f) assertTrue(over <= under + 0.12f, "${style.id} is too high: $under under, $over over")
         }
     }
 
@@ -134,6 +160,9 @@ class BoardAndPawnArtTest : UiTest() {
     private companion object {
         const val PAWN_SIDE = 120
         const val PAWN_RADIUS = 40f
+
+        /** A lone pawn's on the board, in squares. */
+        const val LONE_PAWN_RADIUS = 0.38f
         const val BOARD_SIDE = 360
     }
 }

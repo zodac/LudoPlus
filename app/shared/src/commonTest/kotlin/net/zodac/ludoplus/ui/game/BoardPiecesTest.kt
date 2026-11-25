@@ -60,6 +60,33 @@ class BoardPiecesTest {
     }
 
     @Test
+    fun `a lone pawn stands in the middle of an upright square - and a little above a turned one's`() {
+        for (square in 0..<ClassicBoardLayout.geometry.trackLength) ClassicBoardLayout.trackSquare(square).let { assertEquals(it.centre, it.stand(1f)) }
+        // Every other arm of the eight-seat board is turned an eighth.
+        val layout = BoardLayout.of(GameMode.CLASSIC.rules.forPlayers(8).board)
+        for (seat in 0..<8) for (index in 0..<layout.geometry.homeColumnLength) {
+            val square = layout.homeColumnSquare(seat, index)
+            assertEquals(square.centre.x, square.stand(1f).x, "seat $seat")
+            assertEquals(if (seat % 2 == 0) 0f else 0.0925f, square.centre.y - square.stand(1f).y, 0.006f, "seat $seat")
+        }
+    }
+
+    @Test
+    fun `a pawn's hops and its mark stand at the same place on a turned square`() {
+        val new = GameState.new(GameMode.CLASSIC, 8, rules = GameMode.CLASSIC.rules.forPlayers(8))
+        val layout = BoardLayout.of(new.board)
+        for (progress in listOf(3, new.board.homeProgress - 2)) {
+            val state = new.copy(players = new.players.mapIndexed { i, side -> if (i == 1) side.copy(pawns = listOf(progress, Y, Y, Y)) else side })
+            val mark = pawnMarks(state).single { it.player == 1 && it.pawns == listOf(0) }
+            assertEquals(layout.centreOf(state.players[1].seat, state.position(1, 0), 0), mark.centre)
+            assertTrue(mark.centre.y < mark.square.y, "not lifted at $progress")
+            // Of a style too wide at its top to rise.
+            val level = pawnMarks(state, lift = 0f).single { it.player == 1 && it.pawns == listOf(0) }
+            assertEquals(level.square to level.square, level.centre to layout.centreOf(state.players[1].seat, state.position(1, 0), 0, lift = 0f))
+        }
+    }
+
+    @Test
     fun `colours sharing a safe square take a quarter each`() {
         // Red's 8th step and green's 47th both land on the star on square 8.
         val marks = pawnMarks(state(listOf(8, Y, Y, Y), listOf(47, Y, Y, Y)))
@@ -68,6 +95,47 @@ class BoardPiecesTest {
         val centre = ClassicBoardLayout.trackCell(8).centre
         val offsets = shared.sortedBy { it.player }.map { it.centre - centre }
         assertEquals(listOf(Offset(-0.24f, -0.24f), Offset(0.24f, -0.24f)).map { it.x to it.y }, offsets.map { it.x.rounded() to it.y.rounded() })
+    }
+
+    @Test
+    fun `colours sharing a turned square stand left and right - then up and down - each inside it and clear of the rest`() {
+        for (players in listOf(3, 5, 6, 7, 8)) {
+            val new = GameState.new(GameMode.CLASSIC, players, rules = GameMode.CLASSIC.rules.forPlayers(players))
+            val board = new.board
+            val layout = BoardLayout.of(board)
+            for (star in List(board.seats) { board.startSquare(it) + board.starOffset }) for (sharing in 2..minOf(4, players)) {
+                val square = layout.trackSquare(star.mod(board.trackLength))
+                if (!square.isTurned) continue
+                val state = new.copy(
+                    players = new.players.mapIndexed { i, side ->
+                        val progress = board.progressAt(side.seat, star.mod(board.trackLength))
+                        side.copy(pawns = listOf(if (i < sharing && progress != null) progress else Y, Y, Y, Y))
+                    },
+                )
+                val drawn = pawnMarks(state).filter { it.square == square.centre }
+                if (drawn.size < 2) continue
+                val marks = drawn.sortedBy { it.player }
+                val about = "$players players, star $star, ${marks.size} sharing"
+                assertEquals(drawn.map { it.centre.y }.sorted(), drawn.map { it.centre.y }, "$about: drawn from the furthest up")
+                assertTrue(marks[0].centre.x < marks[1].centre.x, about)
+                assertTrue(marks.drop(2).all { it.centre.x > marks[0].centre.x && it.centre.x < marks[1].centre.x }, about)
+                for ((i, mark) in marks.withIndex()) {
+                    // The foot's two corners and the head, as [BoardSquare.stand] has them.
+                    for ((at, reach) in listOf(Offset(-0.66f, 0.76f) to 0.205f, Offset(0.66f, 0.76f) to 0.205f, Offset(0f, -0.62f) to 0.425f)) {
+                        val point = mark.centre + at * mark.radius
+                        val room = square.corners.indices.minOf { c ->
+                            val side = square.corners[(c + 1) % 4] - square.corners[c]
+                            val inside = square.centre - square.corners[c]
+                            val from = point - square.corners[c]
+                            val way = if (side.x * inside.y - side.y * inside.x < 0) -1 else 1
+                            way * (side.x * from.y - side.y * from.x) / side.getDistance()
+                        }
+                        assertTrue(room - reach * mark.radius > -0.03f, "$about: ${room - reach * mark.radius}")
+                    }
+                    for (other in marks.drop(i + 1)) assertTrue((mark.centre - other.centre).getDistance() > 0.47f, about)
+                }
+            }
+        }
     }
 
     /** [state] with player 1 to move pawn 0 by [roll], moved. */

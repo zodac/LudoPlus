@@ -147,11 +147,11 @@ sealed interface BoardLayout {
     /** The box round home, the whole centre. */
     val homeBounds: Rect
 
-    /** The centre of where a pawn of [seat] at [position] stands ([slot], of [pawns] each, places a yard or home pawn). */
-    fun centreOf(seat: Int, position: PawnPosition, slot: Int, pawns: Int = YARD_SPOTS): Offset = when (position) {
+    /** The centre of where a pawn of [seat] at [position] stands ([slot], of [pawns] each, places a yard or home pawn), of a style that takes [lift] on a turned square. */
+    fun centreOf(seat: Int, position: PawnPosition, slot: Int, pawns: Int = YARD_SPOTS, lift: Float = 1f): Offset = when (position) {
         PawnPosition.Yard, PawnPosition.Out -> yardSpotOf(seat, slot, pawns)
-        is PawnPosition.Track -> trackSquare((geometry.startSquare(seat) + position.steps) % geometry.trackLength).centre
-        is PawnPosition.HomeColumn -> homeColumnSquare(seat, position.index).centre
+        is PawnPosition.Track -> trackSquare((geometry.startSquare(seat) + position.steps) % geometry.trackLength).stand(lift)
+        is PawnPosition.HomeColumn -> homeColumnSquare(seat, position.index).stand(lift)
         PawnPosition.Home -> homeSpot(seat, slot, pawns)
     }
 
@@ -195,13 +195,47 @@ data class BoardSquare(val corners: List<Offset>) {
     /** The direction of its first side, in degrees clockwise from rightwards: how far its art is turned. */
     val angle: Float = (corners[1] - corners[0]).let { atan2(it.y, it.x) * 180f / PI.toFloat() }
 
+    /** How far it's turned from the nearest upright, in degrees clockwise: more than -45, to 45 for one on its corner. */
+    val turn: Float = angle.mod(QUARTER_TURN).let { if (it > QUARTER_TURN / 2 + TURN_TOLERANCE) it - QUARTER_TURN else it }
+
+    /** Whether it's turned at all. */
+    val isTurned: Boolean = abs(turn) > TURN_TOLERANCE
+
     /** Whether it's a whole unit square, so its art is drawn turned, not stretched to fit. */
     val isUnit: Boolean = corners.size == 4 &&
         corners.indices.all { abs((corners[(it + 1) % 4] - corners[it]).getDistance() - 1f) < 1e-3f } &&
         abs((corners[2] - corners[0]).getDistance() - sqrt(2f)) < 1e-3f
 
+    /**
+     * Where a lone pawn's centre is on it: above its own centre where it's turned, so a pawn, upright whichever way its
+     * square is and wider at its foot than its head, is as clear of the sides under it as of those over it. Never below.
+     * [lift] is how much of the classic pawn's rise it takes ([net.zodac.ludoplus.ui.style.PawnStyle.lift]). Of pawns sharing
+     * it, smaller by their [radius] and rising less by it, it's the point they stand about.
+     */
+    fun stand(lift: Float, radius: Float = PAWN_RADIUS): Offset = centre - Offset(0f, rise * lift * radius / PAWN_RADIUS)
+
+    /** How far above its centre a lone classic pawn stands. */
+    private val rise: Float by lazy {
+        val sides = insideSides(corners)
+        (0..STAND_STEPS).map { it * STAND_STEP }.maxBy { lift ->
+            PAWN_OUTLINE.minOf { (at, reach) -> sides.minOf { it.distanceTo(centre + at * PAWN_RADIUS - Offset(0f, lift)) } - reach * PAWN_RADIUS }
+        }
+    }
+
     /** The box round it. */
     val bounds: Rect = Rect(corners.minOf { it.x }, corners.minOf { it.y }, corners.maxOf { it.x }, corners.maxOf { it.y })
+
+    private companion object {
+        const val QUARTER_TURN = 90f
+        const val TURN_TOLERANCE = 0.1f
+
+        /** How far apart the rises tried are, in squares, and how many are: a tenth of a square at most. */
+        const val STAND_STEP = 0.005f
+        const val STAND_STEPS = 20
+
+        /** The circles a standing classic pawn reaches as far as, outline and all: its foot's two corners, and its head, in its radii from its centre. */
+        val PAWN_OUTLINE = listOf(Offset(-0.66f, 0.76f) to 0.205f, Offset(0.66f, 0.76f) to 0.205f, Offset(0f, -0.62f) to 0.425f)
+    }
 }
 
 /** One square of the classic grid: [column] from the left and [row] from the top, from 0. */

@@ -24,7 +24,7 @@ import net.zodac.ludoplus.ui.theme.BoardInk
  * be moved, then the family's own [drawBody]. Every family stands on the same footprint, so a pawn of any family sits
  * on its square the same way.
  */
-abstract class GridPawnStyle(override val id: String, override val swatch: Color) : PawnStyle, Swatched {
+abstract class GridPawnStyle(override val id: String, override val swatch: Color, override val lift: Float = 1f) : PawnStyle, Swatched {
     /** The pawn itself in [colour], on the grid of [g]. */
     protected abstract fun DrawScope.drawBody(g: PawnGrid, colour: Color)
 
@@ -118,7 +118,7 @@ class CounterPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFD9534F)) {
 // ---------------------------------------------------------------------------------------------
 
 /** A painted cone on a round foot, with a ball at its tip. */
-class ConePawnStyle(id: String) : GridPawnStyle(id, Color(0xFF4CAF50)) {
+class ConePawnStyle(id: String) : GridPawnStyle(id, Color(0xFF4CAF50), lift = 0.4f) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val ink = BoardInk
         val stroke = outline(g)
@@ -153,7 +153,7 @@ class ConePawnStyle(id: String) : GridPawnStyle(id, Color(0xFF4CAF50)) {
 // ---------------------------------------------------------------------------------------------
 
 /** A turned wooden peg, stained in its player's colour with the grain showing: a rounded dome on a foot, like a Pachisi piece. */
-class PegPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFB07A3E)) {
+class PegPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFB07A3E), lift = 0.8f) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val ink = BoardInk
         val stroke = outline(g)
@@ -191,7 +191,7 @@ class PegPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFB07A3E)) {
 // ---------------------------------------------------------------------------------------------
 
 /** A cut gem in its player's colour, seen from a little above: flat facet tones round a table, outlined in ink, with a crisp glint. */
-class GemPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF3F7FD9)) {
+class GemPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF3F7FD9), lift = 0f) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val ink = BoardInk
         val stroke = outline(g)
@@ -272,15 +272,15 @@ class GlassPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFB3E5FC)) {
 // ---------------------------------------------------------------------------------------------
 
 /** Which animal an [AnimalPawnStyle] is. */
-enum class PawnAnimal(val swatch: Color) {
-    CAT(Color(0xFFFFB74D)),
-    DUCK(Color(0xFFFFEB3B)),
-    FROG(Color(0xFF7CB342)),
-    PENGUIN(Color(0xFF455A64)),
+enum class PawnAnimal(val swatch: Color, val lift: Float) {
+    CAT(Color(0xFFFFB74D), lift = 0.3f),
+    DUCK(Color(0xFFFFEB3B), lift = 0.5f),
+    FROG(Color(0xFF7CB342), lift = 0.3f),
+    PENGUIN(Color(0xFF455A64), lift = 0.8f),
 }
 
 /** A little animal sitting on a round base, in its player's colour, outlined in ink. */
-class AnimalPawnStyle(id: String, private val animal: PawnAnimal) : GridPawnStyle(id, animal.swatch) {
+class AnimalPawnStyle(id: String, private val animal: PawnAnimal) : GridPawnStyle(id, animal.swatch, animal.lift) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val ink = BoardInk
         val stroke = outline(g)

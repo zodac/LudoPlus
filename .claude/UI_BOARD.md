@@ -37,7 +37,11 @@ The board, the player cards, the die, and the move log. The general rules are in
 - **`LudoBoard`** draws it in four parts, so a move redraws only the move (`BENCHMARKS.md`). What a mode adds is drawn
     under the pawns: portals (`PortalArt.kt`), power-ups (`PowerUpArt.kt`), Survival's arena (`SurvivalArt.kt`), and
     ghosts (`GhostArt.kt`).
-- **Pawns on one square** share it, smaller; two or more of a colour are one pawn with a count. A safe square (a
+- **A lone pawn on a turned square** stands a little above its middle (`BoardSquare.stand`), so its foot is as clear of the
+    lines under it as its head is of those over it (the maintainer, 2026-11-26). Never below,
+    so an upright square's is in its middle. A pawn style wide at its top rises less (`PawnStyle.lift`, `BoardAndPawnArtTest`).
+- **Pawns on one square** share it, smaller (on a turned square, in its turned quarters, left and right first; the
+    maintainer, 2026-11-26); two or more of a colour are one pawn with a count. A safe square (a
     star, or a start square's border), a blockade, and a shield each have their mark. They make room as the pawn joining
     them comes onto the square, in its last half hop, and it lands on its own share of it (`moveMarks`; the maintainer, 2026-11-25).
 - **A shield goes with its pawn** as it hops, or is swapped, till it comes off the track or is taken; one it takes shows as

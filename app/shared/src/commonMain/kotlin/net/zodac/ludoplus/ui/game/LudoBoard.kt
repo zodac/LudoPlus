@@ -132,7 +132,8 @@ fun LudoBoard(
 ) {
     val colours = remember(seatColours) { seatColours.map { it?.color } }
     val movable = remember(moves, state, swapping) { moves.mapNotNull { it.picked(state, swapping) }.toSet() }
-    val marks = remember(state.players) { pawnMarks(state) }
+    val theme = LocalGameVisualTheme.current
+    val marks = remember(state.players, theme.pawns) { pawnMarks(state, lift = theme.pawns.lift) }
     val textMeasurer = rememberTextMeasurer()
     val currentMarks by rememberUpdatedState(marks)
     val currentMovable by rememberUpdatedState(movable)
@@ -151,10 +152,9 @@ fun LudoBoard(
     // The player whose yard is being held.
     var held by remember { mutableStateOf<Int?>(null) }
     var tip by remember { mutableStateOf<PowerUpTip?>(null) }
-    val motion = rememberMoveMotion(state)
+    val motion = rememberMoveMotion(state, theme.pawns.lift)
     val ghostMotion = rememberGhostMotion(state)
     val vanish = rememberVanishMotion(state)
-    val theme = LocalGameVisualTheme.current
     val layout = BoardLayout.of(state.board)
     // Read here, so the board's layer below holds a number rather than the state, which changes every move.
     val pawns = state.rules.pawnsPerPlayer
@@ -616,13 +616,13 @@ private fun DrawScope.drawSpark(centre: Offset, size: Float, colour: Color, alph
  * while a move is still playing out doesn't cut it short. The shields pawns set off with are those of the state shown before it.
  */
 @Composable
-private fun rememberMoveMotion(state: GameState): MoveMotion {
+private fun rememberMoveMotion(state: GameState, lift: Float): MoveMotion {
     val latest = remember { arrayOf(state.lastEvent as? GameEvent.Moved) }
     val firstSeen = remember { latest[0] }
     val event = (state.lastEvent as? GameEvent.Moved)?.also { latest[0] = it } ?: latest[0]
     val reduce = groupReduceMotion(MotionGroup.PAWN_MOVE)
     val shown = remember { arrayOf(state) }
-    val moving = remember(event) { if (event == null || event === firstSeen || reduce || event.keptPlace) null else movingPawn(state, event, before = shown[0]) }
+    val moving = remember(event) { if (event == null || event === firstSeen || reduce || event.keptPlace) null else movingPawn(state, event, before = shown[0], lift = lift) }
     SideEffect { shown[0] = state }
     val clock = remember(event) { Animatable(0f) }
     var done by remember(event) { mutableStateOf(moving == null) }
@@ -634,22 +634,22 @@ private fun rememberMoveMotion(state: GameState): MoveMotion {
     return MoveMotion(if (done) null else moving, clock.asState())
 }
 
-/** [event]'s move, [state] being the game after it, and [before] the one it was made in. */
-private fun movingPawn(state: GameState, event: GameEvent.Moved, before: GameState): MovingPawn {
+/** [event]'s move, [state] being the game after it, and [before] the one it was made in, of pawns whose style takes [lift] ([pawnMarks]). */
+private fun movingPawn(state: GameState, event: GameEvent.Moved, before: GameState, lift: Float): MovingPawn {
     val layout = BoardLayout.of(state.board)
     val move = event.move
     // The pawn's owner: the mover, or a partner they rolled for.
     val owner = move.owner ?: event.player
     val seat = state.players[owner].seat
     val fromYard = move.from == PawnPosition.YARD_PROGRESS
-    val marks = moveMarks(state, event)
+    val marks = moveMarks(state, event, lift)
     val landing = marks.after(PawnRef(owner, move.pawn))
     // On to where the roll takes it, over any lost squares, and where that's onto a shield, back to where it settles.
     val steps = (move.from..move.rolledTo) - move.skipped.toSet() + (move.bouncedFrom?.let { it - 1 downTo move.to } ?: IntRange.EMPTY)
     val squares = if (fromYard) {
-        listOf(layout.yardSpotOf(seat, move.pawn, state.rules.pawnsPerPlayer), layout.centreOf(seat, PawnPosition.of(0, state.board), 0))
+        listOf(layout.yardSpotOf(seat, move.pawn, state.rules.pawnsPerPlayer), layout.centreOf(seat, PawnPosition.of(0, state.board), 0, lift = lift))
     } else {
-        steps.map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn, state.rules.pawnsPerPlayer) }
+        steps.map { layout.centreOf(seat, PawnPosition.of(it, state.board), move.pawn, state.rules.pawnsPerPlayer, lift) }
     }
     val effect = event.effect
     val warps = move.via != null || effect?.movedTo != null

@@ -122,6 +122,12 @@ interface BoardStyle : TableArt {
  */
 interface PawnStyle : TableArt {
     /**
+     * How much of the classic pawn's rise up a turned square it takes ([net.zodac.ludoplus.ui.game.BoardSquare.stand]), 0 to 1:
+     * less, the wider it is at its top, as that is what would cross the square's upper sides.
+     */
+    val lift: Float get() = 1f
+
+    /**
      * A pawn standing within [radius] across of [centre] (a little taller than wide) in its player's [colour], with the
      * violet ring round it when [ringed]: it can be moved.
      */

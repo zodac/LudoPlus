@@ -73,6 +73,8 @@ The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and
 - **A family is a `GridPawnStyle`** (`ui/style/PawnFamilies.kt`). It draws the shadow and the movable ring, so every
     family stands on the same footprint, and the family draws its body on a `PawnGrid`: x and y from -1 to 1 of the
     radius, y down, the foot at about 0.85 and the top no higher than -1.
+- **A new pawn sets its `lift`**: how much of the classic pawn's rise it takes on a turned square (1 unless it's wide at its
+    top), so it's as clear of the lines over it as under it. `BoardAndPawnArtTest` says if it's too low or too high.
 - **Always the player's colour.** A family changes shape and material, never whose a pawn is: shade the colour
     (`lit`), stain it (Peg), or make it translucent (Glass), but never swap it for another.
 - **Outlines** are ink, round-joined (`outline`): a mitred join spikes at sharp corners, as the gem's girdle did.

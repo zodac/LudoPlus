@@ -60,14 +60,14 @@ private fun DrawScope.smoothLine(g: PawnGrid, colour: Color, width: Float, varar
 // ---------------------------------------------------------------------------------------------
 
 /** Which chess piece a [ChessPawnStyle] is. */
-enum class PawnChessPiece(val swatch: Color) {
-    ROOK(Color(0xFF8D6E63)),
-    KNIGHT(Color(0xFFD7B98E)),
-    QUEEN(Color(0xFFF2C94C)),
+enum class PawnChessPiece(val swatch: Color, val lift: Float) {
+    ROOK(Color(0xFF8D6E63), lift = 0.3f),
+    KNIGHT(Color(0xFFD7B98E), lift = 1f),
+    QUEEN(Color(0xFFF2C94C), lift = 0.2f),
 }
 
 /** A turned chess piece on a stepped foot. */
-class ChessPawnStyle(id: String, private val piece: PawnChessPiece) : GridPawnStyle(id, piece.swatch) {
+class ChessPawnStyle(id: String, private val piece: PawnChessPiece) : GridPawnStyle(id, piece.swatch, piece.lift) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val stroke = outline(g)
         val fill = lit(g, colour)
@@ -133,14 +133,14 @@ class ChessPawnStyle(id: String, private val piece: PawnChessPiece) : GridPawnSt
 // ---------------------------------------------------------------------------------------------
 
 /** Which solid a [ShapePawnStyle] is. */
-enum class PawnShape(val swatch: Color) {
-    STAR(Color(0xFFFFD54F)),
-    HEART(Color(0xFFEC407A)),
-    CUBE(Color(0xFF42A5F5)),
+enum class PawnShape(val swatch: Color, val lift: Float) {
+    STAR(Color(0xFFFFD54F), lift = 0.6f),
+    HEART(Color(0xFFEC407A), lift = 0.1f),
+    CUBE(Color(0xFF42A5F5), lift = 0f),
 }
 
 /** A solid shape: a faceted star or a puffed heart on a base, or a cube seen corner on. */
-class ShapePawnStyle(id: String, private val shape: PawnShape) : GridPawnStyle(id, shape.swatch) {
+class ShapePawnStyle(id: String, private val shape: PawnShape) : GridPawnStyle(id, shape.swatch, shape.lift) {
     /** The cube's is its own foot's, thrown to the right. */
     override fun DrawScope.drawShadow(g: PawnGrid) {
         if (shape == PawnShape.CUBE) {
@@ -214,13 +214,13 @@ class ShapePawnStyle(id: String, private val shape: PawnShape) : GridPawnStyle(i
 // ---------------------------------------------------------------------------------------------
 
 /** Which monster a [MonsterPawnStyle] is. */
-enum class PawnMonster(val swatch: Color) {
-    CYCLOPS(Color(0xFF7E57C2)),
-    HORNED(Color(0xFF26A69A)),
+enum class PawnMonster(val swatch: Color, val lift: Float) {
+    CYCLOPS(Color(0xFF7E57C2), lift = 0.4f),
+    HORNED(Color(0xFF26A69A), lift = 0f),
 }
 
 /** A small shaggy monster in its player's colour: one great eye, or two and a pair of horns. */
-class MonsterPawnStyle(id: String, private val monster: PawnMonster) : GridPawnStyle(id, monster.swatch) {
+class MonsterPawnStyle(id: String, private val monster: PawnMonster) : GridPawnStyle(id, monster.swatch, monster.lift) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val stroke = outline(g)
         val dark = lerp(colour, Color.Black, 0.3f)
@@ -301,7 +301,7 @@ private val PixelPawn = listOf(
 )
 
 /** A pawn in pixels, like an old console's sprite. */
-class RetroPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF7E57C2)) {
+class RetroPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF7E57C2), lift = 0.7f) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val tones = mapOf('#' to BoardInk, 'w' to Color.White, 'l' to lerp(colour, Color.White, 0.35f), 'c' to colour, 's' to lerp(colour, Color.Black, 0.3f))
         val p = g.r * PIXEL
@@ -331,7 +331,7 @@ class RetroPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF7E57C2)) {
 // ---------------------------------------------------------------------------------------------
 
 /** A toadstool: a cap in its player's colour, spotted in cream, on a fat cream stalk. */
-class ToadstoolPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFE53935)) {
+class ToadstoolPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFE53935), lift = 0f) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val stroke = outline(g)
         val cream = Color(0xFFFFF3DC)
@@ -365,7 +365,7 @@ class ToadstoolPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFE53935)) {
 // ---------------------------------------------------------------------------------------------
 
 /** A cupcake: a pleated case, a swirl of icing in its player's colour with sprinkles, and a cherry on top. */
-class CakePawnStyle(id: String) : GridPawnStyle(id, Color(0xFFF48FB1)) {
+class CakePawnStyle(id: String) : GridPawnStyle(id, Color(0xFFF48FB1), lift = 0.5f) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val stroke = outline(g)
         val case = g.polygon(-0.66f, 0.1f, 0.66f, 0.1f, 0.46f, 0.84f, -0.46f, 0.84f)
@@ -392,13 +392,13 @@ class CakePawnStyle(id: String) : GridPawnStyle(id, Color(0xFFF48FB1)) {
 // ---------------------------------------------------------------------------------------------
 
 /** Which spacecraft a [SpacePawnStyle] is. */
-enum class PawnSpacecraft(val swatch: Color) {
-    ROCKET(Color(0xFFE57373)),
-    SAUCER(Color(0xFF80DEEA)),
+enum class PawnSpacecraft(val swatch: Color, val lift: Float) {
+    ROCKET(Color(0xFFE57373), lift = 1f),
+    SAUCER(Color(0xFF80DEEA), lift = 0.7f),
 }
 
 /** A rocket stood on its fins, or a flying saucer on its beam. */
-class SpacePawnStyle(id: String, private val craft: PawnSpacecraft) : GridPawnStyle(id, craft.swatch) {
+class SpacePawnStyle(id: String, private val craft: PawnSpacecraft) : GridPawnStyle(id, craft.swatch, craft.lift) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val stroke = outline(g)
         when (craft) {
@@ -465,7 +465,7 @@ class SpacePawnStyle(id: String, private val craft: PawnSpacecraft) : GridPawnSt
 // ---------------------------------------------------------------------------------------------
 
 /** A tin robot in its player's colour: a lit visor, a dial on its chest, and an aerial. */
-class RobotPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF90A4AE)) {
+class RobotPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF90A4AE), lift = 0.3f) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val stroke = outline(g)
         val fill = lit(g, colour)
@@ -494,7 +494,7 @@ class RobotPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF90A4AE)) {
 // ---------------------------------------------------------------------------------------------
 
 /** A pawn bent from a glowing tube in its player's colour, round a dark inside. */
-class NeonPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF3FD8FF)) {
+class NeonPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF3FD8FF), lift = 0.9f) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val body = Path().apply {
             g.at(-0.2f, -0.22f).let { moveTo(it.x, it.y) }
@@ -526,7 +526,7 @@ class NeonPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF3FD8FF)) {
 // ---------------------------------------------------------------------------------------------
 
 /** A wobbly blob in its player's colour, with googly eyes of two sizes looking two ways. */
-class GooglyPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF66BB6A)) {
+class GooglyPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF66BB6A), lift = 0.8f) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val stroke = outline(g)
         val blob = g.smooth(-0.04f, -0.84f, 0.42f, -0.66f, 0.56f, -0.2f, 0.62f, 0.24f, 0.84f, 0.66f, 0.5f, 0.86f, 0f, 0.8f, -0.5f, 0.86f, -0.82f, 0.62f, -0.58f, 0.2f, -0.6f, -0.26f, -0.44f, -0.68f)
@@ -545,7 +545,7 @@ class GooglyPawnStyle(id: String) : GridPawnStyle(id, Color(0xFF66BB6A)) {
 // ---------------------------------------------------------------------------------------------
 
 /** A grinning imp in its player's colour, horned, with a barbed tail. */
-class DevilPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFC62828)) {
+class DevilPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFC62828), lift = 0f) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val stroke = outline(g)
         val dark = lerp(colour, Color.Black, 0.35f)

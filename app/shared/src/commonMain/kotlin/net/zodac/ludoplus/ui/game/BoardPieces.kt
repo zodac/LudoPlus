@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.LudoEngine.replace
@@ -14,7 +15,8 @@ import net.zodac.ludoplus.model.PawnPosition
 /**
  * One mark drawn on the board: [pawns] (indices) of [player], standing together at [centre] with [radius], both in
  * board units ([BoardLayout]). More than one pawn draws as one with a count. [square] is the centre of the square it
- * stands on, which it may share; a yard's or home's is its own spot.
+ * stands on, which it may share, and stands a little above if it's turned ([BoardSquare.stand]); a yard's or home's is its
+ * own spot.
  */
 data class PawnMark(val player: Int, val pawns: List<Int>, val centre: Offset, val radius: Float, val square: Offset = centre)
 
@@ -34,8 +36,9 @@ private const val CROWDED_PAWN_RADIUS = 0.18f
  * Every mark on the board for [state]: each yard pawn on its own spot, each home pawn on its own spot in its triangle
  * (each one seen, never a count), and each square's pawns by player, a quarter of the square each when colours share it
  * (a ring of them when more than four colours do). [without] is a pawn left out, as if it stood nowhere.
+ * [lift] is how far the pawns' style rises on a turned square ([BoardSquare.stand]).
  */
-fun pawnMarks(state: GameState, without: PawnRef? = null): List<PawnMark> {
+fun pawnMarks(state: GameState, without: PawnRef? = null, lift: Float = 1f): List<PawnMark> {
     val layout = BoardLayout.of(state.board)
     val marks = mutableListOf<PawnMark>()
     val onSquares = mutableMapOf<BoardSquare, MutableMap<Int, MutableList<Int>>>()
@@ -54,22 +57,40 @@ fun pawnMarks(state: GameState, without: PawnRef? = null): List<PawnMark> {
     for ((cell, byPlayer) in onSquares) {
         if (byPlayer.size == 1) {
             val (player, pawns) = byPlayer.entries.single()
-            marks += PawnMark(player, pawns, cell.centre, PAWN_RADIUS)
+            marks += PawnMark(player, pawns, cell.stand(lift), PAWN_RADIUS, square = cell.centre)
         } else {
             val crowded = byPlayer.size > SHARED_CORNERS
-            byPlayer.entries.sortedBy { it.key }.forEachIndexed { i, (player, pawns) ->
+            val radius = if (crowded) CROWDED_PAWN_RADIUS else SHARED_PAWN_RADIUS
+            val quarters = cell.quarters()
+            // The furthest up first, so a pawn's foot is never drawn over the head of one below it.
+            marks += byPlayer.entries.sortedBy { it.key }.mapIndexed { i, (player, pawns) ->
                 val offset = if (crowded) {
                     // More colours than corners (5-8 players on a safe square): a ring of them, smaller.
                     val angle = 2 * PI * i / byPlayer.size - PI / 2
                     Offset(cos(angle).toFloat(), sin(angle).toFloat()) * CROWDED_RING
                 } else {
-                    Offset(if (i % 2 == 0) -SHARED_OFFSET else SHARED_OFFSET, if (i < 2) -SHARED_OFFSET else SHARED_OFFSET)
+                    quarters[i]
                 }
-                marks += PawnMark(player, pawns, cell.centre + offset, if (crowded) CROWDED_PAWN_RADIUS else SHARED_PAWN_RADIUS, square = cell.centre)
-            }
+                PawnMark(player, pawns, cell.stand(lift, radius) + offset, radius, square = cell.centre)
+            }.sortedBy { it.centre.y }
         }
     }
     return marks
+}
+
+/**
+ * Where the pawns of up to [SHARED_CORNERS] colours stand about the middle of a square they share, in turn: a quarter of it each, its top left,
+ * top right, bottom left, and bottom right; or where it's turned, the quarters turned with it, those furthest left and right, then up and down.
+ */
+private fun BoardSquare.quarters(): List<Offset> {
+    if (!isTurned) return List(SHARED_CORNERS) { Offset(if (it % 2 == 0) -SHARED_OFFSET else SHARED_OFFSET, if (it < 2) -SHARED_OFFSET else SHARED_OFFSET) }
+    val turned = List(SHARED_CORNERS) {
+        val angle = (turn + 45f + 90f * it) * PI / 180
+        Offset(cos(angle).toFloat(), sin(angle).toFloat()) * (SHARED_OFFSET * sqrt(2f))
+    }
+    val right = turned.maxBy { it.x }
+    val down = turned.maxBy { it.y }
+    return listOf(-right, right, -down, down)
 }
 
 private fun MutableMap<BoardSquare, MutableMap<Int, MutableList<Int>>>.square(cell: BoardSquare, player: Int): MutableList<Int> =
@@ -127,8 +148,8 @@ internal class MoveMarks(private val before: List<PawnMark>, private val after: 
     private fun List<PawnMark>.of(pawn: PawnRef): PawnMark = first { it.player == pawn.player && pawn.pawn in it.pawns }
 }
 
-/** The marks round [event]'s move, [state] being the game after it. */
-internal fun moveMarks(state: GameState, event: GameEvent.Moved): MoveMarks {
+/** The marks round [event]'s move, [state] being the game after it, of pawns whose style takes [lift] ([pawnMarks]). */
+internal fun moveMarks(state: GameState, event: GameEvent.Moved, lift: Float = 1f): MoveMarks {
     val move = event.move
     val effect = event.effect
     val mover = PawnRef(move.owner ?: event.player, move.pawn)
@@ -156,7 +177,7 @@ internal fun moveMarks(state: GameState, event: GameEvent.Moved): MoveMarks {
     }
     // A capture's flight ends in its yard, whether it waits there or is out of the game; but for one brought straight back out.
     for (taken in event.allCaptures) after = after.put(taken, if (taken in event.recalled) 0 else PawnPosition.YARD_PROGRESS)
-    return MoveMarks(pawnMarks(before, without = mover), pawnMarks(after), listOfNotNull(mover, effect?.swapped, called) + event.recalled)
+    return MoveMarks(pawnMarks(before, without = mover, lift = lift), pawnMarks(after, lift = lift), listOfNotNull(mover, effect?.swapped, called) + event.recalled)
 }
 
 /** How far from a movable pawn's centre a tap still picks it, in squares: wider than a square, for a 48dp target. */
