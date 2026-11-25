@@ -165,6 +165,7 @@ class AchievementTracker(
                         if (times >= GROUNDHOG_CAPTURES) feats += Achievement.GROUNDHOG_DAY
                         sentBack(pawn.pawn)
                     }
+                    for (pawn in event.recalled) if (pawn.player == mySeat) recalled(pawn.pawn, after)
                     payback = event.player to after.players[mySeat].turns + 1
                 }
             }
@@ -238,6 +239,14 @@ class AchievementTracker(
         if (pawn == lapPawn) lapPawn = null
         leftYardOnTurn -= pawn
         portalsTaken -= pawn
+    }
+
+    /** Player 1's pawn [pawn] is straight back out of its yard, by a banked Call Up: out from their next turn. */
+    private fun recalled(pawn: Int, after: GameState) {
+        val me = after.players[mySeat]
+        leftYardOnTurn[pawn] = me.turns + 1
+        lapPawn = null
+        if (me.pawns.withIndex().any { (other, progress) -> other != pawn && progress in 0..<after.board.homeProgress }) oneByOne = false
     }
 
     private fun playerOneRolled(dice: List<Int>, before: GameState, startsTurn: Boolean, feats: MutableSet<Achievement>) {

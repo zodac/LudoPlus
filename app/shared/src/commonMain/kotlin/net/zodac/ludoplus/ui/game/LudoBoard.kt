@@ -103,8 +103,8 @@ private const val HOME_SPARKS = 10
 /**
  * The board for [state]'s players, drawn from its [BoardLayout], with [state]'s pawns on it. [seatColours] colours each
  * seat's yard, start square, home column, and pawns (null for a seat nobody sits at). Until the game is over, the yard of
- * the player whose turn it is has a ring round its inside edge, and that of one whose rolls count double has the Double
- * power-up and how many are left. The pawns that [moves] can move
+ * the player whose turn it is has a ring round its inside edge, and that of one with a power-up in force has it, and how
+ * many are left ([InForce]). The pawns that [moves] can move
  * are ringed (a partner's too, when the player rolls for one), and a tap near one, or a screen reader's action on its
  * square ([BoardSemantics]), makes its move ([onMove]). While [swapping], the pawns ringed and tapped are those the move
  * ([Move.swap]) can swap with, once the pawn has landed on the Swap.
@@ -139,8 +139,8 @@ fun LudoBoard(
     val currentSwapping by rememberUpdatedState(swapping)
     // The squares claimed as they're shown: as they were, while a move plays out.
     val shownClaims = remember { arrayOf(state.claimed) }
-    // Each player's doubled rolls left, as they're shown: likewise.
-    val shownDoubles = remember { arrayOf(state.players.map { it.doubledRolls }) }
+    // What's in force for each player, as it's shown: likewise.
+    val shownInForce = remember { arrayOf(state.players.map(::InForce)) }
     // The portal being pressed, and the power-up whose popup is up.
     var pressedPortal by remember { mutableStateOf<Portal?>(null) }
     var tip by remember { mutableStateOf<PowerUpTip?>(null) }
@@ -159,7 +159,7 @@ fun LudoBoard(
             if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
             with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, pawnColours[mark.player], ringed) }
             // At the top right, for pawns sharing a square.
-            if (mark.pawns.size > 1) drawCount(textMeasurer, mark.pawns.size, (mark.centre + Offset(mark.radius * 0.8f, -mark.radius * 0.8f)) * unit, unit * 0.24f)
+            if (mark.pawns.size > 1) drawCount(textMeasurer, mark.pawns.size, (mark.centre + Offset(mark.radius * 0.8f, -mark.radius * 0.8f)) * unit, unit * PAWN_COUNT_RADIUS)
         }
         // A Swap's pawn, landed on it, and those it can be with, once no move is playing out: drawn over the rest, not with it.
         val pickedOut = if (swapping && motion.moving == null) {
@@ -199,11 +199,15 @@ fun LudoBoard(
             if (turnSeat != null) {
                 Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawTurnYard(layout, size.minDimension / layout.size, turnSeat) }
             }
-            // Whose rolls count double, on their yards: as it was while a move plays out, so a Double shows as the pawn lands on it.
-            if (motion.moving == null) shownDoubles[0] = state.players.map { it.doubledRolls }
-            val doubles = shownDoubles[0]
-            if (doubles.any { it > 0 }) {
-                Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawYardDoubles(state, layout, size.minDimension / layout.size, doubles, textMeasurer) }
+            // What's in force for each player, on their yards: as it was while a move plays out, so a Double shows as the pawn lands on it.
+            if (motion.moving == null) shownInForce[0] = state.players.map(::InForce)
+            val inForce = shownInForce[0]
+            if (state.rules.powerUps) {
+                val seats = state.players.map { it.seat }
+                val places = remember(layout, seats, pawns) { seats.map { layout.yardBadges(it, pawns, YARD_BADGE_ROOM) } }
+                if (inForce.any { it.any }) {
+                    Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawInForce(places, size.minDimension / layout.size, inForce, textMeasurer) }
+                }
             }
             // The pawns standing still, on a layer of their own: drawn again as a move starts and ends, not on its frames.
             val animating = motion.moving
@@ -313,6 +317,8 @@ private class MovingPawn(
     val sent: List<SentPawn>,
     val shifts: List<PawnShift>,
     val totalMillis: Int,
+    /** How long the pawns it captures that come straight back out take to, at its end. */
+    val recallMillis: Int,
     val warpTo: Offset? = null,
     /** The power-up it takes, there till it lands. */
     val powerUp: PowerUp? = null,
@@ -346,6 +352,7 @@ private class MovingPawn(
 /**
  * Another pawn, [ref], that a move sends from [from] to [to], where it is [toRadius] across: one taken, on its way back to
  * its yard spot, or one a power-up moves ([taken] false). A shield on it ([shielded]) goes with it, but is lost as it's taken.
+ * One taken that a banked Call Up brings straight back out then goes on to where it stands in [recall].
  */
 private class SentPawn(
     val ref: PawnRef,
@@ -355,6 +362,7 @@ private class SentPawn(
     val toRadius: Float,
     val taken: Boolean,
     val shielded: Boolean,
+    val recall: PawnMark? = null,
 )
 
 /** The squares of [state]'s board with something of the mode's own on them to tap: portals, or power-ups. */
@@ -392,7 +400,9 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
         val moving = moving!!
         val millis = millis
         // How far through what follows the landing, from 0 as it lands.
-        val after = ((millis - moving.travelMillis) / (moving.totalMillis - moving.travelMillis).coerceAtLeast(1)).coerceIn(0f, 1f)
+        val flightEnd = moving.totalMillis - moving.recallMillis
+        val after = ((millis - moving.travelMillis) / (flightEnd - moving.travelMillis).coerceAtLeast(1)).coerceIn(0f, 1f)
+        val recalled = if (moving.recallMillis == 0) 0f else ((millis - flightEnd) / moving.recallMillis).coerceIn(0f, 1f)
         val landed = millis >= moving.travelMillis
         val mover = colourOf(moving.player)
         if (landed) {
@@ -412,6 +422,12 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
         for (sent in moving.sent) {
             val height = CAPTURE_ARC + CAPTURE_ARC_PER_SQUARE * (sent.to - sent.from).getDistance()
             val flight = if (landed) after else 0f
+            if (sent.recall != null && recalled > 0f) {
+                val swell = 1f + YARD_EXIT_SWELL * sin(PI * recalled).toFloat()
+                val size = (sent.toRadius + (sent.recall.radius - sent.toRadius) * recalled) * swell
+                with(pawns) { drawPawn(lerp(sent.to, sent.recall.centre, recalled) * unit, size * unit, colourOf(sent.ref.player), ringed = false) }
+                continue
+            }
             val ground = lerp(sent.from, sent.to, flight)
             val up = height * 4f * flight * (1f - flight)
             val size = sent.fromRadius + (sent.toRadius - sent.fromRadius) * flight
@@ -576,7 +592,11 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved, before: GameSta
     val home = event.endedAt == state.board.homeProgress
     fun sent(ref: PawnRef, taken: Boolean): SentPawn {
         val (from, to) = marks.before(ref) to marks.after(ref)
-        return SentPawn(ref, from.centre, to.centre, from.radius, to.radius, taken, before.isShielded(ref.player, ref.pawn))
+        val shielded = before.isShielded(ref.player, ref.pawn)
+        if (ref !in event.recalled) return SentPawn(ref, from.centre, to.centre, from.radius, to.radius, taken, shielded)
+        val side = state.players[ref.player]
+        val spot = layout.yardSpotOf(side.seat, ref.pawn, side.pawns.size)
+        return SentPawn(ref, from.centre, spot, from.radius, layout.yardPawnRadiusOf(side.pawns.size), taken, shielded, recall = to)
     }
     val sent = event.allCaptures.map { sent(it, taken = true) } +
         listOfNotNull(effect?.swapped, effect?.calledUp?.let { PawnRef(owner, it) }).map { sent(it, taken = false) }
@@ -590,7 +610,8 @@ private fun movingPawn(state: GameState, event: GameEvent.Moved, before: GameSta
         home = home,
         sent = sent,
         shifts = marks.shifts { it in travelling },
-        totalMillis = travelMillis(move, effect) + afterLandingMillis(move, state.board.homeProgress, effect),
+        totalMillis = moveMillis(event, state.board.homeProgress),
+        recallMillis = if (event.recalled.isEmpty()) 0 else RECALL_MILLIS,
         powerUp = effect?.powerUp,
         brokenShields = move.brokenShields + effect?.brokenShields.orEmpty(),
         warpTo = if (warps) landing.centre else null,
@@ -607,6 +628,9 @@ private data class BoardSurface(
     val pawns: Int,
     val parts: BoardParts,
 )
+
+/** How big the count on a pawn is, across from its centre, in squares. */
+internal const val PAWN_COUNT_RADIUS = 0.24f
 
 /** [count] on a badge [badgeRadius] from [badgeCentre]. */
 internal fun DrawScope.drawCount(textMeasurer: TextMeasurer, count: Int, badgeCentre: Offset, badgeRadius: Float) {

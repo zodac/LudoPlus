@@ -238,10 +238,12 @@ class SavedGameJsonTest {
     }
 
     @Test
-    fun `every state of random Chaos games comes back as it was saved - power-ups - shields - and doubled rolls - and plays on the same`() {
+    fun `every state of random Chaos games comes back as it was saved - power-ups - shields - doubled rolls - and banked Call Ups - and plays on the same`() {
         val random = Random(29)
         val effects = mutableSetOf<PowerUp>()
         var swapping = 0
+        var banked = 0
+        var recalled = 0
         repeat(6) { index ->
             var state = GameState.new(GameMode.CHAOS, 4, seed = index - 3L)
             while (!state.isFinished) {
@@ -249,6 +251,8 @@ class SavedGameJsonTest {
                 val back = SavedGameJson.decode(SavedGameJson.encode(saved))
                 assertEquals(saved, back)
                 (state.lastEvent as? GameEvent.Moved)?.effect?.let { effects += it.powerUp }
+                banked = maxOf(banked, state.players.maxOf { it.callUps })
+                recalled += (state.lastEvent as? GameEvent.Moved)?.recalled?.size ?: 0
                 if ((state.phase as? TurnPhase.AwaitingMove)?.swapping == true) swapping++
                 state = when (val phase = state.phase) {
                     is TurnPhase.AwaitingMove -> phase.moves.random(random).let { move ->
@@ -260,6 +264,7 @@ class SavedGameJsonTest {
         }
         assertEquals(PowerUp.entries.toSet(), effects)
         assertTrue(swapping > 0, "No game was saved with a swap to pick")
+        assertTrue(banked > 0 && recalled > 0, "No game was saved with a Call Up banked, or used")
     }
 
     @Test

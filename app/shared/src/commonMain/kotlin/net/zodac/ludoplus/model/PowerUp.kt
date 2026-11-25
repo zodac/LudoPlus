@@ -14,7 +14,7 @@ import net.zodac.ludoplus.resources.power_up_swap_description
 import org.jetbrains.compose.resources.StringResource
 
 /**
- * What a power-up on the track does for the player whose move ends on it, at once, one a move ([GameRules.powerUps]).
+ * What a power-up on the track does for the player whose move ends on it, at once (but for a banked [CALL_UP]), one a move ([GameRules.powerUps]).
  * [id] is the stable storage key, so **never change one once released** - rename [title] instead.
  */
 enum class PowerUp(override val id: String, val title: StringResource, val description: StringResource) : StoredId {
@@ -27,7 +27,7 @@ enum class PowerUp(override val id: String, val title: StringResource, val descr
     /** They roll again. */
     ROLL_AGAIN("roll_again", Res.string.power_up_roll_again, Res.string.power_up_roll_again_description),
 
-    /** One of their pawns comes out of the yard, if any is in it. */
+    /** One of their pawns comes out of the yard; with none in it, it's banked, for the next of them captured to come straight back out. */
     CALL_UP("call_up", Res.string.power_up_call_up, Res.string.power_up_call_up_description),
 
     /** The pawn swaps places with any other player's on the track that its player picks, or with none ([net.zodac.ludoplus.game.Move.swap]). */

@@ -372,7 +372,7 @@ private fun GameFeedback(state: GameState) {
                 if (event.keptPlace) return@LaunchedEffect
                 if (event.allCaptures.isEmpty()) haptics.playMoveTick() else haptics.playCaptureBuzz()
                 var elapsed = 0L
-                for ((at, sound) in moveSoundCues(event.move, state.board.homeProgress, animated, event.effect)) {
+                for ((at, sound) in moveSoundCues(event.move, state.board.homeProgress, animated, event.effect, recalled = event.recalled.isNotEmpty())) {
                     lifecycle.delayWhileResumed(at - elapsed)
                     elapsed = at
                     when (sound) {

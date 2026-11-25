@@ -109,6 +109,21 @@ class BoardPiecesTest {
     }
 
     @Test
+    fun `a pawn a banked Call Up brings back out leaves from where it's taken for its start - where others make room`() {
+        // Red's pawn takes green's on square 4; blue's pawn stands on green's start, 13 (26 from blue's own).
+        val new = GameState.new(GameMode.CHAOS, 4)
+        val pawns = listOf(listOf(2, -1, -1, -1), listOf(43, -1, -1, -1), listOf(-1, -1, -1, -1), listOf(26, -1, -1, -1))
+        val start = new.copy(players = new.players.mapIndexed { i, side -> side.copy(pawns = pawns[i], callUps = if (i == 1) 1 else 0) }, powerUps = emptyMap(), turnsToPowerUp = 5)
+        val (after, marks) = moved(start, 2)
+        assertEquals(0, after.players[1].pawns[0])
+        val green = PawnRef(1, 0)
+        assertEquals(ClassicBoardLayout.trackSquare(4).centre, marks.before(green).square)
+        assertEquals(ClassicBoardLayout.trackSquare(13).centre, marks.after(green).square)
+        val shift = marks.shifts { it == green || it == PawnRef(0, 0) }.single()
+        assertEquals(3 to green, shift.to.player to shift.arriving)
+    }
+
+    @Test
     fun `a pawn passing over another colour's shifts nothing`() {
         val (_, marks) = moved(state(listOf(5, Y, Y, Y), listOf(47, Y, Y, Y)), roll = 4)
         assertEquals(emptyList(), marks.shifts { it == PawnRef(0, 0) })

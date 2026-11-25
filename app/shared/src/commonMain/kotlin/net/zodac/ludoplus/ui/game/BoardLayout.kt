@@ -77,23 +77,36 @@ sealed interface BoardLayout {
     fun yardPawnRadiusOf(pawns: Int): Float = if (pawns > YARD_SPOTS) yardSpotRadiusOf(pawns) * CROWDED_PAWN_SHARE else yardPawnRadius
 
     /**
-     * Where [seat]'s yard shows what's in force for its player, in a game of [pawns] each: where there's the most room
-     * clear of the yard's edge and its pawns, straight out from the yard's middle (away from the board's), in from it, or
-     * to one side of it: the first with room [wanted], or if none has, the one with the most.
+     * The two places [seat]'s yard shows what's in force for its player, in a game of [pawns] each: where there's the most
+     * room clear of the yard's edge and its pawns, straight out from the yard's middle (away from the board's), in from it,
+     * to either side of it, or towards one of its corners. The
+     * first is the first of those with room [wanted], or if none has, the one with the most; the second, the one with the most
+     * that's clear of the first.
      */
-    fun yardBadge(seat: Int, pawns: Int, wanted: Float): YardBadge {
+    fun yardBadges(seat: Int, pawns: Int, wanted: Float): List<YardBadge> {
         val outline = yard(seat)
         val from = loneYardSpot(seat)
         val outward = (from - Offset(size / 2, size / 2)).let { it / it.getDistance() }
+        val side = Offset(-outward.y, outward.x)
+        val corners = outline.map { corner -> (corner - from).let { it / it.getDistance() } }
         val spots = List(pawns) { yardSpotOf(seat, it, pawns) }
         // A pawn stands a little taller than its radius.
         val spotReach = max(yardSpotRadiusOf(pawns), yardPawnRadiusOf(pawns) * PAWN_REACH)
-        fun best(way: Offset) = (0..BADGE_STEPS).map { from + way * (size / 2 * it / BADGE_STEPS) }
-            .filter { it.isInside(outline) }
-            .map { spot -> YardBadge(spot, min(edgeDistance(outline, spot), spots.minOf { (it - spot).getDistance() } - spotReach)) }
-            .maxBy { it.room }
-        val badges = listOf(outward, -outward, Offset(-outward.y, outward.x)).map(::best)
-        return badges.firstOrNull { it.room >= wanted } ?: badges.maxBy { it.room }
+        fun badges(ways: List<Offset>, clearOf: YardBadge?): List<YardBadge> = ways.map { way ->
+            (0..BADGE_STEPS).map { from + way * (size / 2 * it / BADGE_STEPS) }
+                .filter { it.isInside(outline) }
+                .map { spot ->
+                    val toSpots = spots.minOf { (it - spot).getDistance() } - spotReach
+                    val toOther = clearOf?.let { (it.centre - spot).getDistance() - min(it.room, wanted) } ?: toSpots
+                    YardBadge(spot, minOf(edgeDistance(outline, spot), toSpots, toOther))
+                }
+                .maxBy { it.room }
+        }
+        val firsts = badges(listOf(outward, -outward, side, -side) + corners, clearOf = null)
+        val first = firsts.firstOrNull { it.room >= wanted } ?: firsts.maxBy { it.room }
+        val seconds = badges(listOf(side, -side, -outward, outward) + corners, clearOf = first)
+        // A tie goes to the same side in every yard.
+        return listOf(first, seconds.first { second -> second.room >= seconds.maxOf { it.room } - BADGE_TIE })
     }
 
     /** How big a yard spot is drawn, across from its centre. */
@@ -129,8 +142,11 @@ sealed interface BoardLayout {
         private const val CROWDED_SPOT_SHARE = 0.86f
         private const val CROWDED_PAWN_SHARE = 0.72f
 
-        /** How many points out from a yard's middle [yardBadge] weighs up, to half the board's width away. */
+        /** How many points out from a yard's middle [yardBadges] weighs up, to half the board's width away. */
         private const val BADGE_STEPS = 200
+
+        /** How near two places' room is to count as as much. */
+        private const val BADGE_TIE = 0.02f
 
         /** How far a standing pawn reaches from its centre, of its radius. */
         private const val PAWN_REACH = 1.1f

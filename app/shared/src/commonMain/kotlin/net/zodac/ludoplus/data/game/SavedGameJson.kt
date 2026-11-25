@@ -169,6 +169,7 @@ object SavedGameJson {
                         put("timesCaptured", player.timesCaptured)
                         // A power-up's, while they last.
                         if (player.doubledRolls > 0) put("doubledRolls", player.doubledRolls)
+                        if (player.callUps > 0) put("callUps", player.callUps)
                         if (player.timesHaunted > 0) put("timesHaunted", player.timesHaunted)
                         if (player.shielded.isNotEmpty()) put("shielded", jsonInts(player.shielded.sorted()))
                     }
@@ -234,6 +235,7 @@ object SavedGameJson {
                 captures = player.int("captures"),
                 timesCaptured = player.int("timesCaptured"),
                 doubledRolls = player.intOrNull("doubledRolls") ?: 0,
+                callUps = player.intOrNull("callUps") ?: 0,
                 timesHaunted = player.intOrNull("timesHaunted") ?: 0,
                 shielded = if ("shielded" in player) player.array("shielded").ints().toSet() else emptySet(),
             )
@@ -247,8 +249,8 @@ object SavedGameJson {
             require(player.pawns.all { if (rules.lastStanding) it == PawnPosition.OUT_PROGRESS || it in 0..<board.trackSteps else it in PawnPosition.YARD_PROGRESS..board.homeProgress }) {
                 "A pawn is off the board"
             }
-            require(rules.powerUps || (player.doubledRolls == 0 && player.shielded.isEmpty())) { "A power-up's effect without power-ups" }
-            require(player.doubledRolls in 0..PowerUp.DOUBLED_ROLLS && player.shielded.all { it in player.pawns.indices }) { "A power-up's effect doesn't fit" }
+            require(rules.powerUps || (player.doubledRolls == 0 && player.callUps == 0 && player.shielded.isEmpty())) { "A power-up's effect without power-ups" }
+            require(player.doubledRolls in 0..PowerUp.DOUBLED_ROLLS && player.callUps >= 0 && player.shielded.all { it in player.pawns.indices }) { "A power-up's effect doesn't fit" }
             require(player.turns >= 0 && player.captures >= 0 && player.timesCaptured >= 0) { "A negative count" }
         }
         val current = obj.int("current")
@@ -443,11 +445,13 @@ object SavedGameJson {
                     if (effect.brokenShields.isNotEmpty()) put("brokenShields", encodePawns(effect.brokenShields))
                     effect.swapped?.let { put("swapped", encodePawns(listOf(it))) }
                     effect.calledUp?.let { put("calledUp", it) }
+                    if (effect.banked) put("banked", true)
                 })
             }
             put("finished", event.finished)
             if (event.rollsAgain) put("rollsAgain", true)
             if (event.knockedOut.isNotEmpty()) put("knockedOut", jsonInts(event.knockedOut))
+            if (event.recalled.isNotEmpty()) put("recalled", encodePawns(event.recalled))
         }
     }
 
@@ -479,6 +483,7 @@ object SavedGameJson {
                 rollsAgain = obj.flag("rollsAgain"),
                 knockedOut = if ("knockedOut" in obj) obj.array("knockedOut").ints().also { out -> require(out.all { it in 0..<playerCount }) { "No player in $out" } } else emptyList(),
                 effect = obj.objOrNull("effect")?.let(::decodeEffect),
+                recalled = decodePawnsIn(obj, "recalled").also { pawns -> require(pawns.all { it.player in 0..<playerCount }) { "No player in $pawns" } },
             )
             else -> throw JsonParseException("Unknown event \"$kind\"")
         }
@@ -491,6 +496,7 @@ object SavedGameJson {
         brokenShields = decodePawnsIn(obj, "brokenShields"),
         swapped = decodePawnsIn(obj, "swapped").firstOrNull(),
         calledUp = obj.intOrNull("calledUp"),
+        banked = obj.flag("banked"),
     )
 
     /** Pawns as (player, pawn) pairs. */

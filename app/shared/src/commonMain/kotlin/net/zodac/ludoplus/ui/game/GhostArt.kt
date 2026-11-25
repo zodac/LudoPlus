@@ -106,7 +106,7 @@ internal fun rememberGhostMotion(state: GameState): GhostMotion {
 
 /** How long the turn that [state]'s ghost move came after takes to play out: its pawn's move, or its die's tumble. */
 internal fun turnMillis(state: GameState): Int = when (val event = state.lastEvent) {
-    is GameEvent.Moved -> travelMillis(event.move, event.effect) + afterLandingMillis(event.move, state.board.homeProgress, event.effect)
+    is GameEvent.Moved -> moveMillis(event, state.board.homeProgress)
     null -> 0
     else -> DIE_TUMBLE_MILLIS
 }

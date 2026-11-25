@@ -308,7 +308,7 @@ object LudoEngine {
                 phase = phase.copy(moves = swaps, earned = phase.earned || (rules.rollAgainOnCapture && move.captures.isNotEmpty()), swapping = true),
                 yardTriesUsed = 0,
                 knockedOut = state.knockedOut + out,
-                lastEvent = GameEvent.Moved(player, used, move, finished = false, knockedOut = out, effect = PowerUpEffect(PowerUp.SWAP)),
+                lastEvent = GameEvent.Moved(player, used, move, finished = false, knockedOut = out, effect = PowerUpEffect(PowerUp.SWAP), recalled = recalledIn(moved, move.captures)),
             )
         }
         val (taken, effect) = when {
@@ -318,6 +318,7 @@ object LudoEngine {
         }
         val players = taken.players
         val captures = move.captures + effect?.captures.orEmpty()
+        val recalled = recalledIn(taken, captures)
         val endedAt = players[whose].pawns[pawn]
         val finished = players[whose].isFinished(board)
         val knockedOut = captures.map { it.player }.distinct().filter { players[it].pawnsLeft == 0 }
@@ -346,7 +347,7 @@ object LudoEngine {
                 phase = TurnPhase.Finished,
                 rollAgainRun = 0,
                 rollingAgain = false,
-                lastEvent = GameEvent.Moved(player, used, move, finished, effect = effect),
+                lastEvent = GameEvent.Moved(player, used, move, finished, effect = effect, recalled = recalled),
             )
         }
         if (teamHome) next = next.copy(finishingOrder = next.finishingOrder + players.indices.filter { rules.teamOf(it) == team && it !in next.finishingOrder })
@@ -358,7 +359,7 @@ object LudoEngine {
                 phase = TurnPhase.Finished,
                 rollAgainRun = 0,
                 rollingAgain = false,
-                lastEvent = GameEvent.Moved(player, used, move, finished, effect = effect),
+                lastEvent = GameEvent.Moved(player, used, move, finished, effect = effect, recalled = recalled),
             )
         }
         // The mover plays on unless they're placed, or home with no partner's pawns to roll for.
@@ -374,18 +375,22 @@ object LudoEngine {
             if (moves.isNotEmpty()) {
                 return next.copy(
                     phase = TurnPhase.AwaitingMove(left.first(), moves, dice = left, earned = earned, rolled = phase.rolled),
-                    lastEvent = GameEvent.Moved(player, used, move, finished, knockedOut = knockedOut, effect = effect),
+                    lastEvent = GameEvent.Moved(player, used, move, finished, knockedOut = knockedOut, effect = effect, recalled = recalled),
                 )
             }
         }
         val rollsAgain = playsOn && earned
         next = if (rollsAgain) next.copy(rollingAgain = true) else nextPlayer(next, chances)
-        return next.copy(lastEvent = GameEvent.Moved(player, used, move, finished, rollsAgain, knockedOut, effect))
+        return next.copy(lastEvent = GameEvent.Moved(player, used, move, finished, rollsAgain, knockedOut, effect, recalled))
     }
+
+    /** Which of the pawns just [captured] a banked Call Up has brought back out in [state]: those on their start squares. */
+    private fun recalledIn(state: GameState, captured: List<PawnRef>): List<PawnRef> = captured.filter { state.players[it.player].pawns[it.pawn] == 0 }
 
     /**
      * [state] with [owner]'s pawn [pawn] come to rest by [landing]: the pawns it captured back in their yards (or out of the
-     * game), credited to the player whose turn it is, and the shields it broke gone, with its own once it's off the track.
+     * game, or straight back out by a banked Call Up: [PowerUps.recall]), credited to the player whose turn it is, and the
+     * shields it broke gone, with its own once it's off the track.
      */
     internal fun place(state: GameState, owner: Int, pawn: Int, landing: Landing): GameState {
         val rules = state.rules
@@ -407,7 +412,7 @@ object LudoEngine {
             }
         }
         for (broken in landing.brokenShields) players = players.replace(broken.player) { it.copy(shielded = it.shielded - broken.pawn) }
-        return state.copy(players = players)
+        return PowerUps.recall(state.copy(players = players), landing.captures)
     }
 
     /**

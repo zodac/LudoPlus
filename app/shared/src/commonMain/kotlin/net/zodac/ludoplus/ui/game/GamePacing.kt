@@ -13,6 +13,9 @@ const val PAWN_STEP_MILLIS = 140
 /** How long a captured pawn takes to fly back to its yard, once the pawn that took it has landed. */
 const val CAPTURE_FLIGHT_MILLIS = 480
 
+/** How long a captured pawn takes to come back out of its yard, once it has landed there, where a banked Call Up brings it. */
+const val RECALL_MILLIS = PAWN_STEP_MILLIS * 2
+
 /** How long the flourish round a pawn that reaches home lasts, once it has landed. */
 const val HOME_FLOURISH_MILLIS = 720
 
@@ -41,16 +44,20 @@ private fun hopsBack(move: Move): Int = move.bouncedFrom?.let { it - move.to } ?
 fun travelMillis(move: Move, effect: PowerUpEffect? = null): Int =
     (hops(move) + hopsBack(move)) * PAWN_STEP_MILLIS + if (move.via != null || effect?.movedTo != null) PORTAL_WARP_MILLIS else 0
 
+/** How long [event]'s move plays for, on a board whose home is [homeProgress]: its pawn's travel, and what follows its landing. */
+fun moveMillis(event: GameEvent.Moved, homeProgress: Int): Int =
+    travelMillis(event.move, event.effect) + afterLandingMillis(event.move, homeProgress, event.effect, recalled = event.recalled.isNotEmpty())
+
 /** How long [move] plays for: the ghost's drift, then the flight of any pawn it caught. */
 fun ghostMillis(move: GhostMove): Int = abs(move.steps) * GHOST_STEP_MILLIS + if (move.caught.isEmpty()) 0 else CAPTURE_FLIGHT_MILLIS
 
 /**
  * What follows [move]'s landing, on a board whose home is [homeProgress]: a capture's flight back to its yard (or another
- * pawn's, where a power-up moves it, as [effect] says), or a pawn home's flourish.
+ * pawn's, where a power-up moves it, as [effect] says), and back out where it's [recalled], or a pawn home's flourish.
  */
-fun afterLandingMillis(move: Move, homeProgress: Int, effect: PowerUpEffect? = null): Int = when {
+fun afterLandingMillis(move: Move, homeProgress: Int, effect: PowerUpEffect? = null, recalled: Boolean = false): Int = when {
     (effect?.movedTo ?: move.to) == homeProgress -> HOME_FLOURISH_MILLIS
-    move.captures.isNotEmpty() || effect?.captures.orEmpty().isNotEmpty() -> CAPTURE_FLIGHT_MILLIS
+    move.captures.isNotEmpty() || effect?.captures.orEmpty().isNotEmpty() -> CAPTURE_FLIGHT_MILLIS + if (recalled) RECALL_MILLIS else 0
     effect?.swapped != null || effect?.calledUp != null -> CAPTURE_FLIGHT_MILLIS
     else -> 0
 }
@@ -82,7 +89,7 @@ data class GamePacing(
      */
     fun playOutMillis(event: GameEvent?, homeProgress: Int, ghostMove: GhostMove? = null, vanishing: Boolean = false): Long = afterTurnMillis(ghostMove, vanishing) + when (event) {
         null -> 0L
-        is GameEvent.Moved -> if (pawnsAnimated) (travelMillis(event.move, event.effect) + afterLandingMillis(event.move, homeProgress, event.effect)).toLong() else 0L
+        is GameEvent.Moved -> if (pawnsAnimated) moveMillis(event, homeProgress).toLong() else 0L
         is GameEvent.Rolled, is GameEvent.NoMove, is GameEvent.RollAgainLimit -> if (dieAnimated) DIE_TUMBLE_MILLIS.toLong() else 0L
     }
 
@@ -105,9 +112,9 @@ enum class MoveSound { STEP, CAPTURE, HOME }
  * When [move]'s sounds play, in milliseconds from its start, for a board whose home is [homeProgress]: a step as the pawn
  * lands on each square (one hop out of the yard), in time with its move (all at once with [animated] off), the landing's
  * step taken by a capture's sound or a pawn home's chime when it does either; and, [animated], a step as each captured
- * pawn lands back in its yard. [effect] is what a power-up it ended on did.
+ * pawn lands back in its yard, and another as any [recalled] comes back out. [effect] is what a power-up it ended on did.
  */
-fun moveSoundCues(move: Move, homeProgress: Int, animated: Boolean, effect: PowerUpEffect? = null): List<Pair<Long, MoveSound>> {
+fun moveSoundCues(move: Move, homeProgress: Int, animated: Boolean, effect: PowerUpEffect? = null, recalled: Boolean = false): List<Pair<Long, MoveSound>> {
     // A pawn that keeps its place (GameEvent.Moved.keptPlace) goes nowhere.
     if (move.squares == 0 && move.bouncedFrom == null && effect == null) return emptyList()
     // Coming out of a portal is a landing of its own, after its hops.
@@ -120,6 +127,7 @@ fun moveSoundCues(move: Move, homeProgress: Int, animated: Boolean, effect: Powe
         (effect?.movedTo ?: move.to) == homeProgress -> MoveSound.HOME
         else -> MoveSound.STEP
     }
-    val backInYard = if (animated && captures.isNotEmpty()) listOf(steps.last() + CAPTURE_FLIGHT_MILLIS to MoveSound.STEP) else emptyList()
-    return steps.dropLast(1).map { it to MoveSound.STEP } + (steps.last() to landing) + backInYard
+    val backInYard = if (animated && captures.isNotEmpty()) listOf(steps.last() + CAPTURE_FLIGHT_MILLIS) else emptyList()
+    val backOut = if (recalled) backInYard.map { it + RECALL_MILLIS } else emptyList()
+    return steps.dropLast(1).map { it to MoveSound.STEP } + (steps.last() to landing) + (backInYard + backOut).map { it to MoveSound.STEP }
 }

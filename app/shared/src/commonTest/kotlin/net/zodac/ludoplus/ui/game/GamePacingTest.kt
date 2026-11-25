@@ -42,6 +42,13 @@ class GamePacingTest {
         assertEquals(2 * PAWN_STEP_MILLIS + PORTAL_WARP_MILLIS, travelMillis(Move(0, 10, 12), PowerUpEffect(PowerUp.SWAP, movedTo = 15)))
         assertEquals(2 * PAWN_STEP_MILLIS, travelMillis(Move(0, 10, 12), PowerUpEffect(PowerUp.SHIELD)))
         assertEquals(CAPTURE_FLIGHT_MILLIS, afterLandingMillis(Move(0, 10, 12), HOME, PowerUpEffect(PowerUp.CALL_UP, calledUp = 1)))
+        // A banked Call Up: back out once it's back in its yard.
+        val capture = Move(0, 10, 12, listOf(PawnRef(1, 2)))
+        val recalled = GameEvent.Moved(0, 2, capture, finished = false, recalled = listOf(PawnRef(1, 2)))
+        assertEquals(2 * PAWN_STEP_MILLIS + CAPTURE_FLIGHT_MILLIS + RECALL_MILLIS, moveMillis(recalled, HOME))
+        assertEquals(2L * PAWN_STEP_MILLIS + CAPTURE_FLIGHT_MILLIS + RECALL_MILLIS, GamePacing().playOutMillis(recalled, HOME))
+        val inYard = 2L * PAWN_STEP_MILLIS + CAPTURE_FLIGHT_MILLIS
+        assertEquals(listOf(inYard to MoveSound.STEP, inYard + RECALL_MILLIS to MoveSound.STEP), moveSoundCues(capture, HOME, animated = true, recalled = true).takeLast(2))
         // Through a portal: its hops to it, then in and out.
         assertEquals(2 * PAWN_STEP_MILLIS + PORTAL_WARP_MILLIS, travelMillis(Move(0, 1, 10, via = 3)))
         assertEquals(2 * PAWN_STEP_MILLIS + PORTAL_WARP_MILLIS, travelMillis(Move(0, 8, 3, via = 10)))

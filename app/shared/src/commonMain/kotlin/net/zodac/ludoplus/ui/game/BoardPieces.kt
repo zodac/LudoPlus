@@ -133,9 +133,9 @@ internal fun moveMarks(state: GameState, event: GameEvent.Moved): MoveMarks {
         before = before.put(called, PawnPosition.YARD_PROGRESS)
         after = after.put(called, 0)
     }
-    // A capture's flight ends in its yard, whether it waits there or is out of the game.
-    for (taken in event.allCaptures) after = after.put(taken, PawnPosition.YARD_PROGRESS)
-    return MoveMarks(pawnMarks(before, without = mover), pawnMarks(after), listOfNotNull(mover, effect?.swapped, called))
+    // A capture's flight ends in its yard, whether it waits there or is out of the game; but for one brought straight back out.
+    for (taken in event.allCaptures) after = after.put(taken, if (taken in event.recalled) 0 else PawnPosition.YARD_PROGRESS)
+    return MoveMarks(pawnMarks(before, without = mover), pawnMarks(after), listOfNotNull(mover, effect?.swapped, called) + event.recalled)
 }
 
 /** How far from a movable pawn's centre a tap still picks it, in squares: wider than a square, for a 48dp target. */

@@ -38,6 +38,7 @@ internal object GameBreadcrumbs {
                     event.effect?.let { "took ${it.powerUp.name}" },
                     move.swap?.let { "swapped with pawn ${it.pawn + 1} of player ${it.player + 1}".takeUnless { event.keptPlace } ?: "kept its place" },
                     event.allCaptures.takeIf { it.isNotEmpty() }?.let { "captured ${it.size}" },
+                    event.recalled.takeIf { it.isNotEmpty() }?.let { "recalled ${it.size}" },
                 ).joinToString(", ")
             }
         }

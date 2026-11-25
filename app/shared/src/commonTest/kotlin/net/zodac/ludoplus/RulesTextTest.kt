@@ -189,7 +189,7 @@ class RulesTextTest : UiTest() {
                 "Double: Your next 3 rolls move a pawn twice as far. A roll that would take it past home counts once.",
                 "Shield: The next pawn to land on yours bounces off to the square before it, and the shield breaks.",
                 "Roll Again: You get another roll.",
-                "Call Up: One of your pawns comes out of the yard.",
+                "Call Up: One of your pawns comes out of the yard. With none there, it's banked: the next of your pawns to be captured comes straight back out.",
                 "Swap: Your pawn swaps places with any other player's pawn on the track, if you like. You pick which.",
                 "Only one power-up works in a move: a pawn moved onto another leaves it there. A new power-up appears somewhere random every one to five turns, up to two for each player.",
                 "Bouncing off a shield earns no roll unless your pawn captures where it settles. A pawn brought out of the yard can't bounce, so a shield doesn't stop it.",

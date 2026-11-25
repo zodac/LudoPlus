@@ -211,6 +211,21 @@ class ModeAchievementsTest {
     }
 
     @Test
+    fun `One By One isn't a game where a banked Call Up brought one out with another on the board`() {
+        /** Green, two from red's pawn on square 4, takes it, with red's other pawns at [others]. */
+        fun game(others: Int): Set<Achievement> {
+            val steps = Steps(game(GameMode.CHAOS)).roll(1)
+            val taking = steps.skip { red { it.copy(pawns = listOf(4, others, others, others), callUps = 1) }.copy(current = GREEN, rollingAgain = false, powerUps = emptyMap()) }
+            taking.skip { copy(players = players.mapIndexed { i, side -> if (i == GREEN) side.copy(pawns = listOf(41, Y, Y, Y)) else side }) }.play(2)
+            assertEquals(0, steps.state.players[RED].pawns[0])
+            steps.skip { red { it.copy(pawns = listOf(HOME, HOME, HOME, HOME - 2)) }.copy(current = RED, rollingAgain = false, rollAgainRun = 0, powerUps = emptyMap()) }.play(2, pawn = 3)
+            return steps.earned
+        }
+        assertFalse(ONE_BY_ONE in game(others = 30))
+        assertTrue(ONE_BY_ONE in game(others = HOME))
+    }
+
+    @Test
     fun `The Great Escape has all four pawns out within four turns - moving some between - and not in five`() {
         /** A pawn out on each of [turns], the first moved on after it. */
         fun escape(vararg turns: Int, mode: GameMode = GameMode.CLASSIC): Set<Achievement> {

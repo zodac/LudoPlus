@@ -29,6 +29,7 @@ private fun game(vararg pawns: List<Int>, powerUps: Map<Int, PowerUp> = emptyMap
 
 private fun GameState.shielding(player: Int, vararg pawns: Int) = copy(players = players.mapIndexed { i, side -> if (i == player) side.copy(shielded = pawns.toSet()) else side })
 private fun GameState.doubled(player: Int, rolls: Int = 3) = copy(players = players.mapIndexed { i, side -> if (i == player) side.copy(doubledRolls = rolls) else side })
+private fun GameState.banking(player: Int, callUps: Int) = copy(players = players.mapIndexed { i, side -> if (i == player) side.copy(callUps = callUps) else side })
 private fun GameState.movesFor(roll: Int): List<Move> = (LudoEngine.applyRoll(this, roll).phase as? TurnPhase.AwaitingMove)?.moves.orEmpty()
 private fun GameState.play(roll: Int, pawn: Int = 0) = LudoEngine.move(LudoEngine.applyRoll(this, roll), pawn)
 private val GameState.moved: GameEvent.Moved get() = lastEvent as GameEvent.Moved
@@ -202,17 +203,67 @@ class ChaosEngineTest {
     }
 
     @Test
-    fun `Call Up brings out a pawn - and does nothing with none to bring`() {
+    fun `Call Up brings out a pawn - and with none in the yard is banked - however many are`() {
         val out = game(listOf(1, 20, Y, Y), powerUps = mapOf(3 to PowerUp.CALL_UP)).play(2)
         assertEquals(listOf(3, 20, 0, Y), out.players[RED].pawns)
         assertEquals(PowerUpEffect(PowerUp.CALL_UP, calledUp = 2), out.effect)
         val none = game(listOf(1, 20, 30, HOME), powerUps = mapOf(3 to PowerUp.CALL_UP)).play(2)
         assertEquals(listOf(3, 20, 30, HOME), none.players[RED].pawns)
-        assertNull(none.effect.calledUp)
+        assertEquals(PowerUpEffect(PowerUp.CALL_UP, banked = true), none.effect)
+        assertEquals(listOf(1, 0, 0, 0), none.players.map { it.callUps })
+        assertEquals(8, game(listOf(1, 20, 30, HOME), powerUps = mapOf(3 to PowerUp.CALL_UP)).banking(RED, 7).play(2).players[RED].callUps)
+        // One that can't come out for a blockade on its start (39 from green's) isn't banked: it does nothing, as before.
+        val blocked = game(listOf(1, Y, Y, Y), listOf(39, 39, Y, Y), powerUps = mapOf(3 to PowerUp.CALL_UP), houseRules = setOf(HouseRule.BLOCKADES)).play(2)
+        assertEquals(PowerUpEffect(PowerUp.CALL_UP), blocked.effect)
+        assertEquals(0, blocked.players[RED].callUps)
         // Onto its guarded start, it captures there.
         val guarded = game(listOf(1, Y, Y, Y), listOf(39, Y, Y, Y), powerUps = mapOf(3 to PowerUp.CALL_UP), houseRules = setOf(HouseRule.GUARDED_STARTS)).play(2)
         assertEquals(listOf(PawnRef(GREEN, 0)), guarded.effect.captures)
         assertTrue(guarded.rollingAgain)
+    }
+
+    @Test
+    fun `a pawn captured with a Call Up banked comes straight back out - and uses one up`() {
+        // Green's pawn on square 4 (43 from its start) is landed on.
+        val start = game(listOf(2, Y, Y, Y), listOf(43, 20, 30, HOME)).banking(GREEN, 2)
+        val captured = start.play(2)
+        assertEquals(listOf(0, 20, 30, HOME), captured.players[GREEN].pawns)
+        assertEquals(1, captured.players[GREEN].callUps)
+        assertEquals(listOf(PawnRef(GREEN, 0)), captured.moved.recalled)
+        // It's a capture all the same, with the roll it earns.
+        assertEquals(1 to 1, captured.players[RED].captures to captured.players[GREEN].timesCaptured)
+        assertTrue(captured.rollingAgain)
+        // With none banked, it waits in the yard.
+        val none = start.banking(GREEN, 0).play(2)
+        assertEquals(listOf(Y, 20, 30, HOME), none.players[GREEN].pawns)
+        assertEquals(emptyList(), none.moved.recalled)
+        // Another's is no help, nor is the captor's own.
+        assertEquals(Y, start.banking(GREEN, 0).banking(RED, 1).play(2).players[GREEN].pawns[0])
+        // Two captured at once use one each, as far as they go.
+        val two = game(listOf(2, Y, Y, Y), listOf(43, 43, 30, HOME))
+        assertEquals(listOf(0, 0, 30, HOME), two.banking(GREEN, 3).play(2).players[GREEN].pawns)
+        val one = two.banking(GREEN, 1).play(2)
+        assertEquals(listOf(0, Y, 30, HOME), one.players[GREEN].pawns)
+        assertEquals(listOf(PawnRef(GREEN, 0)), one.moved.recalled)
+        assertEquals(0, one.players[GREEN].callUps)
+        // A shield that holds is no capture.
+        assertEquals(2, start.shielding(GREEN, 0).play(2).players[GREEN].callUps)
+    }
+
+    @Test
+    fun `a banked Call Up is kept while its pawn can't come out - and one used on a Swap's landing is told of`() {
+        val pawns = arrayOf(listOf(2, Y, Y, Y), listOf(43, 20, 30, HOME))
+        // Yellow's two on green's start (square 13, 39 from yellow's own) block it.
+        val blocked = game(*pawns, listOf(39, 39, Y, Y), houseRules = setOf(HouseRule.BLOCKADES)).banking(GREEN, 1).play(2)
+        assertEquals(Y to 1, blocked.players[GREEN].pawns[0] to blocked.players[GREEN].callUps)
+        // One alone there isn't safe with Guarded Starts: nobody is captured out of turn.
+        val guarded = game(*pawns, listOf(39, Y, Y, Y), houseRules = setOf(HouseRule.GUARDED_STARTS)).banking(GREEN, 1).play(2)
+        assertEquals(Y to 1, guarded.players[GREEN].pawns[0] to guarded.players[GREEN].callUps)
+        assertEquals(39, guarded.players[2].pawns[0])
+        val landed = game(*pawns, powerUps = mapOf(4 to PowerUp.SWAP)).banking(GREEN, 1).play(2)
+        assertTrue(landed.awaiting.swapping)
+        assertEquals(listOf(PawnRef(GREEN, 0)), landed.moved.recalled)
+        assertEquals(0 to 0, landed.players[GREEN].pawns[0] to landed.players[GREEN].callUps)
     }
 
     private fun emptyYard() = listOf(Y, Y, Y, Y)

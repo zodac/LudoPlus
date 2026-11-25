@@ -29,7 +29,7 @@ Connections: no server, no accounts. This file is the plan and the one source on
     - Host to guest: `Welcome` (the seat it took, and the token that takes it back) or `Refused` (full, started,
         another version), `Lobby` (the seats and who has taken them), `Game` (the whole game, numbered), `Ended`.
     - A version mismatch is refused at `Hello`, with "update the app". Version 3 (2026-11-25): a Swap's landing and its pick
-        are two moves.
+        are two moves, and Call Ups are banked.
 - **Sessions** (`HostSession`, `GuestSession`): the lobby and the game's messages as pure state machines over a
     `NetLink` (send, receive, connected): tested without radios.
 - **The transport seam** (`netplay/Nearby.kt`): advertise, discover, connect, accept, send, receive, disconnect;

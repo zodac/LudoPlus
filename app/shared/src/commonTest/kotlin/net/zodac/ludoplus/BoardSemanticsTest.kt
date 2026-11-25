@@ -204,12 +204,12 @@ class BoardSemanticsTest : UiTest() {
     private fun stateSays(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)
 
     @Test
-    fun `Chaos - a square says its power-up - a pawn its shield - a move what it takes or bounces off - and a yard its doubled rolls`() = uiTest(TestScreen(411, 891)) {
+    fun `Chaos - a square says its power-up - a pawn its shield - a move what it takes or bounces off - and a yard its doubled rolls and banked Call Ups`() = uiTest(TestScreen(411, 891)) {
         val new = GameState.new(GameMode.CHAOS, 4)
         val pawns = listOf(listOf(1, 20, 49, Y), listOf(9, Y, Y, Y))
         val state = new.copy(
             players = new.players.mapIndexed { i, p ->
-                p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }, shielded = if (i == 1) setOf(0) else emptySet(), doubledRolls = if (i == 2) 1 else 0)
+                p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }, shielded = if (i == 1) setOf(0) else emptySet(), doubledRolls = if (i == 2) 1 else 0, callUps = if (i > 1) i - 1 else 0)
             },
             powerUps = mapOf(3 to PowerUp.ROLL_AGAIN, 40 to PowerUp.SHIELD),
         )
@@ -218,8 +218,9 @@ class BoardSemanticsTest : UiTest() {
             "Square 4, Roll Again power-up, empty",
             "Square 41, Shield power-up, empty",
             "Square 23, Green pawn 1, 47 squares from home, shielded",
-            "Yellow yard, 4 pawns waiting, 1 doubled roll left",
-            "Blue yard, 4 pawns waiting",
+            "Yellow yard, 4 pawns waiting, 1 doubled roll left, 1 Call Up banked",
+            "Blue yard, 4 pawns waiting, 2 Call Ups banked",
+            "Green yard, 3 pawns waiting",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
         compose.onNodeWithContentDescription("Square 2, Red pawn 1, 55 squares from home").assert(onClickLabel("Move Red pawn 1 2 squares, taking Roll Again"))
         compose.onNodeWithContentDescription("Square 21, Red pawn 2, 36 squares from home").assert(onClickLabel("Move Red pawn 2 2 squares, bouncing off Green pawn 1's shield"))
@@ -290,11 +291,15 @@ class BoardSemanticsTest : UiTest() {
     @Test
     fun `the log says what a power-up did - after the move that took it`() = uiTest(TestScreen(411, 891)) {
         fun moved(effect: PowerUpEffect?, move: Move = Move(0, 1, 3)) = LogEntry(GameEvent.Moved(0, 2, move, finished = false, effect = effect))
+        fun recalled(vararg pawns: PawnRef) = LogEntry(GameEvent.Moved(0, 2, Move(0, 1, 3, pawns.toList()), finished = false, recalled = pawns.toList()))
         val state = GameState.new(GameMode.CHAOS, 4)
         for ((entry, line) in listOf(
             moved(PowerUpEffect(PowerUp.DOUBLE)) to "Alex moved a pawn 2 squares. Alex's next 3 rolls count double.",
             moved(PowerUpEffect(PowerUp.SHIELD)) to "Alex moved a pawn 2 squares. Alex took Shield.",
             moved(PowerUpEffect(PowerUp.CALL_UP, calledUp = 2)) to "Alex moved a pawn 2 squares. Alex called up a pawn.",
+            moved(PowerUpEffect(PowerUp.CALL_UP, banked = true)) to "Alex moved a pawn 2 squares. Alex banked a Call Up.",
+            recalled(PawnRef(1, 0)) to "Alex captured 1 of Gambit's pawns. Gambit's Call Up brought 1 pawn straight back out.",
+            recalled(PawnRef(1, 0), PawnRef(1, 3)) to "Alex captured 2 of Gambit's pawns. Gambit's Call Ups brought 2 pawns straight back out.",
             moved(PowerUpEffect(PowerUp.CALL_UP)) to "Alex moved a pawn 2 squares. Alex took Call Up.",
             moved(PowerUpEffect(PowerUp.SWAP)) to "Alex moved a pawn 2 squares. Alex took Swap.",
             moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)), Move(0, 3, 3, swap = PawnRef(2, 0))) to "Alex swapped places with Sam.",

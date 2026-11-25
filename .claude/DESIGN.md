@@ -183,7 +183,14 @@ move, at once: a pawn moved onto another leaves it there.
     there (a capture, or another shield to bounce off), never further back than where it came from, and the shield breaks
     (`LudoEngine.land`, `Move.bouncedFrom`). Only a capture where it settles earns a roll. A shield goes as its pawn leaves
     the track, and doesn't stop a pawn leaving the yard (Guarded Starts), which has nowhere to bounce to.
-- **Roll Again**, and **Call Up** (a pawn out of the yard, if one can come).
+- **Roll Again**.
+- **Call Up**: a pawn out of the yard, if one can come. With none in the yard it's banked (the maintainer, 2026-11-25), however
+    many are: `PlayerState.callUps`, the pawn's owner's, on their yard. The next of their pawns captured is brought straight back
+    out onto its start square, using one up (`PowerUps.recall`, in `LudoEngine.place`; `GameEvent.Moved.recalled`). It's a capture
+    all the same, with the roll and the counts it earns; two captured at once use one each. One is kept, and the pawn waits in
+    the yard, where it can't come out: past a blockade, or, with Guarded Starts, onto a start square with a pawn it would capture.
+    The pawn flies back to its yard, then comes out (`RECALL_MILLIS`). The log: "Alex banked a Call Up.", "Alex captured 1
+    of Gambit's pawns. Gambit's Call Up brought 1 pawn straight back out."
 - **Swap** (the maintainer, 2026-11-24, in place of Teleport and of an automatic swap with the nearest rival ahead): with
     any other player's pawn on the track, safe, shielded, or a partner's, or with nobody. Not where the two would leave rivals
     sharing a square that isn't safe, nor where either would stand on the one square its way never takes it over. Each
@@ -480,7 +487,7 @@ in `GameRecordRepository.statistics`, off the main thread. Each figure is read w
     - Easter Eggs: Alliteration (every name starting with one letter), Are You A Developer? (the version tapped seven
         times), Big Fan (a person named "zodac", exactly), Can't Wait To Get Going (the main menu's logo pawn tapped,
         which hops three times; added 2026-11-23), Midnight Run (a new game from midnight to 6am), One By One
-        (every pawn home, none ever brought out with another on the board, by a move or Call Up, seen from the first roll),
+        (every pawn home, none ever brought out with another on the board, by a move or Call Up, banked or not, seen from the first roll),
         Sideways (a game shown with the phone on its side), The Great Escape (all four pawns out together, each brought out
         within the last four turns; both 2026-11-24), Time Flies (an hour of one game on screen), Who's Ludo? (anyone named
         "Ludo", any case).

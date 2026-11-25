@@ -58,11 +58,26 @@ internal object PowerUps {
 
     private fun callUp(state: GameState, owner: Int): Pair<GameState, PowerUpEffect> {
         val waiting = state.players[owner].pawns.indexOf(PawnPosition.YARD_PROGRESS)
-        if (waiting < 0 || LudoEngine.isBlocked(state, LudoEngine.blockades(state), owner, PawnPosition.YARD_PROGRESS, 0)) {
+        if (waiting < 0) {
+            return state.copy(players = state.players.replace(owner) { it.copy(callUps = it.callUps + 1) }) to PowerUpEffect(PowerUp.CALL_UP, banked = true)
+        }
+        if (LudoEngine.isBlocked(state, LudoEngine.blockades(state), owner, PawnPosition.YARD_PROGRESS, 0)) {
             return state to PowerUpEffect(PowerUp.CALL_UP)
         }
         val landing = LudoEngine.land(state, owner, 0, floor = PawnPosition.YARD_PROGRESS)
         return LudoEngine.place(state, owner, waiting, landing) to PowerUpEffect(PowerUp.CALL_UP, captures = landing.captures, calledUp = waiting)
+    }
+
+    /**
+     * [state] with each of the pawns just [captured], in their yards, brought straight back out onto its start square by a
+     * Call Up its player has banked, which is spent. A Call Up is kept where the pawn can't come out: past a blockade, or onto
+     * a start square with a pawn there it would capture.
+     */
+    fun recall(state: GameState, captured: List<PawnRef>): GameState = captured.fold(state) { next, (player, pawn) ->
+        val canCome = next.players[player].callUps > 0 && LudoEngine.capturesAt(next, player, 0).isEmpty() &&
+            !LudoEngine.isBlocked(next, LudoEngine.blockades(next), player, PawnPosition.YARD_PROGRESS, 0)
+        if (!canCome) return@fold next
+        next.copy(players = next.players.replace(player) { side -> side.copy(pawns = side.pawns.replace(pawn) { 0 }, callUps = side.callUps - 1) })
     }
 
     /**

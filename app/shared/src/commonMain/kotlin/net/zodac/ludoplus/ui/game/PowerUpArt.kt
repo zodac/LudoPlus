@@ -13,9 +13,10 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextMeasurer
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
-import net.zodac.ludoplus.game.GameState
+import net.zodac.ludoplus.game.PlayerState
 import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.ui.style.toPath
 import net.zodac.ludoplus.ui.theme.BoardInk
@@ -34,19 +35,25 @@ internal fun DrawScope.drawPowerUps(layout: BoardLayout, unit: Float, powerUps: 
     for ((square, powerUp) in powerUps) drawPowerUp(powerUp, layout.trackSquare(square).centre * unit, unit * POWER_UP_RADIUS)
 }
 
-/**
- * In the yard of each player with rolls still to count double ([doubledRolls], by player), the Double power-up and how many
- * are left, clear of the yard's pawns ([BoardLayout.yardBadge]).
- */
-internal fun DrawScope.drawYardDoubles(state: GameState, layout: BoardLayout, unit: Float, doubledRolls: List<Int>, textMeasurer: TextMeasurer) {
-    state.players.forEachIndexed { player, side ->
-        val rolls = doubledRolls[player]
-        if (rolls == 0) return@forEachIndexed
-        val badge = layout.yardBadge(side.seat, side.pawns.size, YARD_BADGE_ROOM)
-        val radius = min(YARD_BADGE_RADIUS, badge.room * YARD_BADGE_SHARE) * unit
-        val centre = badge.centre * unit
-        drawPowerUp(PowerUp.DOUBLE, centre, radius)
-        drawCount(textMeasurer, rolls, centre + Offset(radius, -radius) * YARD_COUNT_OUT, radius * YARD_COUNT_SIZE)
+/** The power-ups in force for a player: how many of their rolls are still to count double, and how many Call Ups they have banked. */
+internal data class InForce(val doubledRolls: Int, val callUps: Int) {
+    constructor(side: PlayerState) : this(side.doubledRolls, side.callUps)
+
+    val any: Boolean get() = doubledRolls > 0 || callUps > 0
+}
+
+/** Each power-up [inForce] for each player, and how many are left, on [places], each player's two in their yard ([BoardLayout.yardBadges]). */
+internal fun DrawScope.drawInForce(places: List<List<YardBadge>>, unit: Float, inForce: List<InForce>, textMeasurer: TextMeasurer) {
+    for ((badges, powerUps) in places.zip(inForce)) {
+        val counts = listOf(PowerUp.DOUBLE to powerUps.doubledRolls, PowerUp.CALL_UP to powerUps.callUps)
+        for ((badge, shown) in badges.zip(counts)) {
+            val (powerUp, count) = shown
+            if (count == 0) continue
+            val radius = min(YARD_BADGE_RADIUS, badge.room * YARD_BADGE_SHARE) * unit
+            val centre = badge.centre * unit
+            drawPowerUp(powerUp, centre, radius)
+            drawCount(textMeasurer, count, centre + Offset(radius, -radius) * YARD_COUNT_OUT, max(radius * YARD_COUNT_SIZE, unit * PAWN_COUNT_RADIUS))
+        }
     }
 }
 
@@ -58,7 +65,7 @@ internal const val YARD_BADGE_RADIUS = 0.62f
 private const val YARD_BADGE_SHARE = 0.72f
 internal const val YARD_BADGE_ROOM = 0.75f
 
-/** Where the count of a power-up in force is, up and to the right of its centre, and how big, of its radius. */
+/** Where the count of a power-up in force is, up and to the right of its centre, and how big, of its radius: never smaller than a pawn's. */
 private const val YARD_COUNT_OUT = 0.74f
 private const val YARD_COUNT_SIZE = 0.44f
 

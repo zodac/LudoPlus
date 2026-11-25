@@ -256,6 +256,11 @@
         <item quantity="one">%1$d doubled roll left</item>
         <item quantity="other">%1$d doubled rolls left</item>
     </plurals>
+    <!-- Chaos: how many Call Ups (the power-up, power_up_call_up) a player has banked, shown on their yard, as TalkBack says it of the yard. -->
+    <plurals name="game_square_yard_call_ups_spoken">
+        <item quantity="one">%1$d Call Up banked</item>
+        <item quantity="other">%1$d Call Ups banked</item>
+    </plurals>
     <string name="game_player_turn_spoken">playing now</string>
     <string name="game_player_place">%1$s place</string>
     <!-- While a player is still playing: their rank as the game stands (%1$s is "1st", "2nd"...), alone in it or level with another. Shown on their card as the number, on their colour. -->
@@ -340,6 +345,12 @@
         <item quantity="other">%1$s's next %2$d rolls count double.</item>
     </plurals>
     <string name="game_event_call_up">%1$s called up a pawn.</string>
+    <!-- %1$s had no pawn in the yard, so keeps the Call Up until one is captured. Then, after the capture's line: how many of %1$s's captured pawns their banked Call Ups brought back out. -->
+    <string name="game_event_call_up_banked">%1$s banked a Call Up.</string>
+    <plurals name="game_event_recalled">
+        <item quantity="one">%1$s's Call Up brought %2$d pawn straight back out.</item>
+        <item quantity="other">%1$s's Call Ups brought %2$d pawns straight back out.</item>
+    </plurals>
     <string name="game_event_swap">%1$s swapped places with %2$s.</string>
     <!-- Haunted House: as the turn ended, a ghost landed on pawns of %1$s, a player's name or a list of them, so they went back to their yards. -->
     <string name="game_event_haunted">A ghost caught %1$s!</string>
@@ -1146,7 +1157,7 @@
     <string name="power_up_roll_again">Roll Again</string>
     <string name="power_up_roll_again_description">You get another roll.</string>
     <string name="power_up_call_up">Call Up</string>
-    <string name="power_up_call_up_description">One of your pawns comes out of the yard.</string>
+    <string name="power_up_call_up_description">One of your pawns comes out of the yard. With none there, it's banked: the next of your pawns to be captured comes straight back out.</string>
     <string name="power_up_swap">Swap</string>
     <string name="power_up_swap_description">Your pawn swaps places with any other player's pawn on the track, if you like. You pick which.</string>
     <string name="mode_haunted_house">Haunted House</string>

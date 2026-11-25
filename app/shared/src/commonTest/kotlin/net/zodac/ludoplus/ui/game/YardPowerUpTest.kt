@@ -27,8 +27,8 @@ private const val BOARD = "board"
 private const val Y = -1
 private const val FRAME = 16
 
-/** The Double power-up on the yard of a player whose rolls count double. */
-class YardDoubleTest : UiTest() {
+/** The power-ups in force for a player, on their yard: Double while their rolls count double, and Call Up while they have any banked. */
+class YardPowerUpTest : UiTest() {
 
     private fun game(vararg doubledRolls: Int, powerUps: Map<Int, PowerUp> = emptyMap()): GameState {
         val new = GameState.new(GameMode.CHAOS, 4)
@@ -41,8 +41,10 @@ class YardDoubleTest : UiTest() {
         )
     }
 
+    private fun GameState.banking(vararg callUps: Int) = copy(players = players.mapIndexed { i, side -> side.copy(callUps = callUps[i]) })
+
     @Test
-    fun `it's on the yards of those with rolls left to count double - and only theirs`() = uiTest {
+    fun `Double is on the yards of those with rolls left to count double - and only theirs`() = uiTest {
         val state = show(game(0, 2, 0, 1))
         assertEquals(listOf(1, 3), yardsShown())
         state.value = game(3, 0, 0, 1)
@@ -50,7 +52,7 @@ class YardDoubleTest : UiTest() {
     }
 
     @Test
-    fun `it comes as the pawn lands on the Double - not before`() = uiTest {
+    fun `Double comes as the pawn lands on the Double - not before`() = uiTest {
         val rolled = LudoEngine.applyRoll(game(powerUps = mapOf(3 to PowerUp.DOUBLE)), 2)
         val state = show(rolled)
         state.value = LudoEngine.move(rolled, 0)
@@ -60,12 +62,33 @@ class YardDoubleTest : UiTest() {
     }
 
     @Test
-    fun `it stays while the pawn its last doubled roll moves is on its way`() = uiTest {
+    fun `Double stays while the pawn its last doubled roll moves is on its way`() = uiTest {
         val rolled = LudoEngine.applyRoll(game(1), 2)
         val state = show(rolled)
         state.value = LudoEngine.move(rolled, 0)
         val along = frames(4 * PAWN_STEP_MILLIS + 100)
         assertTrue(along.indexOfFirst { it.isEmpty() } * FRAME >= 4 * PAWN_STEP_MILLIS - FRAME, "Too soon: $along")
+        assertEquals(emptyList(), along.last())
+    }
+
+    @Test
+    fun `Call Up is on the yards of those with any banked - in a place of its own`() = uiTest {
+        show(game(0, 2, 0, 1).banking(0, 1, 5, 0))
+        assertEquals(listOf(1, 2), yardsShown(PowerUp.CALL_UP))
+        assertEquals(listOf(1, 3), yardsShown())
+    }
+
+    @Test
+    fun `Call Up stays till the pawn it brings back out is out`() = uiTest {
+        // Red's pawn takes green's on square 3 (42 from its start).
+        val start = game().banking(0, 1, 0, 0)
+        val rolled = LudoEngine.applyRoll(start.copy(players = start.players.mapIndexed { i, side -> if (i == 1) side.copy(pawns = listOf(42, Y, Y, Y)) else side }), 2)
+        val state = show(rolled)
+        state.value = LudoEngine.move(rolled, 0)
+        assertEquals(0, state.value.players[1].callUps)
+        val length = 2 * PAWN_STEP_MILLIS + CAPTURE_FLIGHT_MILLIS + RECALL_MILLIS
+        val along = frames(length + 100, PowerUp.CALL_UP)
+        assertTrue(along.indexOfFirst { it.isEmpty() } * FRAME >= length - FRAME, "Too soon: $along")
         assertEquals(emptyList(), along.last())
     }
 
@@ -82,19 +105,19 @@ class YardDoubleTest : UiTest() {
         return state
     }
 
-    /** The yards it's on, on each frame of the next [millis]. */
-    private fun ComposeUiTest.frames(millis: Int): List<List<Int>> = List(millis / FRAME) {
+    /** The yards [powerUp] is on, on each frame of the next [millis]. */
+    private fun ComposeUiTest.frames(millis: Int, powerUp: PowerUp = PowerUp.DOUBLE): List<List<Int>> = List(millis / FRAME) {
         // Drawn each frame, as a screen is: the move's clock starts on its first drawn frame.
-        yardsShown().also { mainClock.advanceTimeByFrame() }
+        yardsShown(powerUp).also { mainClock.advanceTimeByFrame() }
     }
 
-    /** The seats whose yards it's drawn on: its colour under its symbol. */
-    private fun ComposeUiTest.yardsShown(): List<Int> {
+    /** The seats whose yards [powerUp] is drawn on: its colour under its symbol. */
+    private fun ComposeUiTest.yardsShown(powerUp: PowerUp = PowerUp.DOUBLE): List<Int> {
         val pixels = onNodeWithTag(BOARD).captureToImage().toPixelMap()
         val unit = pixels.width / ClassicBoardLayout.size
         return (0..3).filter { seat ->
-            val at = (ClassicBoardLayout.yardBadge(seat, 4, YARD_BADGE_ROOM).centre + Offset(0f, YARD_BADGE_RADIUS * 0.65f)) * unit
-            pixels[at.x.toInt(), at.y.toInt()] == PowerUp.DOUBLE.color
+            val at = (ClassicBoardLayout.yardBadges(seat, 4, YARD_BADGE_ROOM)[if (powerUp == PowerUp.DOUBLE) 0 else 1].centre + Offset(0f, YARD_BADGE_RADIUS * 0.72f)) * unit
+            pixels[at.x.toInt(), at.y.toInt()] == powerUp.color
         }
     }
 }

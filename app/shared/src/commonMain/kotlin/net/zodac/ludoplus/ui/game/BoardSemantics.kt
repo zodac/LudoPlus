@@ -46,6 +46,7 @@ import net.zodac.ludoplus.resources.game_square_safe_for_spoken
 import net.zodac.ludoplus.resources.game_square_safe_spoken
 import net.zodac.ludoplus.resources.game_square_start_spoken
 import net.zodac.ludoplus.resources.game_square_track_spoken
+import net.zodac.ludoplus.resources.game_square_yard_call_ups_spoken
 import net.zodac.ludoplus.resources.game_square_yard_doubled_spoken
 import net.zodac.ludoplus.resources.game_square_yard_lost_spoken
 import net.zodac.ludoplus.resources.game_square_yard_pawns_spoken
@@ -123,6 +124,7 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
                     pluralStringResource(Res.plurals.game_square_yard_lost_spoken, all, lost, all)
                 } else if (waiting.isEmpty()) empty else pluralStringResource(Res.plurals.game_square_yard_pawns_spoken, waiting.size, waiting.size),
                 state.players[player].doubledRolls.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.game_square_yard_doubled_spoken, it, it) },
+                state.players[player].callUps.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.game_square_yard_call_ups_spoken, it, it) },
             ),
         )
         val move = movableAt(player, waiting)

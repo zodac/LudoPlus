@@ -245,6 +245,8 @@ data class PlayerState(
     val timesCaptured: Int = 0,
     /** How many more of their rolls count double ([PowerUp.DOUBLE]). */
     val doubledRolls: Int = 0,
+    /** How many Call Ups they have banked, each to bring a captured pawn straight back out ([PowerUp.CALL_UP]). */
+    val callUps: Int = 0,
     /** How many of their pawns ghosts have sent back to their yard. */
     val timesHaunted: Int = 0,
     /** Their pawns with a shield ([PowerUp.SHIELD]), by index. */
@@ -325,7 +327,8 @@ data class Move(
 /**
  * What a [powerUp] did for the pawn that ended its move on it: [movedTo] is where it took the pawn (Swap), as
  * progress; [captures] and [brokenShields] what that landing did; [swapped] the opponent's pawn swapped with; and [calledUp]
- * the pawn brought out of the yard. Each null or empty where it did none.
+ * the pawn brought out of the yard, or [banked] whether it was kept for a capture, with none in it. Each null or empty
+ * where it did none.
  */
 data class PowerUpEffect(
     val powerUp: PowerUp,
@@ -334,6 +337,7 @@ data class PowerUpEffect(
     val brokenShields: List<PawnRef> = emptyList(),
     val swapped: PawnRef? = null,
     val calledUp: Int? = null,
+    val banked: Boolean = false,
 )
 
 /** One pawn in a game: [player]'s pawn [pawn], both indices. */
@@ -363,7 +367,8 @@ sealed interface GameEvent {
      * [player] moved with [roll] (with two dice, the die moved). [finished] is true if that brought the moved pawn's
      * owner's last pawn home (theirs, or a partner's they rolled for); [rollsAgain] if the roll, its dice all moved, earned
      * them another (a roll-again roll, a capture, or a pawn home, as the rules give). [knockedOut] are the players whose
-     * last pawn it captured, where that puts them out of the game. [effect] is what a power-up it ended on did.
+     * last pawn it captured, where that puts them out of the game. [effect] is what a power-up it ended on did. [recalled] are
+     * the pawns captured that a banked Call Up brought straight back out, onto their start squares.
      */
     data class Moved(
         override val player: Int,
@@ -373,6 +378,7 @@ sealed interface GameEvent {
         val rollsAgain: Boolean = false,
         val knockedOut: List<Int> = emptyList(),
         val effect: PowerUpEffect? = null,
+        val recalled: List<PawnRef> = emptyList(),
     ) : GameEvent {
         /** Where the pawn ended up, by its progress: where the move took it, or a power-up from there. */
         val endedAt: Int get() = effect?.movedTo ?: move.to
