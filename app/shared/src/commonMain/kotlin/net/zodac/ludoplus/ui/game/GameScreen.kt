@@ -663,7 +663,7 @@ private fun playerCardsHeight(rows: Int, compact: Boolean): Dp {
     return (line + cardPadding(compact) * 2) * rows + cardGap(compact) * (rows - 1)
 }
 
-/** A player's card: a tap on it shows how many captures they have made and had made of them, in all and against each opponent ([CaptureBars]), under their whole name where the card cuts it. It's outlined in dashes while that's up. */
+/** A player's card: a tap on it shows how many captures they have made and had made of them, in all and against each opponent, and their rolls of each face ([PlayerStats]), under their whole name where the card cuts it. It's outlined in dashes while that's up. */
 @Composable
 private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolean, modifier: Modifier) {
     val player = game.players[index]
@@ -707,7 +707,7 @@ private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolea
     // The box takes the weight: a tooltip's modifier is its content's alone, not its own.
     Box(modifier) {
         AppTooltip(
-            body = { CaptureBars(game, index, named = nameCut) },
+            body = { PlayerStats(game, index, named = nameCut) },
             state = tooltip,
             enabled = false,
             wide = true,

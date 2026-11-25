@@ -373,6 +373,10 @@ class SavedGameJsonTest {
             json.replaceFirst("\"captures\":0", "\"captures\":1,\"capturesOf\":{\"1\":2}"),
             json.replaceFirst("\"captures\":0", "\"captures\":1,\"capturesOf\":{\"4\":1}"),
             json.replaceFirst("\"captures\":0", "\"captures\":1,\"capturesOf\":{\"x\":1}"),
+            // Rolls of a face the die hasn't got, of none, and of no number.
+            json.replaceFirst("\"captures\":0", "\"captures\":0,\"rolls\":{\"7\":1}"),
+            json.replaceFirst("\"captures\":0", "\"captures\":0,\"rolls\":{\"1\":0}"),
+            json.replaceFirst("\"captures\":0", "\"captures\":0,\"rolls\":{\"x\":1}"),
             // A try to leave the yard, with no house rule giving one.
             json.replace("\"rollAgainRun\":0", "\"rollAgainRun\":0,\"yardTriesUsed\":1"),
         )
@@ -395,7 +399,7 @@ class SavedGameJsonTest {
                 "\"id\":\"0123456789abcdef0123456789abcdef\",\"steps\":17," +
                 "\"state\":{\"players\":[" +
                 "{\"seat\":0,\"pawns\":[-1,-1,-1,-1],\"turns\":0,\"captures\":0,\"timesCaptured\":0}," +
-                "{\"seat\":1,\"pawns\":[-1,-1,-1,-1],\"turns\":1,\"captures\":0,\"timesCaptured\":0}," +
+                "{\"seat\":1,\"pawns\":[-1,-1,-1,-1],\"turns\":1,\"captures\":0,\"timesCaptured\":0,\"rolls\":{\"4\":1}}," +
                 "{\"seat\":2,\"pawns\":[-1,-1,-1,-1],\"turns\":0,\"captures\":0,\"timesCaptured\":0}," +
                 "{\"seat\":3,\"pawns\":[-1,-1,-1,-1],\"turns\":0,\"captures\":0,\"timesCaptured\":0}]," +
                 "\"current\":2,\"roll\":null,\"rollAgainRun\":0,\"finishingOrder\":[]," +
@@ -413,6 +417,17 @@ class SavedGameJsonTest {
         val older = json.replace(",\"capturesOf\":{\"0\":2,\"3\":1}", "")
         check(older != json)
         assertEquals(3 to emptyMap<Int, Int>(), SavedGameJson.decode(older).state.players[2].let { it.captures to it.capturesOf })
+    }
+
+    @Test
+    fun `rolls by face come back as they were saved - and a save from before they were kept has none`() {
+        val new = GameState.new(GameMode.CLASSIC, 4, first = 1)
+        val saved = game(new.copy(players = new.players.mapIndexed { i, it -> if (i == 2) it.copy(rolls = mapOf(6 to 2, 1 to 3)) else it }))
+        val json = SavedGameJson.encode(saved)
+        assertEquals(saved, SavedGameJson.decode(json))
+        val older = json.replace(",\"rolls\":{\"1\":3,\"6\":2}", "")
+        check(older != json)
+        assertEquals(emptyMap(), SavedGameJson.decode(older).state.players[2].rolls)
     }
 
     @Test

@@ -79,6 +79,16 @@ class LudoEngineTest {
     }
 
     @Test
+    fun `each roll counts for its player by face - with no move and at the limit too`() {
+        val ended = game(listOf(0, Y, Y, Y)).roll(6).move(0).roll(6).move(0).roll(6)
+        assertEquals(GREEN, ended.current)
+        val passed = ended.roll(3)
+        assertEquals(listOf(mapOf(6 to 3), mapOf(3 to 1)), listOf(RED, GREEN).map { passed.players[it].rolls })
+        // A roll in a run and its first count alike.
+        assertEquals(mapOf(6 to 1, 2 to 1), game(listOf(0, Y, Y, Y)).roll(6).move(0).roll(2).players[RED].rolls)
+    }
+
+    @Test
     fun `a run broken by another roll starts counting again - and a mode without the limit never ends the run`() {
         // 6, 6, then a 2 passes; red's next turn begins a fresh run.
         val broken = game(listOf(0, Y, Y, Y)).roll(6).move(0).roll(6).move(0).roll(2).move(0)

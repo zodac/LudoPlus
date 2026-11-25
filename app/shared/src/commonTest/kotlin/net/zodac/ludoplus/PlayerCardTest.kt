@@ -164,7 +164,7 @@ class PlayerCardTest : UiTest() {
         show(game(listOf(6, 6, 6, 6), names, ::withOpponents))
         val config = card("Ace").fetchSemanticsNode().config
         assertEquals(Role.Button, config[SemanticsProperties.Role])
-        assertEquals("Show captures by opponent", config[SemanticsActions.OnClick].label)
+        assertEquals("Show captures and rolls", config[SemanticsActions.OnClick].label)
         assertTrue(SemanticsActions.OnLongClick !in config && SemanticsActions.CustomActions !in config)
         card("Ace").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
@@ -190,13 +190,54 @@ class PlayerCardTest : UiTest() {
         assertEquals(listOf(1, 1), listOf("Lucky, 3 captures, captured by 1", "Alex, 0 captures, captured by 0").map(::says))
     }
 
+    /** Lucky has rolled every face but a 4. */
+    private fun withRolls(game: GameState): GameState = withOpponents(game).let { state ->
+        state.copy(players = state.players.mapIndexed { i, it -> if (i == 1) it.copy(rolls = mapOf(1 to 7, 2 to 1, 3 to 9, 5 to 5, 6 to 11)) else it })
+    }
+
+    private val luckysRolls = listOf(
+        "Rolled a 1, 7 times", "Rolled a 2, 1 time", "Rolled a 3, 9 times", "Rolled a 4, 0 times", "Rolled a 5, 5 times", "Rolled a 6, 11 times",
+    )
+
+    @Test
+    fun `a tap on a card shows how many times its player has rolled each face - and in all`() = uiTest(TestScreen(411, 891)) {
+        show(game(listOf(6, 6, 6, 6), names, ::withRolls))
+        assertEquals(0, says("33 rolls"))
+        tap("Lucky")
+        assertEquals(1, says("33 rolls"))
+        assertEquals(1, drawn("Rolls"))
+        luckysRolls.forEachIndexed { index, spoken ->
+            assertEquals(index, compose.onNodeWithContentDescription(spoken).fetchSemanticsNode().config[SemanticsProperties.CollectionItemInfo].rowIndex, spoken)
+        }
+    }
+
+    @Test
+    fun `rolls are in two columns - each a group read down before the next`() = uiTest(TestScreen(411, 891)) {
+        show(game(listOf(6, 6, 6, 6), names, ::withRolls))
+        tap("Lucky")
+        val at = luckysRolls.map { compose.onNodeWithContentDescription(it).fetchSemanticsNode() }
+        val groups = at.map { node -> generateSequence(node.parent) { it.parent }.first { it.config.getOrNull(SemanticsProperties.IsTraversalGroup) == true }.id }
+        assertEquals(listOf(3, 3), groups.groupBy { it }.values.map { it.size })
+        assertEquals(listOf(1, 1), listOf(groups.take(3), groups.drop(3)).map { it.distinct().size })
+        assertTrue(at[0].positionInRoot.y == at[3].positionInRoot.y && at[0].positionInRoot.x < at[3].positionInRoot.x)
+    }
+
+    @Test
+    fun `a player who hasn't rolled has none of each face`() = uiTest(TestScreen(411, 891)) {
+        show(game(listOf(6, 6, 6, 6), names, ::withRolls))
+        tap("Ace")
+        assertEquals(List(7) { 1 }, (listOf("0 rolls") + (1..6).map { "Rolled a $it, 0 times" }).map(::says))
+    }
+
     @Test
     fun `captures by opponent are whole on the smallest phone - and under a name its card cuts`() = uiTest(TestScreen(320, 640)) {
-        show(game(listOf(6, 6, 6, 6), listOf("Alex", "WWWWWWWW", "Ace", "Bo"), ::withOpponents))
+        show(game(listOf(6, 6, 6, 6), listOf("Alex", "WWWWWWWW", "Ace", "Bo"), ::withRolls))
         tap("WWWWWWWW")
         // The name over them is read with the totals.
         assertEquals(1, says("WWWWWWWW, 3 captures, captured by 1"))
         compose.onNodeWithContentDescription("Bo, 0 captures, captured by 0").assertIsDisplayed()
+        // And so are the rolls under them.
+        for (spoken in luckysRolls.takeLast(1) + "33 rolls") compose.onNodeWithContentDescription(spoken).assertIsDisplayed()
     }
 
     @Test

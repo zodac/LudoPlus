@@ -168,6 +168,7 @@ object SavedGameJson {
                         put("captures", player.captures)
                         put("timesCaptured", player.timesCaptured)
                         if (player.capturesOf.isNotEmpty()) put("capturesOf", jsonInts(player.capturesOf.entries.sortedBy { it.key }.associate { it.key.toString() to it.value }))
+                        if (player.rolls.isNotEmpty()) put("rolls", jsonInts(player.rolls.entries.sortedBy { it.key }.associate { it.key.toString() to it.value }))
                         // A power-up's, while they last.
                         if (player.doubledRolls > 0) put("doubledRolls", player.doubledRolls)
                         if (player.callUps > 0) put("callUps", player.callUps)
@@ -236,6 +237,7 @@ object SavedGameJson {
                 captures = player.int("captures"),
                 timesCaptured = player.int("timesCaptured"),
                 capturesOf = if ("capturesOf" in player) player.obj("capturesOf").ints().mapKeys { requireNotNull(it.key.toIntOrNull()) { "No player ${it.key}" } } else emptyMap(),
+                rolls = if ("rolls" in player) player.obj("rolls").ints().mapKeys { requireNotNull(it.key.toIntOrNull()) { "No face ${it.key}" } } else emptyMap(),
                 doubledRolls = player.intOrNull("doubledRolls") ?: 0,
                 callUps = player.intOrNull("callUps") ?: 0,
                 timesHaunted = player.intOrNull("timesHaunted") ?: 0,
@@ -257,6 +259,7 @@ object SavedGameJson {
             require(player.capturesOf.all { (whose, count) -> whose in 0..<playerCount && count > 0 } && player.capturesOf.values.sum() <= player.captures) {
                 "The captures by player don't fit"
             }
+            require(player.rolls.all { (face, count) -> face in 1..rules.dieFaces && count > 0 }) { "The rolls by face don't fit" }
         }
         val current = obj.int("current")
         require(current in 0..<playerCount) { "No player $current to play" }

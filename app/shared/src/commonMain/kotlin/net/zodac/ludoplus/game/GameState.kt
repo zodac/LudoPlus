@@ -245,6 +245,11 @@ data class PlayerState(
      * has only those since, so they may add up to less.
      */
     val capturesOf: Map<Int, Int> = emptyMap(),
+    /**
+     * How many times they have rolled each face of the die, those with none absent: each of two dice counts, as rolled (not
+     * doubled). A game saved before it was kept has only those since.
+     */
+    val rolls: Map<Int, Int> = emptyMap(),
     /** How many more of their rolls count double ([PowerUp.DOUBLE]). */
     val doubledRolls: Int = 0,
     /** How many Call Ups they have banked, each to bring a captured pawn straight back out ([PowerUp.CALL_UP]). */

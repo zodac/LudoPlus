@@ -264,7 +264,17 @@
     <!-- A player's captures against each opponent, on a tap of their card: the heading over the pawns of theirs each has captured (over those they have captured, leaderboard_captures), as a screen reader says its count after those ("2 captures, captured by 1"), and what the tap does, for a screen reader. -->
     <string name="game_captures_captured">Captured by</string>
     <string name="game_captures_captured_spoken">captured by %1$d</string>
-    <string name="game_captures_action">Show captures by opponent</string>
+    <string name="game_captures_action">Show captures and rolls</string>
+    <!-- Under those: the heading over how many times the player has rolled each face of the die, as a screen reader says its total, and each face (%1$d is the face, %2$d the times, which the plural goes by). -->
+    <string name="game_rolls">Rolls</string>
+    <plurals name="game_rolls_spoken">
+        <item quantity="one">%1$d roll</item>
+        <item quantity="other">%1$d rolls</item>
+    </plurals>
+    <plurals name="game_rolls_face_spoken">
+        <item quantity="one">Rolled a %1$d, %2$d time</item>
+        <item quantity="other">Rolled a %1$d, %2$d times</item>
+    </plurals>
     <string name="game_player_turn_spoken">playing now</string>
     <string name="game_player_place">%1$s place</string>
     <!-- While a player is still playing: their rank as the game stands (%1$s is "1st", "2nd"...), alone in it or level with another. Shown on their card as the number, on their colour; level with another, with an "=" (game_player_rank_tied, %1$d the number), which is only drawn: spoken, it would be read as "equals". -->

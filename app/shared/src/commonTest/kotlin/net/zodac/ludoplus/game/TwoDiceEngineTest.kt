@@ -51,6 +51,12 @@ class TwoDiceEngineTest {
     }
 
     @Test
+    fun `each die counts as a roll of its face - a double as two`() {
+        assertEquals(mapOf(3 to 1, 5 to 1), game(listOf(10, 20, Y, Y)).roll(3, 5).players[RED].rolls)
+        assertEquals(mapOf(4 to 2), game().roll(4, 4).players[RED].rolls)
+    }
+
+    @Test
     fun `a 6 on either die brings a pawn out with that die - the other then moves any pawn - a 6 alone doesn't roll again`() {
         val rolled = game().roll(2, 6)
         assertEquals((0..3).map { Move(it, Y, 0, roll = 6) }, rolled.waiting.moves)

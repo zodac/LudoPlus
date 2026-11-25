@@ -21,14 +21,16 @@ class LudoEnginePropertyTest {
         val playerCount = 2 + seed % 3
         var state = GameState.new(GameMode.CLASSIC, playerCount = playerCount, first = seed % playerCount)
         var actions = 0
+        var rolled = 0
         while (!state.isFinished) {
             if (++actions > MAX_ACTIONS) fail("Seed $seed: no end after $MAX_ACTIONS actions")
             state = when (val phase = state.phase) {
-                TurnPhase.AwaitingRoll -> LudoEngine.roll(state, random)
+                TurnPhase.AwaitingRoll -> LudoEngine.roll(state, random).also { rolled++ }
                 is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random).pawn)
                 TurnPhase.Finished -> error("unreachable")
             }
             checkInvariants(state, seed)
+            assertEquals(rolled, state.players.sumOf { it.rolls.values.sum() }, "Seed $seed: rolls by face")
         }
         assertEquals((0..<playerCount).toSet(), state.finishingOrder.toSet(), "Seed $seed: every player placed once")
         assertEquals(playerCount, state.finishingOrder.size)
