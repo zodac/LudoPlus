@@ -24,7 +24,7 @@ import net.zodac.ludoplus.ui.game.GameContent
 import net.zodac.ludoplus.ui.game.StartedGame
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
 
-/** The player cards over the board: each player's rank as the game stands, and a name too long for its card. */
+/** The player cards over the board: each player's rank as the game stands, and what a tap on one shows. */
 class PlayerCardTest : UiTest() {
 
     private val showcase = Showcase { compose }
@@ -63,7 +63,6 @@ class PlayerCardTest : UiTest() {
 
     @Test
     fun `a tied rank is drawn with an equals sign - partners' shared one isn't`() = uiTest(TestScreen(411, 891)) {
-        fun drawn(text: String) = compose.onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes().size
         show(game(listOf(3, 1, 4, 3), names))
         assertEquals(listOf(2, 0, 1, 1), listOf("=2", "2", "1", "4").map(::drawn))
         // It isn't said: "=2" would be read as "equals 2".
@@ -90,21 +89,53 @@ class PlayerCardTest : UiTest() {
         assertEquals("4 pawns left, 1st place", spoken("Ace"))
     }
 
+    private fun withCaptures(game: GameState): GameState = game.copy(
+        players = game.players.mapIndexed { i, it -> if (i == 1) it.copy(captures = 3, timesCaptured = 1) else if (i == 2) it.copy(timesCaptured = 2) else it },
+    )
+
+    private fun drawn(text: String): Int = compose.onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes().size
+
     @Test
-    fun `a tap on a name too long for its card shows the whole of it - and a name that fits shows nothing`() = uiTest(TestScreen(360, 800)) {
+    fun `a card says its player's captures and times captured last - neither while there are none of either`() = uiTest(TestScreen(411, 891)) {
+        show(game(listOf(6, 6, 6, 6), names, ::withCaptures))
+        assertEquals("6 pawns left, playing now", spoken("Alex"))
+        assertEquals("6 pawns left, 3 captures, 1 captured", spoken("Lucky"))
+        assertEquals("6 pawns left, 0 captures, 2 captured", spoken("Ace"))
+    }
+
+    @Test
+    fun `a tap on a card shows its player's captures and times captured - until a tap on another shows theirs`() = uiTest(TestScreen(411, 891)) {
+        show(game(listOf(6, 6, 6, 6), names, ::withCaptures))
+        assertEquals(listOf(0, 0), listOf("3 captures", "1 captured").map(::drawn))
+        card("Lucky").performTouchInput { click() }
+        compose.waitForIdle()
+        assertEquals(listOf(1, 1), listOf("3 captures", "1 captured").map(::drawn))
+        // It outlasts a plain tooltip's time.
+        compose.mainClock.advanceTimeBy(10_000)
+        compose.waitForIdle()
+        assertEquals(listOf(1, 1), listOf("3 captures", "1 captured").map(::drawn))
+
+        card("Alex").performTouchInput { click() }
+        compose.waitForIdle()
+        assertEquals(listOf(0, 0), listOf("3 captures", "1 captured").map(::drawn))
+        assertEquals(listOf(1, 1), listOf("0 captures", "0 captured").map(::drawn))
+    }
+
+    @Test
+    fun `a tap on a name too long for its card shows the whole of it - and one that fits is not repeated`() = uiTest(TestScreen(360, 800)) {
         show(game(listOf(6, 6, 6, 6), listOf("Alex", "WWWWWWWW", "Ace", "Bo")))
-        val long = compose.onAllNodesWithText("WWWWWWWW")
-        val before = long.fetchSemanticsNodes().size
-        // The whole name is read with the card, so TalkBack is handed no button for it.
+        val before = drawn("WWWWWWWW")
+        // All the tooltip says is read with the card, so TalkBack is handed no button for it.
         assertEquals(false, SemanticsActions.OnClick in card("WWWWWWWW").fetchSemanticsNode().config)
         card("WWWWWWWW").performTouchInput { click() }
         compose.waitForIdle()
-        assertEquals(before + 1, long.fetchSemanticsNodes().size)
+        assertEquals(before + 1, drawn("WWWWWWWW"))
 
         show(game(listOf(6, 6, 6, 6), listOf("Alex", "WWWWWWWW", "Ace", "Bo")))
-        val short = compose.onAllNodesWithText("Bo").fetchSemanticsNodes().size
+        val short = drawn("Bo")
         card("Bo").performTouchInput { click() }
         compose.waitForIdle()
-        assertEquals(short, compose.onAllNodesWithText("Bo").fetchSemanticsNodes().size)
+        assertEquals(1, drawn("0 captures"))
+        assertEquals(short, drawn("Bo"))
     }
 }

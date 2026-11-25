@@ -97,6 +97,8 @@ import net.zodac.ludoplus.resources.game_die_used_spoken
 import net.zodac.ludoplus.resources.game_over_results
 import net.zodac.ludoplus.resources.game_over_team_winner
 import net.zodac.ludoplus.resources.game_over_winner
+import net.zodac.ludoplus.resources.gameover_captured
+import net.zodac.ludoplus.resources.gameover_captures
 import net.zodac.ludoplus.resources.gameover_squares
 import net.zodac.ludoplus.resources.game_player_pawns_home_spoken
 import net.zodac.ludoplus.resources.game_player_pawns_left_spoken
@@ -656,6 +658,7 @@ private fun playerCardsHeight(rows: Int, compact: Boolean): Dp {
     return (line + cardPadding(compact) * 2) * rows + cardGap(compact) * (rows - 1)
 }
 
+/** A player's card: a tap on it shows how many captures they have made and had made of them, under their whole name where the card cuts it. */
 @Composable
 private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolean, modifier: Modifier) {
     val player = game.players[index]
@@ -681,8 +684,11 @@ private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolea
         tied -> stringResource(Res.string.game_player_rank_tied_spoken, ordinal(rank))
         else -> stringResource(Res.string.game_player_rank_spoken, ordinal(rank))
     }
+    val captures = pluralStringResource(Res.plurals.gameover_captures, side.captures, side.captures)
+    val captured = pluralStringResource(Res.plurals.gameover_captured, side.timesCaptured, side.timesCaptured)
     var nameCut by remember(player.name) { mutableStateOf(false) }
-    val nameTooltip = rememberAppTooltipState()
+    // Up until a tap elsewhere: there's more on it than its usual time is enough to read.
+    val tooltip = rememberAppTooltipState(persistent = true)
     val scope = rememberCoroutineScope()
     val spoken = joinClauses(
         listOfNotNull(
@@ -691,13 +697,13 @@ private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolea
             if (state.rules.claims) state.squaresOf(index).let { pluralStringResource(Res.plurals.gameover_squares, it, it) } else null,
             if (current) stringResource(Res.string.game_player_turn_spoken) else null,
             placeText ?: spokenRank,
-        ),
+        ) + if (side.captures > 0 || side.timesCaptured > 0) listOf(captures, captured) else emptyList(),
     )
     Surface(
-        // Raw taps, not a button: TalkBack reads the whole name with the card, so it has nothing to ask for.
+        // Raw taps, not a button: TalkBack reads all the tooltip says with the card, so it has nothing to ask for.
         modifier = modifier
             .semantics(mergeDescendants = true) { stateDescription = spoken }
-            .then(if (nameCut) Modifier.pointerInput(Unit) { detectTapGestures { scope.launch { nameTooltip.show() } } } else Modifier),
+            .pointerInput(Unit) { detectTapGestures { scope.launch { tooltip.show() } } },
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         border = if (current) BorderStroke(2.dp, colour) else null,
@@ -713,8 +719,14 @@ private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolea
             Box(modifier = Modifier.weight(1f)) {
                 // Not focusable: a tap elsewhere, on the die say, does its own job as the tooltip goes.
                 AppTooltip(
-                    body = { Text(text = player.name, style = MaterialTheme.typography.bodyMedium) },
-                    state = nameTooltip,
+                    body = {
+                        Column {
+                            if (nameCut) Text(player.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = colour)
+                            Text(captures, style = MaterialTheme.typography.bodyMedium)
+                            Text(captured, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    },
+                    state = tooltip,
                     enabled = false,
                     focusable = false,
                 ) {

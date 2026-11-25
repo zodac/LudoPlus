@@ -62,8 +62,11 @@ whose turn it is has an outline in their colour.
     shares one, drawn with an equals sign as DiceFive's is ("=2", `game_player_rank_tied`, on a pill as wide as it needs;
     the maintainer, 2026-11-25), and nobody has one while everyone is level. TalkBack: "currently 2nd", "currently joint 2nd", or "4th place"
     once placed (`PlayerCardTest`).
-- **A name too long for its card** is cut with an ellipsis, and a tap anywhere on the card shows all of it in a tooltip. It
-    isn't a button to TalkBack, which reads the whole name with the card.
+- **A tap anywhere on the card** shows a tooltip (the maintainer, 2026-11-25): "3 captures" and "1 captured", this game's
+    counts as Game Over words them (`PlayerState.captures`, `timesCaptured`: a ghost's aren't captures). A name too long for
+    its card is cut with an ellipsis, and the tooltip has all of it above them; one that fits isn't repeated. It stays until
+    a tap elsewhere, which does its own job too. It isn't a button to TalkBack, which reads the whole name with the card, and
+    the two counts last ("3 captures, 1 captured"), neither while both are 0.
 - **Names** are held to the most players' cap (`model/NameWidth.kt`: 8), in widths, not UTF-16 units: full-width
     characters count two, combining marks none. CPU names are shorter, so the cap never
     cuts one (`AiNameGenerator`, `AiNameGeneratorTest`), though a narrow card may.
