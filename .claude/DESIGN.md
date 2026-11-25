@@ -470,8 +470,10 @@ in `GameRecordRepository.statistics`, off the main thread. Each figure is read w
 - **Ids.**
     - The enum constant is the English title in snake case; the stored `id` is that in lower case
         (`GETTING_COMFORTABLE`/`"getting_comfortable"`), and a title renamed since release leaves both alone (Revenge Is Sweet is
-        `PAYBACK`). `AchievementEngineTest` enforces it. Permanent once released.
-    - Removed achievements' ids are kept in `RETIRED_ACHIEVEMENT_IDS`, never to be used again (eleven, 2026-11-23, ten, 2026-11-24, and four, 2026-11-25).
+        `PAYBACK`, and Public Nuisance `PUBLIC_ENEMY`). `AchievementEngineTest` enforces it. Permanent once released.
+    - Removed achievements' ids are kept in `RETIRED_ACHIEVEMENT_IDS`, never to be used again (eleven,
+        2026-11-23, ten, 2026-11-24, four, 2026-11-25, and one, 2026-11-26: Centurion's, which became Seasoned with a new id, at
+        the maintainer's word, as no one had earned it).
     - String keys follow the constant: `achievement_<constant>_title`, `_description`.
 - **Player 1 only.** The person in seat 1 earns them; every other seat, person or CPU, is an opponent. The tutorial
     earns nothing.
@@ -488,7 +490,10 @@ in `GameRecordRepository.statistics`, off the main thread. Each figure is read w
     own included) Buddy System, on 2026-11-25. Visiting The Neighbours is kept out of nothing, though four pawns can't do it
     against more than three others (the maintainer).
     - Speed Demon is a win within 5 minutes of the game on screen (`StartedGame.playMillis`, as Time Flies counts it; the
-        maintainer, 2026-11-23). Locked Out is 5 turns, and Lifetime Achievement 500 games.
+        maintainer, 2026-11-23). Locked Out is 5 turns.
+    - The climbs were shortened on 2026-11-26 (the maintainer): Getting Comfortable, Regular, Seasoned, Old Hand, and Lifetime
+        Achievement are 5, 10, 25, 50, and 100 games; Champion, Hall Of Famer, and Living Legend 5, 10, and 25 wins; Globetrotter
+        500 pawns home; and Ultramarathon 50,000 squares.
     - Stop Hitting Yourself (15 captured) comes from simulated games: a player is captured about 6 times a game.
     - Easter Eggs: Alliteration (every name starting with one letter), Are You A Developer? (the version tapped seven
         times), Big Fan (a person named "zodac", exactly), Can't Wait To Get Going (the main menu's logo pawn tapped,

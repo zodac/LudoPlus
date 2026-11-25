@@ -69,12 +69,12 @@ class AchievementsRepositoryCloudTest {
         repository.record(mapOf(Achievement.THE_JOURNEY_BEGINS to 500L), mapOf(AchievementCounter.WIN_STREAK to 4))
         repository.mergeCloud(
             CloudAchievements(
-                unlockedAt = mapOf(Achievement.THE_JOURNEY_BEGINS.id to 300L, Achievement.CENTURION.id to 900L, "not_an_achievement" to 1L),
+                unlockedAt = mapOf(Achievement.THE_JOURNEY_BEGINS.id to 300L, Achievement.SEASONED.id to 900L, "not_an_achievement" to 1L),
                 latestCounters = mapOf(AchievementCounter.WIN_STREAK.id to Stamped(0, 2_000L)),
             ),
         )
         val state = repository.current()
-        assertEquals(mapOf(Achievement.THE_JOURNEY_BEGINS to 300L, Achievement.CENTURION to 900L), state.unlockedAt)
+        assertEquals(mapOf(Achievement.THE_JOURNEY_BEGINS to 300L, Achievement.SEASONED to 900L), state.unlockedAt)
         assertEquals(0, state.counter(AchievementCounter.WIN_STREAK))
         // An older streak doesn't.
         repository.mergeCloud(CloudAchievements(latestCounters = mapOf(AchievementCounter.WIN_STREAK.id to Stamped(9, 1_500L))))

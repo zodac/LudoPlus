@@ -45,7 +45,7 @@ val Achievement.icon: ImageVector
         Achievement.WELL_ROLLED -> Symbols.Casino
         Achievement.GETTING_COMFORTABLE -> Symbols.Numbers
         Achievement.REGULAR -> Symbols.EventRepeat
-        Achievement.CENTURION -> Symbols.MilitaryTech
+        Achievement.SEASONED -> Symbols.MilitaryTech
         Achievement.OLD_HAND -> Symbols.Elderly
         Achievement.LIFETIME_ACHIEVEMENT -> Symbols.HistoryEdu
         Achievement.CHAMPION -> Symbols.SocialLeaderboard

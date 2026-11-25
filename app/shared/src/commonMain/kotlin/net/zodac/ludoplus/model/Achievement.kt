@@ -17,8 +17,6 @@ import net.zodac.ludoplus.resources.achievement_bottom_of_the_barrel_description
 import net.zodac.ludoplus.resources.achievement_bottom_of_the_barrel_title
 import net.zodac.ludoplus.resources.achievement_bouncer_description
 import net.zodac.ludoplus.resources.achievement_bouncer_title
-import net.zodac.ludoplus.resources.achievement_centurion_description
-import net.zodac.ludoplus.resources.achievement_centurion_title
 import net.zodac.ludoplus.resources.achievement_champion_description
 import net.zodac.ludoplus.resources.achievement_champion_title
 import net.zodac.ludoplus.resources.achievement_clean_sweep_description
@@ -143,6 +141,8 @@ import net.zodac.ludoplus.resources.achievement_punching_bag_description
 import net.zodac.ludoplus.resources.achievement_punching_bag_title
 import net.zodac.ludoplus.resources.achievement_regular_description
 import net.zodac.ludoplus.resources.achievement_regular_title
+import net.zodac.ludoplus.resources.achievement_seasoned_description
+import net.zodac.ludoplus.resources.achievement_seasoned_title
 import net.zodac.ludoplus.resources.achievement_sitting_ducks_description
 import net.zodac.ludoplus.resources.achievement_sitting_ducks_title
 import net.zodac.ludoplus.resources.achievement_six_pack_description
@@ -304,7 +304,7 @@ enum class CounterMerge {
 const val MAX_ACHIEVEMENT_TITLE_LENGTH = 38
 
 /**
- * The ids of achievements a release shipped, since removed (the maintainer, 2026-11-23 to 2026-11-25). A phone that earned one
+ * The ids of achievements a release shipped, since removed or given another id (the maintainer, 2026-11-23 to 2026-11-26). A phone that earned one
  * keeps its stored key, which nothing reads any more; no new achievement may take one of these ids
  * (`AchievementEngineTest`).
  */
@@ -312,6 +312,7 @@ val RETIRED_ACHIEVEMENT_IDS: Set<String> = setOf(
     "back_to_school",
     "broken_record",
     "buddy_system",
+    "centurion",
     "die_hard",
     "frequent_traveller",
     "full_spread",
@@ -454,49 +455,49 @@ enum class Achievement(
         "getting_comfortable",
         Res.string.achievement_getting_comfortable_title,
         Res.string.achievement_getting_comfortable_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 10,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 5,
     ),
     REGULAR(
         "regular",
         Res.string.achievement_regular_title,
         Res.string.achievement_regular_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 50,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 10,
     ),
-    CENTURION(
-        "centurion",
-        Res.string.achievement_centurion_title,
-        Res.string.achievement_centurion_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 100,
+    SEASONED(
+        "seasoned",
+        Res.string.achievement_seasoned_title,
+        Res.string.achievement_seasoned_description,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 25,
     ),
     OLD_HAND(
         "old_hand",
         Res.string.achievement_old_hand_title,
         Res.string.achievement_old_hand_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 250,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 50,
     ),
     LIFETIME_ACHIEVEMENT(
         "lifetime_achievement",
         Res.string.achievement_lifetime_achievement_title,
         Res.string.achievement_lifetime_achievement_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 500,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_PLAYED, target = 100,
     ),
     CHAMPION(
         "champion",
         Res.string.achievement_champion_title,
         Res.string.achievement_champion_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 10,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 5,
     ),
     HALL_OF_FAMER(
         "hall_of_famer",
         Res.string.achievement_hall_of_famer_title,
         Res.string.achievement_hall_of_famer_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 25,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 10,
     ),
     LIVING_LEGEND(
         "living_legend",
         Res.string.achievement_living_legend_title,
         Res.string.achievement_living_legend_description,
-        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 100,
+        AchievementCategory.MILESTONES, AchievementCounter.GAMES_WON, target = 25,
     ),
     HOT_STREAK(
         "hot_streak",
@@ -691,13 +692,13 @@ enum class Achievement(
         "globetrotter",
         Res.string.achievement_globetrotter_title,
         Res.string.achievement_globetrotter_description,
-        AchievementCategory.RACING, AchievementCounter.PAWNS_HOME, target = 1_000, impossibleIn = setOf(GameMode.SURVIVAL),
+        AchievementCategory.RACING, AchievementCounter.PAWNS_HOME, target = 500, impossibleIn = setOf(GameMode.SURVIVAL),
     ),
     ULTRAMARATHON(
         "ultramarathon",
         Res.string.achievement_ultramarathon_title,
         Res.string.achievement_ultramarathon_description,
-        AchievementCategory.RACING, AchievementCounter.SQUARES_MOVED, target = 100_000,
+        AchievementCategory.RACING, AchievementCounter.SQUARES_MOVED, target = 50_000,
     ),
 
     // ---- Winning: alphabetical ------------------------------------------------------------------------------------

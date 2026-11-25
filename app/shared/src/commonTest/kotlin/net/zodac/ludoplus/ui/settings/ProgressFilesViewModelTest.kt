@@ -113,11 +113,11 @@ class ProgressFilesViewModelTest {
     @Test
     fun `an import merges the file in - and says how it went`() = runTest {
         val files = FakeProgressFiles()
-        val other = CloudSave(achievements = CloudAchievements(unlockedAt = mapOf("centurion" to 7L)))
+        val other = CloudSave(achievements = CloudAchievements(unlockedAt = mapOf("seasoned" to 7L)))
         files.opened = ProgressFileResult.Done(ProgressFileCodec.encode(other, files.key))
         val viewModel = viewModel()
         assertEquals(listOf(ProgressOutcome.IMPORTED), messages(viewModel) { viewModel.importProgress(files) })
-        assertEquals(mapOf("the_journey_begins" to 5L, "centurion" to 7L), save.local.achievements.unlockedAt)
+        assertEquals(mapOf("the_journey_begins" to 5L, "seasoned" to 7L), save.local.achievements.unlockedAt)
 
         files.opened = ProgressFileResult.Done("not a progress file".encodeToByteArray())
         assertEquals(listOf(ProgressOutcome.NOT_A_PROGRESS_FILE), messages(viewModel) { viewModel.importProgress(files) })

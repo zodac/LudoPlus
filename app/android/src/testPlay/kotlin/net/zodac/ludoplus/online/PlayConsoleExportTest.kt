@@ -79,9 +79,9 @@ class PlayConsoleExportTest {
             val type = achievement.playType as? PlayAchievementType.Incremental ?: continue
             assertTrue("$achievement: $type", type.steps in 2..PLAY_MAX_STEPS && type.steps * type.perStep >= achievement.target)
         }
-        // 100,000 squares, scaled to Play's 10,000 steps.
-        assertEquals(PlayAchievementType.Incremental(steps = 10_000, perStep = 10), Achievement.ULTRAMARATHON.playType)
-        assertEquals(PlayAchievementType.Incremental(steps = 100, perStep = 1), Achievement.CENTURION.playType)
+        // 50,000 squares, scaled to Play's 10,000 steps.
+        assertEquals(PlayAchievementType.Incremental(steps = 10_000, perStep = 5), Achievement.ULTRAMARATHON.playType)
+        assertEquals(PlayAchievementType.Incremental(steps = 25, perStep = 1), Achievement.SEASONED.playType)
         // A streak can fall back, which Play's steps can't.
         assertEquals(PlayAchievementType.Standard, Achievement.UNSTOPPABLE.playType)
     }

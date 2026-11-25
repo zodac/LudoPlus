@@ -148,10 +148,10 @@ class OnlineSyncTest {
 
     @Test
     fun `unlocks only the service has are restored here - as of now - with no counters touched`() = runTest {
-        val services = SyncServices("ann", remote = setOf(Achievement.THE_JOURNEY_BEGINS.id, Achievement.CENTURION.id))
+        val services = SyncServices("ann", remote = setOf(Achievement.THE_JOURNEY_BEGINS.id, Achievement.SEASONED.id))
         val store = InMemoryAchievementStore(state(Achievement.THE_JOURNEY_BEGINS, counters = mapOf(AchievementCounter.GAMES_PLAYED to 7)))
         assertEquals(1, sync(services, store, OnlineSettingsRepository(InMemoryPreferences())).reconcile())
-        assertEquals(mapOf(Achievement.THE_JOURNEY_BEGINS to 5L, Achievement.CENTURION to now), store.mutableState.value.unlockedAt)
+        assertEquals(mapOf(Achievement.THE_JOURNEY_BEGINS to 5L, Achievement.SEASONED to now), store.mutableState.value.unlockedAt)
         assertEquals(mapOf(AchievementCounter.GAMES_PLAYED to 7), store.mutableState.value.counters)
         assertTrue(services.unlocked.isEmpty())
     }
@@ -161,8 +161,8 @@ class OnlineSyncTest {
         val services = SyncServices("ann")
         val store = InMemoryAchievementStore(state(counters = mapOf(AchievementCounter.GAMES_PLAYED to 7, AchievementCounter.WIN_STREAK to 2)))
         sync(services, store, OnlineSettingsRepository(InMemoryPreferences())).reconcile()
-        assertEquals(7, services.progress[Achievement.GETTING_COMFORTABLE.id])
-        assertEquals(7, services.progress[Achievement.CENTURION.id])
+        assertEquals(7, services.progress[Achievement.REGULAR.id])
+        assertEquals(7, services.progress[Achievement.SEASONED.id])
         assertFalse(Achievement.HOT_STREAK.id in services.progress)
         assertFalse(Achievement.UNTOUCHABLE.id in services.progress)
         assertFalse(Achievement.WELL_ROLLED.id in services.progress)
@@ -176,7 +176,7 @@ class OnlineSyncTest {
         val sync = sync(services, store, settings)
         sync.reconcile()
         val first = services.progressSends.toList()
-        assertTrue((Achievement.GETTING_COMFORTABLE.id to 7) in first)
+        assertTrue((Achievement.REGULAR.id to 7) in first)
 
         // Back from the background with nothing new: nothing sent.
         sync.reconcile()
@@ -186,7 +186,7 @@ class OnlineSyncTest {
         store.record(emptyMap(), mapOf(AchievementCounter.GAMES_PLAYED to 8))
         sync.reconcile()
         val moved = services.progressSends.drop(first.size)
-        assertTrue((Achievement.GETTING_COMFORTABLE.id to 8) in moved)
+        assertTrue((Achievement.REGULAR.id to 8) in moved)
         assertTrue(moved.all { (_, steps) -> steps == 8 }, "only the games-played totals moved: $moved")
 
         // One the service couldn't be handed is tried again next time.
@@ -196,7 +196,7 @@ class OnlineSyncTest {
         services.takesProgress = true
         val beforeRetry = services.progressSends.size
         sync.reconcile()
-        assertTrue((Achievement.GETTING_COMFORTABLE.id to 9) in services.progressSends.drop(beforeRetry))
+        assertTrue((Achievement.REGULAR.id to 9) in services.progressSends.drop(beforeRetry))
 
         // The next launch sends them all once more.
         val sentThisLaunch = services.progressSends.size
@@ -208,18 +208,18 @@ class OnlineSyncTest {
     fun `the first account merges with the device - and so does the same one again`() = runTest {
         val settings = OnlineSettingsRepository(InMemoryPreferences())
         val store = InMemoryAchievementStore(state(Achievement.THE_JOURNEY_BEGINS))
-        val ann = SyncServices("ann", remote = setOf(Achievement.CENTURION.id))
+        val ann = SyncServices("ann", remote = setOf(Achievement.SEASONED.id))
         sync(ann, store, settings).reconcile()
         assertEquals("ann", settings.syncedAccount.first())
         assertEquals(listOf(Achievement.THE_JOURNEY_BEGINS.id), ann.unlocked)
-        assertEquals(setOf(Achievement.THE_JOURNEY_BEGINS, Achievement.CENTURION), store.mutableState.value.unlockedAt.keys)
+        assertEquals(setOf(Achievement.THE_JOURNEY_BEGINS, Achievement.SEASONED), store.mutableState.value.unlockedAt.keys)
 
         // Earned signed out, then the same account again: sent up, nothing wiped.
         store.record(mapOf(Achievement.GOTCHA to 9L), emptyMap())
-        val again = SyncServices("ann", remote = setOf(Achievement.THE_JOURNEY_BEGINS.id, Achievement.CENTURION.id))
+        val again = SyncServices("ann", remote = setOf(Achievement.THE_JOURNEY_BEGINS.id, Achievement.SEASONED.id))
         sync(again, store, settings).reconcile()
         assertEquals(listOf(Achievement.GOTCHA.id), again.unlocked)
-        assertEquals(setOf(Achievement.THE_JOURNEY_BEGINS, Achievement.CENTURION, Achievement.GOTCHA), store.mutableState.value.unlockedAt.keys)
+        assertEquals(setOf(Achievement.THE_JOURNEY_BEGINS, Achievement.SEASONED, Achievement.GOTCHA), store.mutableState.value.unlockedAt.keys)
     }
 
     @Test
@@ -228,9 +228,9 @@ class OnlineSyncTest {
         val store = InMemoryAchievementStore(state(Achievement.THE_JOURNEY_BEGINS, counters = mapOf(AchievementCounter.GAMES_PLAYED to 7)))
         sync(SyncServices("ann", remote = setOf(Achievement.THE_JOURNEY_BEGINS.id)), store, settings).reconcile()
 
-        val bob = SyncServices("bob", remote = setOf(Achievement.CENTURION.id))
+        val bob = SyncServices("bob", remote = setOf(Achievement.SEASONED.id))
         assertEquals(1, sync(bob, store, settings).reconcile())
-        assertEquals(setOf(Achievement.CENTURION), store.mutableState.value.unlockedAt.keys)
+        assertEquals(setOf(Achievement.SEASONED), store.mutableState.value.unlockedAt.keys)
         assertEquals(emptyMap(), store.mutableState.value.counters)
         assertTrue(bob.unlocked.isEmpty() && bob.progress.isEmpty())
         assertEquals("bob", settings.syncedAccount.first())
@@ -445,10 +445,10 @@ class OnlineSyncTest {
     @Test
     fun `an achievement the merged counters have reached is unlocked quietly - and sent to the service`() = runTest {
         val services = SyncServices("ann").apply { cloud = found(CloudSave(records = records("tablet"))) }
-        val store = InMemoryAchievementStore(state(counters = mapOf(AchievementCounter.GAMES_PLAYED to Achievement.CENTURION.target)))
+        val store = InMemoryAchievementStore(state(counters = mapOf(AchievementCounter.GAMES_PLAYED to Achievement.SEASONED.target)))
         sync(services, store, OnlineSettingsRepository(InMemoryPreferences()), cloudSave = SyncCloudSave()).reconcile()
-        assertEquals(now, store.mutableState.value.unlockedAt[Achievement.CENTURION])
-        assertTrue(Achievement.CENTURION.id in services.unlocked)
+        assertEquals(now, store.mutableState.value.unlockedAt[Achievement.SEASONED])
+        assertTrue(Achievement.SEASONED.id in services.unlocked)
     }
 
     @Test

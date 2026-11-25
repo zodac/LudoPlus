@@ -96,17 +96,19 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
 - **Mapping**: `PlayGamesIds.kt`, empty until the Console has ids; an achievement with no id is never sent. From the
     first id, `PlayGamesIdsTest` fails until every achievement is mapped. `PlayGamesAchievements.kt` sets each one's Play
     type and visibility (`playType`, `playHidden`): a climbing total is incremental (steps ≤10,000, so Ultramarathon's
-    100,000 squares are 10 a step), a streak or one-off standard.
+    50,000 squares are 5 a step), a streak or one-off standard.
 - **Published types and steps never change.** Once published, a rule change here keeps the type and steps as
     published. Check a new incremental achievement's type and steps in Play Console before publishing: a mismatch fails
     every unlock silently.
 - **Points** by tier (`PlayConsoleAchievements.kt`, test sources; proposed 2026-11-18, for the maintainer's review):
-    trivial 5, easy 10, medium 15, hard 30, very hard 55, extreme 90 (2026-11-25), Completionist 100 (as DiceFive's), every
+    trivial 5, easy 10, medium 15, hard 45, very hard 70, extreme 80 (2026-11-26), Completionist 100 (as DiceFive's), every
     Easter egg 5. That spends all 2,000 (`PlayConsoleExportTest`), so a new achievement needs points freed first.
     - **Tiers** were retuned on 2026-11-25 from simulated games (1,000 a mode, four Medium CPUs): roughly, trivial comes up in
         over 65% of games, easy 15-65%, medium 2-25%, and hard under 5%. A climb goes by the games it takes: about 100 hard,
         250 very hard, and 400 or more extreme. One that more or fewer players, or aiming for it, makes far easier sits lower
         than its rate; Loaded Dice (easy) and Visiting The Neighbours (medium) are the maintainer's.
+    - **The climbs' tiers moved** on 2026-11-26, when the maintainer shortened them: in 1,000 simulated Classic games played
+        to the end, 500 pawns home is about 135 games, and 50,000 squares 145 (hard, as 100 games and 25 wins are).
 - **Icons**: each its own (Play rejects two the same; `PlayConsoleExportTest` checks).
 
 ## Leaderboards

@@ -77,7 +77,7 @@ class AchievementsViewModel(
     private var unlockedCountTapCount = 0
 
     // A counter achievement's progress is a real, persisted number shared with other achievements
-    // on the same counter (e.g. GAMES_PLAYED backs GETTING_COMFORTABLE/50/100) - superuser mode doesn't fake it. Instead each ticked
+    // on the same counter (e.g. GAMES_PLAYED backs GETTING_COMFORTABLE, REGULAR, and SEASONED) - superuser mode doesn't fake it. Instead each ticked
     // achievement gets its own purely in-memory bump, added on top of its real progress only for
     // display and for deciding when to force-unlock it; nothing here is ever persisted, so it can't
     // corrupt a shared counter.
@@ -189,7 +189,7 @@ class AchievementsViewModel(
             // Grouped by theme and, within a theme, easiest first - which is just the catalogue's
             // own declaration order, so a ladder stays a ladder whether its achievements are
             // earned yet or not. Alphabetical would scatter "Getting Comfortable", "Regular" and
-            // "Centurion" across the list; splitting earned ones into their own section would
+            // "Seasoned" across the list; splitting earned ones into their own section would
             // scatter the ladders themselves.
             groups = items
                 .groupBy { it.achievement.category }

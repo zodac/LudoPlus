@@ -83,9 +83,9 @@ class ProgressTransferTest {
     @Test
     fun `an achievement the merged counters have reached is unlocked quietly`() = runTest {
         val to = device()
-        to.achievements.record(emptyMap(), mapOf(AchievementCounter.GAMES_PLAYED to Achievement.CENTURION.target))
+        to.achievements.record(emptyMap(), mapOf(AchievementCounter.GAMES_PLAYED to Achievement.SEASONED.target))
         to.transfer.import(device().apply { store.merge(phone) }.transfer.export(key), key)
-        assertEquals(now, to.achievements.current().unlockedAt[Achievement.CENTURION])
+        assertEquals(now, to.achievements.current().unlockedAt[Achievement.SEASONED])
     }
 
     @Test

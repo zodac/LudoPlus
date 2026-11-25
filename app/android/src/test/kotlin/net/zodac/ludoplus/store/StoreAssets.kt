@@ -181,10 +181,10 @@ internal object StoreState {
 
     /** The totals behind the long climbs: past those earned, and some way short of those left ([Scenes.LOCKED]). */
     private val STAGED_COUNTERS = mapOf(
-        AchievementCounter.GAMES_PLAYED to 312,
+        AchievementCounter.GAMES_PLAYED to 86,
         AchievementCounter.CAPTURES to 748,
-        AchievementCounter.PAWNS_HOME to 861,
-        AchievementCounter.SQUARES_MOVED to 64_230,
+        AchievementCounter.PAWNS_HOME to 318,
+        AchievementCounter.SQUARES_MOVED to 29_840,
     )
 
     /** Saves [game] as the game to continue. */

@@ -44,6 +44,17 @@ class AchievementEngineTest {
     }
 
     @Test
+    fun `each climb on games - wins - pawns home - and squares has its targets`() {
+        val expected = mapOf(
+            AchievementCounter.GAMES_PLAYED to listOf(5, 10, 25, 50, 100),
+            AchievementCounter.GAMES_WON to listOf(5, 10, 25),
+            AchievementCounter.PAWNS_HOME to listOf(10, 500),
+            AchievementCounter.SQUARES_MOVED to listOf(50_000),
+        )
+        assertEquals(expected, expected.mapValues { (counter, _) -> Achievement.entries.filter { it.counter == counter }.map { it.target } })
+    }
+
+    @Test
     fun `Milestones are the firsts - then a ladder at a time - rolls, games played, wins, win streaks, and captures - then Completionist`() {
         val counters = Achievement.entries.filter { it.category == AchievementCategory.MILESTONES }.map { it.counter }
         val runs = counters.fold(listOf<AchievementCounter?>()) { runs, counter -> if (runs.isNotEmpty() && runs.last() == counter) runs else runs + counter }
@@ -121,25 +132,25 @@ class AchievementEngineTest {
 
     @Test
     fun `counts are added to the stored counters - and a counter reaching a target unlocks it`() {
-        val before = AchievementsState(counters = mapOf(AchievementCounter.GAMES_PLAYED to 9, AchievementCounter.CAPTURES to 3))
+        val before = AchievementsState(counters = mapOf(AchievementCounter.GAMES_PLAYED to 4, AchievementCounter.CAPTURES to 3))
         val update = AchievementEngine.evaluate(GameFeats(counts = mapOf(AchievementCounter.GAMES_PLAYED to 1, AchievementCounter.CAPTURES to 2)), before, NOW)
-        assertEquals(mapOf(AchievementCounter.GAMES_PLAYED to 10, AchievementCounter.CAPTURES to 5), update.counters)
+        assertEquals(mapOf(AchievementCounter.GAMES_PLAYED to 5, AchievementCounter.CAPTURES to 5), update.counters)
         assertEquals(listOf(Achievement.GETTING_COMFORTABLE), update.newlyUnlocked)
         assertEquals(mapOf(Achievement.GETTING_COMFORTABLE to NOW), update.unlockedAt())
-        // Regular (50) moved from 9 to 10, not across a quarter (12.5), nor did any longer ladder; Pest (10) from 3 to 5,
-        // across its quarter (2.5) to its half: one banner.
-        assertEquals(listOf(AchievementProgress(Achievement.PEST, 3, 5)), update.progressed)
+        // Regular (10) moved from 4 to 5, across its half, and no longer ladder across a quarter (Seasoned's is 6.25); Pest
+        // (10) from 3 to 5, across its half too.
+        assertEquals(listOf(AchievementProgress(Achievement.REGULAR, 4, 5), AchievementProgress(Achievement.PEST, 3, 5)), update.progressed)
     }
 
     @Test
     fun `a running total's progress banner shows at each quarter - never alongside its own unlock`() {
-        val before = AchievementsState(unlockedAt = mapOf(Achievement.HOMECOMING to 5L), counters = mapOf(AchievementCounter.PAWNS_HOME to 249))
+        val before = AchievementsState(unlockedAt = mapOf(Achievement.HOMECOMING to 5L), counters = mapOf(AchievementCounter.PAWNS_HOME to 124))
         val update = AchievementEngine.evaluate(GameFeats(counts = mapOf(AchievementCounter.PAWNS_HOME to 1)), before, NOW)
-        assertEquals(listOf(AchievementProgress(Achievement.GLOBETROTTER, 249, 250)), update.progressed)
+        assertEquals(listOf(AchievementProgress(Achievement.GLOBETROTTER, 124, 125)), update.progressed)
 
         val unlocking = AchievementEngine.evaluate(
             GameFeats(counts = mapOf(AchievementCounter.PAWNS_HOME to 1)),
-            AchievementsState(unlockedAt = mapOf(Achievement.HOMECOMING to 5L), counters = mapOf(AchievementCounter.PAWNS_HOME to 999)),
+            AchievementsState(unlockedAt = mapOf(Achievement.HOMECOMING to 5L), counters = mapOf(AchievementCounter.PAWNS_HOME to 499)),
             NOW,
         )
         assertEquals(listOf(Achievement.GLOBETROTTER), unlocking.newlyUnlocked)
