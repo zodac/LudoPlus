@@ -80,7 +80,8 @@ internal class ArtNode(private val view: View) {
     /** Takes on [art] at the size of [scope], [margin] past it each way. Reads nothing that would redraw what draws this. */
     fun show(scope: DrawScope, margin: Float, art: DrawScope.() -> Unit) {
         this.art = art
-        density = scope
+        // Not the scope itself, which is at its density only while it draws.
+        density = Density(scope.density, scope.fontScale)
         layoutDirection = scope.layoutDirection
         size = scope.size
         this.margin = margin

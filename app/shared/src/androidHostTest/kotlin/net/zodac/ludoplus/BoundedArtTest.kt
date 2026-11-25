@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
@@ -53,9 +54,9 @@ class BoundedArtTest : UiTest() {
         ShadowLooper.idleMainLooper()
     }
 
-    /** Shows [art] in [node], as a draw of the view does, at 20 x 10 with [margin] past it. */
-    private fun show(node: ArtNode, margin: Float = 0f, art: androidx.compose.ui.graphics.drawscope.DrawScope.() -> Unit) {
-        CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, Canvas(ImageBitmap(1, 1)), Size(20f, 10f)) {
+    /** Shows [art] in [node], as a draw of the view at [density] does, at 20 x 10 with [margin] past it. */
+    private fun show(node: ArtNode, margin: Float = 0f, density: Density = Density(1f), art: DrawScope.() -> Unit) {
+        CanvasDrawScope().draw(density, LayoutDirection.Ltr, Canvas(ImageBitmap(1, 1)), Size(20f, 10f)) {
             node.show(this, margin, art)
         }
     }
@@ -86,6 +87,31 @@ class BoundedArtTest : UiTest() {
         assertEquals(2, draws)
         assertEquals(1, parent.framesAsked)
         assertEquals(0, view.invalidations)
+        node.release()
+    }
+
+    @Test
+    fun aRedrawIsAtTheDensityAndFontScaleItWasShownAt() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val view = View(context)
+        FrameLayout(context).addView(view)
+        val node = ArtNode(view)
+        val seconds = mutableFloatStateOf(0f)
+        // State made this frame isn't yet "changed" by a write: an app's has been around longer.
+        Snapshot.notifyObjectsInitialized()
+        val drawnAt = mutableListOf<List<Float>>()
+        show(node, density = Density(3f, 1.5f)) {
+            seconds.floatValue
+            drawnAt += listOf(density, fontScale, 10.dp.toPx(), 60f.toSp().value)
+        }
+
+        // Once the draw that showed it is over.
+        seconds.floatValue = 1f
+        applyChanges()
+
+        assertEquals(2, drawnAt.size)
+        assertEquals(listOf(3f, 1.5f, 30f), drawnAt[0].take(3))
+        assertEquals(drawnAt[0], drawnAt[1])
         node.release()
     }
 
