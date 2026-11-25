@@ -273,6 +273,7 @@
     <string name="game_swap_decline">Don't swap</string>
     <!-- The line under the die saying what to do now. %1$s is the player's name, %2$d the roll. -->
     <string name="game_prompt_roll">%1$s, tap the die to roll.</string>
+    <!-- A player not at this phone, waiting for their roll; or anyone whose die is still tumbling, where its roll has no move. -->
     <string name="game_prompt_cpu_roll">%1$s is rolling.</string>
     <!-- The same, when the last move earned another roll in the same turn (a 6, a capture, or a pawn home). -->
     <string name="game_prompt_roll_again">%1$s, roll again: tap the die.</string>

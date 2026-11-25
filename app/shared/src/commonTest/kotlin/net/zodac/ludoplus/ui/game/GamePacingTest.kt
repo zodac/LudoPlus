@@ -17,7 +17,10 @@ class GamePacingTest {
     fun `a CPU waits its think plus whatever the screen is still showing`() {
         assertEquals(500, pacing.waitAfter(null, HOME))
         assertEquals(500L + DIE_TUMBLE_MILLIS, pacing.waitAfter(GameEvent.Rolled(1, 4), HOME))
-        assertEquals(500L + DIE_TUMBLE_MILLIS, pacing.waitAfter(GameEvent.NoMove(1, 4), HOME))
+        // A roll that passes the turn on is shown a moment once the die has settled; one with another try isn't.
+        assertEquals(500L + DIE_TUMBLE_MILLIS + TURN_PASSED_MILLIS, pacing.waitAfter(GameEvent.NoMove(1, 4), HOME))
+        assertEquals(500L + DIE_TUMBLE_MILLIS + TURN_PASSED_MILLIS, pacing.waitAfter(GameEvent.RollAgainLimit(1, 6), HOME))
+        assertEquals(500L + DIE_TUMBLE_MILLIS, pacing.waitAfter(GameEvent.NoMove(1, 4, triesLeft = 1), HOME))
         // Three hops, then a capture's flight back to its yard.
         assertEquals(500L + 3 * PAWN_STEP_MILLIS, pacing.waitAfter(GameEvent.Moved(1, 3, Move(0, 10, 13), finished = false), HOME))
         assertEquals(
@@ -66,8 +69,8 @@ class GamePacingTest {
         val skipping = GameEvent.Moved(1, 3, Move(0, 10, 15, skipped = listOf(11, 12)), finished = false)
         assertEquals(3L * PAWN_STEP_MILLIS, pacing.playOutMillis(skipping, HOME))
         assertEquals(3L * PAWN_STEP_MILLIS + VANISH_MILLIS, pacing.playOutMillis(skipping, HOME, vanishing = true))
-        assertEquals(DIE_TUMBLE_MILLIS + 3L * GHOST_STEP_MILLIS, pacing.playOutMillis(GameEvent.NoMove(1, 4), HOME, GhostMove(0, 20, -3)))
-        assertEquals(500L + DIE_TUMBLE_MILLIS + 3 * GHOST_STEP_MILLIS, pacing.waitAfter(GameEvent.NoMove(1, 4), HOME, GhostMove(0, 20, -3)))
+        assertEquals(DIE_TUMBLE_MILLIS + TURN_PASSED_MILLIS + 3L * GHOST_STEP_MILLIS, pacing.playOutMillis(GameEvent.NoMove(1, 4), HOME, GhostMove(0, 20, -3)))
+        assertEquals(500L + DIE_TUMBLE_MILLIS + TURN_PASSED_MILLIS + 3 * GHOST_STEP_MILLIS, pacing.waitAfter(GameEvent.NoMove(1, 4), HOME, GhostMove(0, 20, -3)))
     }
 
     @Test

@@ -213,8 +213,18 @@ class GameViewModel(
     val settled: StateFlow<Boolean> = _settled.asStateFlow()
     private var settling: Job? = null
 
+    private val _rollShown = MutableStateFlow(true)
+
+    /**
+     * Whether the screen has shown the last roll, if that was the last action ([GamePacing.rollShownMillis]): until then
+     * a roll with no move hasn't been seen, so nobody is asked for the next. In the tutorial too.
+     */
+    val rollShown: StateFlow<Boolean> = _rollShown.asStateFlow()
+    private var showingRoll: Job? = null
+
     /** The action that brought the game to [state] is being played out; null for a game new here, with none to play. */
     private fun settle(state: GameState?) {
+        showRoll(state)
         settling?.cancel()
         val playOut = if (state == null || tutorial != null) 0 else pacing.playOutMillis(state)
         _settled.value = playOut == 0L
@@ -222,6 +232,18 @@ class GameViewModel(
         settling = viewModelScope.launch {
             pausableDelay(playOut)
             _settled.value = true
+        }
+    }
+
+    /** The roll that brought the game to [state], if one did, is being shown; null for a game new here. */
+    private fun showRoll(state: GameState?) {
+        showingRoll?.cancel()
+        val millis = pacing.rollShownMillis(state?.lastEvent)
+        _rollShown.value = millis == 0L
+        if (millis == 0L) return
+        showingRoll = viewModelScope.launch {
+            pausableDelay(millis)
+            _rollShown.value = true
         }
     }
 

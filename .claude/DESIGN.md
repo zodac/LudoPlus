@@ -656,7 +656,8 @@ Each category is two lists in the same order:
     running out. Settings switches sound and vibration off separately; vibration is wired like sound
     (`rememberAppHaptics`).
 - **The roll.** The die tumbles for `DIE_TUMBLE_MILLIS`, flicking through random faces as it turns, and lands on its result;
-    a style that tumbles itself is handed the clock (`LocalDieTumbleMillis`).
+    a style that tumbles itself is handed the clock (`LocalDieTumbleMillis`). A roll that passes the turn on then shows for
+    `TURN_PASSED_MILLIS` before the next player is prompted (`rollMillis`; `UI_BOARD.md`, "The die and its line").
 - **Animations setting** (`AnimationLevel`): High (uncapped), Medium (60fps, ambient decoration still), Low (30fps), or Off,
     each a preset of the Graphics page's **Advanced graphics settings** (`MotionSettings`): Off, 30fps, 60fps, or Max for
     the Die's and Background's decoration, Menus & pages, Achievement banners, Celebrations, the Die roll, and Pawn

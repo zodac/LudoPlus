@@ -91,7 +91,8 @@ internal fun rememberGhostMotion(state: GameState): GhostMotion {
     val firstSeen = remember { latest[0] }
     val move = state.ghostMove?.also { latest[0] = it } ?: latest[0]
     val reduce = groupReduceMotion(MotionGroup.PAWN_MOVE)
-    val before = remember(move) { turnMillis(state) }
+    val dieAnimated = !groupReduceMotion(MotionGroup.DIE_ROLL)
+    val before = remember(move) { turnMillis(state, dieAnimated) }
     val drifting = remember(move) { if (move == null || move === firstSeen || reduce) null else driftingGhost(state, move) }
     val clock = remember(move) { Animatable(-before.toFloat()) }
     var done by remember(move) { mutableStateOf(drifting == null) }
@@ -104,11 +105,11 @@ internal fun rememberGhostMotion(state: GameState): GhostMotion {
     return GhostMotion(if (done) null else drifting, clock.asState())
 }
 
-/** How long the turn that [state]'s ghost move came after takes to play out: its pawn's move, or its die's tumble. */
-internal fun turnMillis(state: GameState): Int = when (val event = state.lastEvent) {
+/** How long the turn that [state]'s ghost move came after takes to play out: its pawn's move, or its roll's showing, where the die is animated. */
+internal fun turnMillis(state: GameState, dieAnimated: Boolean): Int = when (val event = state.lastEvent) {
     is GameEvent.Moved -> moveMillis(event, state.board.homeProgress)
     null -> 0
-    else -> DIE_TUMBLE_MILLIS
+    else -> if (dieAnimated) rollMillis(event) else 0
 }
 
 private fun driftingGhost(state: GameState, move: GhostMove): DriftingGhost {

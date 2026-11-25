@@ -231,6 +231,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
     val tutorialNextReady by viewModel.tutorialNextReady.collectAsStateWithLifecycle()
     TurnEndingBuzz((guestState as? GuestState.Playing)?.turnEnding == true)
     val settled by viewModel.settled.collectAsStateWithLifecycle()
+    val rollShown by viewModel.rollShown.collectAsStateWithLifecycle()
     val awaySeats by viewModel.awaySeats.collectAsStateWithLifecycle()
     SuperuserRollPicker(viewModel)
     val window = LocalWindowInfo.current.containerSize
@@ -251,6 +252,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
             onBack = leave,
             onResults = { finishedView = FinishedView.RESULTS },
             settled = settled,
+            rollShown = rollShown,
             notice = netplayNotice(guestState, awaySeats, started),
             showLog = showLog,
             tutorial = if (isTutorial) {
@@ -348,13 +350,14 @@ private fun GameFeedback(state: GameState) {
     val event = state.lastEvent
     val firstSeen = remember { event }
     val animated = !groupReduceMotion(MotionGroup.PAWN_MOVE)
+    val dieAnimated = !groupReduceMotion(MotionGroup.DIE_ROLL)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val ghostMove = state.ghostMove
     val firstGhostMove = remember { ghostMove }
     LaunchedEffect(ghostMove) {
         if (ghostMove == null || ghostMove === firstGhostMove || ghostMove.caught.isEmpty()) return@LaunchedEffect
         // As the ghost reaches them, once the turn before it has played out.
-        if (animated) lifecycle.delayWhileResumed(turnMillis(state) + ghostMillis(ghostMove) - CAPTURE_FLIGHT_MILLIS.toLong())
+        if (animated) lifecycle.delayWhileResumed(turnMillis(state, dieAnimated) + ghostMillis(ghostMove) - CAPTURE_FLIGHT_MILLIS.toLong())
         haptics.playCaptureBuzz()
         sounds.playCapture()
     }
@@ -363,7 +366,7 @@ private fun GameFeedback(state: GameState) {
     LaunchedEffect(justLost) {
         if (justLost.isEmpty() || justLost == firstLost) return@LaunchedEffect
         // As they go, once the turn before has played out.
-        if (animated) lifecycle.delayWhileResumed(turnMillis(state).toLong())
+        if (animated) lifecycle.delayWhileResumed(turnMillis(state, dieAnimated).toLong())
         haptics.playCaptureBuzz()
     }
     LaunchedEffect(event) {
@@ -391,7 +394,8 @@ private fun GameFeedback(state: GameState) {
 /**
  * The game screen's content for [started]: rolling calls [onRoll], a tap on a movable pawn [onMove], the back arrow
  * [onBack], and the finished game's button [onResults]. The die can't be rolled until the last action has played out
- * ([settled]). The move log is on screen with [showLog]; without it, TalkBack still hears its newest line.
+ * ([settled]). Until a roll with no move has been shown ([rollShown]), the turn stays its roller's, and the log doesn't tell
+ * of it. The move log is on screen with [showLog]; without it, TalkBack still hears its newest line.
  */
 @Composable
 fun GameContent(
@@ -401,6 +405,7 @@ fun GameContent(
     onBack: () -> Unit,
     onResults: () -> Unit,
     settled: Boolean = true,
+    rollShown: Boolean = true,
     notice: String? = null,
     tutorial: TutorialView? = null,
     showLog: Boolean = true,
@@ -409,6 +414,10 @@ fun GameContent(
         started.state.players.indexOfFirst { it.seat == seat }.takeIf { it >= 0 }?.let { started.players[it].colour }
     }
     val phase = started.state.phase
+    val unshown = started.state.lastEvent.takeIf { !rollShown && !started.state.isFinished && (it is GameEvent.NoMove || it is GameEvent.RollAgainLimit) }
+    // Whose turn the screen says it is.
+    val turn = unshown?.player ?: started.state.current
+    val logged = remember(started, unshown) { if (unshown != null && started.log.lastOrNull()?.event == unshown) started.copy(log = started.log.dropLast(1)) else started }
     // A move with no choice makes itself: nothing to pick, so nothing is ringed (the tutorial makes none).
     val picks = tutorial != null || started.automaticMove == null
     // A Swap's pick isn't asked for until the pawn has landed on it.
@@ -431,7 +440,7 @@ fun GameContent(
     val rollStep = tutorial?.step is TutorialStep.Roll
     val players = @Composable { compact: Boolean ->
         if (notice != null) NetplayNotice(notice)
-        if (tutorial == null) PlayerCards(started, compact) else TutorialCoachCard(tutorial)
+        if (tutorial == null) PlayerCards(started, turn, compact) else TutorialCoachCard(tutorial)
         if (started.state.rules.suddenDeath && !started.state.isFinished) SuddenDeathNotice(started.state)
     }
     val background = LocalGameVisualTheme.current.background
@@ -459,8 +468,8 @@ fun GameContent(
                     board(Modifier.size(minOf(height, width - SIDE_PANEL_WIDTH)))
                     Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         players(false)
-                        TurnPanel(started, offered, seatColours, onRoll, onMove, onResults, settled = settled, onDeclineSwap = declineSwap, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
-                        MoveLogPanel(started, seatColours, tutorial = tutorial != null, shown = showLog, modifier = Modifier.weight(1f))
+                        TurnPanel(started, offered, seatColours, onRoll, onMove, onResults, settled = settled, unshown = unshown, onDeclineSwap = declineSwap, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
+                        MoveLogPanel(logged, seatColours, tutorial = tutorial != null, shown = showLog, modifier = Modifier.weight(1f))
                     }
                 }
             } else {
@@ -474,10 +483,10 @@ fun GameContent(
                     board = { board(Modifier) },
                     turn = {
                         TurnPanel(
-                            started, offered, seatColours, onRoll, onMove, onResults, settled = settled, onDeclineSwap = declineSwap, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
+                            started, offered, seatColours, onRoll, onMove, onResults, settled = settled, unshown = unshown, onDeclineSwap = declineSwap, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
                         )
                     },
-                    log = { MoveLogPanel(started, seatColours, tutorial = tutorial != null, shown = showLog) },
+                    log = { MoveLogPanel(logged, seatColours, tutorial = tutorial != null, shown = showLog) },
                 )
             }
         }
@@ -617,12 +626,12 @@ private fun TutorialCoachCard(tutorial: TutorialView) {
 }
 
 /**
- * The players, laid out as their yards are round the board ([playerCardRows]): the one whose turn it is outlined in their
+ * The players, laid out as their yards are round the board ([playerCardRows]): the one whose [turn] it is outlined in their
  * colour. TalkBack reads them in player order, whatever the rows. [compact] on a short screen: closer together, for the
  * log's sake.
  */
 @Composable
-private fun PlayerCards(game: StartedGame, compact: Boolean) {
+private fun PlayerCards(game: StartedGame, turn: Int, compact: Boolean) {
     val seats = game.state.players.map { it.seat }
     val rows = remember(game.state.board, seats) { playerCardRows(BoardLayout.of(game.state.board), seats) }
     Column(verticalArrangement = Arrangement.spacedBy(cardGap(compact)), modifier = Modifier.semantics { isTraversalGroup = true }) {
@@ -632,7 +641,7 @@ private fun PlayerCards(game: StartedGame, compact: Boolean) {
                     if (index == null) {
                         Box(Modifier.weight(1f))
                     } else {
-                        PlayerCard(game, index, compact, Modifier.weight(1f).semantics { traversalIndex = index.toFloat() })
+                        PlayerCard(game, index, turn, compact, Modifier.weight(1f).semantics { traversalIndex = index.toFloat() })
                     }
                 }
             }
@@ -652,12 +661,12 @@ private fun playerCardsHeight(rows: Int, compact: Boolean): Dp {
 }
 
 @Composable
-private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier: Modifier) {
+private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolean, modifier: Modifier) {
     val player = game.players[index]
     val state = game.state
     val side = state.players[index]
     val colour = player.colour.color
-    val current = state.current == index && !state.isFinished
+    val current = turn == index && !state.isFinished
     val lastStanding = state.rules.lastStanding
     // The card's dots: the pawns home, or where the last standing wins, the pawns still in.
     val counted = if (lastStanding) side.pawnsLeft else side.pawnsHome(state.board)
@@ -826,7 +835,7 @@ private fun PawnDots(counted: Int, total: Int, colour: Color, modifier: Modifier
     }
 }
 
-/** The die, and the line saying what to do now, with a button not to swap while a swap is picked ([onDeclineSwap]); once the game is over, the winner and the way back to the results. */
+/** The die, and the line saying what to do now, with a button not to swap while a swap is picked ([onDeclineSwap]); once the game is over, the winner and the way back to the results. While the roll is [unshown], it's still its roller's turn. */
 @Composable
 private fun TurnPanel(
     game: StartedGame,
@@ -837,6 +846,7 @@ private fun TurnPanel(
     onResults: () -> Unit,
     dieSize: Dp,
     settled: Boolean,
+    unshown: GameEvent? = null,
     onDeclineSwap: (() -> Unit)? = null,
     tutorial: TutorialView? = null,
     rollStep: Boolean = false,
@@ -858,8 +868,8 @@ private fun TurnPanel(
     }
     val phase = state.phase
     val roll = (phase as? TurnPhase.AwaitingMove)?.roll ?: lastRoll(state.lastEvent)
-    val canRoll = phase == TurnPhase.AwaitingRoll && settled && !game.currentIsCpu && (tutorial == null || rollStep)
-    val seat = state.currentPlayer.seat
+    val canRoll = phase == TurnPhase.AwaitingRoll && settled && unshown == null && !game.currentIsCpu && (tutorial == null || rollStep)
+    val seat = state.players[unshown?.player ?: state.current].seat
     val turnColour = (seatColours.getOrNull(seat) ?: PlayerColour.defaultFor(seat)).color
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -882,7 +892,7 @@ private fun TurnPanel(
             )
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            StatusLines(game, moves, seatColours, onMove, tutorial = tutorial != null, selectedDie = dice.selected, swapping = onDeclineSwap != null)
+            StatusLines(game, moves, seatColours, onMove, unshown, tutorial = tutorial != null, selectedDie = dice.selected, swapping = onDeclineSwap != null)
             // Under the prompt, not beside it: a large font has room for only one of them across.
             if (onDeclineSwap != null) FilledTonalButton(onClick = onDeclineSwap) { Text(stringResource(Res.string.game_swap_decline)) }
         }
@@ -903,6 +913,7 @@ private fun ColumnScope.StatusLines(
     moves: List<Move>,
     seatColours: List<PlayerColour?>,
     onMove: (Move) -> Unit,
+    unshown: GameEvent?,
     tutorial: Boolean = false,
     selectedDie: Int? = null,
     swapping: Boolean = false,
@@ -910,11 +921,14 @@ private fun ColumnScope.StatusLines(
     val state = game.state
     val name = { index: Int -> game.players[index].name }
     val phase = state.phase
-    val current = name(state.current)
+    val turn = unshown?.player ?: state.current
+    val current = name(turn)
     val twoDice = phase is TurnPhase.AwaitingMove && state.rules.dice > 1
     // A move that makes itself is told as the computer's is, no pick asked for, and so is one onto a Swap until it has landed.
     val movesItself = game.currentIsCpu || (!tutorial && game.automaticMove != null) || (phase is TurnPhase.AwaitingMove && phase.swapping)
     val prompt = when {
+        // A roll with no move, the die still tumbling: the next is asked for once it's seen.
+        unshown != null -> stringResource(Res.string.game_prompt_cpu_roll, current)
         swapping -> stringResource(Res.string.game_prompt_swap, current)
         // Two dice: the roll, or the die left, and the die a pawn moves by.
         twoDice && phase.dice.size > 1 && movesItself -> stringResource(Res.string.game_prompt_cpu_move_dice, current, phase.rolled[0], phase.rolled[1])
@@ -936,7 +950,7 @@ private fun ColumnScope.StatusLines(
     // A screen reader can make any move from here as well as from its pawn's square.
     val actions = moves.map { move -> CustomAccessibilityAction(if (swapping) swapLabel(move, colourOf) else moveLabel(state, move, colourOf)) { onMove(move); true } }
     Text(
-        text = withNamesInColour(prompt, listOf(name(state.current) to colourOf(state.current).color), bold = true),
+        text = withNamesInColour(prompt, listOf(current to colourOf(turn).color), bold = true),
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Start,

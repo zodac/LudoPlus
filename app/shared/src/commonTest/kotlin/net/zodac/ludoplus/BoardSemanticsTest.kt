@@ -67,11 +67,11 @@ class BoardSemanticsTest : UiTest() {
     private var rolls = 0
     private var backs = 0
 
-    private fun show(state: GameState, log: List<LogEntry> = emptyList()) {
+    private fun show(state: GameState, log: List<LogEntry> = emptyList(), rollShown: Boolean = true) {
         val game = StartedGame(state.mode, players, state, first = 0, log = log)
         showcase.show {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
-                LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it.pawn }, onBack = { backs++ }, onResults = {}) }
+                LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it.pawn }, onBack = { backs++ }, onResults = {}, rollShown = rollShown) }
             }
         }
     }
@@ -476,6 +476,40 @@ class BoardSemanticsTest : UiTest() {
         assertEquals(PlayerColour.defaultFor(2).color, span.item.color)
         assertEquals(FontWeight.Bold, span.item.fontWeight)
         assertEquals("Sam, tap the die to roll.", prompt.config[SemanticsProperties.ContentDescription].single())
+    }
+
+    @Test
+    fun `a roll with no move keeps the turn its roller's and out of the log until it has been shown - whoever rolls next`() = uiTest(TestScreen(411, 891)) {
+        val first = LogEntry(GameEvent.NoMove(3, 2))
+        fun playing() = listOf("Alex", "Sam").filter { name ->
+            compose.onAllNodes(hasText(name) and SemanticsMatcher("playing now") { "playing now" in it.config.getOrNull(SemanticsProperties.StateDescription).orEmpty() })
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        // The turn passes to Sam by a roll with no move, or a third 6; or Alex has another try.
+        val rolls = listOf(
+            Triple(GameEvent.NoMove(0, 3), 2, "Sam, tap the die to roll.") to "Alex rolled 3 and had no move.",
+            Triple(GameEvent.RollAgainLimit(0, 6), 2, "Sam, tap the die to roll.") to "Alex rolled a third 6 in a row, so the turn passed.",
+            Triple(GameEvent.NoMove(0, 3, triesLeft = 1), 0, "Alex, roll again: tap the die.") to "Alex rolled 3 and had no move: 1 more try.",
+        )
+        for ((roll, line) in rolls) {
+            val (event, next, prompt) = roll
+            val state = state().copy(current = next, rollingAgain = next == 0, lastEvent = event)
+            show(state, listOf(first, LogEntry(event)), rollShown = false)
+            val waiting = compose.onNodeWithContentDescription("Alex is rolling.").fetchSemanticsNode()
+            assertEquals(PlayerColour.defaultFor(0).color, waiting.config[SemanticsProperties.Text].single().spanStyles.single().item.color)
+            compose.onNodeWithContentDescription(prompt).assertDoesNotExist()
+            compose.onNode(hasContentDescription(line)).assertDoesNotExist()
+            compose.onNode(hasContentDescription("Payout rolled 2 and had no move.")).assertExists()
+            compose.onNode(onClickLabel("Roll")).assertDoesNotExist()
+            assertEquals(listOf("Alex"), playing())
+
+            show(state, listOf(first, LogEntry(event)))
+            compose.onNodeWithContentDescription("Alex is rolling.").assertDoesNotExist()
+            compose.onNodeWithContentDescription(prompt).assertExists()
+            compose.onNode(hasContentDescription(line)).assertExists()
+            compose.onNode(onClickLabel("Roll")).assertExists()
+            assertEquals(listOf(if (next == 0) "Alex" else "Sam"), playing())
+        }
     }
 
     /** A log of every kind of line, oldest first, with what each says. */

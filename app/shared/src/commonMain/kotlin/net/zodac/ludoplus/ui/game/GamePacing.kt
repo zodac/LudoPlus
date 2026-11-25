@@ -31,6 +31,17 @@ const val VANISH_MILLIS = 700
 /** How long the die tumbles before it settles on a roll. */
 const val DIE_TUMBLE_MILLIS = 420
 
+/** How long a settled die shows a roll that passes the turn on, before the next player is asked for theirs. */
+const val TURN_PASSED_MILLIS = 300
+
+/** How long [event]'s roll takes to show: the die's tumble, and where it passed the turn on, [TURN_PASSED_MILLIS] on its face. None for a move. */
+fun rollMillis(event: GameEvent): Int = when (event) {
+    is GameEvent.Moved -> 0
+    is GameEvent.Rolled -> DIE_TUMBLE_MILLIS
+    is GameEvent.NoMove -> DIE_TUMBLE_MILLIS + if (event.triesLeft > 0) 0 else TURN_PASSED_MILLIS
+    is GameEvent.RollAgainLimit -> DIE_TUMBLE_MILLIS + TURN_PASSED_MILLIS
+}
+
 /** How many hops [move]'s pawn makes: one a square, and one out of the yard. */
 private fun hops(move: Move): Int = if (move.from < 0) 1 else move.squares
 
@@ -84,14 +95,17 @@ data class GamePacing(
     fun waitAfter(state: GameState): Long = thinkMillis + playOutMillis(state)
 
     /**
-     * How long the screen animates [event] for, on a board whose home is [homeProgress]: the die's tumble, or a move's
+     * How long the screen animates [event] for, on a board whose home is [homeProgress]: the roll's showing ([rollMillis]), or a move's
      * travel and what follows its landing, then the [ghostMove] that came after it, or squares [vanishing].
      */
     fun playOutMillis(event: GameEvent?, homeProgress: Int, ghostMove: GhostMove? = null, vanishing: Boolean = false): Long = afterTurnMillis(ghostMove, vanishing) + when (event) {
         null -> 0L
         is GameEvent.Moved -> if (pawnsAnimated) moveMillis(event, homeProgress).toLong() else 0L
-        is GameEvent.Rolled, is GameEvent.NoMove, is GameEvent.RollAgainLimit -> if (dieAnimated) DIE_TUMBLE_MILLIS.toLong() else 0L
+        is GameEvent.Rolled, is GameEvent.NoMove, is GameEvent.RollAgainLimit -> rollShownMillis(event)
     }
+
+    /** How long the screen takes to show [event]'s roll ([rollMillis]): none with the die not animated, or for a move. */
+    fun rollShownMillis(event: GameEvent?): Long = if (dieAnimated && event != null) rollMillis(event).toLong() else 0L
 
     /** [playOutMillis] for the last action of [state], and what came after it. */
     fun playOutMillis(state: GameState): Long = playOutMillis(state.lastEvent, state.board.homeProgress, state.ghostMove, state.justLost.isNotEmpty())

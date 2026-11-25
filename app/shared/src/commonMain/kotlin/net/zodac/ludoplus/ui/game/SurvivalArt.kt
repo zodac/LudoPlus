@@ -124,7 +124,8 @@ internal fun rememberVanishMotion(state: GameState): VanishMotion {
     val firstSeen = remember { latest[0] }
     val lost = state.justLost.ifEmpty { latest[0] }.also { latest[0] = it }
     val reduce = groupReduceMotion(MotionGroup.PAWN_MOVE)
-    val before = remember(lost) { turnMillis(state) }
+    val dieAnimated = !groupReduceMotion(MotionGroup.DIE_ROLL)
+    val before = remember(lost) { turnMillis(state, dieAnimated) }
     var done by remember(lost) { mutableStateOf(lost.isEmpty() || lost == firstSeen || reduce) }
     val clock = remember(lost) { Animatable(-before.toFloat()) }
     LaunchedEffect(lost) {
