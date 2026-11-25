@@ -124,7 +124,15 @@ palette per M3's mapping. That's what makes `primary`/`onPrimary` and the other 
 - **Button labels are Title Case** ("Start Game", "Sign In"); Settings rows and dialog titles are sentence case. English only:
     a translation keeps its language's own convention.
 - **Full-width main actions stand `MAIN_ACTION_HEIGHT` (56dp)**, on every page: the menu, New Game, Rules, Game Over, and a
-    picker's closing button.
+    picker's closing button. The menu's alone may stand less, on a page short of height (below).
+- **The menu tightens before it scrolls** (`MenuScreen`'s `MenuLayout`; the maintainer, 2026-11-25), only as far as the
+    height asks: first its spacing (margins 16dp to 8dp, under the logo 48dp to 20dp, between buttons 12dp to 8dp), then
+    its buttons (56dp to 48dp, the touch minimum) and logo (to 0.6). Only with all of that at its least does it scroll.
+    - An ad on the maintainer's 374x827dp phone takes only the spacing.
+    - A button is never shorter than its label needs, and its text is never shrunk. In landscape, where the logo is beside
+        the buttons, it stays full size while it fits.
+    - It's sized while it's laid out, in pixels, against `LocalPageContentHeight`, which `PageColumn` provides. It can't
+        take a `weight`: inside `PageColumn` that's held to the viewport, so what doesn't fit is squashed, not scrolled to.
 - **One filled button per screen**, tonal for the rest (the menu: filled Play, tonal destinations; New Game: filled Start
     Game, tonal tutorial).
     - Game Over is the one exception: filled Play Again, with outlined Main Menu and Review Board. They are exits

@@ -77,6 +77,9 @@ fun wideColumnMaxWidth(padding: Dp): Dp = WIDE_CONTENT_MAX_WIDTH + padding * 2
 /** Whether the page is wider than it's tall - provided by [ScreenScaffold] and [PageColumn] for the page's content. */
 val LocalLandscapePage = compositionLocalOf { false }
 
+/** The height a [PageColumn]'s content can take before the page scrolls, inside its vertical padding - provided by it for its content. */
+val LocalPageContentHeight = compositionLocalOf { 0.dp }
+
 /**
  * Two groups of a page's content: side by side, [start] then [end], each half the width, on a landscape page
  * ([LocalLandscapePage]); one above the other, as a single column, otherwise. Each pane's items are [spacing] apart, as a
@@ -414,7 +417,10 @@ fun PageColumn(
                 .verticalScroll(scroll),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            CompositionLocalProvider(LocalLandscapePage provides landscape) {
+            CompositionLocalProvider(
+                LocalLandscapePage provides landscape,
+                LocalPageContentHeight provides (viewportHeight - verticalPadding * 2).coerceAtLeast(0.dp),
+            ) {
                 Column(
                     modifier = Modifier
                         .widthIn(max = if (landscape && wide) wideColumnMaxWidth(horizontalPadding) else CONTENT_MAX_WIDTH)
