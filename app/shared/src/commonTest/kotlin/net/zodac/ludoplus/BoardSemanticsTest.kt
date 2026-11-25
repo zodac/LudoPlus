@@ -204,7 +204,7 @@ class BoardSemanticsTest : UiTest() {
     private fun stateSays(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)
 
     @Test
-    fun `Chaos - a square says its power-up - a pawn its shield - a move what it takes or bounces off - and a card its doubled rolls`() = uiTest(TestScreen(411, 891)) {
+    fun `Chaos - a square says its power-up - a pawn its shield - a move what it takes or bounces off - and a yard its doubled rolls`() = uiTest(TestScreen(411, 891)) {
         val new = GameState.new(GameMode.CHAOS, 4)
         val pawns = listOf(listOf(1, 20, 49, Y), listOf(9, Y, Y, Y))
         val state = new.copy(
@@ -218,10 +218,12 @@ class BoardSemanticsTest : UiTest() {
             "Square 4, Roll Again power-up, empty",
             "Square 41, Shield power-up, empty",
             "Square 23, Green pawn 1, 47 squares from home, shielded",
+            "Yellow yard, 4 pawns waiting, 1 doubled roll left",
+            "Blue yard, 4 pawns waiting",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
         compose.onNodeWithContentDescription("Square 2, Red pawn 1, 55 squares from home").assert(onClickLabel("Move Red pawn 1 2 squares, taking Roll Again"))
         compose.onNodeWithContentDescription("Square 21, Red pawn 2, 36 squares from home").assert(onClickLabel("Move Red pawn 2 2 squares, bouncing off Green pawn 1's shield"))
-        compose.onNode(hasText("Sam") and stateSays("0 pawns home, 1 doubled roll left, currently joint 3rd")).assertExists()
+        compose.onNode(hasText("Sam") and stateSays("0 pawns home, currently joint 3rd")).assertExists()
     }
 
     @Test

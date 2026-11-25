@@ -177,7 +177,8 @@ two for each player (`PowerUp.MOST_PER_PLAYER`; the maintainer, 2026-11-24). Wit
 move, at once: a pawn moved onto another leaves it there.
 
 - **Double**: the taker's next 3 rolls (not turns) move twice as far, but for one that would overshoot home, which counts
-    once. A 6 still leaves the yard and rolls again. `PlayerState.doubledRolls`, on their card as "×2 · 3".
+    once. A 6 still leaves the yard and rolls again. `PlayerState.doubledRolls`, on their yard
+    (`UI_BOARD.md`; the maintainer, 2026-11-25).
 - **Shield** (`PlayerState.shielded`): a rival landing on the pawn's square settles on the one before, as any landing
     there (a capture, or another shield to bounce off), never further back than where it came from, and the shield breaks
     (`LudoEngine.land`, `Move.bouncedFrom`). Only a capture where it settles earns a roll. A shield goes as its pawn leaves
@@ -203,7 +204,7 @@ then "Alex swapped places with Sam."; a log of 1.1.0's has them in one.
 Every chance is drawn from `GameState.seed`, which each draw moves on, so a saved game and a Nearby one play on the same;
 the CPU weighs a move with its power-up left alone (`LudoEngine.moveWithoutChances`), so it never sees what a chance will
 be. What a power-up did is the move's `GameEvent.Moved.effect`. TalkBack: "Square 4, Shield power-up, empty", "Green pawn
-1, 47 squares from home, shielded", "Move Red pawn 1 2 squares, taking Shield", "1 doubled roll left"; the log adds a
+1, 47 squares from home, shielded", "Move Red pawn 1 2 squares, taking Shield", "Yellow yard, 4 pawns waiting, 1 doubled roll left"; the log adds a
 sentence ("Alex swapped places with Sam.").
 
 **Haunted House** (`GameRules.ghosts`, `game/Ghosts.kt`; the maintainer, 2026-11-24). A ghost for every two players,

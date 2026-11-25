@@ -79,7 +79,6 @@ import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.game.TutorialStep
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerType
-import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.netplay.GuestState
 import net.zodac.ludoplus.platform.LocalPlatformServices
 import net.zodac.ludoplus.resources.Res
@@ -99,8 +98,6 @@ import net.zodac.ludoplus.resources.game_over_results
 import net.zodac.ludoplus.resources.game_over_team_winner
 import net.zodac.ludoplus.resources.game_over_winner
 import net.zodac.ludoplus.resources.gameover_squares
-import net.zodac.ludoplus.resources.game_player_doubled
-import net.zodac.ludoplus.resources.game_player_doubled_spoken
 import net.zodac.ludoplus.resources.game_player_pawns_home_spoken
 import net.zodac.ludoplus.resources.game_player_pawns_left_spoken
 import net.zodac.ludoplus.resources.game_player_place
@@ -685,7 +682,6 @@ private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier
             pluralStringResource(if (lastStanding) Res.plurals.game_player_pawns_left_spoken else Res.plurals.game_player_pawns_home_spoken, counted, counted),
             if (state.rules.claims) state.squaresOf(index).let { pluralStringResource(Res.plurals.gameover_squares, it, it) } else null,
             if (current) stringResource(Res.string.game_player_turn_spoken) else null,
-            side.doubledRolls.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.game_player_doubled_spoken, it, it) },
             placeText ?: spokenRank,
         ),
     )
@@ -724,7 +720,6 @@ private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier
                 }
             }
             if (player.type == PlayerType.AI) CpuPlayerIcon(size = 16.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (side.doubledRolls > 0) DoubledBadge(side.doubledRolls, Modifier.clearAndSetSemantics { })
             if (state.rules.claims) SquaresBadge(state.squaresOf(index), colour, Modifier.clearAndSetSemantics { })
             if (placeText != null) {
                 Text(placeText, style = MaterialTheme.typography.labelMedium, color = colour, modifier = Modifier.clearAndSetSemantics { })
@@ -767,21 +762,6 @@ internal fun teamNumber(state: GameState, player: Int): Int? {
     if (state.rules.teams == null) return null
     val order = state.players.indices.map(state.rules::teamOf).distinct()
     return order.indexOf(state.rules.teamOf(player)) + 1
-}
-
-/** That a player's next [rolls] rolls count double, on their card: "×2" and how many. Drawn only; the card says it. */
-@Composable
-private fun DoubledBadge(rolls: Int, modifier: Modifier) {
-    Surface(color = PowerUp.DOUBLE.color, shape = CircleShape, modifier = modifier) {
-        Text(
-            stringResource(Res.string.game_player_doubled, rolls),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            maxLines = 1,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
-        )
-    }
 }
 
 /** How many [squares] a player has claimed, on a square of their [colour]. Drawn only; the card says it. */

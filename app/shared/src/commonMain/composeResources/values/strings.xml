@@ -251,9 +251,8 @@
         <item quantity="one">%1$d square vanished.</item>
         <item quantity="other">%1$d squares vanished.</item>
     </plurals>
-    <!-- Chaos: how many more of a player's rolls count double (Double, a power-up): on their card, and as TalkBack says it. -->
-    <string name="game_player_doubled">×2 · %1$d</string>
-    <plurals name="game_player_doubled_spoken">
+    <!-- Chaos: how many more of a player's rolls count double (Double, a power-up), shown on their yard, as TalkBack says it of the yard. -->
+    <plurals name="game_square_yard_doubled_spoken">
         <item quantity="one">%1$d doubled roll left</item>
         <item quantity="other">%1$d doubled rolls left</item>
     </plurals>

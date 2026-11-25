@@ -10,9 +10,12 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.text.TextMeasurer
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.min
 import kotlin.math.sin
+import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.ui.style.toPath
 import net.zodac.ludoplus.ui.theme.BoardInk
@@ -30,6 +33,34 @@ private const val SHIELD_SIZE = 1.4f
 internal fun DrawScope.drawPowerUps(layout: BoardLayout, unit: Float, powerUps: Map<Int, PowerUp>) {
     for ((square, powerUp) in powerUps) drawPowerUp(powerUp, layout.trackSquare(square).centre * unit, unit * POWER_UP_RADIUS)
 }
+
+/**
+ * In the yard of each player with rolls still to count double ([doubledRolls], by player), the Double power-up and how many
+ * are left, clear of the yard's pawns ([BoardLayout.yardBadge]).
+ */
+internal fun DrawScope.drawYardDoubles(state: GameState, layout: BoardLayout, unit: Float, doubledRolls: List<Int>, textMeasurer: TextMeasurer) {
+    state.players.forEachIndexed { player, side ->
+        val rolls = doubledRolls[player]
+        if (rolls == 0) return@forEachIndexed
+        val badge = layout.yardBadge(side.seat, side.pawns.size, YARD_BADGE_ROOM)
+        val radius = min(YARD_BADGE_RADIUS, badge.room * YARD_BADGE_SHARE) * unit
+        val centre = badge.centre * unit
+        drawPowerUp(PowerUp.DOUBLE, centre, radius)
+        drawCount(textMeasurer, rolls, centre + Offset(radius, -radius) * YARD_COUNT_OUT, radius * YARD_COUNT_SIZE)
+    }
+}
+
+/**
+ * How big a power-up in force is in a yard, across from its centre, in squares, and at most how much of the room there: less
+ * than all, so its count is clear too. And how much room is enough.
+ */
+internal const val YARD_BADGE_RADIUS = 0.62f
+private const val YARD_BADGE_SHARE = 0.72f
+internal const val YARD_BADGE_ROOM = 0.75f
+
+/** Where the count of a power-up in force is, up and to the right of its centre, and how big, of its radius. */
+private const val YARD_COUNT_OUT = 0.74f
+private const val YARD_COUNT_SIZE = 0.44f
 
 /** [powerUp] as a gold-edged hexagon in its colour, with its symbol in white: told by the symbol, never the colour alone. */
 internal fun DrawScope.drawPowerUp(powerUp: PowerUp, centre: Offset, radius: Float) {

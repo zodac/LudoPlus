@@ -77,6 +77,28 @@ class BoardLayoutTest {
     }
 
     @Test
+    fun `a yard's badge has room in it - clear of its edge and every pawn's spot - on every board with any number of pawns`() {
+        for (geometry in (2..8).map(BoardGeometry::forPlayers)) {
+            val layout = BoardLayout.of(geometry)
+            for (seat in 0..<geometry.seats) for (pawns in 1..6) {
+                val badge = layout.yardBadge(seat, pawns, YARD_BADGE_ROOM)
+                val about = "$geometry seat $seat, $pawns pawns"
+                assertTrue(badge.room >= YARD_BADGE_ROOM, "$about: room for only ${badge.room}")
+                val yard = layout.yard(seat)
+                val turns = yard.indices.map { c ->
+                    val side = yard[(c + 1) % yard.size] - yard[c]
+                    (side.x * (badge.centre.y - yard[c].y) - side.y * (badge.centre.x - yard[c].x)) / side.getDistance()
+                }
+                assertTrue(turns.all { it >= badge.room - 0.01f } || turns.all { it <= 0.01f - badge.room }, "$about: $turns from its edges")
+                for (pawn in 0..<pawns) {
+                    val gap = (layout.yardSpotOf(seat, pawn, pawns) - badge.centre).getDistance() - layout.yardSpotRadiusOf(pawns)
+                    assertTrue(gap >= badge.room - 0.01f, "$about: $gap from pawn $pawn's spot")
+                }
+            }
+        }
+    }
+
+    @Test
     fun `a yard of six has a spot a pawn - none overlapping - all on its court - on every board`() {
         for (geometry in (2..8).map(BoardGeometry::forPlayers)) {
             val layout = BoardLayout.of(geometry)

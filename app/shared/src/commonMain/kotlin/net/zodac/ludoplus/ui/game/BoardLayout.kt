@@ -76,6 +76,26 @@ sealed interface BoardLayout {
     /** How big a pawn is drawn in a yard of [pawns]. */
     fun yardPawnRadiusOf(pawns: Int): Float = if (pawns > YARD_SPOTS) yardSpotRadiusOf(pawns) * CROWDED_PAWN_SHARE else yardPawnRadius
 
+    /**
+     * Where [seat]'s yard shows what's in force for its player, in a game of [pawns] each: where there's the most room
+     * clear of the yard's edge and its pawns, straight out from the yard's middle (away from the board's), in from it, or
+     * to one side of it: the first with room [wanted], or if none has, the one with the most.
+     */
+    fun yardBadge(seat: Int, pawns: Int, wanted: Float): YardBadge {
+        val outline = yard(seat)
+        val from = loneYardSpot(seat)
+        val outward = (from - Offset(size / 2, size / 2)).let { it / it.getDistance() }
+        val spots = List(pawns) { yardSpotOf(seat, it, pawns) }
+        // A pawn stands a little taller than its radius.
+        val spotReach = max(yardSpotRadiusOf(pawns), yardPawnRadiusOf(pawns) * PAWN_REACH)
+        fun best(way: Offset) = (0..BADGE_STEPS).map { from + way * (size / 2 * it / BADGE_STEPS) }
+            .filter { it.isInside(outline) }
+            .map { spot -> YardBadge(spot, min(edgeDistance(outline, spot), spots.minOf { (it - spot).getDistance() } - spotReach)) }
+            .maxBy { it.room }
+        val badges = listOf(outward, -outward, Offset(-outward.y, outward.x)).map(::best)
+        return badges.firstOrNull { it.room >= wanted } ?: badges.maxBy { it.room }
+    }
+
     /** How big a yard spot is drawn, across from its centre. */
     val yardSpotRadius: Float
 
@@ -108,6 +128,12 @@ sealed interface BoardLayout {
         /** How much smaller the spots of a yard of six are than of four, and how much of one its pawn fills. */
         private const val CROWDED_SPOT_SHARE = 0.86f
         private const val CROWDED_PAWN_SHARE = 0.72f
+
+        /** How many points out from a yard's middle [yardBadge] weighs up, to half the board's width away. */
+        private const val BADGE_STEPS = 200
+
+        /** How far a standing pawn reaches from its centre, of its radius. */
+        private const val PAWN_REACH = 1.1f
 
         /** How much smaller five or six pawns home are than four. */
         private const val CROWDED_HOME_SHARE = 0.75f
@@ -467,6 +493,19 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
         const val HEXAGON_HOME_SPREAD_OUT = 0.42
         const val HEXAGON_HOME_SPREAD_ACROSS = 0.48
     }
+}
+
+/** A place in a yard for a badge: its [centre], and how much [room] there is round it, in board units. */
+class YardBadge(val centre: Offset, val room: Float)
+
+/** Whether this point is inside the convex [outline]. */
+private fun Offset.isInside(outline: List<Offset>): Boolean {
+    val turns = outline.indices.map { i ->
+        val from = outline[i]
+        val side = outline[(i + 1) % outline.size] - from
+        side.x * (y - from.y) - side.y * (x - from.x)
+    }
+    return turns.all { it >= 0f } || turns.all { it <= 0f }
 }
 
 /** How far [point] is from the nearest side of the convex [outline]. */

@@ -30,6 +30,10 @@ The board, the player cards, the die, and the move log. The general rules are in
     half hop, and it lands on its own share of it (`moveMarks`; the maintainer, 2026-11-25).
 - **A shield goes with its pawn** as it hops, or is swapped, till it comes off the track or is taken; one it takes shows as
     it lands (`ShieldMotionTest`; the maintainer, 2026-11-25).
+- **What's in force for a player is on their yard**, not their card (the maintainer, 2026-11-25): while their rolls count
+    double, the Double power-up with how many are left (`drawYardDoubles`, `YardDoubleTest`). It's clear of the yard's edge
+    and its pawns on every board (`BoardLayout.yardBadge`), and changes as the move that changes it lands. TalkBack: the yard
+    says it, "Yellow yard, 4 pawns waiting, 1 doubled roll left".
 - **A movable pawn is ringed** in violet. A tap on its square makes the move; where a square holds more than one, a tap
     asks which. The player whose turn it is has a white ring, edged in ink, inside their yard.
 - **A mode's own tiles** (`BoardTiles.kt`, `BoardTilesTest`; the maintainer, 2026-11-24). While a portal is pressed, it and
@@ -44,7 +48,7 @@ The board, the player cards, the die, and the move log. The general rules are in
 
 ## The player cards
 
-`PlayerCard` (`GameScreen.kt`): a disc of the player's colour with their rank on it, their name, a CPU's icon, a badge for their team or a doubled roll,
+`PlayerCard` (`GameScreen.kt`): a disc of the player's colour with their rank on it, their name, a CPU's icon, a badge for their team,
 and a dot for each pawn home (in Survival, each pawn left), or their place once they have one. The card of the player
 whose turn it is has an outline in their colour.
 

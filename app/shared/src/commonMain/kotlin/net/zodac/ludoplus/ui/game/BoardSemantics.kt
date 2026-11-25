@@ -46,6 +46,7 @@ import net.zodac.ludoplus.resources.game_square_safe_for_spoken
 import net.zodac.ludoplus.resources.game_square_safe_spoken
 import net.zodac.ludoplus.resources.game_square_start_spoken
 import net.zodac.ludoplus.resources.game_square_track_spoken
+import net.zodac.ludoplus.resources.game_square_yard_doubled_spoken
 import net.zodac.ludoplus.resources.game_square_yard_lost_spoken
 import net.zodac.ludoplus.resources.game_square_yard_pawns_spoken
 import net.zodac.ludoplus.resources.game_square_yard_spoken
@@ -115,12 +116,13 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
         val seat = state.players[player].seat
         val waiting = state.players[player].pawns.indices.filter { state.position(player, it) == PawnPosition.Yard }
         val description = joinClauses(
-            listOf(
+            listOfNotNull(
                 stringResource(Res.string.game_square_yard_spoken, stringResource(colourOf(player).label)),
                 if (state.rules.lastStanding) {
                     val (lost, all) = state.players[player].let { it.pawns.size - it.pawnsLeft to it.pawns.size }
                     pluralStringResource(Res.plurals.game_square_yard_lost_spoken, all, lost, all)
                 } else if (waiting.isEmpty()) empty else pluralStringResource(Res.plurals.game_square_yard_pawns_spoken, waiting.size, waiting.size),
+                state.players[player].doubledRolls.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.game_square_yard_doubled_spoken, it, it) },
             ),
         )
         val move = movableAt(player, waiting)

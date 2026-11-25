@@ -103,7 +103,8 @@ private const val HOME_SPARKS = 10
 /**
  * The board for [state]'s players, drawn from its [BoardLayout], with [state]'s pawns on it. [seatColours] colours each
  * seat's yard, start square, home column, and pawns (null for a seat nobody sits at). Until the game is over, the yard of
- * the player whose turn it is has a ring round its inside edge. The pawns that [moves] can move
+ * the player whose turn it is has a ring round its inside edge, and that of one whose rolls count double has the Double
+ * power-up and how many are left. The pawns that [moves] can move
  * are ringed (a partner's too, when the player rolls for one), and a tap near one, or a screen reader's action on its
  * square ([BoardSemantics]), makes its move ([onMove]). While [swapping], the pawns ringed and tapped are those the move
  * ([Move.swap]) can swap with, once the pawn has landed on the Swap.
@@ -138,6 +139,8 @@ fun LudoBoard(
     val currentSwapping by rememberUpdatedState(swapping)
     // The squares claimed as they're shown: as they were, while a move plays out.
     val shownClaims = remember { arrayOf(state.claimed) }
+    // Each player's doubled rolls left, as they're shown: likewise.
+    val shownDoubles = remember { arrayOf(state.players.map { it.doubledRolls }) }
     // The portal being pressed, and the power-up whose popup is up.
     var pressedPortal by remember { mutableStateOf<Portal?>(null) }
     var tip by remember { mutableStateOf<PowerUpTip?>(null) }
@@ -155,7 +158,8 @@ fun LudoBoard(
             if (shielded) drawShieldBubble(mark.centre * unit, mark.radius * unit)
             if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
             with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, pawnColours[mark.player], ringed) }
-            if (mark.pawns.size > 1) drawCount(textMeasurer, mark.pawns.size, mark, unit)
+            // At the top right, for pawns sharing a square.
+            if (mark.pawns.size > 1) drawCount(textMeasurer, mark.pawns.size, (mark.centre + Offset(mark.radius * 0.8f, -mark.radius * 0.8f)) * unit, unit * 0.24f)
         }
         // A Swap's pawn, landed on it, and those it can be with, once no move is playing out: drawn over the rest, not with it.
         val pickedOut = if (swapping && motion.moving == null) {
@@ -194,6 +198,12 @@ fun LudoBoard(
             val turnSeat = if (state.isFinished) null else state.currentPlayer.seat
             if (turnSeat != null) {
                 Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawTurnYard(layout, size.minDimension / layout.size, turnSeat) }
+            }
+            // Whose rolls count double, on their yards: as it was while a move plays out, so a Double shows as the pawn lands on it.
+            if (motion.moving == null) shownDoubles[0] = state.players.map { it.doubledRolls }
+            val doubles = shownDoubles[0]
+            if (doubles.any { it > 0 }) {
+                Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawYardDoubles(state, layout, size.minDimension / layout.size, doubles, textMeasurer) }
             }
             // The pawns standing still, on a layer of their own: drawn again as a move starts and ends, not on its frames.
             val animating = motion.moving
@@ -598,10 +608,8 @@ private data class BoardSurface(
     val parts: BoardParts,
 )
 
-/** A count badge at the top right of [mark], for pawns sharing a square. */
-private fun DrawScope.drawCount(textMeasurer: TextMeasurer, count: Int, mark: PawnMark, unit: Float) {
-    val badgeCentre = (mark.centre + Offset(mark.radius * 0.8f, -mark.radius * 0.8f)) * unit
-    val badgeRadius = unit * 0.24f
+/** [count] on a badge [badgeRadius] from [badgeCentre]. */
+internal fun DrawScope.drawCount(textMeasurer: TextMeasurer, count: Int, badgeCentre: Offset, badgeRadius: Float) {
     drawCircle(BoardInk, badgeRadius, badgeCentre)
     val text = textMeasurer.measure(
         count.toString(),
