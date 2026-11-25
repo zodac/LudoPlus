@@ -79,6 +79,13 @@ class UpgradeCheckTest(unittest.TestCase):
         logged = board(*LEFT, ("Moves", "", "false"), ("[08:48:51] ", "", "false"), ("Player 1 goes first.", "", "false"))
         self.assertEqual(["Joker", "Player 1"], check.snapshot(logged)["names"])
 
+    def test_the_time_played_is_not_a_name_and_may_be_new_or_count_on(self):
+        timed = [board(*LEFT, (f"Time played: {time}", "Time played", "false")) for time in ("45s", "1m", "1h 2m")]
+        for nodes in timed:
+            self.assertEqual(["Joker", "Player 1"], check.snapshot(nodes)["names"])
+            self.assertEqual([], check.differences(check.snapshot(board(*LEFT)), check.snapshot(nodes)))
+        self.assertEqual([], check.differences(check.snapshot(timed[0]), check.snapshot(timed[1])))
+
     def test_the_move_logs_headings_are_not_names(self):
         logged = board(*LEFT, ("Turn 12", "", "false"), ("Start", "", "false"))
         self.assertEqual(["Joker", "Player 1"], check.snapshot(logged)["names"])
