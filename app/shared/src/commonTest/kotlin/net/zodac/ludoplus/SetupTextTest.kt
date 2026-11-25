@@ -171,7 +171,7 @@ class SetupTextTest : UiTest() {
         compose.onNodeWithText("Done").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("1 enabled").assertExists()
-        compose.onNodeWithText("Off the Leaderboard and Statistics, and only its own achievements").assertExists()
+        compose.onNodeWithText("Scores and most achievements won't count").assertExists()
     }
 
     @Test
@@ -193,7 +193,7 @@ class SetupTextTest : UiTest() {
         compose.onNodeWithText("Done").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("1 enabled").assertExists()
-        compose.onNodeWithText("Off the Leaderboard and Statistics, and only its own achievements").assertExists()
+        compose.onNodeWithText("Scores and most achievements won't count").assertExists()
         // Survival's own number: nothing to change there.
         viewModel.setupForm.setGameMode(GameMode.SURVIVAL)
         assertEquals(null, viewModel.setupForm.setup.value.playedPawns)

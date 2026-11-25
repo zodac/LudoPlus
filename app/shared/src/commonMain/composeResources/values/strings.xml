@@ -578,7 +578,7 @@
     <!-- The setup form's House Rules card (model/HouseRule.kt): a picker of switches, the modifiers. Closed, it shows how many are on (common_modifiers_*) over the description, or the note while any is on. -->
     <string name="setup_house_rules">House Rules</string>
     <string name="setup_house_rules_description">Common changes to the classic rules, in any mix</string>
-    <string name="setup_house_rules_active_note">Off the Leaderboard and Statistics, and only its own achievements</string>
+    <string name="setup_house_rules_active_note">Scores and most achievements won't count</string>
     <!-- In place of the picker until a first game is finished. -->
     <string name="setup_house_rules_locked">Finish a game to unlock house rules</string>
     <!-- In place of the picker while a custom mode is picked: %1$s is its name, %2$s its house rules' names as a list. -->
