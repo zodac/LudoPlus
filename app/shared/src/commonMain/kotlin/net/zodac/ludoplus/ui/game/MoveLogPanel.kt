@@ -2,7 +2,6 @@ package net.zodac.ludoplus.ui.game
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -71,7 +70,6 @@ import net.zodac.ludoplus.resources.game_event_three_sixes
 import net.zodac.ludoplus.resources.game_log_line
 import net.zodac.ludoplus.resources.game_log_start
 import net.zodac.ludoplus.resources.game_log_time_pattern
-import net.zodac.ludoplus.resources.game_log_title
 import net.zodac.ludoplus.resources.game_log_turn
 import net.zodac.ludoplus.ui.common.LazyListScrollbar
 import net.zodac.ludoplus.ui.common.formatTimestamp
@@ -83,33 +81,22 @@ import net.zodac.ludoplus.ui.common.stringResource
 import net.zodac.ludoplus.ui.theme.color
 
 private val LOG_LINE_PADDING = 2.dp
-private val LOG_TITLE_TOP = 8.dp
-private val LOG_TITLE_BOTTOM = 6.dp
-private val LOG_BOTTOM = 8.dp
 private val LOG_HEADING_PADDING = 4.dp
 
-/** Over the first line where the log has no title. */
-private val UNTITLED_TOP = 4.dp
+/** Over the first row of the log, and under its last. */
+private val LOG_PADDING = 4.dp
 
-/** How tall the move log's card is at its shortest: no title, the newest turn's heading, and a line under it. */
+/** How tall the move log's card is at its shortest: the newest turn's heading, and a line under it. */
 @Composable
-internal fun shortestLogHeight(): Dp = UNTITLED_TOP * 2 + headedLinesHeight(1)
+internal fun shortestLogHeight(): Dp = LOG_PADDING * 2 + logHeadingHeight() + logLineHeight()
 
 /** How tall one of the log's lines is, where it doesn't wrap. */
 @Composable
 private fun logLineHeight(): Dp = with(LocalDensity.current) { MaterialTheme.typography.bodyMedium.lineHeight.toDp() } + LOG_LINE_PADDING * 2
 
-/** How tall the log's title is, and one of its headings without its padding. */
+/** How tall one of the log's headings is. */
 @Composable
-private fun logLabelHeight(): Dp = with(LocalDensity.current) { MaterialTheme.typography.labelMedium.lineHeight.toDp() }
-
-/** How tall the log's card is with its title, a heading, and two lines under it. */
-@Composable
-private fun titledLogHeight(): Dp = LOG_TITLE_TOP + logLabelHeight() + LOG_TITLE_BOTTOM + headedLinesHeight(2)
-
-/** How tall a heading and [lines] lines under it are. */
-@Composable
-private fun headedLinesHeight(lines: Int): Dp = logLabelHeight() + LOG_HEADING_PADDING * 2 + logLineHeight() * lines
+private fun logHeadingHeight(): Dp = with(LocalDensity.current) { MaterialTheme.typography.labelMedium.lineHeight.toDp() } + LOG_HEADING_PADDING * 2
 
 /** One row of the log's list. */
 private sealed interface LogRow {
@@ -139,22 +126,21 @@ private fun logRows(log: List<LogEntry>, first: Boolean): List<LogRow> = buildLi
  * The game's move log, under the die and the prompt: every move ([StartedGame.log]), newest first, back to who went
  * first (outside the tutorial), in a card that scrolls, brought back to its top as each move comes. Each turn's moves, one
  * or more for every player, are under a heading ("Turn 3").
- * Each line starts with when it happened, "[14:05:09]", and names its players in their colours. TalkBack hears its title
- * and each turn's as headings, the lines as a list ("1 of 12") without their times, and the newest line as it comes (a
- * polite live region). Where there isn't room for the title, the newest turn's heading, and two lines (a short screen, a
- * large font), the card has no title; where there isn't room for a line under that heading, it isn't shown; where there
- * isn't room for a line, or the log isn't [shown] (Settings' "Move log"), it isn't drawn, and TalkBack still hears the newest.
+ * Each line starts with when it happened, "[14:05:09]", and names its players in their colours. TalkBack hears each turn's
+ * heading as one, the lines as a list ("1 of 12") without their times, and the newest line as it comes (a polite live
+ * region). Where there isn't room for a line under the newest turn's heading (a short screen, a large font), that heading
+ * isn't shown; where there isn't room for a line, or the log isn't [shown] (Settings' "Move log"), it isn't drawn, and
+ * TalkBack still hears the newest.
  */
 @Composable
 internal fun MoveLogPanel(game: StartedGame, seatColours: List<PlayerColour?>, tutorial: Boolean, shown: Boolean, modifier: Modifier = Modifier) {
     val count = game.log.size + if (tutorial) 0 else 1
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         if (count == 0) return@BoxWithConstraints
-        if (!shown || maxHeight < UNTITLED_TOP * 2 + logLineHeight()) {
+        if (!shown || maxHeight < LOG_PADDING * 2 + logLineHeight()) {
             LogLine(game, seatColours, entry = game.log.lastOrNull(), newest = true, Modifier.drawWithContent { })
             return@BoxWithConstraints
         }
-        val titled = maxHeight >= titledLogHeight()
         val headed = maxHeight >= shortestLogHeight()
         val rows = remember(game.log, tutorial, headed) { logRows(game.log, first = !tutorial).let { if (headed) it else it.dropWhile { row -> row is LogRow.Heading } } }
         val listState = rememberLazyListState()
@@ -165,48 +151,38 @@ internal fun MoveLogPanel(game: StartedGame, seatColours: List<PlayerColour?>, t
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier.fillMaxSize(),
         ) {
-            Column(modifier = Modifier.padding(top = if (titled) LOG_TITLE_TOP else 0.dp)) {
-                if (titled) {
-                    Text(
-                        text = stringResource(Res.string.game_log_title),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = LOG_TITLE_BOTTOM).semantics { heading() },
-                    )
-                }
-                Box {
-                    LazyColumn(
-                        state = listState,
-                        contentPadding = PaddingValues(start = 12.dp, end = 16.dp, top = if (titled) 0.dp else UNTITLED_TOP, bottom = if (titled) LOG_BOTTOM else UNTITLED_TOP),
-                        modifier = Modifier.fillMaxSize().semantics { collectionInfo = CollectionInfo(rowCount = count, columnCount = 1) },
-                    ) {
-                        // The newest line and the heading over it keep their keys, so the list stays at its top as they change.
-                        itemsIndexed(
-                            rows,
-                            key = { position, row ->
-                                when (row) {
-                                    is LogRow.Heading -> if (position == 0) "newest turn" else "turn ${row.turn}"
-                                    is LogRow.Line -> if (row.index == 0) "newest" else game.log.size - 1 - row.index
-                                }
-                            },
-                            contentType = { _, row -> row is LogRow.Heading },
-                        ) { _, row ->
+            Box {
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(start = 12.dp, end = 16.dp, top = LOG_PADDING, bottom = LOG_PADDING),
+                    modifier = Modifier.fillMaxSize().semantics { collectionInfo = CollectionInfo(rowCount = count, columnCount = 1) },
+                ) {
+                    // The newest line and the heading over it keep their keys, so the list stays at its top as they change.
+                    itemsIndexed(
+                        rows,
+                        key = { position, row ->
                             when (row) {
-                                is LogRow.Heading -> LogHeading(row.turn)
-                                is LogRow.Line -> LogLine(
-                                    game,
-                                    seatColours,
-                                    entry = row.entry,
-                                    newest = row.index == 0,
-                                    Modifier.padding(vertical = LOG_LINE_PADDING).semantics {
-                                        collectionItemInfo = CollectionItemInfo(rowIndex = row.index, rowSpan = 1, columnIndex = 0, columnSpan = 1)
-                                    },
-                                )
+                                is LogRow.Heading -> if (position == 0) "newest turn" else "turn ${row.turn}"
+                                is LogRow.Line -> if (row.index == 0) "newest" else game.log.size - 1 - row.index
                             }
+                        },
+                        contentType = { _, row -> row is LogRow.Heading },
+                    ) { _, row ->
+                        when (row) {
+                            is LogRow.Heading -> LogHeading(row.turn)
+                            is LogRow.Line -> LogLine(
+                                game,
+                                seatColours,
+                                entry = row.entry,
+                                newest = row.index == 0,
+                                Modifier.padding(vertical = LOG_LINE_PADDING).semantics {
+                                    collectionItemInfo = CollectionItemInfo(rowIndex = row.index, rowSpan = 1, columnIndex = 0, columnSpan = 1)
+                                },
+                            )
                         }
                     }
-                    LazyListScrollbar(listState, modifier = Modifier.padding(end = 4.dp, top = if (titled) 0.dp else UNTITLED_TOP, bottom = if (titled) LOG_BOTTOM else UNTITLED_TOP))
                 }
+                LazyListScrollbar(listState, modifier = Modifier.padding(end = 4.dp, top = LOG_PADDING, bottom = LOG_PADDING))
             }
         }
     }

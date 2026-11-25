@@ -493,7 +493,7 @@ class BoardSemanticsTest : UiTest() {
             // A minute apart, the first a minute after the game started.
             val log = everyLine.mapIndexed { i, (entry, _) -> entry.copy(atEpochMillis = (i + 1) * 60_000L) }
             show(state().copy(current = 2, lastEvent = everyLine.last().first.event), log)
-            compose.onNodeWithText("Moves").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+            compose.onNodeWithText("Moves").assertDoesNotExist()
             compose.onNodeWithText("Sam, tap the die to roll.").assertExists()
             val lines = (listOf("Alex goes first.") + everyLine.map { it.second }).reversed()
             val list = compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.CollectionInfo))
@@ -517,7 +517,6 @@ class BoardSemanticsTest : UiTest() {
     @Test
     fun `on a screen with no room for the log its newest line is shown alone - and heard as it comes`() = uiTest(TestScreen(320, 470)) {
         show(state().copy(current = 2, lastEvent = everyLine.last().first.event), everyLine.map { it.first })
-        compose.onNodeWithText("Moves").assertDoesNotExist()
         compose.onNode(hasContentDescription("Gambit captured 1 of Alex's pawns."))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
         compose.onNode(hasContentDescription("Alex brought a pawn out.")).assertDoesNotExist()

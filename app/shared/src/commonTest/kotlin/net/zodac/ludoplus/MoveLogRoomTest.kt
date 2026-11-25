@@ -10,8 +10,10 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -178,18 +180,14 @@ class MoveLogRoomTest : UiTest() {
         compose.onNode(hasContentDescription("Alex goes first.")).assertDoesNotExist()
     }
 
-    private val isTitle = hasText("Moves") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)
-
     @Test
-    fun `the log has its title where there's room for it - a heading - and two lines`() = uiTest(TestScreen(411, 891)) {
+    fun `the log starts at its newest turn's heading - with no title over it - however much room it has`() = uiTest(TestScreen(411, 891)) {
         show(game(4))
-        compose.onNode(isTitle).assertExists()
-    }
-
-    @Test
-    fun `and not where there isn't`() = uiTest(TestScreen(411, 731)) {
-        show(game(8))
-        compose.onNode(isTitle).assertDoesNotExist()
+        compose.onNodeWithText("Moves").assertDoesNotExist()
+        val heading = compose.onNode(hasText("Turn $newestTurn") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).fetchSemanticsNode()
+        val log = compose.onNode(isLog).fetchSemanticsNode()
+        // 4dp over the first row, and a heading's own 4dp.
+        assertEquals(with(compose.density) { 8.dp.toPx() }, heading.positionInRoot.y - log.positionInRoot.y, 1f)
     }
 
     @Test

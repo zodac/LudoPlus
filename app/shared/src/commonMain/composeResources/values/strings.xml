@@ -354,8 +354,6 @@
     <string name="game_event_swap">%1$s swapped places with %2$s.</string>
     <!-- Haunted House: as the turn ended, a ghost landed on pawns of %1$s, a player's name or a list of them, so they went back to their yards. -->
     <string name="game_event_haunted">A ghost caught %1$s!</string>
-    <!-- The move log's title. -->
-    <string name="game_log_title">Moves</string>
     <!-- A heading in the move log, over the moves of one round of turns: %1$d counts the rounds from 1. -->
     <string name="game_log_turn">Turn %1$d</string>
     <!-- The move log's last heading, over who went first. -->
@@ -752,7 +750,7 @@
     <!-- The fastest frame rate: as fast as the screen draws. Drawn, then spoken. -->
     <string name="settings_frame_rate_max">Max</string>
     <string name="settings_frame_rate_max_spoken">Maximum</string>
-    <!-- Whether the game screen shows its list of every move (game_log_title). -->
+    <!-- Whether the game screen shows its list of every move (game_log_line). -->
     <string name="settings_move_log">Move log</string>
     <string name="settings_confirm_leaving">Confirm leaving game</string>
     <!-- Ends a new game as soon as one player has every pawn home; the others are placed as they stand. -->
