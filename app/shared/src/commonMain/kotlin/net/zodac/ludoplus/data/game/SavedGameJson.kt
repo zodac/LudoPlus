@@ -167,6 +167,7 @@ object SavedGameJson {
                         put("turns", player.turns)
                         put("captures", player.captures)
                         put("timesCaptured", player.timesCaptured)
+                        if (player.capturesOf.isNotEmpty()) put("capturesOf", jsonInts(player.capturesOf.entries.sortedBy { it.key }.associate { it.key.toString() to it.value }))
                         // A power-up's, while they last.
                         if (player.doubledRolls > 0) put("doubledRolls", player.doubledRolls)
                         if (player.callUps > 0) put("callUps", player.callUps)
@@ -234,6 +235,7 @@ object SavedGameJson {
                 turns = player.int("turns"),
                 captures = player.int("captures"),
                 timesCaptured = player.int("timesCaptured"),
+                capturesOf = if ("capturesOf" in player) player.obj("capturesOf").ints().mapKeys { requireNotNull(it.key.toIntOrNull()) { "No player ${it.key}" } } else emptyMap(),
                 doubledRolls = player.intOrNull("doubledRolls") ?: 0,
                 callUps = player.intOrNull("callUps") ?: 0,
                 timesHaunted = player.intOrNull("timesHaunted") ?: 0,
@@ -252,6 +254,9 @@ object SavedGameJson {
             require(rules.powerUps || (player.doubledRolls == 0 && player.callUps == 0 && player.shielded.isEmpty())) { "A power-up's effect without power-ups" }
             require(player.doubledRolls in 0..PowerUp.DOUBLED_ROLLS && player.callUps >= 0 && player.shielded.all { it in player.pawns.indices }) { "A power-up's effect doesn't fit" }
             require(player.turns >= 0 && player.captures >= 0 && player.timesCaptured >= 0) { "A negative count" }
+            require(player.capturesOf.all { (whose, count) -> whose in 0..<playerCount && count > 0 } && player.capturesOf.values.sum() <= player.captures) {
+                "The captures by player don't fit"
+            }
         }
         val current = obj.int("current")
         require(current in 0..<playerCount) { "No player $current to play" }

@@ -369,6 +369,10 @@ class SavedGameJsonTest {
             // A player placed who hasn't finished, and a finish time for a player who hasn't.
             json.replace("\"finishingOrder\":[]", "\"finishingOrder\":[2]"),
             json.replace("\"finishMillis\":{}", "\"finishMillis\":{\"2\":5}"),
+            // More captures by opponent than in all, and of a player who isn't there.
+            json.replaceFirst("\"captures\":0", "\"captures\":1,\"capturesOf\":{\"1\":2}"),
+            json.replaceFirst("\"captures\":0", "\"captures\":1,\"capturesOf\":{\"4\":1}"),
+            json.replaceFirst("\"captures\":0", "\"captures\":1,\"capturesOf\":{\"x\":1}"),
             // A try to leave the yard, with no house rule giving one.
             json.replace("\"rollAgainRun\":0", "\"rollAgainRun\":0,\"yardTriesUsed\":1"),
         )
@@ -398,6 +402,17 @@ class SavedGameJsonTest {
                 "\"lastEvent\":{\"kind\":\"noMove\",\"player\":1,\"roll\":4}}}",
             json,
         )
+    }
+
+    @Test
+    fun `captures by opponent come back as they were saved - and a save from before they were kept has its totals alone`() {
+        val new = GameState.new(GameMode.CLASSIC, 4, first = 1)
+        val saved = game(new.copy(players = new.players.mapIndexed { i, it -> if (i == 2) it.copy(captures = 3, capturesOf = mapOf(0 to 2, 3 to 1)) else it }))
+        val json = SavedGameJson.encode(saved)
+        assertEquals(saved, SavedGameJson.decode(json))
+        val older = json.replace(",\"capturesOf\":{\"0\":2,\"3\":1}", "")
+        check(older != json)
+        assertEquals(3 to emptyMap<Int, Int>(), SavedGameJson.decode(older).state.players[2].let { it.captures to it.capturesOf })
     }
 
     @Test

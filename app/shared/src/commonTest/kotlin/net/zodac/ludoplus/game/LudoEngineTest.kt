@@ -127,6 +127,7 @@ class LudoEngineTest {
         assertEquals(listOf(7, Y, Y, Y), after.players[GREEN].pawns)
         assertEquals(1, after.players[GREEN].captures)
         assertEquals(1, after.players[RED].timesCaptured)
+        assertEquals(listOf(emptyMap(), mapOf(RED to 1)), listOf(RED, GREEN).map { after.players[it].capturesOf })
     }
 
     @Test
@@ -135,6 +136,7 @@ class LudoEngineTest {
         assertEquals(listOf(Y, Y, 5, Y), after.players[RED].pawns)
         assertEquals(2, after.players[GREEN].captures)
         assertEquals(2, after.players[RED].timesCaptured)
+        assertEquals(mapOf(RED to 2), after.players[GREEN].capturesOf)
     }
 
     @Test

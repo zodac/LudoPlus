@@ -261,6 +261,9 @@
         <item quantity="one">%1$d Call Up banked</item>
         <item quantity="other">%1$d Call Ups banked</item>
     </plurals>
+    <!-- A player's captures against each opponent, on a long press of their card: the heading over the pawns of theirs each has captured (over those they have captured, leaderboard_captures), and the action a screen reader offers on the card to show it. -->
+    <string name="game_captures_captured">Captured</string>
+    <string name="game_captures_action">Captures by opponent</string>
     <string name="game_player_turn_spoken">playing now</string>
     <string name="game_player_place">%1$s place</string>
     <!-- While a player is still playing: their rank as the game stands (%1$s is "1st", "2nd"...), alone in it or level with another. Shown on their card as the number, on their colour; level with another, with an "=" (game_player_rank_tied, %1$d the number), which is only drawn: spoken, it would be read as "equals". -->

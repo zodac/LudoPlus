@@ -240,6 +240,11 @@ data class PlayerState(
     val captures: Int = 0,
     /** How many of their own pawns have been sent back to their yard. */
     val timesCaptured: Int = 0,
+    /**
+     * Their [captures] by whose pawns they were (a player index), those with none absent. A game saved before it was kept
+     * has only those since, so they may add up to less.
+     */
+    val capturesOf: Map<Int, Int> = emptyMap(),
     /** How many more of their rolls count double ([PowerUp.DOUBLE]). */
     val doubledRolls: Int = 0,
     /** How many Call Ups they have banked, each to bring a captured pawn straight back out ([PowerUp.CALL_UP]). */

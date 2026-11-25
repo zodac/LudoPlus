@@ -14,14 +14,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupPositionProvider
 
 /** What [AppTooltip] shows on request - see [rememberAppTooltipState]; wraps Material's experimental state. */
 @OptIn(ExperimentalMaterial3Api::class)
 class AppTooltipState internal constructor(internal val state: TooltipState) {
+    /** Whether the tooltip is up. */
+    val isVisible: Boolean get() = state.isVisible
+
     /** Shows the tooltip, until it times out - or, for a persistent one, until it's dismissed. */
     suspend fun show() = state.show()
 
@@ -50,6 +59,7 @@ fun rememberAppTooltipState(persistent: Boolean = false): AppTooltipState {
  * something else too, such as a tap: `state.show()` in a coroutine. Give the content a matching action
  * for a screen reader - a tooltip isn't announced, so it can't be the only way to reach what it says.
  * With [focusable] false, a tap outside it reaches what's under it (as well as closing it) instead of only closing it.
+ * [wide] is for a layout too big for a plain tooltip: up to a rich tooltip's width, and kept clear of the screen's edges.
  */
 // rememberPlainTooltipPositionProvider is deprecated in favour of rememberTooltipPositionProvider,
 // which doesn't exist yet in material3 1.4.0 - it arrives with the 1.5.0 line. Swap it over then.
@@ -62,17 +72,21 @@ fun AppTooltip(
     state: AppTooltipState = rememberAppTooltipState(),
     enabled: Boolean = true,
     focusable: Boolean = true,
+    wide: Boolean = false,
     content: @Composable () -> Unit,
 ) {
+    val margin = with(LocalDensity.current) { WIDE_TOOLTIP_MARGIN.roundToPx() }
+    val shape = if (wide) MaterialTheme.shapes.medium else MaterialTheme.shapes.small
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        positionProvider = if (wide) remember(margin) { WideTooltipPosition(margin) } else TooltipDefaults.rememberPlainTooltipPositionProvider(),
         tooltip = {
             // Raised off the dark page by a lighter container, a gold outline and a shadow - branded
             // (gold is the app's one accent) yet plainly not part of the content it floats over. The
             // default inverse-surface tooltip is a stark light-grey slab on this dark theme.
             PlainTooltip(
-                modifier = Modifier.border(TOOLTIP_OUTLINE, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small),
-                shape = MaterialTheme.shapes.small,
+                modifier = Modifier.border(TOOLTIP_OUTLINE, MaterialTheme.colorScheme.primary, shape),
+                maxWidth = if (wide) TooltipDefaults.richTooltipMaxWidth else TooltipDefaults.plainTooltipMaxWidth,
+                shape = shape,
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 shadowElevation = TOOLTIP_ELEVATION,
@@ -114,6 +128,22 @@ fun AppTooltip(
     content: @Composable () -> Unit,
 ) = AppTooltip(AnnotatedString(message), modifier, state, enabled, content)
 
+/** Centred on its anchor, above it where there's room or else below, and [margin] pixels clear of it and of the window's edges. */
+private class WideTooltipPosition(private val margin: Int) : PopupPositionProvider {
+    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
+        val x = anchorBounds.center.x - popupContentSize.width / 2
+        val above = anchorBounds.top - margin - popupContentSize.height
+        val y = if (above >= margin) above else anchorBounds.bottom + margin
+        return IntOffset(x.within(windowSize.width - popupContentSize.width), y.within(windowSize.height - popupContentSize.height))
+    }
+
+    private fun Int.within(room: Int): Int {
+        val least = margin.coerceAtMost(maxOf(room, 0))
+        return coerceIn(least, maxOf(room - margin, least))
+    }
+}
+
+private val WIDE_TOOLTIP_MARGIN = 8.dp
 private val TOOLTIP_OUTLINE = 1.dp
 private val TOOLTIP_ELEVATION = 6.dp
 

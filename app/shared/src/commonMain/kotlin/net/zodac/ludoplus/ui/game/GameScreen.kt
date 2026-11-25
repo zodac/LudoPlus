@@ -43,6 +43,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
@@ -93,6 +99,7 @@ import net.zodac.ludoplus.resources.netplay_turn_ending
 import net.zodac.ludoplus.resources.game_die_second_cd
 import net.zodac.ludoplus.resources.game_die_selected_spoken
 import net.zodac.ludoplus.resources.game_die_showing_named_cd
+import net.zodac.ludoplus.resources.game_captures_action
 import net.zodac.ludoplus.resources.game_die_used_spoken
 import net.zodac.ludoplus.resources.game_over_results
 import net.zodac.ludoplus.resources.game_over_team_winner
@@ -639,7 +646,7 @@ private fun PlayerCards(game: StartedGame, turn: Int, compact: Boolean) {
                     if (index == null) {
                         Box(Modifier.weight(1f))
                     } else {
-                        PlayerCard(game, index, turn, compact, Modifier.weight(1f).semantics { traversalIndex = index.toFloat() })
+                        PlayerCard(game, index, turn, compact, Modifier.weight(1f))
                     }
                 }
             }
@@ -658,7 +665,7 @@ private fun playerCardsHeight(rows: Int, compact: Boolean): Dp {
     return (line + cardPadding(compact) * 2) * rows + cardGap(compact) * (rows - 1)
 }
 
-/** A player's card: a tap on it shows how many captures they have made and had made of them, under their whole name where the card cuts it. */
+/** A player's card: a tap on it shows how many captures they have made and had made of them, and a long press each against each opponent ([CaptureBars]), under their whole name where the card cuts it. It's outlined in dashes while either is up. */
 @Composable
 private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolean, modifier: Modifier) {
     val player = game.players[index]
@@ -689,7 +696,14 @@ private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolea
     var nameCut by remember(player.name) { mutableStateOf(false) }
     // Up until a tap elsewhere: there's more on it than its usual time is enough to read.
     val tooltip = rememberAppTooltipState(persistent = true)
+    var detailed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val showTooltip = { withOpponents: Boolean ->
+        detailed = withOpponents
+        scope.launch { tooltip.show() }
+        Unit
+    }
+    val detailAction = stringResource(Res.string.game_captures_action)
     val spoken = joinClauses(
         listOfNotNull(
             team?.let { stringResource(Res.string.game_player_team_spoken, it) },
@@ -699,56 +713,85 @@ private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolea
             placeText ?: spokenRank,
         ) + if (side.captures > 0 || side.timesCaptured > 0) listOf(captures, captured) else emptyList(),
     )
-    Surface(
-        // Raw taps, not a button: TalkBack reads all the tooltip says with the card, so it has nothing to ask for.
-        modifier = modifier
-            .semantics(mergeDescendants = true) { stateDescription = spoken }
-            .pointerInput(Unit) { detectTapGestures { scope.launch { tooltip.show() } } },
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = if (current) BorderStroke(2.dp, colour) else null,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = cardPadding(compact)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
+    // Focusable only for a long press's, as a power-up's is, so that TalkBack reads on into it. Otherwise a tap elsewhere, on
+    // the die say, does its own job as the tooltip goes.
+    // The box takes the weight: a tooltip's modifier is its content's alone, not its own.
+    Box(modifier) {
+        AppTooltip(
+            body = {
+                if (detailed) CaptureBars(game, index, named = nameCut) else Column {
+                    if (nameCut) Text(player.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = colour)
+                    Text(captures, style = MaterialTheme.typography.bodyMedium)
+                    Text(captured, style = MaterialTheme.typography.bodyMedium)
+                }
+            },
+            state = tooltip,
+            enabled = false,
+            focusable = detailed,
+            wide = detailed,
         ) {
-            if (team != null) TeamBadge(team, Modifier.clearAndSetSemantics { })
-            RankDisc(rank, tied, colour, Modifier.clearAndSetSemantics { })
-            // The box takes the room: a tooltip's own is only as wide as what's in it.
-            Box(modifier = Modifier.weight(1f)) {
-                // Not focusable: a tap elsewhere, on the die say, does its own job as the tooltip goes.
-                AppTooltip(
-                    body = {
-                        Column {
-                            if (nameCut) Text(player.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = colour)
-                            Text(captures, style = MaterialTheme.typography.bodyMedium)
-                            Text(captured, style = MaterialTheme.typography.bodyMedium)
-                        }
-                    },
-                    state = tooltip,
-                    enabled = false,
-                    focusable = false,
+            Surface(
+                // Raw taps, not a button: TalkBack reads all a tap's tooltip says with the card, and has an action for a long press's.
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .openedOutline(tooltip.isVisible, colour)
+                    .semantics(mergeDescendants = true) {
+                        stateDescription = spoken
+                        traversalIndex = index.toFloat()
+                        customActions = listOf(CustomAccessibilityAction(detailAction) { showTooltip(true); true })
+                    }
+                    .pointerInput(Unit) { detectTapGestures(onLongPress = { showTooltip(true) }, onTap = { showTooltip(false) }) },
+                shape = RoundedCornerShape(CARD_CORNER),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = if (current && !tooltip.isVisible) BorderStroke(2.dp, colour) else null,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = cardPadding(compact)),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
+                    if (team != null) TeamBadge(team, Modifier.clearAndSetSemantics { })
+                    RankDisc(rank, tied, colour, Modifier.clearAndSetSemantics { })
                     Text(
                         text = player.name,
                         style = MaterialTheme.typography.titleSmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         onTextLayout = { nameCut = it.hasVisualOverflow },
+                        modifier = Modifier.weight(1f),
                     )
+                    if (player.type == PlayerType.AI) CpuPlayerIcon(size = 16.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (state.rules.claims) SquaresBadge(state.squaresOf(index), colour, Modifier.clearAndSetSemantics { })
+                    if (placeText != null) {
+                        Text(placeText, style = MaterialTheme.typography.labelMedium, color = colour, modifier = Modifier.clearAndSetSemantics { })
+                    } else {
+                        PawnDots(counted, state.rules.pawnsPerPlayer, colour, Modifier.clearAndSetSemantics { })
+                    }
                 }
-            }
-            if (player.type == PlayerType.AI) CpuPlayerIcon(size = 16.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (state.rules.claims) SquaresBadge(state.squaresOf(index), colour, Modifier.clearAndSetSemantics { })
-            if (placeText != null) {
-                Text(placeText, style = MaterialTheme.typography.labelMedium, color = colour, modifier = Modifier.clearAndSetSemantics { })
-            } else {
-                PawnDots(counted, state.rules.pawnsPerPlayer, colour, Modifier.clearAndSetSemantics { })
             }
         }
     }
 }
+
+/**
+ * A dashed outline in [colour] while [opened]: the player card whose tooltip is up, as DiceFive's was whose card was being
+ * looked at. In place of the solid outline, on the card of the player whose turn it is.
+ */
+private fun Modifier.openedOutline(opened: Boolean, colour: Color): Modifier = if (!opened) this else drawWithContent {
+    drawContent()
+    val stroke = OPENED_OUTLINE.toPx()
+    val inset = stroke / 2
+    drawRoundRect(
+        color = colour,
+        topLeft = Offset(inset, inset),
+        size = Size(size.width - inset * 2, size.height - inset * 2),
+        cornerRadius = CornerRadius(CARD_CORNER.toPx() - inset),
+        style = Stroke(stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))),
+    )
+}
+
+private val CARD_CORNER = 12.dp
+private val OPENED_OUTLINE = 1.5.dp
 
 /**
  * The player's [colour], with their [rank] as the game stands on it ([GameState.ranks]), or none while everyone is level:

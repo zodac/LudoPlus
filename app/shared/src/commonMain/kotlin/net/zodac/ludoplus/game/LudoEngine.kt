@@ -400,7 +400,12 @@ object LudoEngine {
                     shielded = if (landing.at < state.board.trackSteps) side.shielded else side.shielded - pawn,
                 )
             }
-            .replace(state.current) { mover -> mover.copy(captures = mover.captures + landing.captures.size) }
+            .replace(state.current) { mover ->
+                mover.copy(
+                    captures = mover.captures + landing.captures.size,
+                    capturesOf = landing.captures.fold(mover.capturesOf) { counts, taken -> counts + (taken.player to (counts[taken.player] ?: 0) + 1) },
+                )
+            }
         for (captured in landing.captures) {
             players = players.replace(captured.player) { victim ->
                 victim.copy(

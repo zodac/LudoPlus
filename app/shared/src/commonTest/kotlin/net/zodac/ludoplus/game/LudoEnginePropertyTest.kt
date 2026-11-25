@@ -43,6 +43,11 @@ class LudoEnginePropertyTest {
             assertTrue(player.pawns.all { it in PawnPosition.YARD_PROGRESS..board.homeProgress }, "Seed $seed: ${player.pawns}")
         }
         assertEquals(state.players.sumOf { it.captures }, state.players.sumOf { it.timesCaptured }, "Seed $seed: capture tallies")
+        state.players.forEachIndexed { index, player ->
+            assertEquals(player.captures, player.capturesOf.values.sum(), "Seed $seed: captures by opponent")
+            assertEquals(player.timesCaptured, state.players.sumOf { it.capturesOf[index] ?: 0 }, "Seed $seed: times captured by opponent")
+            assertTrue(index !in player.capturesOf, "Seed $seed: a player captured their own pawn")
+        }
         // Off a safe square, a track square never holds two colours.
         val owners = mutableMapOf<Int, Int>()
         state.players.forEachIndexed { index, player ->

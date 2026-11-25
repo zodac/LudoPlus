@@ -67,6 +67,17 @@ whose turn it is has an outline in their colour.
     its card is cut with an ellipsis, and the tooltip has all of it above them; one that fits isn't repeated. It stays until
     a tap elsewhere, which does its own job too. It isn't a button to TalkBack, which reads the whole name with the card, and
     the two counts last ("3 captures, 1 captured"), neither while both are 0.
+- **A long press on the card** shows both counts against each opponent (`CaptureBars`, `PlayerCardTest`; the maintainer,
+    2026-11-25): the totals, then a bar either side of each opponent's name, in their colour, all on one scale. Partners are
+    left out unless they capture each other. A tap anywhere only closes it, as a power-up's. TalkBack: the card has the action
+    "Captures by opponent", and the popup reads "Lucky, 3 captures, 1 captured", then "Alex, 2 captures, 0 captured" for each.
+    - The counts are `PlayerState.capturesOf`, kept in the saved game (`capturesOf`, absent with none). A game saved before it
+        was kept has its totals, and rows for the captures since.
+    - The card whose tooltip is up (a tap's or a long press's) has a dashed outline in its player's colour, as DiceFive's viewed
+        tab had (the maintainer, 2026-11-25), in place of the solid one if it's also their turn. Its spoken twin is the name the popup's
+        totals start with.
+    - `AppTooltip(wide = true)`: a rich tooltip's width, 8dp clear of the screen's edges. It scrolls where a large font makes it
+        taller than the screen.
 - **Names** are held to the most players' cap (`model/NameWidth.kt`: 8), in widths, not UTF-16 units: full-width
     characters count two, combining marks none. CPU names are shorter, so the cap never
     cuts one (`AiNameGenerator`, `AiNameGeneratorTest`), though a narrow card may.
