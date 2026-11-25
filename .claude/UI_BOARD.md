@@ -57,6 +57,11 @@ The board, the player cards, the die, and the move log. The general rules are in
     press what it does too, up until a tap anywhere (never timed out), or until it's taken. A tap on a tile is the tile's,
     not a move, unless a movable pawn stands on it or is nearer (`pawnTakesTap`); a portal held is never a move. TalkBack: a
     power-up's square has the action "What Shield does", whose tooltip is a live region; a portal's square says its pair.
+- **A yard held** (a long press anywhere in it, till it's let go; the maintainer, 2026-11-25): everything fades as far but
+    its player's pawns, wherever they are, each with its number on it (its index and 1, as TalkBack and the log say it). Those on one
+    square are told apart, in a ring about its middle (`PawnMark.apart`). They keep their numbers while a move or a ghost
+    plays out. Nothing is ringed, and a pawn in the yard held is never moved. Survival's pawns lost are out of the game, so they
+    fade with the rest. `BoardTilesTest`. TalkBack needs no action for it: each square says its pawns by number.
 - **Moves** are played square by square (`GamePacing`, "Sound, haptics and motion" in `DESIGN.md`).
 
 ## The player cards
@@ -120,9 +125,12 @@ Each round is under a heading ("Turn 3", `LogEntry.turn`: which of its player's 
 under "Start". A roll again's moves are lines of the same turn. The card has no title (the maintainer, 2026-11-25: it only
 took room). Where there isn't room for a line under the heading, it has no heading; where there isn't room for a line, or
 with Settings' **Move log** off (`show_move_log`, on by default), nothing is drawn, and TalkBack still hears the newest; with
-it off, the board has the log's room. Every move is logged either way. A game saved before entries kept their turns (1.1.0)
-has them counted back as it's loaded (`MoveLog.withTurns`). To TalkBack the headings are headings, and the lines a list ("1
-of 12"), read without their times.
+it off, the board has the log's room. Pawns are named by their numbers, a held yard's (the maintainer, 2026-11-25):
+the one that moved ("Alex's Pawn 2 moved 4 squares.", which fits a line at a large font), a partner's with their own
+name, and any captured, caught, swapped, or brought back out ("Alex captured Sam's Pawn 1 and Pawn 3 with Pawn 2."). A
+player's last pawn home has no number. Every move is logged either way. A game saved before entries kept their turns
+(1.1.0) has them counted back as it's loaded (`MoveLog.withTurns`). To TalkBack the headings are headings, and the
+lines a list ("1 of 12"), read without their times.
 
 ## What TalkBack hears
 

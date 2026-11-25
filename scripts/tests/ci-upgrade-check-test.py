@@ -103,9 +103,18 @@ class UpgradeCheckTest(unittest.TestCase):
 
     def test_a_lines_rewording_is_not_a_changed_log(self):
         before = check.snapshot(board(*LEFT), LOG)
-        self.assertEqual(["[08:49:10]", ["Joker", "Player 1"], [2, 1]], before["log"][0])
-        reworded = [(LOG[0][0], "Joker sent 2 of Player 1's pawns back."), *LOG[1:]]
+        self.assertEqual(["[08:49:10]", ["Joker", "Player 1"], [1]], before["log"][0])
+        reworded = [(LOG[0][0], "Joker sent Player 1 back."), *LOG[1:]]
         self.assertEqual([], check.differences(before, check.snapshot(board(*LEFT), reworded)))
+
+    def test_a_line_that_comes_to_name_its_pawns_is_not_a_changed_log(self):
+        before = check.snapshot(board(*LEFT), LOG)
+        named = [
+            (LOG[0][0], "Joker captured Player 1's Pawn 2 and Pawn 4 with Pawn 3."),
+            (LOG[1][0], "Player 1's Pawn 2 moved 3 squares."),
+            LOG[2],
+        ]
+        self.assertEqual([], check.differences(before, check.snapshot(board(*LEFT), named)))
 
     def test_a_log_that_lost_changed_or_retimed_a_line_is_named(self):
         before = check.snapshot(board(*LEFT), LOG)

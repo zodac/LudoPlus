@@ -60,22 +60,27 @@ internal class GhostMotion(val drifting: DriftingGhost?, private val clock: Stat
         }
     }
 
-    /** The pawns being caught (but for [moving], the pawn whose move is still playing out), and the ghost drifting onto them. */
+    /** Each pawn being caught at this moment (but for [moving], the pawn whose move is still playing out), drawn by [draw] at its centre and as big as it is, in squares. */
+    fun eachCaught(moving: PawnRef?, draw: (PawnRef, Offset, Float) -> Unit) {
+        val drifting = drifting ?: return
+        val landing = drifting.path.last()
+        val flight = ((clock.value - drifting.driftMillis) / CAPTURE_FLIGHT_MILLIS).coerceIn(0f, 1f)
+        for ((pawn, yard) in drifting.caught) {
+            if (pawn == moving) continue
+            val ground = lerp(landing, yard, flight)
+            val up = (CAUGHT_ARC + CAUGHT_ARC_PER_SQUARE * (yard - landing).getDistance()) * 4f * flight * (1f - flight)
+            draw(pawn, ground - Offset(0f, up), PAWN_RADIUS + (drifting.yardRadius - PAWN_RADIUS) * flight)
+        }
+    }
+
+    /** The pawns being caught ([eachCaught]), and the ghost drifting onto them. */
     fun DrawScope.drawDrift(unit: Float, pawns: PawnStyle, colourOf: (Int) -> Color, moving: PawnRef?) {
         val drifting = drifting ?: return
         val millis = clock.value
         val step = (millis / GHOST_STEP_MILLIS).coerceIn(0f, (drifting.path.size - 1).toFloat())
         val index = step.toInt().coerceAtMost(drifting.path.size - 2)
         val fraction = step - index
-        val landing = drifting.path.last()
-        val flight = ((millis - drifting.driftMillis) / CAPTURE_FLIGHT_MILLIS).coerceIn(0f, 1f)
-        for ((pawn, yard) in drifting.caught) {
-            if (pawn == moving) continue
-            val ground = lerp(landing, yard, flight)
-            val up = (CAUGHT_ARC + CAUGHT_ARC_PER_SQUARE * (yard - landing).getDistance()) * 4f * flight * (1f - flight)
-            val size = PAWN_RADIUS + (drifting.yardRadius - PAWN_RADIUS) * flight
-            with(pawns) { drawPawn((ground - Offset(0f, up)) * unit, size * unit, colourOf(pawn.player), ringed = false) }
-        }
+        eachCaught(moving) { pawn, centre, size -> with(pawns) { drawPawn(centre * unit, size * unit, colourOf(pawn.player), ringed = false) } }
         val at = lerp(drifting.path[index], drifting.path[index + 1], fraction) - Offset(0f, GHOST_FLOAT * sin(PI * fraction).toFloat())
         drawGhost(at * unit, unit)
     }

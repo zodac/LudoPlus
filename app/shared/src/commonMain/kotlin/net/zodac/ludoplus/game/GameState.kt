@@ -382,11 +382,14 @@ sealed interface GameEvent {
         val effect: PowerUpEffect? = null,
         val recalled: List<PawnRef> = emptyList(),
     ) : GameEvent {
+        /** The pawn that moved: [player]'s, or a partner's they rolled for. */
+        val mover: PawnRef get() = PawnRef(move.owner ?: player, move.pawn)
+
         /** Where the pawn ended up, by its progress: where the move took it, or a power-up from there. */
         val endedAt: Int get() = effect?.movedTo ?: move.to
 
         /** Whether it's no more than the choice not to swap: its pawn, landed on a Swap, keeps its place ([Move.swap]). */
-        val keptPlace: Boolean get() = move.swap == PawnRef(move.owner ?: player, move.pawn)
+        val keptPlace: Boolean get() = move.swap == mover
 
         /** Every pawn captured, by the move and by a power-up it ended on. */
         val allCaptures: List<PawnRef> get() = move.captures + effect?.captures.orEmpty()

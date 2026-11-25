@@ -136,7 +136,7 @@ class BoardSemanticsTest : UiTest() {
     fun `the log says a move went through a portal`() = uiTest(TestScreen(411, 891)) {
         val state = GameState.new(GameMode.PORTALS, 4)
         show(state, log = listOf(LogEntry(GameEvent.Moved(0, 2, Move(0, 8, 3, via = 10), finished = false))))
-        compose.onNodeWithContentDescription("Alex moved a pawn 2 squares, then through a portal.").assertExists()
+        compose.onNodeWithContentDescription("Alex's Pawn 1 moved 2 squares, then through a portal.").assertExists()
     }
 
     @Test
@@ -195,7 +195,7 @@ class BoardSemanticsTest : UiTest() {
         compose.onNodeWithContentDescription("Square 9, Red pawn 1").assert(onClickLabel("Move Red pawn 1 4 squares"))
         val log = listOf(LogEntry(GameEvent.Moved(0, 4, Move(0, 8, 14, skipped = listOf(9, 10)), finished = false), vanished = 2))
         show(state, log)
-        compose.onNodeWithContentDescription("Alex moved a pawn 4 squares. 2 squares vanished.", useUnmergedTree = true).assertExists()
+        compose.onNodeWithContentDescription("Alex's Pawn 1 moved 4 squares. 2 squares vanished.", useUnmergedTree = true).assertExists()
 
         show(state.copy(lostSquares = (0..<52).filter { it !in setOf(8, 20, 13, 33, 47, 1, 2) }.toSet()))
         compose.onNodeWithText("Cataclysm! No more squares will vanish.").assertExists()
@@ -297,19 +297,19 @@ class BoardSemanticsTest : UiTest() {
         fun recalled(vararg pawns: PawnRef) = LogEntry(GameEvent.Moved(0, 2, Move(0, 1, 3, pawns.toList()), finished = false, recalled = pawns.toList()))
         val state = GameState.new(GameMode.CHAOS, 4)
         for ((entry, line) in listOf(
-            moved(PowerUpEffect(PowerUp.DOUBLE)) to "Alex moved a pawn 2 squares. Alex's next 3 rolls count double.",
-            moved(PowerUpEffect(PowerUp.SHIELD)) to "Alex moved a pawn 2 squares. Alex took Shield.",
-            moved(PowerUpEffect(PowerUp.CALL_UP, calledUp = 2)) to "Alex moved a pawn 2 squares. Alex called up a pawn.",
-            moved(PowerUpEffect(PowerUp.CALL_UP, banked = true)) to "Alex moved a pawn 2 squares. Alex banked a Call Up.",
-            recalled(PawnRef(1, 0)) to "Alex captured 1 of Gambit's pawns. Gambit's Call Up brought 1 pawn straight back out.",
-            recalled(PawnRef(1, 0), PawnRef(1, 3)) to "Alex captured 2 of Gambit's pawns. Gambit's Call Ups brought 2 pawns straight back out.",
-            moved(PowerUpEffect(PowerUp.CALL_UP)) to "Alex moved a pawn 2 squares. Alex took Call Up.",
-            moved(PowerUpEffect(PowerUp.SWAP)) to "Alex moved a pawn 2 squares. Alex took Swap.",
-            moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)), Move(0, 3, 3, swap = PawnRef(2, 0))) to "Alex swapped places with Sam.",
+            moved(PowerUpEffect(PowerUp.DOUBLE)) to "Alex's Pawn 1 moved 2 squares. Alex's next 3 rolls count double.",
+            moved(PowerUpEffect(PowerUp.SHIELD)) to "Alex's Pawn 1 moved 2 squares. Alex took Shield.",
+            moved(PowerUpEffect(PowerUp.CALL_UP, calledUp = 2)) to "Alex's Pawn 1 moved 2 squares. Alex called up Pawn 3.",
+            moved(PowerUpEffect(PowerUp.CALL_UP, banked = true)) to "Alex's Pawn 1 moved 2 squares. Alex banked a Call Up.",
+            recalled(PawnRef(1, 0)) to "Alex captured Gambit's Pawn 1 with Pawn 1. Gambit's Call Up brought Pawn 1 straight back out.",
+            recalled(PawnRef(1, 0), PawnRef(1, 3)) to "Alex captured Gambit's Pawn 1 and Pawn 4 with Pawn 1. Gambit's Call Ups brought Pawn 1 and Pawn 4 straight back out.",
+            moved(PowerUpEffect(PowerUp.CALL_UP)) to "Alex's Pawn 1 moved 2 squares. Alex took Call Up.",
+            moved(PowerUpEffect(PowerUp.SWAP)) to "Alex's Pawn 1 moved 2 squares. Alex took Swap.",
+            moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)), Move(0, 3, 3, swap = PawnRef(2, 0))) to "Alex swapped Pawn 1 with Sam's Pawn 1.",
             // As 1.1.0's games logged it: the landing and its swap in one.
-            moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)), Move(0, 1, 3, swap = PawnRef(2, 0))) to "Alex moved a pawn 2 squares. Alex swapped places with Sam.",
-            moved(PowerUpEffect(PowerUp.ROLL_AGAIN), Move(0, 1, 3, listOf(PawnRef(1, 0)))) to "Alex captured 1 of Gambit's pawns. Alex took Roll Again.",
-            moved(null, Move(0, 1, 2, bouncedFrom = 3, brokenShields = listOf(PawnRef(1, 0)))) to "Alex moved a pawn 2 squares and bounced off Gambit's shield.",
+            moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)), Move(0, 1, 3, swap = PawnRef(2, 0))) to "Alex's Pawn 1 moved 2 squares. Alex swapped Pawn 1 with Sam's Pawn 1.",
+            moved(PowerUpEffect(PowerUp.ROLL_AGAIN), Move(0, 1, 3, listOf(PawnRef(1, 0)))) to "Alex captured Gambit's Pawn 1 with Pawn 1. Alex took Roll Again.",
+            moved(null, Move(0, 1, 2, bouncedFrom = 3, brokenShields = listOf(PawnRef(1, 0)))) to "Alex's Pawn 1 moved 2 squares and bounced off Gambit's shield.",
         )) {
             show(state, log = listOf(entry))
             compose.onNodeWithContentDescription(line).assertExists()
@@ -329,8 +329,27 @@ class BoardSemanticsTest : UiTest() {
         )
         compose.onNodeWithContentDescription("Square 2, ghost, Red pawn 1, 55 squares from home").assertExists()
         compose.onNodeWithContentDescription("Square 41, ghost, empty").assertExists()
-        compose.onNodeWithContentDescription("Alex rolled 3 and had no move. A ghost caught Gambit!").assertExists()
-        compose.onNodeWithContentDescription("Alex moved a pawn 2 squares. A ghost caught Alex and Sam!").assertExists()
+        compose.onNodeWithContentDescription("Alex rolled 3 and had no move. A ghost caught Gambit's Pawn 1 and Pawn 2!").assertExists()
+        compose.onNodeWithContentDescription("Alex's Pawn 1 moved 2 squares. A ghost caught Alex's Pawn 1 and Sam's Pawn 2!").assertExists()
+    }
+
+    @Test
+    fun `the log names every pawn by its number - a partner's and those of several players by their names too`() = uiTest(TestScreen(411, 891)) {
+        val rules = GameMode.CLASSIC.rules.copy(teams = listOf(0, 1, 0, 1))
+        val state = GameState.new(GameMode.CLASSIC, 4, rules = rules)
+        for ((move, line) in listOf(
+            Move(2, 0, 4, owner = 2) to "Sam's Pawn 3 moved 4 squares.",
+            Move(3, Y, 0, owner = 2) to "Alex brought Sam's Pawn 4 out.",
+            Move(1, H - 4, H, owner = 2) to "Alex brought Sam's Pawn 2 home.",
+            Move(2, 0, 4, listOf(PawnRef(1, 0), PawnRef(1, 3), PawnRef(3, 1)), owner = 2) to
+                "Alex captured Gambit's Pawn 1, Pawn 4, and Payout's Pawn 2 with Sam's Pawn 3.",
+        )) {
+            show(state, log = listOf(LogEntry(GameEvent.Moved(0, 4, move, finished = false))))
+            val node = compose.onNodeWithContentDescription(line).fetchSemanticsNode()
+            // The partner's name is in their colour, as the mover's is where it's there.
+            val text = node.config[SemanticsProperties.Text][1]
+            assertTrue(listOf("Alex" to 0, "Sam" to 2).filter { it.first in line }.all { (name, seat) -> text.spanStyles.any { text.text.substring(it.start, it.end) == name && it.item.color == PlayerColour.defaultFor(seat).color } }, line)
+        }
     }
 
     @Test
@@ -344,8 +363,8 @@ class BoardSemanticsTest : UiTest() {
                 LogEntry(GameEvent.Moved(0, 2, move, finished = false, knockedOut = listOf(1, 2))),
             ),
         )
-        compose.onNodeWithContentDescription("Alex knocked Gambit out of the game.").assertExists()
-        compose.onNodeWithContentDescription("Alex knocked Gambit and Sam out of the game.").assertExists()
+        compose.onNodeWithContentDescription("Alex knocked Gambit out of the game with Pawn 1.").assertExists()
+        compose.onNodeWithContentDescription("Alex knocked Gambit and Sam out of the game with Pawn 1.").assertExists()
     }
 
     @Test
@@ -514,14 +533,14 @@ class BoardSemanticsTest : UiTest() {
 
     /** A log of every kind of line, oldest first, with what each says. */
     private val everyLine = listOf(
-        LogEntry(GameEvent.Moved(0, 6, Move(0, Y, 0), finished = false)) to "Alex brought a pawn out.",
-        LogEntry(GameEvent.Moved(0, 4, Move(0, 0, 4), finished = false)) to "Alex moved a pawn 4 squares.",
-        LogEntry(GameEvent.Moved(0, 1, Move(0, 4, 5), finished = false)) to "Alex moved a pawn 1 square.",
+        LogEntry(GameEvent.Moved(0, 6, Move(0, Y, 0), finished = false)) to "Alex brought Pawn 1 out.",
+        LogEntry(GameEvent.Moved(0, 4, Move(0, 0, 4), finished = false)) to "Alex's Pawn 1 moved 4 squares.",
+        LogEntry(GameEvent.Moved(0, 1, Move(0, 4, 5), finished = false)) to "Alex's Pawn 1 moved 1 square.",
         LogEntry(GameEvent.NoMove(1, 3)) to "Gambit rolled 3 and had no move.",
         LogEntry(GameEvent.RollAgainLimit(2, 6)) to "Sam rolled a third 6 in a row, so the turn passed.",
-        LogEntry(GameEvent.Moved(3, 2, Move(1, H - 2, H), finished = false)) to "Payout brought a pawn home.",
+        LogEntry(GameEvent.Moved(3, 2, Move(1, H - 2, H), finished = false)) to "Payout brought Pawn 2 home.",
         LogEntry(GameEvent.Moved(3, 2, Move(2, H - 2, H), finished = true), place = 1) to "Payout has every pawn home, in 1st place.",
-        LogEntry(GameEvent.Moved(1, 5, Move(0, 15, 20, listOf(PawnRef(0, 1))), finished = false)) to "Gambit captured 1 of Alex's pawns.",
+        LogEntry(GameEvent.Moved(1, 5, Move(0, 15, 20, listOf(PawnRef(0, 1))), finished = false)) to "Gambit captured Alex's Pawn 2 with Pawn 1.",
     )
 
     @Test
@@ -554,15 +573,15 @@ class BoardSemanticsTest : UiTest() {
     @Test
     fun `on a screen with no room for the log its newest line is shown alone - and heard as it comes`() = uiTest(TestScreen(320, 470)) {
         show(state().copy(current = 2, lastEvent = everyLine.last().first.event), everyLine.map { it.first })
-        compose.onNode(hasContentDescription("Gambit captured 1 of Alex's pawns."))
+        compose.onNode(hasContentDescription("Gambit captured Alex's Pawn 2 with Pawn 1."))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
-        compose.onNode(hasContentDescription("Alex brought a pawn out.")).assertDoesNotExist()
+        compose.onNode(hasContentDescription("Alex brought Pawn 1 out.")).assertDoesNotExist()
     }
 
     @Test
     fun `a line in the log shows each player it names in their colour - not bold - and is said as written`() = uiTest(TestScreen(411, 891)) {
         show(state().copy(current = 2, lastEvent = GameEvent.Moved(1, 5, Move(0, 15, 20, listOf(PawnRef(0, 1))), finished = false)), listOf(LogEntry(GameEvent.Moved(1, 5, Move(0, 15, 20, listOf(PawnRef(0, 1))), finished = false))))
-        val node = compose.onNode(hasContentDescription("Gambit captured 1 of Alex's pawns.")).fetchSemanticsNode()
+        val node = compose.onNode(hasContentDescription("Gambit captured Alex's Pawn 2 with Pawn 1.")).fetchSemanticsNode()
         // The time, then the line: two texts in one row.
         val (time, line) = node.config[SemanticsProperties.Text]
         assertEquals(
@@ -572,15 +591,15 @@ class BoardSemanticsTest : UiTest() {
         // Coloured, not bold: bold is the prompt's.
         assertEquals(listOf(null, null), line.spanStyles.map { it.item.fontWeight })
         assertTrue(Regex("""^\[\d\d:\d\d:\d\d] $""").matches(time.text), time.text)
-        assertEquals("Gambit captured 1 of Alex's pawns.", line.text)
-        assertEquals("Gambit captured 1 of Alex's pawns.", node.config[SemanticsProperties.ContentDescription].single())
+        assertEquals("Gambit captured Alex's Pawn 2 with Pawn 1.", line.text)
+        assertEquals("Gambit captured Alex's Pawn 2 with Pawn 1.", node.config[SemanticsProperties.ContentDescription].single())
     }
 
     @Test
     fun `each name is coloured once - a short one never inside a longer one - and one not there is left`() {
-        val text = withNamesInColour("Jo captured 1 of Joe's pawns.", listOf("Jo" to Color.Red, "Joe" to Color.Blue, "Sam" to Color.Green, "" to Color.Cyan))
+        val text = withNamesInColour("Jo captured Joe's Pawn 1 with Pawn 2.", listOf("Jo" to Color.Red, "Joe" to Color.Blue, "Sam" to Color.Green, "" to Color.Cyan))
         assertEquals(
-            listOf(Triple(0, 2, Color.Red), Triple(17, 20, Color.Blue)),
+            listOf(Triple(0, 2, Color.Red), Triple(12, 15, Color.Blue)),
             text.spanStyles.sortedBy { it.start }.map { Triple(it.start, it.end, it.item.color) },
         )
     }

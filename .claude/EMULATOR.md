@@ -116,6 +116,8 @@ minutes in the sandbox.
     script's `is_name`.
 - **A release with no move log** (`LOGLESS_RELEASES`: 1.0.1) is compared without it. Temporary: remove it once 1.1.0 is
     released.
+- **A line's pawns aren't compared** (`LOG_PAWNS`): releases up to 1.1.2 don't say which moved. Temporary: remove it once a
+    release that does is the last one.
 - **A retired package.** 1.0.0 went out as `net.zodac.ludo.github`, before the package became `net.zodac.ludoplus`, so
     no later release can upgrade it (the maintainer, 2026-11-19, let it go). The script reads both APKs' packages with
     `aapt2` and passes a last release in `RETIRED_PACKAGES` with a notice; any other mismatch fails.

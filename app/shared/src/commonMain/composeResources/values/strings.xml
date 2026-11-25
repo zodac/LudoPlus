@@ -311,36 +311,37 @@
         <item quantity="other">%1$s rolled %2$d and %3$d and had no move: %4$d more tries.</item>
     </plurals>
     <string name="game_event_three_doubles">%1$s rolled a third double in a row, so the turn passed.</string>
-    <!-- %2$s is the captured pawns' owner, %3$d how many of their pawns went back to the yard. -->
-    <plurals name="game_event_capture">
-        <item quantity="one">%1$s captured %3$d of %2$s's pawns.</item>
-        <item quantity="other">%1$s captured %3$d of %2$s's pawns.</item>
-    </plurals>
-    <!-- Survival: the capture took the last pawns of %2$s, a player's name or a list of them ("Sam and Jo"). -->
-    <string name="game_event_knocked_out">%1$s knocked %2$s out of the game.</string>
-    <string name="game_event_home">%1$s brought a pawn home.</string>
+    <!-- A pawn in the move log, by its number (the one it shows while its yard is held, from 1): the player's own that the line starts with, then anyone else's (%1$s their name). In the lines below, "a pawn" is one of these, and "pawns" one or a list of them, each player named once ("Sam's Pawn 1, Pawn 3, and Jo's Pawn 2"). -->
+    <string name="game_event_pawn">Pawn %1$d</string>
+    <string name="game_event_pawn_of">%1$s's Pawn %2$d</string>
+    <!-- %2$s is the pawns captured, %3$s the pawn that captured them. -->
+    <string name="game_event_capture">%1$s captured %2$s with %3$s.</string>
+    <!-- Survival: the capture took the last pawns of %2$s, a player's name or a list of them ("Sam and Jo"). %3$s is the pawn that did. -->
+    <string name="game_event_knocked_out">%1$s knocked %2$s out of the game with %3$s.</string>
+    <!-- %2$s is a pawn. -->
+    <string name="game_event_home">%1$s brought %2$s home.</string>
     <!-- %2$s is the place: "1st", "2nd"... -->
     <string name="game_event_finished">%1$s has every pawn home, in %2$s place.</string>
     <!-- A team game: a player has every pawn home, but their team isn't placed until every partner's are too. -->
     <string name="game_event_all_home">%1$s has every pawn home.</string>
     <!-- A team game: the last of a team's pawns home. %1$s is its players' names as a list ("Alex and Sam"), %2$s the place ("1st"). -->
     <string name="game_event_team_finished">%1$s are home, in %2$s place.</string>
-    <!-- A pawn moved from its yard onto the board. -->
-    <string name="game_event_out">%1$s brought a pawn out.</string>
-    <!-- A pawn moved along the board: %2$d is how many squares. -->
+    <!-- A pawn (%2$s) moved from its yard onto the board. -->
+    <string name="game_event_out">%1$s brought %2$s out.</string>
+    <!-- A pawn (%1$s, game_event_pawn_of) moved along the board: %2$d is how many squares. Kept short, to fit one line of the log at a large font. -->
     <plurals name="game_event_move">
-        <item quantity="one">%1$s moved a pawn %2$d square.</item>
-        <item quantity="other">%1$s moved a pawn %2$d squares.</item>
+        <item quantity="one">%1$s moved %2$d square.</item>
+        <item quantity="other">%1$s moved %2$d squares.</item>
     </plurals>
-    <!-- The Portals mode: the pawn's move ended on a portal, so it came out at that portal's pair. %2$d is how many squares it moved first. -->
+    <!-- The Portals mode: the pawn's (%1$s) move ended on a portal, so it came out at that portal's pair. %2$d is how many squares it moved first. -->
     <plurals name="game_event_portal">
-        <item quantity="one">%1$s moved a pawn %2$d square, then through a portal.</item>
-        <item quantity="other">%1$s moved a pawn %2$d squares, then through a portal.</item>
+        <item quantity="one">%1$s moved %2$d square, then through a portal.</item>
+        <item quantity="other">%1$s moved %2$d squares, then through a portal.</item>
     </plurals>
-    <!-- Chaos: the pawn landed on a shielded one, so it settled on the square before it. %3$s is the shielded pawn's player. -->
+    <!-- Chaos: the pawn (%1$s) landed on a shielded one, so it settled on the square before it. %3$s is the shielded pawn's player. -->
     <plurals name="game_event_bounce">
-        <item quantity="one">%1$s moved a pawn %2$d square and bounced off %3$s's shield.</item>
-        <item quantity="other">%1$s moved a pawn %2$d squares and bounced off %3$s's shield.</item>
+        <item quantity="one">%1$s moved %2$d square and bounced off %3$s's shield.</item>
+        <item quantity="other">%1$s moved %2$d squares and bounced off %3$s's shield.</item>
     </plurals>
     <!-- Chaos: a line of the log, then what the power-up the move ended on did (the lines after this one), each a sentence. -->
     <string name="game_event_and">%1$s %2$s</string>
@@ -349,15 +350,17 @@
         <item quantity="one">%1$s's next %2$d roll counts double.</item>
         <item quantity="other">%1$s's next %2$d rolls count double.</item>
     </plurals>
-    <string name="game_event_call_up">%1$s called up a pawn.</string>
-    <!-- %1$s had no pawn in the yard, so keeps the Call Up until one is captured. Then, after the capture's line: how many of %1$s's captured pawns their banked Call Ups brought back out. -->
+    <!-- %2$s is the pawn the Call Up brought out of the yard. -->
+    <string name="game_event_call_up">%1$s called up %2$s.</string>
+    <!-- %1$s had no pawn in the yard, so keeps the Call Up until one is captured. Then, after the capture's line: the captured pawns of %1$s's (%2$s) their banked Call Ups brought back out; the quantity is how many. -->
     <string name="game_event_call_up_banked">%1$s banked a Call Up.</string>
     <plurals name="game_event_recalled">
-        <item quantity="one">%1$s's Call Up brought %2$d pawn straight back out.</item>
-        <item quantity="other">%1$s's Call Ups brought %2$d pawns straight back out.</item>
+        <item quantity="one">%1$s's Call Up brought %2$s straight back out.</item>
+        <item quantity="other">%1$s's Call Ups brought %2$s straight back out.</item>
     </plurals>
-    <string name="game_event_swap">%1$s swapped places with %2$s.</string>
-    <!-- Haunted House: as the turn ended, a ghost landed on pawns of %1$s, a player's name or a list of them, so they went back to their yards. -->
+    <!-- %2$s is the pawn that landed on the Swap, %3$s the one it swapped places with. -->
+    <string name="game_event_swap">%1$s swapped %2$s with %3$s.</string>
+    <!-- Haunted House: as the turn ended, a ghost landed on %1$s, a pawn or a list of them, so they went back to their yards. -->
     <string name="game_event_haunted">A ghost caught %1$s!</string>
     <!-- A heading in the move log, over the moves of one round of turns: %1$d counts the rounds from 1. -->
     <string name="game_log_turn">Turn %1$d</string>

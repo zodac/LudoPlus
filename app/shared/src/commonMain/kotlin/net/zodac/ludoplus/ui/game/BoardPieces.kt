@@ -75,6 +75,28 @@ fun pawnMarks(state: GameState, without: PawnRef? = null): List<PawnMark> {
 private fun MutableMap<BoardSquare, MutableMap<Int, MutableList<Int>>>.square(cell: BoardSquare, player: Int): MutableList<Int> =
     getOrPut(cell) { mutableMapOf() }.getOrPut(player) { mutableListOf() }
 
+/** How far from its square's middle each of two or more pawns told apart is ([apart]), and how big, in squares. */
+private const val APART_OFFSET = 0.5f
+private const val APART_PAWN_RADIUS = 0.34f
+private const val APART_CROWD = 4
+private const val APART_CROWD_OFFSET = 0.6f
+private const val APART_CROWD_RADIUS = 0.28f
+
+/**
+ * This mark's pawns told apart: itself where it's one pawn, and otherwise each in a ring of their own about the square's
+ * middle, the first at its top left, or with two, at its left.
+ */
+internal fun PawnMark.apart(): List<PawnMark> {
+    if (pawns.size == 1) return listOf(this)
+    val crowd = pawns.size > APART_CROWD
+    val first = if (pawns.size == 2) PI else -PI / 2 - PI / pawns.size
+    return pawns.mapIndexed { i, pawn ->
+        val angle = first + 2 * PI * i / pawns.size
+        val out = Offset(cos(angle).toFloat(), sin(angle).toFloat()) * if (crowd) APART_CROWD_OFFSET else APART_OFFSET
+        copy(pawns = listOf(pawn), centre = square + out, radius = if (crowd) APART_CROWD_RADIUS else APART_PAWN_RADIUS)
+    }
+}
+
 /**
  * A mark that stands still through a move, but shifts [from] where it stood [to] where it stands after, as the pawn
  * [arriving] comes onto its square.

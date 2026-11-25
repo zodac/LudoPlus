@@ -44,6 +44,9 @@ sealed interface BoardLayout {
     /** The outline of [seat]'s yard, convex: a round side is many short ones. */
     fun yard(seat: Int): List<Offset>
 
+    /** Whether [point] is in [seat]'s yard. */
+    fun isInYard(seat: Int, point: Offset): Boolean = insideSides(yard(seat)).all { it.distanceTo(point) >= 0f }
+
     /** The outline of [seat]'s yard's court, the plain inside round its pawns' spots; round where the yard is. */
     fun yardCourt(seat: Int): List<Offset>
 

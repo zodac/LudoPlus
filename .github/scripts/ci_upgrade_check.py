@@ -59,6 +59,12 @@ LOG_TIME = re.compile(r"\[\d{2}:\d{2}:\d{2}\]\s*$")
 # from one of these: remove this, and what it's used for in play_on_old_app and differences.
 LOGLESS_RELEASES = ("1.0.1",)
 
+# TEMPORARY: what a line of the log says of pawns. Releases up to 1.1.2 say how many were captured ("captured 2 of Sam's
+# pawns"), and later ones which pawns moved and were captured ("captured Sam's Pawn 1 with Pawn 3"), so neither is compared.
+# Once a release that names them is the last one, no upgrade check starts from one that doesn't: remove this, and what it's
+# used for in log_entry.
+LOG_PAWNS = re.compile(r"\bPawn \d+|\bcaptured \d+ of\b")
+
 # The player's own rolls and moves before the game is left, at the least; more, up to MAX_PLAYER_ACTIONS, until a pawn
 # is out of its yard, so the saved game holds more than a new one.
 PLAYER_ACTIONS = 4
@@ -198,9 +204,9 @@ def joined_lines(lines, page):
 
 
 def log_entry(line, names):
-    """A line of the log with its wording left out: its time, the players it names in order, and its numbers."""
+    """A line of the log with its wording left out: its time, the players it names in order, and its numbers (LOG_PAWNS aside)."""
     time_text, happened = line
-    return [time_text, sorted((name for name in names if name in happened), key=happened.index), numbers_in(happened)]
+    return [time_text, sorted((name for name in names if name in happened), key=happened.index), numbers_in(LOG_PAWNS.sub("", happened))]
 
 
 def snapshot(nodes, log=None):

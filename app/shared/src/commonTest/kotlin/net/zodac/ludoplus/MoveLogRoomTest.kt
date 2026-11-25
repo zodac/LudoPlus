@@ -176,7 +176,7 @@ class MoveLogRoomTest : UiTest() {
         assertTrue(boardHeight() > withLog, "the board is $withLog tall with the log and ${boardHeight()} without")
         // The newest line, as a polite live region, and none of the others.
         val heard = compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite)).fetchSemanticsNodes()
-        assertTrue(heard.any { node -> node.config.getOrNull(SemanticsProperties.ContentDescription)?.single()?.contains("moved a pawn") == true })
+        assertTrue(heard.any { node -> node.config.getOrNull(SemanticsProperties.ContentDescription)?.single()?.contains("'s Pawn ") == true })
         compose.onNode(hasContentDescription("Alex goes first.")).assertDoesNotExist()
     }
 

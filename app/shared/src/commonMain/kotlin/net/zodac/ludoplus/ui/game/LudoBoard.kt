@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.sin
 import net.zodac.ludoplus.data.settings.MotionGroup
 import net.zodac.ludoplus.game.GameEvent
@@ -115,7 +117,8 @@ private const val HOME_SPARKS = 10
  * plays while the Pawn moves motion is off ([MotionGroup.PAWN_MOVE]).
  *
  * While a portal is pressed, it and its pair are picked out, and everything else on the board fades; as all but the pawn
- * that moves and those it can swap with does while [swapping]. A tap on a power-up shows its name, and a
+ * that moves and those it can swap with does while [swapping]. From a long press on a player's yard until it's let go, all
+ * but their pawns fades, and each of those has its number, those on one square told apart. A tap on a power-up shows its name, and a
  * long press what it does too, until a tap puts it away.
  */
 @Composable
@@ -145,6 +148,8 @@ fun LudoBoard(
     val shownInForce = remember { arrayOf(state.players.map(::InForce)) }
     // The portal being pressed, and the power-up whose popup is up.
     var pressedPortal by remember { mutableStateOf<Portal?>(null) }
+    // The player whose yard is being held.
+    var held by remember { mutableStateOf<Int?>(null) }
     var tip by remember { mutableStateOf<PowerUpTip?>(null) }
     val motion = rememberMoveMotion(state)
     val ghostMotion = rememberGhostMotion(state)
@@ -162,15 +167,18 @@ fun LudoBoard(
             // At the top right, for pawns sharing a square.
             if (mark.pawns.size > 1) drawCount(textMeasurer, mark.pawns.size, (mark.centre + Offset(mark.radius * 0.8f, -mark.radius * 0.8f)) * unit, unit * PAWN_COUNT_RADIUS)
         }
+        // The pawns of a mark not on their way anywhere.
+        fun still(mark: PawnMark): List<Int> =
+            mark.pawns.filterNot { motion.isAnimated(mark.player, it) || motion.isShifting(mark.player, it) || ghostMotion.isCaught(PawnRef(mark.player, it)) }
         // A Swap's pawn, landed on it, and those it can be with, once no move is playing out: drawn over the rest, not with it.
-        val pickedOut = if (swapping && motion.moving == null) {
+        val pickedOut = if (swapping && motion.moving == null && held == null) {
             val swappers = moves.mapNotNull { it.picked(state, swapping = false) }
             marks.filter { mark -> mark.pawns.any { pawn -> PawnRef(mark.player, pawn).let { it in movable || it in swappers } } }
         } else {
             emptyList()
         }
         // All that's drawn but what's picked out, faded together: a press is read by the layer alone, so it redraws none of it.
-        Box(modifier = Modifier.matchParentSize().graphicsLayer { alpha = if (pressedPortal == null && pickedOut.isEmpty()) 1f else BOARD_FADE }) {
+        Box(modifier = Modifier.matchParentSize().graphicsLayer { alpha = if (pressedPortal == null && pickedOut.isEmpty() && held == null) 1f else BOARD_FADE }) {
             // The board, painted once (off the main thread) into an image for its style, seats' colours, pawn count, squares claimed, and size,
             // on a layer of its own: a frame of a move or a turn's ring never draws it again.
             val lastStanding = state.rules.lastStanding
@@ -242,18 +250,20 @@ fun LudoBoard(
                         }
                         detectTapGestures(
                             onPress = { at ->
-                                if (currentState.rules.portals) {
-                                    pressedPortal = tileAt(point(at), layout, specialSquares(currentState))?.let(layout.geometry::portalAt)
-                                    try {
-                                        awaitRelease()
-                                    } finally {
-                                        pressedPortal = null
-                                    }
+                                if (currentState.rules.portals) pressedPortal = tileAt(point(at), layout, specialSquares(currentState))?.let(layout.geometry::portalAt)
+                                try {
+                                    awaitRelease()
+                                } finally {
+                                    pressedPortal = null
+                                    held = null
                                 }
                             },
                             onLongPress = { at ->
                                 val tile = tileAt(point(at), layout, specialSquares(currentState))
+                                val yard = currentState.players.indexOfFirst { layout.isInYard(it.seat, point(at)) }
                                 when {
+                                    // A yard held to be looked at: a pawn in it isn't moved.
+                                    tile == null && yard >= 0 -> held = yard
                                     tile == null -> tap(point(at))
                                     tile in currentState.powerUps -> tip = PowerUpTip(tile, detailed = true)
                                     // A portal held to be looked at: a pawn on it isn't moved.
@@ -267,9 +277,11 @@ fun LudoBoard(
                 val unit = size.minDimension / layout.size
                 if (lastStanding) drawFallen(state, layout, unit, { pawnColours[it] }, theme.pawns) { player, pawn -> animating != null && motion.isAnimated(player, pawn) }
                 for (mark in marks - pickedOut.toSet()) {
+                    // Drawn over the rest.
+                    if (mark.player == held) continue
                     // The moving pawn and any it captured are drawn on their way, below; the rest of their mark stays.
                     // So are those making room for it.
-                    val pawns = mark.pawns.filterNot { motion.isAnimated(mark.player, it) || motion.isShifting(mark.player, it) || ghostMotion.isCaught(PawnRef(mark.player, it)) }
+                    val pawns = still(mark)
                     if (pawns.isEmpty()) continue
                     drawMark(mark.copy(pawns = pawns), unit, ringed = animating == null && pawns.any { PawnRef(mark.player, it) in movable })
                 }
@@ -289,7 +301,7 @@ fun LudoBoard(
                 BoundedArt(modifier = Modifier.fillMaxSize()) {
                     val unit = size.minDimension / layout.size
                     with(motion) {
-                        drawShifting { drawMark(it, unit, ringed = false) }
+                        drawShifting { if (it.player != held) drawMark(it, unit, ringed = false) }
                         drawMotion(unit, theme.pawns) { pawnColours[it] }
                     }
                 }
@@ -299,6 +311,29 @@ fun LudoBoard(
         if (pickedOut.isNotEmpty()) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 for (mark in pickedOut) drawMark(mark, size.minDimension / layout.size, ringed = mark.pawns.any { PawnRef(mark.player, it) in movable })
+            }
+        }
+        // The held yard's pawns, bright over the rest, each with its number: wherever a move or a ghost has them.
+        held?.let { player ->
+            BoundedArt(modifier = Modifier.fillMaxSize()) {
+                val unit = size.minDimension / layout.size
+                fun drawNumbered(pawn: Int, centre: Offset, radius: Float, shielded: Boolean) {
+                    if (shielded) drawShieldBubble(centre * unit, radius * unit)
+                    with(theme.pawns) { drawPawn(centre * unit, radius * unit, pawnColours[player], ringed = false) }
+                    drawPawnNumber(textMeasurer, pawn + 1, centre * unit, radius * unit, unit)
+                }
+                fun drawApart(mark: PawnMark) = mark.apart().forEach { drawNumbered(it.pawns.single(), it.centre, it.radius, state.isShielded(player, it.pawns.single())) }
+                for (mark in marks) {
+                    if (mark.player != player) continue
+                    val pawns = still(mark)
+                    if (pawns.isNotEmpty()) drawApart(mark.copy(pawns = pawns))
+                }
+                val mover = motion.moving?.let { PawnRef(it.player, it.pawn) }
+                ghostMotion.eachCaught(mover) { pawn, centre, radius -> if (pawn.player == player) drawNumbered(pawn.pawn, centre, radius, shielded = false) }
+                if (mover != null) {
+                    motion.drawShifting { if (it.player == player) drawApart(it) }
+                    motion.eachOnItsWay { pawn, centre, radius, shielded -> if (pawn.player == player) drawNumbered(pawn.pawn, centre, radius, shielded) }
+                }
             }
         }
         // The pair pressed, bright over the rest.
@@ -375,7 +410,10 @@ private class SentPawn(
     val taken: Boolean,
     val shielded: Boolean,
     val recall: PawnMark? = null,
-)
+) {
+    /** How high it's thrown on its way, in squares. */
+    val arc: Float get() = CAPTURE_ARC + CAPTURE_ARC_PER_SQUARE * (to - from).getDistance()
+}
 
 /** The squares of [state]'s board with something of the mode's own on them to tap: portals, or power-ups. */
 private fun specialSquares(state: GameState): Collection<Int> =
@@ -403,6 +441,35 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
         }
     }
 
+    /** Each pawn the move sends on its way at this moment, drawn by [draw] at its centre and as big as it is, in squares, and whether it has a shield: the mover first. */
+    fun eachOnItsWay(draw: (PawnRef, Offset, Float, Boolean) -> Unit) {
+        val moving = moving!!
+        val landed = millis >= moving.travelMillis
+        val (centre, lift, radius) = moverPose(moving, if (landed && moving.home) after(moving) else 0f)
+        draw(PawnRef(moving.player, moving.pawn), centre - Offset(0f, lift), radius, moving.isShielded(millis))
+        for (sent in moving.sent) {
+            val (ground, up, size) = sentPose(moving, sent)
+            draw(sent.ref, ground - Offset(0f, up), size, sent.shielded && !(sent.taken && landed))
+        }
+    }
+
+    /** How far through what follows the landing the move is, from 0 as it lands. */
+    private fun after(moving: MovingPawn): Float {
+        val flightEnd = moving.totalMillis - moving.recallMillis
+        return ((millis - moving.travelMillis) / (flightEnd - moving.travelMillis).coerceAtLeast(1)).coerceIn(0f, 1f)
+    }
+
+    /** Where [sent] is on the ground, how high it is off it, and how big it is. */
+    private fun sentPose(moving: MovingPawn, sent: SentPawn): Triple<Offset, Float, Float> {
+        val recalled = if (moving.recallMillis == 0) 0f else ((millis - (moving.totalMillis - moving.recallMillis)) / moving.recallMillis).coerceIn(0f, 1f)
+        if (sent.recall != null && recalled > 0f) {
+            val swell = 1f + YARD_EXIT_SWELL * sin(PI * recalled).toFloat()
+            return Triple(lerp(sent.to, sent.recall.centre, recalled), 0f, (sent.toRadius + (sent.recall.radius - sent.toRadius) * recalled) * swell)
+        }
+        val flight = if (millis >= moving.travelMillis) after(moving) else 0f
+        return Triple(lerp(sent.from, sent.to, flight), sent.arc * 4f * flight * (1f - flight), sent.fromRadius + (sent.toRadius - sent.fromRadius) * flight)
+    }
+
     /**
      * The move at this moment, on a board of [unit] per square, in [pawns]' style and each player's colour ([colourOf]):
      * a capture's burst under the mover, a home flourish's ring round it and its sparks over it, and the captured pawns
@@ -411,10 +478,7 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
     fun DrawScope.drawMotion(unit: Float, pawns: PawnStyle, colourOf: (Int) -> Color) {
         val moving = moving!!
         val millis = millis
-        // How far through what follows the landing, from 0 as it lands.
-        val flightEnd = moving.totalMillis - moving.recallMillis
-        val after = ((millis - moving.travelMillis) / (flightEnd - moving.travelMillis).coerceAtLeast(1)).coerceIn(0f, 1f)
-        val recalled = if (moving.recallMillis == 0) 0f else ((millis - flightEnd) / moving.recallMillis).coerceIn(0f, 1f)
+        val after = after(moving)
         val landed = millis >= moving.travelMillis
         val mover = colourOf(moving.player)
         if (landed) {
@@ -432,18 +496,8 @@ private class MoveMotion(val moving: MovingPawn?, private val clock: State<Float
         with(pawns) { drawPawn((centre - Offset(0f, lift)) * unit, radius * unit, mover, ringed = false) }
         if (landed && moving.home) drawHomeSparks(moving.landing * unit, unit, after, mover)
         for (sent in moving.sent) {
-            val height = CAPTURE_ARC + CAPTURE_ARC_PER_SQUARE * (sent.to - sent.from).getDistance()
-            val flight = if (landed) after else 0f
-            if (sent.recall != null && recalled > 0f) {
-                val swell = 1f + YARD_EXIT_SWELL * sin(PI * recalled).toFloat()
-                val size = (sent.toRadius + (sent.recall.radius - sent.toRadius) * recalled) * swell
-                with(pawns) { drawPawn(lerp(sent.to, sent.recall.centre, recalled) * unit, size * unit, colourOf(sent.ref.player), ringed = false) }
-                continue
-            }
-            val ground = lerp(sent.from, sent.to, flight)
-            val up = height * 4f * flight * (1f - flight)
-            val size = sent.fromRadius + (sent.toRadius - sent.fromRadius) * flight
-            if (up > 0f) drawGroundShadow(ground * unit, size * unit, up / height)
+            val (ground, up, size) = sentPose(moving, sent)
+            if (up > 0f) drawGroundShadow(ground * unit, size * unit, up / sent.arc)
             if (sent.shielded && !(sent.taken && landed)) drawShieldBubble((ground - Offset(0f, up)) * unit, size * unit)
             with(pawns) { drawPawn((ground - Offset(0f, up)) * unit, size * unit, colourOf(sent.ref.player), ringed = false) }
         }
@@ -652,6 +706,21 @@ internal fun DrawScope.drawCount(textMeasurer: TextMeasurer, count: Int, badgeCe
         TextStyle(color = BoardIvory, fontSize = (badgeRadius * 1.3f).toSp(), fontWeight = FontWeight.Bold),
     )
     drawText(text, topLeft = badgeCentre - Offset(text.size.width / 2f, text.size.height / 2f))
+}
+
+/** How big a pawn's number is, of its radius, and at least, in squares; and the ink round it, of the number. */
+private const val PAWN_NUMBER_SIZE = 1.35f
+private const val SMALLEST_PAWN_NUMBER = 0.5f
+private const val PAWN_NUMBER_EDGE = 0.3f
+
+/** A pawn's [number] on it, at [centre] and [radius] across, on a board of [unit] per square: ivory, edged in ink, so it's read on any colour. */
+private fun DrawScope.drawPawnNumber(textMeasurer: TextMeasurer, number: Int, centre: Offset, radius: Float, unit: Float) {
+    val fontSize = max(radius * PAWN_NUMBER_SIZE, unit * SMALLEST_PAWN_NUMBER)
+    val text = textMeasurer.measure(number.toString(), TextStyle(fontSize = fontSize.toSp(), fontWeight = FontWeight.Bold))
+    val topLeft = centre - Offset(text.size.width / 2f, text.size.height / 2f)
+    drawText(text, color = BoardInk, topLeft = topLeft, drawStyle = Stroke(fontSize * PAWN_NUMBER_EDGE, join = StrokeJoin.Round))
+    // Said, as the text's own paint keeps the last style it was drawn in.
+    drawText(text, color = BoardIvory, topLeft = topLeft, drawStyle = Fill)
 }
 
 private operator fun Offset.div(by: Float) = Offset(x / by, y / by)

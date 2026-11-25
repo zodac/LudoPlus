@@ -208,8 +208,8 @@ earned is kept until the pick (`earned`); with two dice, so is the other die. Th
 weighs a landing by its best swap (`LudoEngine.swapsAfter`), then picks in its turn, as does one for a Nearby guest whose
 time is up. A person picks once the landing has played out: the pawns to swap with ringed, with the rest of the board faded
 (`UI_BOARD.md`), or Don't swap. The prompt is "Alex, pick a pawn to swap with."; TalkBack's actions, there and on each pawn's
-square, are "Swap places with Green pawn 2". The log has a line for each: "Alex moved a pawn 2 squares. Alex took Swap.",
-then "Alex swapped places with Sam."; a log of 1.1.0's has them in one.
+square, are "Swap places with Green pawn 2". The log has a line for each: "Alex's Pawn 1 moved 2 squares. Alex took Swap.",
+then "Alex swapped Pawn 1 with Sam's Pawn 2."; a log of 1.1.0's has them in one.
 
 Every chance is drawn from `GameState.seed`, which each draw moves on, so a saved game and a Nearby one play on the same;
 the CPU weighs a move with its power-up left alone (`LudoEngine.moveWithoutChances`), so it never sees what a chance will

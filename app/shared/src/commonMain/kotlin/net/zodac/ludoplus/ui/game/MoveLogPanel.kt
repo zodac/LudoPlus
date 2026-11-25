@@ -59,6 +59,8 @@ import net.zodac.ludoplus.resources.game_event_no_move_dice
 import net.zodac.ludoplus.resources.game_event_no_move_dice_tries
 import net.zodac.ludoplus.resources.game_event_no_move_tries
 import net.zodac.ludoplus.resources.game_event_out
+import net.zodac.ludoplus.resources.game_event_pawn
+import net.zodac.ludoplus.resources.game_event_pawn_of
 import net.zodac.ludoplus.resources.game_event_portal
 import net.zodac.ludoplus.resources.game_event_power_up
 import net.zodac.ludoplus.resources.game_event_recalled
@@ -241,15 +243,30 @@ private fun colourOf(game: StartedGame, seatColours: List<PlayerColour?>, player
     return seatColours.getOrNull(seat) ?: PlayerColour.defaultFor(seat)
 }
 
-/** What [entry] says in the log: "Alex rolled 3 and had no move.", "Alex moved a pawn 4 squares.", "Alex captured 1 of Sam's pawns." */
+/** What [entry] says in the log: "Alex rolled 3 and had no move.", "Alex's Pawn 2 moved 4 squares.", "Alex captured Sam's Pawn 1 with Pawn 2." */
 @Composable
 internal fun logLine(game: StartedGame, entry: LogEntry): String {
     val line = eventLine(game, entry)
     if (entry.vanished > 0) return stringResource(Res.string.game_event_and, line, pluralStringResource(Res.plurals.game_event_vanished, entry.vanished, entry.vanished))
     if (entry.haunted.isEmpty()) return line
-    val names = entry.haunted.map { it.player }.distinct().map { game.players[it].name }
-    return stringResource(Res.string.game_event_and, line, stringResource(Res.string.game_event_haunted, spokenList(names)))
+    return stringResource(Res.string.game_event_and, line, stringResource(Res.string.game_event_haunted, pawnsNamed(game, entry.haunted)))
 }
+
+/** [pawns] as a list, the first of each player's with their name: "Sam's Pawn 1, Pawn 3, and Jo's Pawn 2". */
+@Composable
+private fun pawnsNamed(game: StartedGame, pawns: List<PawnRef>): String {
+    val named = pawns.groupBy { it.player }.flatMap { (player, own) ->
+        own.mapIndexed { index, pawn ->
+            if (index == 0) stringResource(Res.string.game_event_pawn_of, game.players[player].name, pawn.pawn + 1) else pawnNamed(game, player, pawn)
+        }
+    }
+    return spokenList(named)
+}
+
+/** [pawn] in a line that starts with [player]'s name: "Pawn 2", or where it's a partner's, "Sam's Pawn 2". */
+@Composable
+private fun pawnNamed(game: StartedGame, player: Int, pawn: PawnRef): String =
+    if (pawn.player == player) stringResource(Res.string.game_event_pawn, pawn.pawn + 1) else pawnsNamed(game, listOf(pawn))
 
 /** What [entry]'s event did, before any ghost came or square vanished. */
 @Composable
@@ -276,7 +293,8 @@ private fun eventLine(game: StartedGame, entry: LogEntry): String {
             val taken = if (effect == null || event.finished) line else stringResource(Res.string.game_event_and, line, effectLine(game, event, effect))
             var told = taken
             for ((player, pawns) in event.recalled.groupBy { it.player }) {
-                told = stringResource(Res.string.game_event_and, told, pluralStringResource(Res.plurals.game_event_recalled, pawns.size, game.players[player].name, pawns.size))
+                val brought = spokenList(pawns.map { pawnNamed(game, player, it) })
+                told = stringResource(Res.string.game_event_and, told, pluralStringResource(Res.plurals.game_event_recalled, pawns.size, game.players[player].name, brought))
             }
             told
         }
@@ -291,39 +309,46 @@ private fun movedLine(game: StartedGame, entry: LogEntry, event: GameEvent.Moved
     val name = { index: Int -> game.players[index].name }
     val move = event.move
     val squares = move.squares
+    val mover = event.mover
+    val pawn = pawnNamed(game, event.player, mover)
+    // What starts the line, with its player's name.
+    val named = pawnsNamed(game, listOf(mover))
     return when {
         event.finished -> finishedLine(game, move.owner ?: event.player, entry.place)
-        event.knockedOut.isNotEmpty() -> stringResource(Res.string.game_event_knocked_out, name(event.player), spokenList(event.knockedOut.map(name)))
-        move.captures.isNotEmpty() -> captureLine(game, event.player, move.captures)
-        move.to == game.state.board.homeProgress -> stringResource(Res.string.game_event_home, name(event.player))
-        move.from == PawnPosition.YARD_PROGRESS -> stringResource(Res.string.game_event_out, name(event.player))
-        move.via != null -> pluralStringResource(Res.plurals.game_event_portal, squares, name(event.player), squares)
+        event.knockedOut.isNotEmpty() -> stringResource(Res.string.game_event_knocked_out, name(event.player), spokenList(event.knockedOut.map(name)), pawn)
+        move.captures.isNotEmpty() -> captureLine(game, event.player, move.captures, by = mover)
+        move.to == game.state.board.homeProgress -> stringResource(Res.string.game_event_home, name(event.player), pawn)
+        move.from == PawnPosition.YARD_PROGRESS -> stringResource(Res.string.game_event_out, name(event.player), pawn)
+        move.via != null -> pluralStringResource(Res.plurals.game_event_portal, squares, named, squares)
         move.brokenShields.isNotEmpty() ->
-            pluralStringResource(Res.plurals.game_event_bounce, squares, name(event.player), squares, name(move.brokenShields.first().player))
-        else -> pluralStringResource(Res.plurals.game_event_move, squares, name(event.player), squares)
+            pluralStringResource(Res.plurals.game_event_bounce, squares, named, squares, name(move.brokenShields.first().player))
+        else -> pluralStringResource(Res.plurals.game_event_move, squares, named, squares)
     }
 }
 
+/** What [player]'s capturing [captures] with the pawn [by] says. */
 @Composable
-private fun captureLine(game: StartedGame, player: Int, captures: List<PawnRef>): String =
-    pluralStringResource(Res.plurals.game_event_capture, captures.size, game.players[player].name, game.players[captures.first().player].name, captures.size)
+private fun captureLine(game: StartedGame, player: Int, captures: List<PawnRef>, by: PawnRef): String =
+    stringResource(Res.string.game_event_capture, game.players[player].name, pawnsNamed(game, captures), pawnNamed(game, player, by))
 
-/** What the power-up [event]'s move ended on did, as [effect] says: "Alex swapped places with Sam.", and a capture it made. */
+/** What the power-up [event]'s move ended on did, as [effect] says: "Alex swapped Pawn 1 with Sam's Pawn 3.", and a capture it made. */
 @Composable
 private fun effectLine(game: StartedGame, event: GameEvent.Moved, effect: PowerUpEffect): String {
     val name = game.players[event.player].name
     val swapped = effect.swapped
+    val mover = event.mover
+    val calledUp = effect.calledUp?.let { PawnRef(mover.player, it) }
     val line = when {
         effect.powerUp == PowerUp.DOUBLE -> pluralStringResource(Res.plurals.game_event_double, PowerUp.DOUBLED_ROLLS, name, PowerUp.DOUBLED_ROLLS)
-        effect.powerUp == PowerUp.CALL_UP && effect.calledUp != null -> stringResource(Res.string.game_event_call_up, name)
+        effect.powerUp == PowerUp.CALL_UP && calledUp != null -> stringResource(Res.string.game_event_call_up, name, pawnNamed(game, event.player, calledUp))
         effect.banked -> stringResource(Res.string.game_event_call_up_banked, name)
-        swapped != null -> stringResource(Res.string.game_event_swap, name, game.players[swapped.player].name)
+        swapped != null -> stringResource(Res.string.game_event_swap, name, pawnNamed(game, event.player, mover), pawnsNamed(game, listOf(swapped)))
         else -> stringResource(Res.string.game_event_power_up, name, stringResource(effect.powerUp.title))
     }
-    return if (effect.captures.isEmpty()) line else stringResource(Res.string.game_event_and, line, captureLine(game, event.player, effect.captures))
+    return if (effect.captures.isEmpty()) line else stringResource(Res.string.game_event_and, line, captureLine(game, event.player, effect.captures, by = calledUp ?: mover))
 }
 
-/** The players [entry]'s line names, to draw in their colours: the mover and anyone captured, or a placed team. */
+/** The players [entry]'s line names, to draw in their colours: the mover, a partner whose pawn it moved, and anyone captured, or a placed team. */
 private fun logNames(game: StartedGame, entry: LogEntry): List<Int> {
     val state = game.state
     val event = entry.event
@@ -333,7 +358,7 @@ private fun logNames(game: StartedGame, entry: LogEntry): List<Int> {
             state.players.indices.filter { it == owner || state.rules.arePartners(owner, it) }
         }
         event is GameEvent.Moved -> (
-            listOf(event.player) + event.allCaptures.map { it.player } + event.move.brokenShields.map { it.player } + listOfNotNull(event.effect?.swapped?.player)
+            listOf(event.player, event.mover.player) + event.allCaptures.map { it.player } + event.move.brokenShields.map { it.player } + listOfNotNull(event.effect?.swapped?.player)
         ).distinct()
         else -> listOf(event.player)
     }

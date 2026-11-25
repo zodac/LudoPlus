@@ -32,11 +32,14 @@ import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.Move
 import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.game.TurnPhase
+import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.ui.style.MovableRing
+import net.zodac.ludoplus.ui.theme.BoardIvory
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
+import net.zodac.ludoplus.ui.theme.color
 
 private const val BOARD = "board"
 private const val SIDE = 600
@@ -133,6 +136,77 @@ class BoardTilesTest : UiTest() {
         state = LudoEngine.move(state, 0, swap = PawnRef(0, 0))
         compose.waitForIdle()
         assertEquals(before.second, bright.map(::at))
+    }
+
+    @Test
+    fun `a yard held fades all but its player's pawns - each with its number - until it's let go - and is never a move`() = uiTest(TestScreen(700, 900)) {
+        // Red has one pawn alone, two together, and one in its yard, all of which a 6 can move; green has one out.
+        val new = game(GameMode.CLASSIC, 20, 30, 30)
+        val rolled = LudoEngine.applyRoll(new.copy(players = new.players.mapIndexed { i, it -> if (i == 1) it.copy(pawns = listOf(9, Y, Y, Y)) else it }), 6)
+        show(rolled)
+        fun at(point: Offset): Color = board().captureToImage().toPixelMap()[point.x.toInt(), point.y.toInt()]
+        val yardPawn = ClassicBoardLayout.yardSpotOf(0, 3, 4) * UNIT
+        val corner = Offset(UNIT * 0.5f, UNIT * 0.5f)
+        // Where each of the two told apart is, clear of its number, and the lone pawns', likewise.
+        val apart = listOf(-1f, 1f).map { square(30) + Offset(it * UNIT * 0.5f, UNIT * 0.25f) }
+        val lone = listOf(square(20) + Offset(0f, UNIT * 0.28f), yardPawn + Offset(0f, UNIT * 0.36f))
+        val rest = listOf(square(22), square(4), corner, Offset(UNIT * 7.5f, UNIT * 6.7f), ClassicBoardLayout.yardSpotOf(1, 3, 4) * UNIT)
+        val before = (rest + lone + apart).map(::at)
+        val whole = board().captureToImage().toPixelMap()
+        // A press isn't a hold yet.
+        board().performTouchInput { down(yardPawn) }
+        compose.mainClock.advanceTimeBy(100)
+        assertEquals(before, (rest + lone + apart).map(::at))
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.waitForIdle()
+        rest.forEachIndexed { i, point -> assertTrue(difference(at(point), Color.White) < difference(before[i], Color.White) * 0.3f + 0.02f, "Point $i didn't fade: ${at(point)}") }
+        lone.forEachIndexed { i, point -> assertTrue(difference(at(point), before[rest.size + i]) < 0.1f, "Pawn $i isn't as bright: ${at(point)}") }
+        val red = PlayerColour.defaultFor(0).color
+        apart.forEachIndexed { i, point -> assertTrue(difference(at(point), red) < 0.9f && difference(at(point), Color.White) > 0.6f, "The two weren't told apart, at $i: ${at(point)}") }
+        // A number on each: ivory in its middle square, where there was only the pawn's own colour.
+        fun ivory(centre: Offset): Int {
+            val pixels = board().captureToImage().toPixelMap()
+            val reach = (UNIT * 0.2f).toInt()
+            return (-reach..reach).sumOf { dx -> (-reach..reach).count { dy -> difference(pixels[centre.x.toInt() + dx, centre.y.toInt() + dy], BoardIvory) < 0.1f } }
+        }
+        val numbered = listOf(square(20), yardPawn) + listOf(-1f, 1f).map { square(30) + Offset(it * UNIT * 0.5f, 0f) }
+        numbered.forEachIndexed { i, centre -> assertTrue(ivory(centre) > 8, "No number on pawn $i: ${ivory(centre)} pixels") }
+        board().performTouchInput { up() }
+        compose.waitForIdle()
+        val after = board().captureToImage().toPixelMap()
+        assertTrue((0 until SIDE step 3).all { x -> (0 until SIDE step 3).all { y -> whole[x, y] == after[x, y] } }, "The board isn't as it was")
+        assertEquals(emptyList(), made)
+        // A tap there still moves a pawn out.
+        board().performTouchInput { click(yardPawn) }
+        assertEquals(listOf(3), made.map { it.pawn })
+    }
+
+    @Test
+    fun `pawns on one square are told apart in order, clear of each other and near it - a lone one stays where it is`() {
+        val square = Offset(4.5f, 6.5f)
+        val lone = PawnMark(0, listOf(2), square + Offset(0.24f, 0.24f), 0.24f, square)
+        assertEquals(listOf(lone), lone.apart())
+        for (count in 2..6) {
+            val marks = PawnMark(0, (0..<count).toList(), square, 0.38f).apart()
+            assertEquals((0..<count).map { listOf(it) }, marks.map { it.pawns })
+            for ((i, mark) in marks.withIndex()) {
+                assertTrue((mark.centre - square).getDistance() + mark.radius < 0.9f, "$count pawns: $i strays")
+                for (other in marks.drop(i + 1)) assertTrue((mark.centre - other.centre).getDistance() > mark.radius + other.radius - 0.02f, "$count pawns: $i overlaps")
+            }
+        }
+        assertTrue(PawnMark(0, listOf(0, 1), square, 0.38f).apart().let { (first, second) -> first.centre.x < second.centre.x && abs(first.centre.y - second.centre.y) < 0.01f })
+    }
+
+    @Test
+    fun `every yard holds its own pawns' spots and no other's, and no square of the track`() {
+        for (players in 2..8) {
+            val layout = BoardLayout.of(BoardGeometry.forPlayers(players))
+            val seats = 0..<layout.geometry.seats
+            for (seat in seats) {
+                for (pawn in 0..5) assertEquals(listOf(seat), seats.filter { layout.isInYard(it, layout.yardSpotOf(seat, pawn, 6)) }, "$players players, seat $seat, pawn $pawn")
+            }
+            for (square in 0..<layout.geometry.trackLength) assertTrue(seats.none { layout.isInYard(it, layout.trackSquare(square).centre) }, "$players players, square $square")
+        }
     }
 
     @Test
