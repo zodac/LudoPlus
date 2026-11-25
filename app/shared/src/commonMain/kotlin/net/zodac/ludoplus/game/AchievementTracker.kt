@@ -99,7 +99,7 @@ class AchievementTracker(
     /** The players who have captured a pawn of player 1's this game: for [Achievement.STOP_PICKING_ON_ME]. */
     private val capturedBy = mutableSetOf<Int>()
 
-    /** Whether player 1 has never brought a pawn out with another on the board: for [Achievement.ONE_BY_ONE]. */
+    /** Whether player 1 has never brought a pawn out with another on the track: for [Achievement.ONE_BY_ONE]. */
     private var oneByOne = true
 
     /** Player 1's moves by the dice of one roll that captured: for [Achievement.TWO_BIRDS_TWO_STONES]. */
@@ -253,7 +253,7 @@ class AchievementTracker(
         val me = after.players[mySeat]
         leftYardOnTurn[pawn] = me.turns + 1
         lapPawn = null
-        if (me.pawns.withIndex().any { (other, progress) -> other != pawn && progress in 0..<after.board.homeProgress }) oneByOne = false
+        if (me.pawns.withIndex().any { (other, progress) -> other != pawn && progress in 0..<after.board.trackSteps }) oneByOne = false
     }
 
     private fun playerOneRolled(dice: List<Int>, before: GameState, startsTurn: Boolean, feats: MutableSet<Achievement>) {
@@ -337,13 +337,14 @@ class AchievementTracker(
                 if (opponents.none { neverOut(before.players[it]) }) lastOut = true
             }
             leftYardOnTurn[move.pawn] = turn
-            if (me.pawns.any { it in 0..<board.homeProgress }) oneByOne = false
+            if (me.pawns.any { it in 0..<board.trackSteps }) oneByOne = false
         }
         event.effect?.let { effect ->
             powerUpsTaken += effect.powerUp
             if (powerUpsTaken.size == PowerUp.entries.size) feats += Achievement.ONE_OF_EVERYTHING
             effect.calledUp?.let {
                 leftYardOnTurn[it] = turn
+                // The pawn that took it is on the track.
                 oneByOne = false
             }
         }

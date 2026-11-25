@@ -1111,7 +1111,7 @@
     <string name="achievement_midnight_run_title">Midnight Run</string>
     <string name="achievement_midnight_run_description">Start a game between midnight and 6am</string>
     <string name="achievement_one_by_one_title">One By One</string>
-    <string name="achievement_one_by_one_description">Bring all four pawns home, never taking one out of the yard while another is on the board</string>
+    <string name="achievement_one_by_one_description">Bring all four pawns home, never taking one out of the yard while another is on the track</string>
     <string name="achievement_the_great_escape_title">The Great Escape</string>
     <string name="achievement_the_great_escape_description">Bring all four pawns out of the yard within four turns</string>
     <string name="achievement_time_flies_title">Time Flies</string>

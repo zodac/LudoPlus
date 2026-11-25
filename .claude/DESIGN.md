@@ -495,7 +495,8 @@ in `GameRecordRepository.statistics`, off the main thread. Each figure is read w
         which hops three times; added 2026-11-23), Full Retreat (every pawn on the board at once, then every one back in the yard,
         captured or caught by a ghost; in place of Who's Ludo?, 2026-11-25), Hungry For 6s (every pawn of player 1's out of the yard before any other
         player, a partner included, has brought one out; in place of Sideways, 2026-11-25), Midnight Run (a new game from midnight to 6am), One By One
-        (every pawn home, none ever brought out with another on the board, by a move or Call Up, banked or not, seen from the first roll),
+        (every pawn home, none ever brought out with another on the track, by a move or Call Up, banked or not, seen from the first roll;
+        one in its home column is off the track, 2026-11-26),
         The Great Escape (all four pawns out together, each brought out within the last four turns; both 2026-11-24),
         and Time Flies (an hour of one game on screen).
     - Wire To Wire needs the whole game seen (from player 1's first roll): one continued from its save can't earn it.

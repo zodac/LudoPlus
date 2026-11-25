@@ -90,8 +90,10 @@ Grand Tour (a game finished of every mode, none with house rules) is worked out 
 games from before it count (`AchievementCounter.MODES_FINISHED`, raised, never added to). A new mode raises its target;
 anyone already holding it keeps it.
 
-One By One (an Easter Egg) is 6% of Classic games for a player set on it, and 2-9% in the other modes; a 6 that can't move
-the pawn that's out spoils it. The Great Escape is 5-8% of games for a Medium CPU, and 19% in Two Dice, left as easier.
+One By One (an Easter Egg) is 38% of four-player Classic games for a player set on it (6% before a pawn in its home column
+was allowed, 2026-11-26), and 0.2% in Colour Rush, 9% in Chaos, 35% in Two Dice, 36% in Portals, and 50% in Haunted House;
+for one who isn't, it's 0.2% or less. A 6 that can't move the pawn on the track spoils it.
+The Great Escape is 5-8% of games for a Medium CPU, and 19% in Two Dice, left as easier.
 
 Stop Picking On Me is 11% of four-player Classic games (31% with two players, 5% with six), and 0.4-14% in the other modes,
 so it's kept out of none. A ghost's catch is nobody's, and a partner isn't one of the players.

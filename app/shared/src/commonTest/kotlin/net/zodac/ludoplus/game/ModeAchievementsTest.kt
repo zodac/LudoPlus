@@ -22,6 +22,9 @@ private const val Y = YARD_PROGRESS
 private const val X = OUT_PROGRESS
 private const val HOME = 56
 
+/** The first square of the home column. */
+private const val COLUMN = 51
+
 private val table = List(4) { PlayerConfig(it + 1, if (it == 0) PlayerType.HUMAN else PlayerType.AI, if (it == 0) "Me" else "P$it") }
 
 /** A game of [mode] with each player's pawns at the progress given (as they start for the rest), red to roll. */
@@ -188,8 +191,8 @@ class ModeAchievementsTest {
     }
 
     @Test
-    fun `One By One brings every pawn home with no other ever out - a capture starting one again - seen from the start`() {
-        /** From the first roll: [others] on the board as the second pawn comes out, the last then 2 from home. */
+    fun `One By One brings every pawn home with no other on the track as one comes out - a capture starting one again - seen from the start`() {
+        /** From the first roll: [others] on the board as another pawn comes out, the last then 2 from home. */
         fun game(others: Int, mode: GameMode = GameMode.CLASSIC, seen: Boolean = true): Set<Achievement> {
             val steps = Steps(game(mode))
             if (seen) steps.roll(1)
@@ -198,9 +201,12 @@ class ModeAchievementsTest {
         }
         assertTrue(ONE_BY_ONE in game(others = HOME))
         assertTrue(ONE_BY_ONE in game(others = Y))
-        // Even one in its home column is out.
+        assertFalse(ONE_BY_ONE in game(others = 0))
         assertFalse(ONE_BY_ONE in game(others = 30))
-        assertFalse(ONE_BY_ONE in game(others = 53))
+        // The home column, from its first square, is off the track.
+        assertFalse(ONE_BY_ONE in game(others = COLUMN - 1))
+        assertTrue(ONE_BY_ONE in game(others = COLUMN))
+        assertTrue(ONE_BY_ONE in game(others = HOME - 1))
         assertFalse(ONE_BY_ONE in game(others = HOME, seen = false))
         assertTrue(ONE_BY_ONE in game(others = HOME, mode = GameMode.CHAOS))
     }
@@ -214,7 +220,7 @@ class ModeAchievementsTest {
     }
 
     @Test
-    fun `One By One isn't a game where a banked Call Up brought one out with another on the board`() {
+    fun `One By One isn't a game where a banked Call Up brought one out with another on the track`() {
         /** Green, two from red's pawn on square 4, takes it, with red's other pawns at [others]. */
         fun game(others: Int): Set<Achievement> {
             val steps = Steps(game(GameMode.CHAOS)).roll(1)
@@ -225,6 +231,8 @@ class ModeAchievementsTest {
             return steps.earned
         }
         assertFalse(ONE_BY_ONE in game(others = 30))
+        assertFalse(ONE_BY_ONE in game(others = COLUMN - 1))
+        assertTrue(ONE_BY_ONE in game(others = COLUMN))
         assertTrue(ONE_BY_ONE in game(others = HOME))
     }
 
