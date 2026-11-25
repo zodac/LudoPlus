@@ -25,9 +25,9 @@ The board, the player cards, the die, and the move log. The general rules are in
 - **`LudoBoard`** draws it in four parts, so a move redraws only the move (`BENCHMARKS.md`). What a mode adds is drawn
     under the pawns: portals (`PortalArt.kt`), power-ups (`PowerUpArt.kt`), Survival's arena (`SurvivalArt.kt`), and
     ghosts (`GhostArt.kt`).
-- **Pawns on one square** share it, smaller; two or more of a colour are one pawn with a count. A safe square, a
-    blockade, and a shield each have their mark. They make room as the pawn joining them comes onto the square, in its last
-    half hop, and it lands on its own share of it (`moveMarks`; the maintainer, 2026-11-25).
+- **Pawns on one square** share it, smaller; two or more of a colour are one pawn with a count. A safe square (a
+    star, or a start square's border), a blockade, and a shield each have their mark. They make room as the pawn joining
+    them comes onto the square, in its last half hop, and it lands on its own share of it (`moveMarks`; the maintainer, 2026-11-25).
 - **A shield goes with its pawn** as it hops, or is swapped, till it comes off the track or is taken; one it takes shows as
     it lands (`ShieldMotionTest`; the maintainer, 2026-11-25).
 - **What's in force for a player is on their yard**, not their card (the maintainer, 2026-11-25): while their rolls count
@@ -59,7 +59,8 @@ whose turn it is has an outline in their colour.
     placed keep their place; the rest go by pawns left in Survival (`lastStanding`), by squares in Colour Rush (`claims`, whose
     cards also have a count on a square of the player's colour), and otherwise by how far their pawns
     have come in all (`stepsOf`), as a game stopped at its first winner places them. Partners share their team's, a tie
-    shares one, and nobody has one while everyone is level. TalkBack: "currently 2nd", "currently joint 2nd", or "4th place"
+    shares one, drawn with an equals sign as DiceFive's is ("=2", `game_player_rank_tied`, on a pill as wide as it needs;
+    the maintainer, 2026-11-25), and nobody has one while everyone is level. TalkBack: "currently 2nd", "currently joint 2nd", or "4th place"
     once placed (`PlayerCardTest`).
 - **A name too long for its card** is cut with an ellipsis, and a tap anywhere on the card shows all of it in a tooltip. It
     isn't a button to TalkBack, which reads the whole name with the card.

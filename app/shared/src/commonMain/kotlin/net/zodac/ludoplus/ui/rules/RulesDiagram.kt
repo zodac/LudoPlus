@@ -51,7 +51,7 @@ import org.jetbrains.compose.resources.StringResource
  * A pawn in a diagram, in the default colour of [seat] (0 Red), standing at [centre] (board units). A [ghost] is where a
  * pawn was, drawn faint.
  */
-internal class DiagramPawn(val seat: Int, val centre: Offset, val radius: Float = 0.38f, val ghost: Boolean = false, val home: Boolean = false)
+internal class DiagramPawn(val seat: Int, val centre: Offset, val radius: Float = 0.38f, val ghost: Boolean = false)
 
 /** An arrow through [points] (board units), dashed for a pawn sent back rather than moved. */
 internal class DiagramArrow(val points: List<Offset>, val dashed: Boolean = false)
@@ -147,7 +147,7 @@ private val WINNING_DIAGRAM = Diagram(
     description = Res.string.rules_winning_diagram_cd,
     pawns = listOf(
         DiagramPawn(0, at(CLOSE_UP, board.homeProgress - WINNING_ROLL)),
-        DiagramPawn(0, ClassicBoardLayout.homeSpot(CLOSE_UP, 0), radius = HOME_PAWN_RADIUS, home = true),
+        DiagramPawn(0, ClassicBoardLayout.homeSpot(CLOSE_UP, 0), radius = HOME_PAWN_RADIUS),
     ),
     arrows = listOf(DiagramArrow((board.homeProgress - WINNING_ROLL..<board.homeProgress).map { at(CLOSE_UP, it) } + Offset(6.2f, 7.5f))),
     die = WINNING_ROLL,
@@ -191,7 +191,6 @@ fun RulesDiagram(kind: RulesDiagramKind, modifier: Modifier = Modifier) {
                 for (arrow in diagram.arrows) drawArrow(arrow, unit)
                 for (pawn in diagram.pawns) {
                     val colour = PlayerColour.defaultFor(pawn.seat).color.let { if (pawn.ghost) it.copy(alpha = 0.35f) else it }
-                    if (pawn.home) with(ClassicBoardStyle) { drawHomeSpot(pawn.centre * unit, pawn.radius * unit) }
                     with(ClassicPawnStyle) { drawPawn(pawn.centre * unit, pawn.radius * unit, colour, ringed = false) }
                 }
             }

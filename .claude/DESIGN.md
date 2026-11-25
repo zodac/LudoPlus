@@ -569,7 +569,7 @@ with the player's pick of the other.
 The boards are Classic, Wood, Ocean, Comic, Patchwork, Candy, Obsidian, Disco, Retro, Paper, Starry, Groovy, Stone,
 Meadow, Circuit, Bestagons, and Neon. Every family but Classic is a `LayeredBoardStyle` (`ui/style/BoardFamilies.kt`,
 and `PlayfulBoardFamilies.kt`, 2026-11-24): a ground, the squares, the yards, the home triangles, the safe squares'
-marks, and a finish over it all (grain, speckle), each the family's own, with the seats' colours drawn through its
+marks, the start squares' borders, and a finish over it all (grain, speckle), each the family's own, with the seats' colours drawn through its
 `seatTone` (tinted towards the material, never so far that two seats look alike). `LudoBoard` draws the board on a
 Canvas of its own under the pawns, which reads only the style and the seat colours, so a texture isn't redrawn on every
 frame of a move.

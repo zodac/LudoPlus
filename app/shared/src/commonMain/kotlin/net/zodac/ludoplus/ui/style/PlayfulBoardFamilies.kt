@@ -275,6 +275,11 @@ class CandyBoardStyle(id: String, private val icing: Color, private val sugar: C
         drawRoundRect(Color.White.copy(alpha = 0.7f), sweet.topLeft + Offset(unit * 0.14f, unit * 0.08f), Size(unit * 0.5f, unit * 0.11f), CornerRadius(unit * 0.06f))
     }
 
+    override fun DrawScope.drawStartBorder(topLeft: Offset, unit: Float) {
+        val sweet = squareRect(topLeft, unit).deflate(unit * 0.1f)
+        drawRoundRect(StartBorder, sweet.topLeft, sweet.size, CornerRadius(unit * 0.23f), style = Stroke(unit * START_BORDER_WIDTH))
+    }
+
     override fun DrawScope.drawSafeMark(centre: Offset, unit: Float) {
         val radius = unit * 0.34f
         drawCircle(Color.White, radius, centre)
@@ -361,6 +366,8 @@ class ObsidianBoardStyle(id: String, private val rock: Color, private val glow: 
         drawPath(listOf(corners[0], corners[1], corners[7]).toPath(), glint)
         drawPath(path, Color.Black.copy(alpha = 0.55f), style = Stroke(maxOf(0.75.dp.toPx(), unit * 0.04f), join = StrokeJoin.Round))
     }
+
+    override fun DrawScope.drawStartBorder(topLeft: Offset, unit: Float) = drawLightStartBorder(squareRect(topLeft, unit).deflate(unit * 0.1f), unit)
 
     override fun DrawScope.drawSafeMark(centre: Offset, unit: Float) {
         fun tongue(scale: Float): Path {
@@ -450,6 +457,9 @@ class DiscoBoardStyle(id: String, private val dark: Color, private val lights: L
         drawRoundRect(chrome.copy(alpha = 0.5f), panel.topLeft, panel.size, round, style = Stroke(maxOf(0.75.dp.toPx(), unit * 0.03f)))
     }
 
+    override fun DrawScope.drawStartBorder(topLeft: Offset, unit: Float) =
+        drawLightStartBorder(squareRect(topLeft, unit).deflate(unit * 0.08f), unit, CornerRadius(unit * 0.08f))
+
     override fun DrawScope.drawSafeMark(centre: Offset, unit: Float) {
         val radius = unit * 0.34f
         drawSoftSpot(Color.White.copy(alpha = 0.45f), centre, unit * 0.5f)
@@ -489,12 +499,6 @@ class DiscoBoardStyle(id: String, private val dark: Color, private val lights: L
     override fun DrawScope.drawSpot(centre: Offset, radius: Float, unit: Float, colour: Color) {
         drawSoftSpot(colour.copy(alpha = 0.8f), centre, radius * 1.15f)
         drawCircle(colour, radius, centre, style = Stroke(unit * 0.07f))
-    }
-
-    override fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
-        val spot = centre + Offset(0f, -0.05f * radius)
-        drawCircle(court, radius * 1.12f, spot)
-        drawCircle(chrome, radius * 1.12f, spot, style = Stroke(maxOf(1.dp.toPx(), radius * 0.08f)))
     }
 }
 
@@ -597,6 +601,10 @@ class MeadowBoardStyle(id: String, private val grass: Color, private val stone: 
         drawPath(outline(centre, 0.46f, wobble), lerp(fill, Color.Black, 0.45f), style = Stroke(maxOf(0.75.dp.toPx(), unit * 0.035f)))
     }
 
+    /** A ring round the stone. */
+    override fun DrawScope.drawStartBorder(topLeft: Offset, unit: Float) =
+        drawCircle(StartBorder, unit * 0.39f, topLeft + Offset(unit / 2, unit / 2), style = Stroke(unit * START_BORDER_WIDTH))
+
     override fun DrawScope.drawSafeMark(centre: Offset, unit: Float) =
         drawFlower(centre, unit * 0.38f, petals = 8, petal = Color.White, heart = Color(0xFFFFC107), outline = Color(0xFF5B6653))
 
@@ -626,12 +634,6 @@ class MeadowBoardStyle(id: String, private val grass: Color, private val stone: 
         drawCircle(shade, radius, centre + Offset(0f, unit * 0.05f))
         drawCircle(lerp(stone, colour, 0.55f), radius, centre)
         drawCircle(lerp(colour, Color.Black, 0.35f), radius, centre, style = Stroke(unit * 0.05f))
-    }
-
-    override fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
-        val spot = centre + Offset(0f, -0.05f * radius)
-        drawCircle(stone, radius * 1.12f, spot)
-        drawCircle(shade, radius * 1.12f, spot, style = Stroke(maxOf(0.75.dp.toPx(), radius * 0.07f)))
     }
 }
 
@@ -669,6 +671,9 @@ class CircuitBoardStyle(id: String, private val mask: Color, private val copper:
         }
         drawRoundRect(copper, inner.topLeft, inner.size, round, style = Stroke(wire))
     }
+
+    override fun DrawScope.drawStartBorder(topLeft: Offset, unit: Float) =
+        drawLightStartBorder(squareRect(topLeft, unit).deflate(unit * 0.1f), unit, CornerRadius(unit * 0.14f))
 
     override fun DrawScope.drawSafeMark(centre: Offset, unit: Float) {
         val half = unit * 0.24f
@@ -739,15 +744,19 @@ class BestagonBoardStyle(id: String, private val cell: Color, private val wax: C
 
     override fun DrawScope.ground(extent: Size) = drawRect(wax, size = extent)
 
+    /** A hexagon as tall as it's wide, so it fills its square. */
+    private fun hexagon(centre: Offset, reach: Float): Path = hexagonPoints(Offset.Zero, reach).map { centre + Offset(it.x, it.y * HEXAGON_STRETCH) }.toPath()
+
     override fun DrawScope.drawSquare(topLeft: Offset, unit: Float, fill: Color, seat: Boolean) {
         drawRect(wax, topLeft, Size(unit, unit))
         val centre = topLeft + Offset(unit / 2, unit / 2)
-        // A hexagon as tall as it's wide, so it fills its square.
-        fun hexagon(reach: Float) = hexagonPoints(Offset.Zero, unit * reach).map { centre + Offset(it.x, it.y * HEXAGON_STRETCH) }.toPath()
-        drawPath(hexagon(0.48f), fill)
-        drawPath(hexagon(0.36f), lerp(fill, Color.White, 0.2f))
-        drawPath(hexagon(0.48f), edge, style = Stroke(maxOf(1.dp.toPx(), unit * 0.045f), join = StrokeJoin.Round))
+        drawPath(hexagon(centre, unit * 0.48f), fill)
+        drawPath(hexagon(centre, unit * 0.36f), lerp(fill, Color.White, 0.2f))
+        drawPath(hexagon(centre, unit * 0.48f), edge, style = Stroke(maxOf(1.dp.toPx(), unit * 0.045f), join = StrokeJoin.Round))
     }
+
+    override fun DrawScope.drawStartBorder(topLeft: Offset, unit: Float) =
+        drawPath(hexagon(topLeft + Offset(unit / 2, unit / 2), unit * 0.4f), StartBorder, style = Stroke(unit * START_BORDER_WIDTH, join = StrokeJoin.Round))
 
     override fun DrawScope.drawSafeMark(centre: Offset, unit: Float) {
         val ink = Color(0xFF2B1B0A)

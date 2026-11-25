@@ -86,11 +86,21 @@ interface TableBackground : TableArt {
 }
 
 /**
- * Which parts of a board are drawn: whether a start square is in its seat's colour ([starts]) or a plain one, the star
- * squares have their marks ([stars]), and there's a home, with its columns ([homes]). Each of [claims], an absolute track
- * square and its player's colour, is drawn as a home column's square of that colour is, a star's mark smaller on it.
+ * Which parts of a board are drawn: whether a start square is in its seat's colour, with the border that says it's safe
+ * ([starts]), or a plain one, the border on an empty seat's too ([emptyStartsSafe]), the star squares have their marks
+ * ([stars]), and there's a home, with its columns ([homes]). Each of [claims], an absolute track square and its player's
+ * colour, is drawn as a home column's square of that colour is, a star's mark smaller on it.
  */
-data class BoardParts(val starts: Boolean = true, val stars: Boolean = true, val homes: Boolean = true, val claims: Map<Int, Color> = emptyMap())
+data class BoardParts(
+    val starts: Boolean = true,
+    val emptyStartsSafe: Boolean = true,
+    val stars: Boolean = true,
+    val homes: Boolean = true,
+    val claims: Map<Int, Color> = emptyMap(),
+) {
+    /** Whether [seat]'s start square has its border, in a game of [seatColours]. */
+    internal fun startBorder(seat: Int, seatColours: List<Color?>): Boolean = starts && (emptyStartsSafe || seatColours.getOrNull(seat) != null)
+}
 
 /**
  * A board: its track, safe squares, yards, home columns, and centre, drawn under the pawns on a square
@@ -104,9 +114,6 @@ interface BoardStyle : TableArt {
      * for each of [pawns] pawns ([BoardLayout.yardSpotOf]), and only its [parts].
      */
     fun DrawScope.drawBoard(layout: BoardLayout, unit: Float, seatColours: List<Color?>, pawns: Int = YARD_SPOTS, parts: BoardParts = BoardParts())
-
-    /** The spot a pawn that is home stands on, under it: it lifts the pawn off its own colour's triangle. */
-    fun DrawScope.drawHomeSpot(centre: Offset, radius: Float)
 }
 
 /**

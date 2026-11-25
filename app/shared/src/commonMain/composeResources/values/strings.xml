@@ -263,7 +263,8 @@
     </plurals>
     <string name="game_player_turn_spoken">playing now</string>
     <string name="game_player_place">%1$s place</string>
-    <!-- While a player is still playing: their rank as the game stands (%1$s is "1st", "2nd"...), alone in it or level with another. Shown on their card as the number, on their colour. -->
+    <!-- While a player is still playing: their rank as the game stands (%1$s is "1st", "2nd"...), alone in it or level with another. Shown on their card as the number, on their colour; level with another, with an "=" (game_player_rank_tied, %1$d the number), which is only drawn: spoken, it would be read as "equals". -->
+    <string name="game_player_rank_tied">=%1$d</string>
     <string name="game_player_rank_spoken">currently %1$s</string>
     <string name="game_player_rank_tied_spoken">currently joint %1$s</string>
     <!-- Chaos: while the player picks whose pawn to swap with; what a screen reader offers on each (%1$s a colour, %2$d its number); and the button to swap with nobody. -->

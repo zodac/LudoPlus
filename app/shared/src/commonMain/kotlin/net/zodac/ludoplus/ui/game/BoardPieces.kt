@@ -13,11 +13,10 @@ import net.zodac.ludoplus.model.PawnPosition
 
 /**
  * One mark drawn on the board: [pawns] (indices) of [player], standing together at [centre] with [radius], both in
- * board units ([BoardLayout]). More than one pawn draws as one with a count. A pawn [home] stands on an ivory spot, so
- * it shows against its own colour's triangle. [square] is the centre of the square it stands on, which it may share; a
- * yard's or home's is its own spot.
+ * board units ([BoardLayout]). More than one pawn draws as one with a count. [square] is the centre of the square it
+ * stands on, which it may share; a yard's or home's is its own spot.
  */
-data class PawnMark(val player: Int, val pawns: List<Int>, val centre: Offset, val radius: Float, val home: Boolean = false, val square: Offset = centre)
+data class PawnMark(val player: Int, val pawns: List<Int>, val centre: Offset, val radius: Float, val square: Offset = centre)
 
 /** How big a lone pawn is, in squares across; pawns of several colours on one square share it, each a quarter. */
 internal const val PAWN_RADIUS = 0.38f
@@ -46,7 +45,7 @@ fun pawnMarks(state: GameState, without: PawnRef? = null): List<PawnMark> {
                 PawnPosition.Yard -> marks += PawnMark(player, listOf(pawn), layout.yardSpotOf(side.seat, pawn, side.pawns.size), layout.yardPawnRadiusOf(side.pawns.size))
                 // Drawn in its yard's tally ([drawFallen]), not as a pawn.
                 PawnPosition.Out -> Unit
-                PawnPosition.Home -> marks += PawnMark(player, listOf(pawn), layout.homeSpot(side.seat, pawn, side.pawns.size), layout.homePawnRadiusOf(side.pawns.size), home = true)
+                PawnPosition.Home -> marks += PawnMark(player, listOf(pawn), layout.homeSpot(side.seat, pawn, side.pawns.size), layout.homePawnRadiusOf(side.pawns.size))
                 is PawnPosition.Track -> onSquares.square(layout.trackSquare(state.board.trackSquare(side.seat, position.steps)), player) += pawn
                 is PawnPosition.HomeColumn -> onSquares.square(layout.homeColumnSquare(side.seat, position.index), player) += pawn
             }

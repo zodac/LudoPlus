@@ -59,15 +59,14 @@ object ClassicBoardStyle : BoardStyle, Swatched {
             }
             // Home: the seat's part of the centre.
             if (parts.homes) shape(layout.homeArea(seat), colour)
+            if (parts.startBorder(seat, seatColours)) {
+                drawBoardSquare(layout.trackSquare(board.startSquare(seat)), unit) {
+                    val frame = squareRect(it, unit).deflate(unit * 0.09f)
+                    drawRect(BoardInk.copy(alpha = 0.8f), frame.topLeft, frame.size, style = Stroke(unit * 0.09f))
+                }
+            }
         }
         if (layout.round) drawOval(BoardInk.copy(alpha = 0.6f), size = extent, style = Stroke(1.5.dp.toPx()))
-    }
-
-    /** The ivory spot a pawn that is home stands on, ringed in ink: it lifts the pawn off its own colour's triangle. */
-    override fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
-        val spot = centre + Offset(0f, -0.05f * radius)
-        drawCircle(BoardIvory, radius * 1.12f, spot)
-        drawCircle(BoardInk.copy(alpha = 0.6f), radius * 1.12f, spot, style = Stroke(maxOf(0.75.dp.toPx(), radius * 0.07f)))
     }
 }
 

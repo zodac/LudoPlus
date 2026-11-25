@@ -21,7 +21,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -102,6 +103,7 @@ import net.zodac.ludoplus.resources.game_player_pawns_home_spoken
 import net.zodac.ludoplus.resources.game_player_pawns_left_spoken
 import net.zodac.ludoplus.resources.game_player_place
 import net.zodac.ludoplus.resources.game_player_rank_spoken
+import net.zodac.ludoplus.resources.game_player_rank_tied
 import net.zodac.ludoplus.resources.game_player_rank_tied_spoken
 import net.zodac.ludoplus.resources.game_player_team_spoken
 import net.zodac.ludoplus.resources.game_player_turn_spoken
@@ -665,12 +667,13 @@ private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier
     val team = teamNumber(state, index)
     val ranks = remember(state) { state.ranks() }
     val rank = ranks?.get(index)
+    // Partners share a rank without being level.
+    val tied = rank != null && state.placeOf(index) == null && state.players.indices.any { ranks[it] == rank && state.rules.teamOf(it) != state.rules.teamOf(index) }
     // Once the game is over the rank is the place, said as one even where the card keeps its dots.
     val spokenRank = when {
         rank == null || placeText != null -> null
         state.placeOf(index) != null -> stringResource(Res.string.game_player_place, ordinal(rank))
-        // Partners share a rank without being level.
-        state.players.indices.any { ranks[it] == rank && state.rules.teamOf(it) != state.rules.teamOf(index) } -> stringResource(Res.string.game_player_rank_tied_spoken, ordinal(rank))
+        tied -> stringResource(Res.string.game_player_rank_tied_spoken, ordinal(rank))
         else -> stringResource(Res.string.game_player_rank_spoken, ordinal(rank))
     }
     var nameCut by remember(player.name) { mutableStateOf(false) }
@@ -700,7 +703,7 @@ private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             if (team != null) TeamBadge(team, Modifier.clearAndSetSemantics { })
-            RankDisc(rank, colour, Modifier.clearAndSetSemantics { })
+            RankDisc(rank, tied, colour, Modifier.clearAndSetSemantics { })
             // The box takes the room: a tooltip's own is only as wide as what's in it.
             Box(modifier = Modifier.weight(1f)) {
                 // Not focusable: a tap elsewhere, on the die say, does its own job as the tooltip goes.
@@ -731,24 +734,25 @@ private fun PlayerCard(game: StartedGame, index: Int, compact: Boolean, modifier
 }
 
 /**
- * The player's [colour], with their [rank] as the game stands on it ([GameState.ranks]), or none while everyone is level.
- * It grows with the font, and no taller than the name's line. Drawn only; the card says the rank.
+ * The player's [colour], with their [rank] as the game stands on it ([GameState.ranks]), or none while everyone is level:
+ * "=2" where it's [tied], on a pill as wide as that needs. It grows with the font, and no taller than the name's line.
+ * Drawn only; the card says the rank.
  */
 @Composable
-private fun RankDisc(rank: Int?, colour: Color, modifier: Modifier) {
+private fun RankDisc(rank: Int?, tied: Boolean, colour: Color, modifier: Modifier) {
     val size = with(LocalDensity.current) { RANK_DISC_SIZE.toDp() }
-    Surface(color = colour, shape = CircleShape, modifier = modifier.size(size)) {
+    Surface(color = colour, shape = CircleShape, modifier = modifier.height(size).widthIn(min = size)) {
         if (rank == null) return@Surface
-        Box(contentAlignment = Alignment.Center) {
+        Box(contentAlignment = Alignment.Center, modifier = if (tied) Modifier.padding(horizontal = size / 8) else Modifier) {
             Text(
-                rank.toString(),
+                if (tied) stringResource(Res.string.game_player_rank_tied, rank) else rank.toString(),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black,
                 maxLines = 1,
                 softWrap = false,
                 // A large font's line is taller than the disc: centred on it all the same.
-                modifier = Modifier.wrapContentSize(unbounded = true),
+                modifier = Modifier.wrapContentHeight(unbounded = true),
             )
         }
     }

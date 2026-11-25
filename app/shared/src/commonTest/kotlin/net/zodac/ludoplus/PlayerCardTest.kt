@@ -62,6 +62,18 @@ class PlayerCardTest : UiTest() {
     }
 
     @Test
+    fun `a tied rank is drawn with an equals sign - partners' shared one isn't`() = uiTest(TestScreen(411, 891)) {
+        fun drawn(text: String) = compose.onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes().size
+        show(game(listOf(3, 1, 4, 3), names))
+        assertEquals(listOf(2, 0, 1, 1), listOf("=2", "2", "1", "4").map(::drawn))
+        // It isn't said: "=2" would be read as "equals 2".
+        assertEquals(0, compose.onAllNodesWithText("=2").fetchSemanticsNodes().size)
+
+        show(game(listOf(3, 1, 4, 3), names) { it.copy(rules = it.rules.copy(teams = listOf(0, 1, 0, 1))) })
+        assertEquals(listOf(0, 0), listOf("=1", "=2").map(::drawn))
+    }
+
+    @Test
     fun `partners share a rank without being joint`() = uiTest(TestScreen(411, 891)) {
         show(game(listOf(3, 1, 4, 3), names) { it.copy(rules = it.rules.copy(teams = listOf(0, 1, 0, 1))) })
         assertEquals("Team 1, 3 pawns left, playing now, currently 1st", spoken("Alex"))

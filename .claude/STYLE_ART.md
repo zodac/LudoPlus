@@ -30,7 +30,7 @@ The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and
 
 - **A family is a `LayeredBoardStyle`** (`ui/style/BoardFamilies.kt`): it overrides the layers it changes, in the
     order they're drawn: `ground`, `drawSquare` (every track and home-column square), `drawYard`, `drawHomeTriangle`,
-    `drawSafeMark`, and `drawFinish` over the lot. Classic (`BoardStyles.kt`) is drawn on its own and is what the Rules
+    `drawSafeMark`, `drawStartBorder`, and `drawFinish` over the lot. Classic (`BoardStyles.kt`) is drawn on its own and is what the Rules
     diagrams use.
 - **A star square is shaded as well as marked** (the maintainer, 2026-11-24), so it shows with a pawn over its mark:
     `drawSquare` is given `safeFill` there, darker than `plain`, or lighter on a darker board, and a family whose plain
@@ -38,6 +38,10 @@ The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and
 - **A claimed star square** (Colour Rush) is its player's colour with the mark at `CLAIMED_MARK_SCALE` (`drawClaimedMark`):
     both must show, whichever of the player colours it is. A mark that would be lost on one is edged there (Starry's).
     `ClaimedSquareTest` holds every board to it.
+- **A start square has a border** (`drawStartBorder`; the maintainer, 2026-11-25), as it's safe: `StartBorder`, just inside
+    the square's edge and in its shape, or on a dark board `drawLightStartBorder`. It must show round a pawn and on every
+    player colour. It goes when the square stops being safe: in Survival's Overtime (`BoardParts.starts`), and on a guarded
+    start no one sits at (`emptyStartsSafe`). `StartSquareTest` holds every board to it.
 - **One yard for every layout.** A new family extends `ShapedYardBoardStyle` (`PlayfulBoardFamilies.kt`), which draws the
     classic yard and a star board's through the same `drawYardGround`, `drawCourt`, and `drawSpot`, each cut to its shape.
 - **Many dots are one draw**: `drawDots` (`drawPoints`), as Comic's halftone.
@@ -61,8 +65,8 @@ The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and
     renders compare byte for byte.
 - **A grid style snaps to it.** Retro draws on a grid of `RETRO_PIXELS` to a square, including its stars, spots, and
     stepped homes (`encloses` tests each pixel's centre against the home's convex outline).
-- **`drawHomeSpot`** is the disc a pawn that's home stands on: the court's colour ringed in the line colour, unless the
-    family draws its own.
+- **A pawn that's home stands on its triangle**, with no disc under it (the maintainer, 2026-11-25): its ink outline lifts
+    it off its own colour.
 
 ## Pawns
 

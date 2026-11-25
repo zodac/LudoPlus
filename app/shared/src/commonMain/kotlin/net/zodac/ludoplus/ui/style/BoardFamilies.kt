@@ -31,7 +31,7 @@ import net.zodac.ludoplus.ui.theme.BoardEmptySeat
 
 /**
  * A board drawn in layers, each a family's own: the [ground] under it all, every square ([drawSquare]), the safe
- * squares' marks ([drawSafeMark]), the yards ([drawYard]), the home triangles ([drawHomeTriangle]), and a [drawFinish]
+ * squares' marks ([drawSafeMark]), the start squares' borders ([drawStartBorder]), the yards ([drawYard]), the home triangles ([drawHomeTriangle]), and a [drawFinish]
  * over the lot (grain, speckle). A seat's colour is drawn as [seatTone] of it, which may tint it towards the board's
  * material but never so far that the seats can't be told apart.
  */
@@ -59,6 +59,19 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
 
     /** [drawSafeMark] on a square claimed: smaller, so its player's colour shows round it. */
     protected open fun DrawScope.drawClaimedMark(centre: Offset, unit: Float) = scale(CLAIMED_MARK_SCALE, centre) { drawSafeMark(centre, unit) }
+
+    /** A start square's border, inside the square [unit] across from [topLeft], which [drawSquare] has drawn: it's safe. */
+    protected open fun DrawScope.drawStartBorder(topLeft: Offset, unit: Float) {
+        val frame = squareRect(topLeft, unit).deflate(unit * 0.1f)
+        drawRect(StartBorder, frame.topLeft, frame.size, style = Stroke(unit * START_BORDER_WIDTH))
+    }
+
+    /** [drawStartBorder] for a dark board, where a dark one would be lost: white on [edge], the square's own, and dark inside it, so that it shows on a light seat. */
+    protected fun DrawScope.drawLightStartBorder(edge: Rect, unit: Float, round: CornerRadius = CornerRadius.Zero) {
+        val inside = edge.deflate(unit * 0.07f)
+        drawRoundRect(StartBorder, inside.topLeft, inside.size, round, style = Stroke(unit * 0.06f))
+        drawRoundRect(Color.White, edge.topLeft, edge.size, round, style = Stroke(unit * START_BORDER_WIDTH))
+    }
 
     /**
      * A seat's yard on the classic board in [colour], [unit] a square from [topLeft], round a court with a spot at each of
@@ -128,6 +141,9 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
             val centre = layout.trackSquare(square).centre * unit
             if (square in parts.claims) drawClaimedMark(centre, unit) else drawSafeMark(centre, unit)
         }
+        for (s in 0..<board.seats) {
+            if (parts.startBorder(s, seatColours)) drawBoardSquare(layout.trackSquare(board.startSquare(s)), unit) { drawStartBorder(it, unit) }
+        }
         if (disc != null) {
             clipPath(disc) { drawFinish(extent, unit) }
             drawPath(disc, line, style = Stroke(1.5.dp.toPx()))
@@ -135,13 +151,11 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
             drawFinish(extent, unit)
         }
     }
-
-    override fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
-        val spot = centre + Offset(0f, -0.05f * radius)
-        drawCircle(court, radius * 1.12f, spot)
-        drawCircle(line, radius * 1.12f, spot, style = Stroke(maxOf(0.75.dp.toPx(), radius * 0.07f)))
-    }
 }
+
+/** What a start square's border is drawn in, on every board but the dark ones, and how wide it is, in squares. */
+internal val StartBorder = Color.Black.copy(alpha = 0.7f)
+internal const val START_BORDER_WIDTH = 0.09f
 
 /** How big a claimed star square's mark is, against one nobody has claimed. */
 internal const val CLAIMED_MARK_SCALE = 0.7f
@@ -401,6 +415,12 @@ class NeonBoardStyle(id: String, private val dark: Color, private val tube: Colo
         glow(unit, tubeColour) { stroke, colour -> drawRect(colour, inner.topLeft, inner.size, style = stroke) }
     }
 
+    /** A white tube inside the square's own. */
+    override fun DrawScope.drawStartBorder(topLeft: Offset, unit: Float) {
+        val inner = squareRect(topLeft, unit).deflate(unit * 0.1f)
+        glow(unit, Color.White) { stroke, colour -> drawRect(colour, inner.topLeft, inner.size, style = stroke) }
+    }
+
     override fun DrawScope.drawSafeMark(centre: Offset, unit: Float) {
         val path = starPath(centre, unit * 0.3f)
         glow(unit * 0.7f, star) { stroke, colour -> drawPath(path, colour, style = stroke) }
@@ -427,12 +447,6 @@ class NeonBoardStyle(id: String, private val dark: Color, private val tube: Colo
         val triangle = points.toPath()
         drawPath(triangle, colour.copy(alpha = 0.3f))
         clipPath(triangle) { glow(unit, colour) { stroke, c -> drawPath(triangle, c, style = stroke) } }
-    }
-
-    override fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
-        val spot = centre + Offset(0f, -0.05f * radius)
-        drawCircle(dark, radius * 1.12f, spot)
-        drawCircle(tube, radius * 1.12f, spot, style = Stroke(maxOf(1.dp.toPx(), radius * 0.08f)))
     }
 }
 
@@ -533,12 +547,6 @@ class OceanBoardStyle(
             drawCircle(sand, unit * 0.6f * scale, spot)
             drawCircle(colour.copy(alpha = 0.5f), unit * 0.6f * scale, spot, style = Stroke(unit * 0.06f))
         }
-    }
-
-    override fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
-        val spot = centre + Offset(0f, -0.05f * radius)
-        drawCircle(sand, radius * 1.12f, spot)
-        drawCircle(shore, radius * 1.12f, spot, style = Stroke(maxOf(0.75.dp.toPx(), radius * 0.07f)))
     }
 }
 
@@ -688,6 +696,11 @@ class PaperBoardStyle(id: String, private val paper: Color, private val pencil: 
         )
     }
 
+    /** Gone over in pencil, three times. */
+    override fun DrawScope.drawStartBorder(topLeft: Offset, unit: Float) {
+        for (i in 0..2) pencilRect(squareRect(topLeft, unit).deflate(unit * (0.08f + 0.03f * i)), unit)
+    }
+
     private fun DrawScope.pencilRect(rect: Rect, unit: Float) {
         val random = Random((rect.left * 3 + rect.top * 5 + rect.width).toInt())
         pencilLine(rect.topLeft, rect.topRight, unit, random)
@@ -790,6 +803,15 @@ class RetroBoardStyle(id: String, private val block: Color, private val screen: 
 
     override fun DrawScope.drawSquare(topLeft: Offset, unit: Float, fill: Color, seat: Boolean) = bevel(topLeft, unit, fill)
 
+    /** A white pixel all round in place of the bevel, and a black one inside it. */
+    override fun DrawScope.drawStartBorder(topLeft: Offset, unit: Float) {
+        val p = unit / RETRO_PIXELS
+        for ((inset, colour) in listOf(1 to Color.White, 2 to Color.Black)) {
+            val ring = squareRect(topLeft, unit).deflate((inset + 0.5f) * p)
+            drawRect(colour, ring.topLeft, ring.size, style = Stroke(p))
+        }
+    }
+
     override fun DrawScope.drawSafeMark(centre: Offset, unit: Float) {
         val p = unit / RETRO_PIXELS
         val origin = centre - Offset(p * PixelStar.size / 2f, p * PixelStar.size / 2f)
@@ -868,12 +890,6 @@ class RetroBoardStyle(id: String, private val block: Color, private val screen: 
                 !inside[row - 1][column] || !inside[row + 1][column] || !inside[row][column - 1] || !inside[row][column + 1]
             drawRect(if (edge) Color.Black else colour, Offset(bounds.left + column * p, bounds.top + row * p), Size(p, p))
         }
-    }
-
-    override fun DrawScope.drawHomeSpot(centre: Offset, radius: Float) {
-        val p = radius / 4f
-        pixelDisc(centre, 5, p, Color.Black)
-        pixelDisc(centre, 4, p, block)
     }
 }
 

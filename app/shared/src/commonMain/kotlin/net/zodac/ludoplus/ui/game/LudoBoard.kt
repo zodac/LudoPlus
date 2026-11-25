@@ -158,7 +158,6 @@ fun LudoBoard(
         fun DrawScope.drawMark(mark: PawnMark, unit: Float, ringed: Boolean) {
             val shielded = mark.pawns.any { state.isShielded(mark.player, it) || PawnRef(mark.player, it) in motion.moving?.brokenShields.orEmpty() }
             if (shielded) drawShieldBubble(mark.centre * unit, mark.radius * unit)
-            if (mark.home) with(theme.board) { drawHomeSpot(mark.centre * unit, mark.radius * unit) }
             with(theme.pawns) { drawPawn(mark.centre * unit, mark.radius * unit, pawnColours[mark.player], ringed) }
             // At the top right, for pawns sharing a square.
             if (mark.pawns.size > 1) drawCount(textMeasurer, mark.pawns.size, (mark.centre + Offset(mark.radius * 0.8f, -mark.radius * 0.8f)) * unit, unit * PAWN_COUNT_RADIUS)
@@ -176,10 +175,16 @@ fun LudoBoard(
             // on a layer of its own: a frame of a move or a turn's ring never draws it again.
             val lastStanding = state.rules.lastStanding
             val stage = state.suddenDeathStage
+            // A guarded start no one sits at is safe for nobody.
+            val guardedStarts = state.rules.guardedStarts
             // The squares claimed: painted again as one changes hands, once the pawn that claims it has landed.
             if (motion.moving == null) shownClaims[0] = state.claimed
             val claims = shownClaims[0].mapValues { (_, player) -> pawnColours[player] }
-            val parts = if (lastStanding) BoardParts(starts = stage < 1, stars = stage < 2, homes = false) else BoardParts(claims = claims)
+            val parts = if (lastStanding) {
+                BoardParts(starts = stage < 1, emptyStartsSafe = !guardedStarts, stars = stage < 2, homes = false)
+            } else {
+                BoardParts(emptyStartsSafe = !guardedStarts, claims = claims)
+            }
             // A last-standing yard's spots are its tally, drawn with the pawns.
             val spots = if (lastStanding) 0 else pawns
             val surface = BoardSurface(theme.board, layout, colours, spots, parts)

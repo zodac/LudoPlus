@@ -32,8 +32,6 @@ class BoardPiecesTest {
         assertEquals(ClassicBoardLayout.yardSpot(0, 0), red.single { it.pawns == listOf(0) }.centre)
         assertEquals(ClassicBoardLayout.trackCell(10).centre, red.single { it.pawns == listOf(1, 2) }.centre)
         assertEquals(ClassicBoardLayout.homeSpot(0, 3), red.single { it.pawns == listOf(3) }.centre)
-        // Only a pawn that's home stands on an ivory spot.
-        assertEquals(listOf(listOf(3)), red.filter { it.home }.map { it.pawns })
         // Every pawn home is seen, each on its own spot: never one pawn with a count.
         assertEquals(listOf(ClassicBoardLayout.homeSpot(1, 0), ClassicBoardLayout.homeSpot(1, 1)), marks.filter { it.player == 1 && it.pawns.single() <= 1 }.map { it.centre })
         // Red's three marks, green's two home and two yard pawns, and yellow's and blue's four yard pawns each.
