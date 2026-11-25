@@ -170,11 +170,13 @@ turn has played out (`VanishMotion`, `VANISH_MILLIS`), with a buzz; the log's li
 the board counts the turns, and TalkBack's board leaves the square out.
 
 **Chaos** (`GameRules.powerUps`, `model/PowerUp.kt`, `game/PowerUps.kt`; the maintainer, 2026-11-24, reversing Phase 9's
-"power-up squares weren't picked"). One power-up for each player at the start, and a new one every one to five turns
-(anyone's, a run of rolls being one; `GameState.turnsToPowerUp`, as the last of them starts), whether any is taken or not, but never more than
-two for each player (`PowerUp.MOST_PER_PLAYER`; the maintainer, 2026-11-24). With no limit, four Medium CPUs' board averaged
-12 and reached 30; with it, it averages 7. Each is of any kind, anywhere on the track but a safe square, a pawn's, or another's. One works a
-move, at once: a pawn moved onto another leaves it there.
+"power-up squares weren't picked"). At least one of each kind is on the track at any time: a game starts with one of each,
+and the last of a kind is replaced at once as it's taken, somewhere else (`PowerUps.restock`; the maintainer, 2026-11-25,
+in place of one for each player at the start). It's drawn once the pawn that took it has landed. Besides those, one of any
+kind, all as likely, comes every one to five turns (anyone's, a run of rolls being one; `GameState.turnsToPowerUp`, as the
+last of them starts), whether any is taken or not, up to two for each player, or seven for two or three players
+(`PowerUp.most`). Each is anywhere on the track but a safe square, a pawn's, or another's. A game saved by 1.1.0, short of
+some kinds, gets them as its next comes. One works a move, at once: a pawn moved onto another leaves it there.
 
 - **Double**: the taker's next 3 rolls (not turns) move twice as far, but for one that would overshoot home, which counts
     once. A 6 still leaves the yard and rolls again. `PlayerState.doubledRolls`, on their yard

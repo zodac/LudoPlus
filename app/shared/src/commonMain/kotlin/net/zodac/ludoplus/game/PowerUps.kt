@@ -11,16 +11,23 @@ import net.zodac.ludoplus.model.PowerUp
  */
 internal object PowerUps {
 
-    /** [state], a game's start, with a power-up on the track for each player, and the first new one due. */
-    fun start(state: GameState): GameState = due(state.players.indices.fold(state) { next, _ -> spawn(next) })
+    /** [state], a game's start, with a power-up of each kind on the track, and the first new one due. */
+    fun start(state: GameState): GameState = due(restock(state))
 
-    /** [state] as a turn starts: the next power-up a turn nearer, and if its time has come, on the track (unless it's full: [PowerUp.MOST_PER_PLAYER]), with another due. */
+    /** [state] with a new power-up of each kind the track has none of. */
+    fun restock(state: GameState): GameState = (PowerUp.entries - state.powerUps.values.toSet()).fold(state) { next, kind -> spawn(next, kind) }
+
+    /**
+     * [state] as a turn starts: the next power-up a turn nearer, and if its time has come, on the track (unless it's full:
+     * [PowerUp.most]), with another due. It's of any kind, but where the track has none of some (a game saved by 1.1.0), one of each of those.
+     */
     fun tick(state: GameState): GameState {
         if (!state.rules.powerUps) return state
         val left = state.turnsToPowerUp - 1
         if (left > 0) return state.copy(turnsToPowerUp = left)
-        val full = state.powerUps.size >= PowerUp.MOST_PER_PLAYER * state.players.size
-        return due(if (full) state else spawn(state))
+        val stocked = restock(state)
+        val full = state.powerUps.size >= PowerUp.most(state.players.size)
+        return due(if (full || stocked != state) stocked else spawn(state, kind = null))
     }
 
     /** [state] with the next power-up due in a random number of turns. */
@@ -37,7 +44,7 @@ internal object PowerUps {
 
     /**
      * [state] with the power-up that [owner]'s pawn [pawn] has ended a move on taken, and what it did; as it is, and null,
-     * with none there. One a move: a pawn a power-up moves onto another leaves it there. A Swap does nothing, taken so: it's
+     * with none there. The last of its kind is replaced at once ([restock]). One a move: a pawn a power-up moves onto another leaves it there. A Swap does nothing, taken so: it's
      * only with nobody to swap with that nobody is asked ([LudoEngine.swapMoves]).
      */
     fun take(state: GameState, owner: Int, pawn: Int): Pair<GameState, PowerUpEffect?> {
@@ -46,7 +53,7 @@ internal object PowerUps {
         val square = state.board.trackSquare(state.players[owner].seat, progress)
         val powerUp = state.powerUps[square] ?: return state to null
         val taken = state.copy(powerUps = state.powerUps - square)
-        return when (powerUp) {
+        val (after, effect) = when (powerUp) {
             // The roller's: the one whose rolls are counted.
             PowerUp.DOUBLE -> taken.copy(players = taken.players.replace(state.current) { it.copy(doubledRolls = PowerUp.DOUBLED_ROLLS) }) to PowerUpEffect(powerUp)
             PowerUp.SHIELD -> taken.copy(players = taken.players.replace(owner) { it.copy(shielded = it.shielded + pawn) }) to PowerUpEffect(powerUp)
@@ -54,6 +61,7 @@ internal object PowerUps {
             PowerUp.CALL_UP -> callUp(taken, owner)
             PowerUp.SWAP -> taken to PowerUpEffect(powerUp)
         }
+        return restock(after) to effect
     }
 
     private fun callUp(state: GameState, owner: Int): Pair<GameState, PowerUpEffect> {
@@ -118,14 +126,14 @@ internal object PowerUps {
         return state.copy(players = players) to PowerUpEffect(PowerUp.SWAP, movedTo = to, swapped = other)
     }
 
-    /** [state] with a power-up of any kind anywhere on the track: never on a safe square, a pawn's, or another's. As it is with no square free. */
-    private fun spawn(state: GameState): GameState {
+    /** [state] with a power-up of [kind], or of any for null, anywhere on the track: never on a safe square, a pawn's, or another's. As it is with no square free. */
+    private fun spawn(state: GameState, kind: PowerUp?): GameState {
         val board = state.board
         val taken = state.players.flatMap { side -> side.pawns.filter { it in 0..<board.trackSteps }.map { board.trackSquare(side.seat, it) } }.toSet() + state.powerUps.keys
         val free = (0..<board.trackLength).filter { !board.isSafe(it) && it !in taken }
         if (free.isEmpty()) return state
         val (random, drawn) = draw(state)
-        return drawn.copy(powerUps = state.powerUps + (free.random(random) to PowerUp.entries.random(random)))
+        return drawn.copy(powerUps = state.powerUps + (free.random(random) to (kind ?: PowerUp.entries.random(random))))
     }
 
     /** What to draw a chance from, and [state] with its seed moved on. */

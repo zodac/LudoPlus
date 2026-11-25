@@ -41,7 +41,13 @@ enum class PowerUp(override val id: String, val title: StringResource, val descr
         /** The most turns (anyone's) between one new power-up and the next: a random number, from 1. */
         const val MOST_TURNS = 5
 
-        /** The most power-ups on the track at once for each player in the game: a new one due with as many there doesn't come. */
-        const val MOST_PER_PLAYER = 2
+        /**
+         * The most power-ups on the track at once in a game of [players]: a new one due with as many there doesn't come. Two
+         * for each player, but always room for one of each kind and [LEAST_RANDOM] of any.
+         */
+        fun most(players: Int): Int = maxOf(MOST_PER_PLAYER * players, entries.size + LEAST_RANDOM)
+
+        private const val MOST_PER_PLAYER = 2
+        private const val LEAST_RANDOM = 2
     }
 }

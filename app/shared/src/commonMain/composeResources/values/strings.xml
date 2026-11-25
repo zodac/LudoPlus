@@ -1205,8 +1205,8 @@
     <string name="rules_survival_4">On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when Overtime comes.</string>
     <string name="rules_survival_5">Ten turns after that comes the Cataclysm: after every five turns, up to three squares with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven squares left, so nobody can keep away for ever.</string>
     <string name="rules_survival_records">The Leaderboard ranks Survival wins by the most pawns left.</string>
-    <string name="rules_chaos_1">In Chaos there are power-ups on the track, one for each player to begin with. End a move on one to use it at once:</string>
-    <string name="rules_chaos_2">Only one power-up works in a move: a pawn moved onto another leaves it there. A new power-up appears somewhere random every one to five turns, up to two for each player.</string>
+    <string name="rules_chaos_1">In Chaos there are power-ups on the track, at least one of each kind at any time. End a move on one to use it at once:</string>
+    <string name="rules_chaos_2">Only one power-up works in a move: a pawn moved onto another leaves it there. When the last of a kind is taken, another appears somewhere random at once. A random power-up also appears every one to five turns, up to two for each player, or seven with two or three players.</string>
     <string name="rules_chaos_3">Bouncing off a shield earns no roll unless your pawn captures where it settles. A pawn brought out of the yard can't bounce, so a shield doesn't stop it.</string>
     <string name="rules_haunted_house_1">In Haunted House, ghosts haunt the track, one for every two players. After every second turn one of them drifts up to 6 squares, forwards or back, and you won't know which one or how far until it does.</string>
     <string name="rules_haunted_house_2">A ghost sends every pawn on the square it lands on back to its yard, whoever's they are, unless the square is safe. Landing on a ghost yourself does no harm: it only catches pawns when it moves.</string>

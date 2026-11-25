@@ -303,8 +303,7 @@ object LudoEngine {
         val swaps = if (chances && !phase.swapping && isOnSwap(state, whose, move.to)) swapMoves(moved, whose, pawn, move.roll) else emptyList()
         if (swaps.isNotEmpty()) {
             val out = move.captures.map { it.player }.distinct().filter { moved.players[it].pawnsLeft == 0 }
-            return moved.copy(
-                powerUps = moved.powerUps - board.trackSquare(moved.players[whose].seat, move.to),
+            return PowerUps.restock(moved.copy(powerUps = moved.powerUps - board.trackSquare(moved.players[whose].seat, move.to))).copy(
                 phase = phase.copy(moves = swaps, earned = phase.earned || (rules.rollAgainOnCapture && move.captures.isNotEmpty()), swapping = true),
                 yardTriesUsed = 0,
                 knockedOut = state.knockedOut + out,

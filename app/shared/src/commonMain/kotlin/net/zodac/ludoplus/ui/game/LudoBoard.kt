@@ -139,6 +139,8 @@ fun LudoBoard(
     val currentSwapping by rememberUpdatedState(swapping)
     // The squares claimed as they're shown: as they were, while a move plays out.
     val shownClaims = remember { arrayOf(state.claimed) }
+    // The power-ups on the track, as they're shown: likewise, but for one taken, which goes with its move.
+    val shownPowerUps = remember { arrayOf(state.powerUps) }
     // What's in force for each player, as it's shown: likewise.
     val shownInForce = remember { arrayOf(state.players.map(::InForce)) }
     // The portal being pressed, and the power-up whose popup is up.
@@ -193,7 +195,12 @@ fun LudoBoard(
             // The portals, under the pawns: drawn once.
             if (state.rules.portals) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPortals(layout, size.minDimension / layout.size) }
             // The power-ups, under the pawns: drawn again as one comes or goes.
-            if (state.rules.powerUps) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPowerUps(layout, size.minDimension / layout.size, state.powerUps) }
+            if (state.rules.powerUps) {
+                // One that comes in place of one taken shows once the pawn that took it has landed.
+                shownPowerUps[0] = if (motion.moving == null) state.powerUps else shownPowerUps[0].filter { (square, powerUp) -> state.powerUps[square] == powerUp }
+                val powerUps = shownPowerUps[0]
+                Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPowerUps(layout, size.minDimension / layout.size, powerUps) }
+            }
             // On a layer of its own too, drawn again only as the turn passes.
             val turnSeat = if (state.isFinished) null else state.currentPlayer.seat
             if (turnSeat != null) {

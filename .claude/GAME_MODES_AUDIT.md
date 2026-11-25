@@ -83,7 +83,7 @@ and reported to the maintainer. Counters (games, wins, streaks, captures, rolls)
 | Two Dice | Double Or Nothing, Two Birds, Two Stones 12% |
 | Portals | Through The Looking Glass, There And Back Again 45% |
 | Survival | Last Pawn Standing, Barely A Scratch 3.3% (a sixth of wins) |
-| Chaos | Agent Of Chaos, One Of Everything 64% (left easy at the maintainer's word, 2026-11-24, as power-ups came more often) |
+| Chaos | Agent Of Chaos, One Of Everything 67% (46% with two, 99% with eight; left easy at the maintainer's word, 2026-11-24, as power-ups came more often; measured again 2026-11-25, with one of each kind always on the track) |
 | Haunted House | Living To Tell The Tale, Not A Ghost Of A Chance 3.7% (harder with more players: never, in eight-player simulations) |
 
 Grand Tour (a game finished of every mode, none with house rules) is worked out from the records each time a game ends, so

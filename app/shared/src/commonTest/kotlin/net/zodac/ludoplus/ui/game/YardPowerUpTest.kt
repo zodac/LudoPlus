@@ -92,6 +92,26 @@ class YardPowerUpTest : UiTest() {
         assertEquals(emptyList(), along.last())
     }
 
+    @Test
+    fun `the power-up that replaces one taken shows as the pawn that took it lands - not before`() = uiTest {
+        // One of each other kind, so only Shield's is replaced.
+        val others = (PowerUp.entries - PowerUp.SHIELD).withIndex().associate { (i, kind) -> 40 + i to kind }
+        val rolled = LudoEngine.applyRoll(game(powerUps = others + (3 to PowerUp.SHIELD)), 2)
+        val state = show(rolled)
+        state.value = LudoEngine.move(rolled, 0)
+        val square = (state.value.powerUps.keys - others.keys).single()
+        val along = List((2 * PAWN_STEP_MILLIS + 100) / FRAME) { isDrawn(PowerUp.SHIELD, square).also { mainClock.advanceTimeByFrame() } }
+        assertTrue(along.indexOf(true) * FRAME >= 2 * PAWN_STEP_MILLIS - FRAME, "Too soon: $along")
+        assertTrue(along.last(), "Never shown")
+    }
+
+    /** Whether [powerUp] is drawn on track [square]: its colour under its symbol. */
+    private fun ComposeUiTest.isDrawn(powerUp: PowerUp, square: Int): Boolean {
+        val pixels = onNodeWithTag(BOARD).captureToImage().toPixelMap()
+        val at = (ClassicBoardLayout.trackSquare(square).centre + Offset(0f, POWER_UP_RADIUS * 0.72f)) * (pixels.width / ClassicBoardLayout.size)
+        return pixels[at.x.toInt(), at.y.toInt()] == powerUp.color
+    }
+
     private fun ComposeUiTest.show(start: GameState): MutableState<GameState> {
         val state = mutableStateOf(start)
         mainClock.autoAdvance = false
