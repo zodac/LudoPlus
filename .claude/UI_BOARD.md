@@ -129,9 +129,13 @@ whose turn it is has an outline in their colour.
     rest of the turn. It can't be rolled until the last action has played out (`GameViewModel.settled`: the die's tumble, a
     pawn's move, a ghost's drift, or squares vanishing). Two Dice draws two, at 0.8 of the size; a tap on one picks it for the next move (`TwoDice`).
 - **A roll with no move** (or that ends a run of 6s) is seen before it counts (the maintainer, 2026-11-25): while the die
-    tumbles (`GameViewModel.rollShown`) the turn stays its roller's, in the line ("Alex is rolling."), the ring, and the
-    cards, and the log doesn't tell of it. One that passes the turn on is shown for `TURN_PASSED_MILLIS` more. With the Die
-    roll motion off, the turn passes at once.
+    tumbles (`GameViewModel.actionShown`) the turn stays its roller's, in the line ("Alex is rolling."), the die's ring, the
+    card, and the yard, and the log doesn't tell of it. One that passes the turn on is shown for `TURN_PASSED_MILLIS` more.
+    With the Die roll motion off, the turn passes at once.
+- **A move that passes the turn on** keeps it its player's the same way until its pawn has landed, and what follows has
+    played (a capture's flight, a flourish; the maintainer, 2026-11-26): the line ("Alex is moving.", not a live region, as the
+    log's newest line says the move at once), the die's ring, the card, and the yard. A ghost's drift or
+    squares vanishing after it play on the next player's turn. With the Pawn moves motion off, the turn passes at once.
 - `StatusLines` says what to do now, names in their players' colours. It's a polite live region, and holds every legal
     move as a custom action, so TalkBack can make a move from there as well as from a pawn's square.
 

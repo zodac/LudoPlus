@@ -593,7 +593,8 @@ clock (`LocalDieTumbleMillis`) instead. Before the first roll it's the style's b
 drawn round the style, not by it: in the colour of the player whose turn it is, in full while it can be rolled (or, of
 two dice, once picked) and faint the rest of the turn, a CPU's included (2026-11-23). On the board, that player's yard
 has a white ring, edged in ink, round its inside edge (`LudoBoard`), until the game is over. Both are visual only: the
-status lines name whose turn it is (`TurnHighlightTest`).
+status lines name whose turn it is (`TurnHighlightTest`). The turn passes on once its last action has been shown
+(`UI_BOARD.md`, "The die and its line").
 
 **Backgrounds** have 20 families. One that moves (the Ocean's Waves, Floating Dice)
 runs on the Background decoration group; a die's own sparkle or glow on the Die group (`MotionGroup.DICE`).

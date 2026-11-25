@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
@@ -18,6 +19,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.font.FontWeight
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import net.zodac.ludoplus.game.GameEvent
 import net.zodac.ludoplus.game.GameState
@@ -67,11 +69,11 @@ class BoardSemanticsTest : UiTest() {
     private var rolls = 0
     private var backs = 0
 
-    private fun show(state: GameState, log: List<LogEntry> = emptyList(), rollShown: Boolean = true) {
+    private fun show(state: GameState, log: List<LogEntry> = emptyList(), actionShown: Boolean = true) {
         val game = StartedGame(state.mode, players, state, first = 0, log = log)
         showcase.show {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
-                LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it.pawn }, onBack = { backs++ }, onResults = {}, rollShown = rollShown) }
+                LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it.pawn }, onBack = { backs++ }, onResults = {}, actionShown = actionShown) }
             }
         }
     }
@@ -497,13 +499,43 @@ class BoardSemanticsTest : UiTest() {
         assertEquals("Sam, tap the die to roll.", prompt.config[SemanticsProperties.ContentDescription].single())
     }
 
+    /** Which of Alex and Sam the cards say is playing now. */
+    private fun ComposeUiTest.playing() = listOf("Alex", "Sam").filter { name ->
+        onAllNodes(hasText(name) and SemanticsMatcher("playing now") { "playing now" in it.config.getOrNull(SemanticsProperties.StateDescription).orEmpty() })
+            .fetchSemanticsNodes().isNotEmpty()
+    }
+
+    @Test
+    fun `a move keeps the turn its player's until it has been shown, though the log tells of it at once - and one that rolls again keeps its prompt`() =
+        uiTest(TestScreen(411, 891)) {
+            val event = GameEvent.Moved(0, 4, Move(0, 0, 4), finished = false)
+            val passed = state(listOf(4, Y, Y, Y)).copy(current = 2, lastEvent = event)
+            show(passed, listOf(LogEntry(event)), actionShown = false)
+            val waiting = compose.onNodeWithContentDescription("Alex is moving.").fetchSemanticsNode()
+            assertEquals(PlayerColour.defaultFor(0).color, waiting.config[SemanticsProperties.Text].single().spanStyles.single().item.color)
+            // The log's line is what's heard of the move.
+            assertNull(waiting.config.getOrNull(SemanticsProperties.LiveRegion))
+            val line = compose.onNode(hasContentDescription("Alex's Pawn 1 moved 4 squares.")).fetchSemanticsNode()
+            assertEquals(LiveRegionMode.Polite, line.config[SemanticsProperties.LiveRegion])
+            compose.onNodeWithContentDescription("Sam, tap the die to roll.").assertDoesNotExist()
+            compose.onNode(onClickLabel("Roll")).assertDoesNotExist()
+            assertEquals(listOf("Alex"), compose.playing())
+
+            show(passed, listOf(LogEntry(event)))
+            compose.onNodeWithContentDescription("Alex is moving.").assertDoesNotExist()
+            val prompt = compose.onNodeWithContentDescription("Sam, tap the die to roll.").fetchSemanticsNode()
+            assertEquals(LiveRegionMode.Polite, prompt.config[SemanticsProperties.LiveRegion])
+            compose.onNode(onClickLabel("Roll")).assertExists()
+            assertEquals(listOf("Sam"), compose.playing())
+
+            show(passed.copy(current = 0, rollingAgain = true), listOf(LogEntry(event)), actionShown = false)
+            compose.onNodeWithContentDescription("Alex, roll again: tap the die.").assertExists()
+            assertEquals(listOf("Alex"), compose.playing())
+        }
+
     @Test
     fun `a roll with no move keeps the turn its roller's and out of the log until it has been shown - whoever rolls next`() = uiTest(TestScreen(411, 891)) {
         val first = LogEntry(GameEvent.NoMove(3, 2))
-        fun playing() = listOf("Alex", "Sam").filter { name ->
-            compose.onAllNodes(hasText(name) and SemanticsMatcher("playing now") { "playing now" in it.config.getOrNull(SemanticsProperties.StateDescription).orEmpty() })
-                .fetchSemanticsNodes().isNotEmpty()
-        }
         // The turn passes to Sam by a roll with no move, or a third 6; or Alex has another try.
         val rolls = listOf(
             Triple(GameEvent.NoMove(0, 3), 2, "Sam, tap the die to roll.") to "Alex rolled 3 and had no move.",
@@ -513,21 +545,21 @@ class BoardSemanticsTest : UiTest() {
         for ((roll, line) in rolls) {
             val (event, next, prompt) = roll
             val state = state().copy(current = next, rollingAgain = next == 0, lastEvent = event)
-            show(state, listOf(first, LogEntry(event)), rollShown = false)
+            show(state, listOf(first, LogEntry(event)), actionShown = false)
             val waiting = compose.onNodeWithContentDescription("Alex is rolling.").fetchSemanticsNode()
             assertEquals(PlayerColour.defaultFor(0).color, waiting.config[SemanticsProperties.Text].single().spanStyles.single().item.color)
             compose.onNodeWithContentDescription(prompt).assertDoesNotExist()
             compose.onNode(hasContentDescription(line)).assertDoesNotExist()
             compose.onNode(hasContentDescription("Payout rolled 2 and had no move.")).assertExists()
             compose.onNode(onClickLabel("Roll")).assertDoesNotExist()
-            assertEquals(listOf("Alex"), playing())
+            assertEquals(listOf("Alex"), compose.playing())
 
             show(state, listOf(first, LogEntry(event)))
             compose.onNodeWithContentDescription("Alex is rolling.").assertDoesNotExist()
             compose.onNodeWithContentDescription(prompt).assertExists()
             compose.onNode(hasContentDescription(line)).assertExists()
             compose.onNode(onClickLabel("Roll")).assertExists()
-            assertEquals(listOf(if (next == 0) "Alex" else "Sam"), playing())
+            assertEquals(listOf(if (next == 0) "Alex" else "Sam"), compose.playing())
         }
     }
 

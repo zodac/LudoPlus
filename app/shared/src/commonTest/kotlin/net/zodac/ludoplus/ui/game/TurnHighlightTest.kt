@@ -33,9 +33,10 @@ class TurnHighlightTest : UiTest() {
     fun `the yard of the player whose turn it is has a white ring round its inside edge, until the game is over`() = uiTest {
         val red = PlayerColour.defaultFor(0).color
         var state by mutableStateOf(GameState.new(GameMode.CLASSIC, 4, first = 0))
+        var held by mutableStateOf<Int?>(null)
         compose.setContent {
             LudoPlusTheme {
-                LudoBoard(state, List(4) { PlayerColour.defaultFor(it) }, emptyList(), {}, Modifier.size(300.dp).testTag(ART))
+                LudoBoard(state, List(4) { PlayerColour.defaultFor(it) }, emptyList(), {}, Modifier.size(300.dp).testTag(ART), turn = held ?: state.current)
             }
         }
         // Red's yard is the bottom-left six squares; this point is a tenth of a square in from its left edge.
@@ -44,6 +45,9 @@ class TurnHighlightTest : UiTest() {
         assertClose(Color.White, redYardEdge(), "Red's turn: the ring")
         state = state.copy(current = 1)
         assertClose(red, redYardEdge(), "Another's turn: red's yard as it is")
+        held = 0
+        assertClose(Color.White, redYardEdge(), "Another's turn, red's move not yet shown: the ring")
+        held = null
         state = state.copy(current = 0, phase = TurnPhase.Finished)
         assertClose(red, redYardEdge(), "Game over: no ring")
     }

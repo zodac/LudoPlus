@@ -122,6 +122,7 @@ import net.zodac.ludoplus.resources.game_prompt_move
 import net.zodac.ludoplus.resources.game_prompt_move_dice
 import net.zodac.ludoplus.resources.game_prompt_move_die_left
 import net.zodac.ludoplus.resources.game_prompt_move_partner
+import net.zodac.ludoplus.resources.game_prompt_moving
 import net.zodac.ludoplus.resources.game_prompt_roll
 import net.zodac.ludoplus.resources.game_prompt_roll_again
 import net.zodac.ludoplus.resources.game_prompt_roll_again_dice
@@ -237,7 +238,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
     val tutorialNextReady by viewModel.tutorialNextReady.collectAsStateWithLifecycle()
     TurnEndingBuzz((guestState as? GuestState.Playing)?.turnEnding == true)
     val settled by viewModel.settled.collectAsStateWithLifecycle()
-    val rollShown by viewModel.rollShown.collectAsStateWithLifecycle()
+    val actionShown by viewModel.actionShown.collectAsStateWithLifecycle()
     val awaySeats by viewModel.awaySeats.collectAsStateWithLifecycle()
     SuperuserRollPicker(viewModel)
     // The player's picks on the Styles page, or the defaults until they've loaded.
@@ -256,7 +257,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
             onResults = { finishedView = FinishedView.RESULTS },
             playMillis = viewModel::playMillis,
             settled = settled,
-            rollShown = rollShown,
+            actionShown = actionShown,
             notice = netplayNotice(guestState, awaySeats, started),
             showLog = showLog,
             tutorial = if (isTutorial) {
@@ -398,8 +399,8 @@ private fun GameFeedback(state: GameState) {
 /**
  * The game screen's content for [started]: rolling calls [onRoll], a tap on a movable pawn [onMove], the back arrow
  * [onBack], and the finished game's button [onResults]. The die can't be rolled until the last action has played out
- * ([settled]). Until a roll with no move has been shown ([rollShown]), the turn stays its roller's, and the log doesn't tell
- * of it. The move log is on screen with [showLog]; without it, TalkBack still hears its newest line. Under the title is how
+ * ([settled]). Until the last action has been shown ([actionShown]), a turn it passed on stays the player's who acted, and
+ * the log doesn't tell of a roll with no move. The move log is on screen with [showLog]; without it, TalkBack still hears its newest line. Under the title is how
  * long it has been played, [playMillis] ([GameTime]): not in the tutorial, which isn't timed.
  */
 @Composable
@@ -410,7 +411,7 @@ fun GameContent(
     onBack: () -> Unit,
     onResults: () -> Unit,
     settled: Boolean = true,
-    rollShown: Boolean = true,
+    actionShown: Boolean = true,
     notice: String? = null,
     tutorial: TutorialView? = null,
     showLog: Boolean = true,
@@ -420,10 +421,11 @@ fun GameContent(
         started.state.players.indexOfFirst { it.seat == seat }.takeIf { it >= 0 }?.let { started.players[it].colour }
     }
     val phase = started.state.phase
-    val unshown = started.state.lastEvent.takeIf { !rollShown && !started.state.isFinished && (it is GameEvent.NoMove || it is GameEvent.RollAgainLimit) }
+    val unshown = started.state.lastEvent.takeIf { !actionShown && !started.state.isFinished && it.holdsTurn(started.state.current) }
     // Whose turn the screen says it is.
     val turn = unshown?.player ?: started.state.current
-    val logged = remember(started, unshown) { if (unshown != null && started.log.lastOrNull()?.event == unshown) started.copy(log = started.log.dropLast(1)) else started }
+    // A move is told as it's made, and a roll once it's seen.
+    val logged = remember(started, unshown) { if (unshown != null && unshown !is GameEvent.Moved && started.log.lastOrNull()?.event == unshown) started.copy(log = started.log.dropLast(1)) else started }
     // A move with no choice makes itself: nothing to pick, so nothing is ringed (the tutorial makes none).
     val picks = tutorial != null || started.automaticMove == null
     // A Swap's pick isn't asked for until the pawn has landed on it.
@@ -468,6 +470,7 @@ fun GameContent(
                     onMove = onMove,
                     modifier = modifier.clip(RoundedCornerShape(8.dp)),
                     swapping = keepPlace != null,
+                    turn = turn,
                 )
             }
             if (width > height) {
@@ -871,7 +874,17 @@ private fun PawnDots(counted: Int, total: Int, colour: Color, modifier: Modifier
     }
 }
 
-/** The die, and the line saying what to do now, with a button not to swap while a swap is picked ([onDeclineSwap]); once the game is over, the winner and the way back to the results. While the roll is [unshown], it's still its roller's turn. */
+/**
+ * Whether, until it has been shown, this keeps the turn with the player who acted, [current] being next to act: a roll
+ * with no move, whoever that is, and a move that passed the turn on.
+ */
+private fun GameEvent?.holdsTurn(current: Int): Boolean = when (this) {
+    null, is GameEvent.Rolled -> false
+    is GameEvent.NoMove, is GameEvent.RollAgainLimit -> true
+    is GameEvent.Moved -> player != current
+}
+
+/** The die, and the line saying what to do now, with a button not to swap while a swap is picked ([onDeclineSwap]); once the game is over, the winner and the way back to the results. While the last action is [unshown], it's still the turn of the player who acted. */
 @Composable
 private fun TurnPanel(
     game: StartedGame,
@@ -963,6 +976,8 @@ private fun ColumnScope.StatusLines(
     // A move that makes itself is told as the computer's is, no pick asked for, and so is one onto a Swap until it has landed.
     val movesItself = game.currentIsCpu || (!tutorial && game.automaticMove != null) || (phase is TurnPhase.AwaitingMove && phase.swapping)
     val prompt = when {
+        // The pawn still on its way: the next player is asked for their roll once it's there.
+        unshown is GameEvent.Moved -> stringResource(Res.string.game_prompt_moving, current)
         // A roll with no move, the die still tumbling: the next is asked for once it's seen.
         unshown != null -> stringResource(Res.string.game_prompt_cpu_roll, current)
         swapping -> stringResource(Res.string.game_prompt_swap, current)
@@ -991,7 +1006,8 @@ private fun ColumnScope.StatusLines(
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Start,
         modifier = Modifier.semantics {
-            liveRegion = LiveRegionMode.Polite
+            // Not for a move on its way, which the log's newest line says.
+            if (unshown !is GameEvent.Moved) liveRegion = LiveRegionMode.Polite
             contentDescription = prompt
             if (actions.isNotEmpty()) customActions = actions
         },

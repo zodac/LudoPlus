@@ -105,7 +105,7 @@ private const val HOME_SPARKS = 10
 /**
  * The board for [state]'s players, drawn from its [BoardLayout], with [state]'s pawns on it. [seatColours] colours each
  * seat's yard, start square, home column, and pawns (null for a seat nobody sits at). Until the game is over, the yard of
- * the player whose turn it is has a ring round its inside edge, and that of one with a power-up in force has it, and how
+ * the player whose [turn] it is has a ring round its inside edge, and that of one with a power-up in force has it, and how
  * many are left ([InForce]). The pawns that [moves] can move
  * are ringed (a partner's too, when the player rolls for one), and a tap near one, or a screen reader's action on its
  * square ([BoardSemantics]), makes its move ([onMove]). While [swapping], the pawns ringed and tapped are those the move
@@ -129,6 +129,7 @@ fun LudoBoard(
     onMove: (Move) -> Unit,
     modifier: Modifier = Modifier,
     swapping: Boolean = false,
+    turn: Int = state.current,
 ) {
     val colours = remember(seatColours) { seatColours.map { it?.color } }
     val movable = remember(moves, state, swapping) { moves.mapNotNull { it.picked(state, swapping) }.toSet() }
@@ -215,7 +216,7 @@ fun LudoBoard(
                 Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPowerUps(layout, size.minDimension / layout.size, powerUps) }
             }
             // On a layer of its own too, drawn again only as the turn passes.
-            val turnSeat = if (state.isFinished) null else state.currentPlayer.seat
+            val turnSeat = if (state.isFinished) null else state.players[turn].seat
             if (turnSeat != null) {
                 Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawTurnYard(layout, size.minDimension / layout.size, turnSeat) }
             }

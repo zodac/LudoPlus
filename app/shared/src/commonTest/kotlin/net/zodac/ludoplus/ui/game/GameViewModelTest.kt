@@ -138,17 +138,17 @@ class GameViewModelTest {
         advanceTimeBy(5_000)
         runCurrent()
         assertFalse(viewModel.settled.value)
-        assertFalse(viewModel.rollShown.value)
+        assertFalse(viewModel.actionShown.value)
         viewModel.setForeground(true)
         advanceTimeBy(DIE_TUMBLE_MILLIS + TURN_PASSED_MILLIS - 1L)
         runCurrent()
-        assertFalse(viewModel.rollShown.value)
+        assertFalse(viewModel.actionShown.value)
         viewModel.roll()
         assertEquals(missed, viewModel.state)
         advanceTimeBy(1)
         runCurrent()
         assertTrue(viewModel.settled.value)
-        assertTrue(viewModel.rollShown.value)
+        assertTrue(viewModel.actionShown.value)
 
         // On to a 6, and its pawn out: the roll it earned waits for the pawn.
         repeat(200) {
@@ -162,10 +162,12 @@ class GameViewModelTest {
         assertTrue(moved.rollingAgain)
         advanceTimeBy(PAWN_STEP_MILLIS - 1L)
         runCurrent()
+        assertFalse(viewModel.actionShown.value)
         viewModel.roll()
         assertEquals(moved, viewModel.state)
         advanceTimeBy(1)
         runCurrent()
+        assertTrue(viewModel.actionShown.value)
         viewModel.roll()
         assertNotEquals(moved, viewModel.state)
     }
@@ -175,7 +177,7 @@ class GameViewModelTest {
         val viewModel = started(noSixFirst, humans = true)
         viewModel.roll()
         assertTrue(viewModel.settled.value)
-        assertTrue(viewModel.rollShown.value)
+        assertTrue(viewModel.actionShown.value)
         val missed = viewModel.state
         viewModel.roll()
         assertNotEquals(missed, viewModel.state)

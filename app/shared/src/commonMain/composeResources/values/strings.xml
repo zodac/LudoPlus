@@ -299,6 +299,8 @@
     <!-- A team game: the player has every pawn home and moves a partner's. -->
     <string name="game_prompt_move_partner">%1$s rolled %2$d. Pick a partner's pawn to move.</string>
     <string name="game_prompt_cpu_move">%1$s rolled %2$d.</string>
+    <!-- A pawn of theirs is on its way to where it was moved, before the next player's turn. -->
+    <string name="game_prompt_moving">%1$s is moving.</string>
     <!-- Two dice: %2$d and %3$d are the dice; %4$d the one the next move uses (picked by tapping a die). -->
     <string name="game_prompt_move_dice">%1$s rolled %2$d and %3$d. Pick a pawn to move %4$d.</string>
     <!-- Two dice, one moved: %2$d is the die left. -->

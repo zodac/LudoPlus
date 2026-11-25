@@ -216,18 +216,18 @@ class GameViewModel(
     val settled: StateFlow<Boolean> = _settled.asStateFlow()
     private var settling: Job? = null
 
-    private val _rollShown = MutableStateFlow(true)
+    private val _actionShown = MutableStateFlow(true)
 
     /**
-     * Whether the screen has shown the last roll, if that was the last action ([GamePacing.rollShownMillis]): until then
-     * a roll with no move hasn't been seen, so nobody is asked for the next. In the tutorial too.
+     * Whether the screen has shown the last action itself (its roll, or its pawn's move, but not a ghost's drift or squares
+     * vanishing after it): until then, a turn it passed on isn't shown as the next player's. In the tutorial too.
      */
-    val rollShown: StateFlow<Boolean> = _rollShown.asStateFlow()
-    private var showingRoll: Job? = null
+    val actionShown: StateFlow<Boolean> = _actionShown.asStateFlow()
+    private var showingAction: Job? = null
 
     /** The action that brought the game to [state] is being played out; null for a game new here, with none to play. */
     private fun settle(state: GameState?) {
-        showRoll(state)
+        showAction(state)
         settling?.cancel()
         val playOut = if (state == null || tutorial != null) 0 else pacing.playOutMillis(state)
         _settled.value = playOut == 0L
@@ -238,15 +238,15 @@ class GameViewModel(
         }
     }
 
-    /** The roll that brought the game to [state], if one did, is being shown; null for a game new here. */
-    private fun showRoll(state: GameState?) {
-        showingRoll?.cancel()
-        val millis = pacing.rollShownMillis(state?.lastEvent)
-        _rollShown.value = millis == 0L
+    /** The action that brought the game to [state] is being shown; null for a game new here. */
+    private fun showAction(state: GameState?) {
+        showingAction?.cancel()
+        val millis = if (state == null) 0 else pacing.playOutMillis(state.lastEvent, state.board.homeProgress)
+        _actionShown.value = millis == 0L
         if (millis == 0L) return
-        showingRoll = viewModelScope.launch {
+        showingAction = viewModelScope.launch {
             pausableDelay(millis)
-            _rollShown.value = true
+            _actionShown.value = true
         }
     }
 
