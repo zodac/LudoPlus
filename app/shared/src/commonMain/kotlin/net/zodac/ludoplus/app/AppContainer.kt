@@ -78,6 +78,9 @@ class AppContainer(
     val savedStyles: StateFlow<SavedStyles?> =
         savedStylesFlow(settingsRepository, achievementsRepository, ownsAllStyles).stateIn(scope, SharingStarted.Eagerly, null)
 
+    /** Whether the player has had the ads removed, loaded with the container so the first page is laid out for it: null until then. */
+    val adsRemoved: StateFlow<Boolean?> = purchasesRepository.has(Entitlement.NO_ADS).stateIn(scope, SharingStarted.Eagerly, null)
+
     /** The one way an achievement is earned, shared by every screen - see [AchievementUnlocker]. */
     val achievementUnlocker: AchievementUnlocker = AchievementUnlocker(achievementsRepository, ownsAllStyles)
 

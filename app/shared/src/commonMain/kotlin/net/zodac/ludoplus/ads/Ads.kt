@@ -15,14 +15,16 @@ import kotlinx.coroutines.flow.StateFlow
 interface Ads {
 
     /**
-     * Whether an ad can be shown: the network is set up, and the player has answered its consent form where the law
-     * asks for one. False until then, and for good on a device or build with none.
+     * Whether there's an ad network, known as the app starts: the banner's slot is then kept from the first frame, so
+     * no page moves when an ad comes. False for good on a device or build with none.
      */
-    val ready: StateFlow<Boolean>
+    val available: Boolean
 
     /**
-     * The banner, as wide as [modifier] allows and as tall as the network's banner for that width. [clickable] false,
-     * touches on it go nowhere: while an achievement banner is over it, so a tap meant for that can't open an ad.
+     * The banner's slot, as wide as [modifier] allows and as tall as the network's banner for that width from the first
+     * frame on. It's empty until an ad can be shown: the network is set up, and the player has answered its consent form
+     * where the law asks for one. [clickable] false, touches on it go nowhere: while an achievement banner is over it, so
+     * a tap meant for that can't open an ad.
      */
     @Composable
     fun Banner(clickable: Boolean, modifier: Modifier)
@@ -36,7 +38,7 @@ interface Ads {
 
 /** No ads: previews, tests, the github app, and a device without the network. */
 object NoAds : Ads {
-    override val ready: StateFlow<Boolean> = MutableStateFlow(false)
+    override val available: Boolean = false
 
     @Composable
     override fun Banner(clickable: Boolean, modifier: Modifier) = Unit

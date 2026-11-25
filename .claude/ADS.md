@@ -8,11 +8,15 @@
 - **Where**: at the foot of every page but the game's (Game Over included) and the tutorial's, under the page rather
     than over it, as wide as the screen and as tall as AdMob's anchored adaptive banner for that width. The page above it
     leaves the navigation bar's inset to the banner, which sits above the bar.
+- **Its slot is there from the first frame**, empty (the page's surface colour) until the ad comes, so no page moves for
+    it: wherever there's an ad network (`Ads.available`, known at launch) and ads aren't removed. The slot stays, empty,
+    while no ad can be shown (offline, or no consent yet).
 - **Under the achievement banners**: they're windows of their own at the foot of the screen, so they cover it. While
     any is up (`AchievementBannersShowing`, set by `AchievementBannerHost`), a layer over the ad takes every touch, so a
     tap meant for the achievement can't open an ad (the maintainer's ask).
-- **Gone** with "Remove ads" or the combined purchase (`Entitlement.NO_ADS`, `PURCHASES.md`). Until the cached
-    entitlement has been read, no banner shows, so a buyer never sees one flash up.
+- **Gone** with "Remove ads" or the combined purchase (`Entitlement.NO_ADS`, `PURCHASES.md`). The cached
+    entitlement is read with the container (`AppContainer.adsRemoved`), and no page is drawn until it has been, so a buyer
+    never sees the slot come and go, nor anyone else the page move. A read that fails counts as not removed.
 - **The github app never has ads**: no SDK, no `INTERNET`, no `AD_ID` (`GithubFlavourTest`).
 - **TalkBack** reads the ad as AdMob's own view presents it; nothing of the app's is added.
 
@@ -20,7 +24,7 @@
 
 Google's User Messaging Platform (UMP). At each launch the consent information is brought up to date and, where the law
 asks for it (the UK and the EEA) and the player hasn't answered, Google's form is shown. AdMob starts only once
-`canRequestAds`; until then `Ads.ready` is false and no banner shows. Where the law asks for a way back to the choices,
+`canRequestAds`; until then the slot is empty. Where the law asks for a way back to the choices,
 Settings shows **Ad privacy choices** (`Ads.privacyOptionsRequired`), which opens Google's form again. The forms'
 messages are configured in AdMob's Privacy & messaging page, not here.
 
@@ -31,9 +35,9 @@ and a certified SDK.
 ## Code
 
 ```text
-app/shared/.../ads/Ads.kt               Ads (ready, Banner, privacyOptionsRequired, showPrivacyOptions), NoAds, LocalAds,
+app/shared/.../ads/Ads.kt               Ads (available, Banner, privacyOptionsRequired, showPrivacyOptions), NoAds, LocalAds,
                                         AchievementBannersShowing - nothing here names Google
-app/shared/.../ui/LudoPlusApp.kt        the banner's slot, and when it shows
+app/shared/.../ui/LudoPlusApp.kt        when the banner's slot is there
 app/android/src/play/.../ads/AdMobAds   the only com.google.android.gms.ads and ump imports, in the play flavour alone
 ```
 
@@ -51,8 +55,10 @@ app/android/src/play/.../ads/AdMobAds   the only com.google.android.gms.ads and 
     builds none while they and `PLAY_LICENCE_KEY` are all unset.
 - **Licences**: AdMob, UMP, and what they pull in are Google's ASDKL, allowed in `LicencePolicy`; `checker-qual` (MIT)
     is credited in `app/licensing/libraries/`.
-- **Tests**: `AdBannerTest` (where it shows, gone for a buyer, untouchable under an achievement banner),
-    `PlayFlavourTest`, `GithubFlavourTest`.
+- **The slot's height** is AdMob's own sum over the screen's width (`AdSize`), which needs no started SDK; the `AdView` is
+    made only once the SDK has started.
+- **Tests**: `AdBannerTest` (where the slot is, there from the first frame, gone for a buyer, untouchable under an
+    achievement banner), `AdMobAdsTest` (the slot's height before AdMob starts), `PlayFlavourTest`, `GithubFlavourTest`.
 
 ## The maintainer's steps
 

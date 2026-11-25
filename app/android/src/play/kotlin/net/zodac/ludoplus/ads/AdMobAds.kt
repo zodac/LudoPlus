@@ -3,6 +3,7 @@ package net.zodac.ludoplus.ads
 import android.app.Application
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -18,6 +20,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -40,12 +43,15 @@ import net.zodac.ludoplus.BuildConfig
  *
  * On each attach the consent information is brought up to date and, where the law asks for it (the UK and the EU) and
  * the player hasn't answered yet, the form is shown. Only once [ConsentInformation.canRequestAds] does the SDK start and
- * [ready] turn true. Nothing throws: a failure is logged under [LOG_TAG] and leaves no banner. See `.claude/ADS.md`.
+ * the banner's slot get its ad. Nothing throws: a failure is logged under [LOG_TAG] and leaves the slot empty. See
+ * `.claude/ADS.md`.
  */
-class AdMobAds private constructor(private val application: Application) : Ads {
+class AdMobAds @VisibleForTesting internal constructor(private val application: Application) : Ads {
 
-    private val mutableReady = MutableStateFlow(false)
-    override val ready: StateFlow<Boolean> = mutableReady.asStateFlow()
+    override val available: Boolean = true
+
+    /** Whether the SDK has started, which it does only once ads may be asked for. */
+    private val ready = MutableStateFlow(false)
 
     private val mutablePrivacyOptionsRequired = MutableStateFlow(false)
     override val privacyOptionsRequired: StateFlow<Boolean> = mutablePrivacyOptionsRequired.asStateFlow()
@@ -86,7 +92,7 @@ class AdMobAds private constructor(private val application: Application) : Ads {
         if (!consent.canRequestAds() || !started.compareAndSet(false, true)) return
         // Off the main thread, as Google advises: it reads the device and starts the mediation adapters.
         Thread {
-            MobileAds.initialize(application) { mutableReady.value = true }
+            MobileAds.initialize(application) { ready.value = true }
         }.start()
     }
 
@@ -100,28 +106,32 @@ class AdMobAds private constructor(private val application: Application) : Ads {
 
     /**
      * An anchored adaptive banner, as wide as there is room and as tall as AdMob's banner for that width, on the page's
-     * surface while it loads. A new width (the screen turning) is a new banner. While not [clickable], a layer over it
-     * takes every touch, so none reaches the ad.
+     * surface until it loads. Its size is worked out from the screen alone, so the slot has it before the SDK starts; the
+     * ad view itself is made only once [ready]. A new width (the screen turning) is a new banner. While not [clickable],
+     * a layer over it takes every touch, so none reaches the ad.
      */
     @Composable
     override fun Banner(clickable: Boolean, modifier: Modifier) {
+        val adsReady by ready.collectAsStateWithLifecycle()
         BoxWithConstraints(modifier) {
             val context = LocalContext.current
             val width = maxWidth.value.toInt()
             val size = remember(width) { AdSize.getLargeAnchoredAdaptiveBannerAdSize(context, width) }
             Box(Modifier.fillMaxWidth().height(size.height.dp).background(MaterialTheme.colorScheme.surface)) {
-                key(size) {
-                    AndroidView(
-                        factory = { viewContext ->
-                            AdView(viewContext).apply {
-                                setAdSize(size)
-                                adUnitId = bannerId
-                                loadAd(AdRequest.Builder().build())
-                            }
-                        },
-                        onRelease = { it.destroy() },
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                if (adsReady) {
+                    key(size) {
+                        AndroidView(
+                            factory = { viewContext ->
+                                AdView(viewContext).apply {
+                                    setAdSize(size)
+                                    adUnitId = bannerId
+                                    loadAd(AdRequest.Builder().build())
+                                }
+                            },
+                            onRelease = { it.destroy() },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                 }
                 if (!clickable) {
                     Box(

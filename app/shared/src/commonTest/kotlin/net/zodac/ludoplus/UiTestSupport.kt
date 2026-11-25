@@ -41,13 +41,14 @@ internal fun inMemoryAppContainer(
     saved: InProgressGameRepository = InProgressGameRepository(InMemoryPreferences()),
     records: GameRecordRepository = GameRecordRepository(InMemoryGameResultDao()),
     achievements: AchievementStore = InMemoryAchievementStore(),
+    purchases: PurchasesRepository = PurchasesRepository(InMemoryPreferences()),
 ) = AppContainer(
     settingsRepository = settings,
     inProgressGameRepository = saved,
     gameRecordRepository = records,
     achievementsRepository = achievements,
     onlineSettingsRepository = OnlineSettingsRepository(InMemoryPreferences()),
-    purchasesRepository = PurchasesRepository(InMemoryPreferences()),
+    purchasesRepository = purchases,
     buildInfo = BuildInfo(versionName = "1.0.0", isDebug = false),
 )
 

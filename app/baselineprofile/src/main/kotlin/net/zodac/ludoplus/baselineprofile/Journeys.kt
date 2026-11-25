@@ -193,11 +193,9 @@ private val PLAYERS_ACTION = By.clickable(true).desc(Pattern.compile("Die( showi
 private val GAME_OVER = By.text("Game Over")
 
 /**
- * Taps the menu's [label] button until its page is up, told by [page], which the pages its neighbours open don't show. A
- * tap can be dropped - one that lands while a dialog's dim layer is still fading out over the menu, or that a slow emulator
- * doesn't take - and the steps after it would then run on the menu: their back press leaves the app. It can also open
- * another page: the ad banner's slot comes as AdMob starts, soon after a launch, and the menu moves up under the tap. That
- * page is left, and the button tapped again.
+ * Taps the menu's [label] button until the menu has gone, then waits for its page, told by [page]. A tap can be dropped -
+ * one that lands while a dialog's dim layer is still fading out over the menu, or that a slow emulator doesn't take - and
+ * the steps after it would then run on the menu: their back press leaves the app.
  */
 internal fun MacrobenchmarkScope.openFromMenu(label: String, page: BySelector) {
     repeat(CLOSE_ATTEMPTS) { attempt ->
@@ -211,11 +209,9 @@ internal fun MacrobenchmarkScope.openFromMenu(label: String, page: BySelector) {
             }
         }
         if (device.wait(Until.gone(MENU), TIMEOUT_MS)) {
-            if (device.wait(Until.hasObject(page), TIMEOUT_MS)) {
-                device.waitForIdle()
-                return
-            }
-            backToMenu()
+            await(page, "the page '$label' opens")
+            device.waitForIdle()
+            return
         }
     }
     error("Baseline Profile journey: '$label' never opened from the menu (on screen: ${screenText()})")

@@ -13,9 +13,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -62,7 +66,6 @@ import net.zodac.ludoplus.online.OnlineSync
 import net.zodac.ludoplus.online.OnlineSyncRequests
 import net.zodac.ludoplus.platform.LocalPlatformServices
 import net.zodac.ludoplus.platform.PlatformServices
-import net.zodac.ludoplus.purchases.Entitlement
 import net.zodac.ludoplus.purchases.LocalStore
 import net.zodac.ludoplus.purchases.NoStore
 import net.zodac.ludoplus.purchases.Store
@@ -240,13 +243,21 @@ fun LudoPlusApp(
                             .collect { OnlineSyncRequests.request() }
                     }
                     // The ad banner, at the foot of every page but the game's and the tutorial's, under the page rather than
-                    // over it, while the network is ready and ads aren't removed (unknown counts as removed, so none flashes
-                    // up for a buyer). The page then leaves the navigation bar's inset to the banner, which sits above it.
-                    val route = navController.currentBackStackEntryAsState().value?.destination?.route
-                    val adsReady by ads.ready.collectAsStateWithLifecycle()
-                    val noAds by remember(container) { container.purchasesRepository.has(Entitlement.NO_ADS) }.collectAsStateWithLifecycle(initialValue = true)
-                    val showAd = adsReady && !noAds && route != null && route != Screen.PLAY_GAME && route != Screen.TUTORIAL
-                    Column(modifier = Modifier.fillMaxSize()) {
+                    // over it, where there's a network and ads aren't removed. Its slot is there from the first frame, empty
+                    // until the ad comes, so no page moves as it does. The page leaves the navigation bar's inset to the
+                    // banner, which sits above it.
+                    //
+                    // The route is null until the NavHost has composed: until then it's the page the last frame was on, saved
+                    // across a recreation, or the menu at a launch.
+                    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+                    var lastRoute by rememberSaveable { mutableStateOf(Screen.MENU) }
+                    SideEffect { currentRoute?.let { lastRoute = it } }
+                    val route = currentRoute ?: lastRoute
+                    val adsRemoved by container.adsRemoved.collectAsStateWithLifecycle()
+                    val showAd = ads.available && adsRemoved == false && route != Screen.PLAY_GAME && route != Screen.TUTORIAL
+                    // Nothing is drawn until the purchases have been read (with the container, so before the first frame but
+                    // for a slow read; a read that fails counts as none), so neither a buyer nor anyone else sees the page move.
+                    Column(modifier = Modifier.fillMaxSize().drawWithContent { if (!ads.available || adsRemoved != null) drawContent() }) {
                         // Above the NavHost, not inside it: the burst of banners at the end of a game has to survive the move
                         // from the board to Game Over and on to the menu, which a per-page overlay wouldn't.
                         AchievementBannerHost(
