@@ -123,13 +123,6 @@ them all home first. Releasing from 1.0.0 (2026-11-18).
     unchanged.
 - **Ask the user questions with the AskUserQuestion tool**, never as a question at the end of a message. That includes
     offers ("Do you want me to...?") and choices between options.
-- **Notify the maintainer when a prompt is finished.** They drive sessions from their phone over Remote Control, so
-    end every prompt with the PushNotification tool: one line under 200 characters, leading with the outcome or what
-    needs their action ("Sandbox cleanup done, lint clean, not committed"). Skip it when the prompt ends in
-    AskUserQuestion, which already notifies.
-    - The notification is the **last** thing in the prompt: send it only once every action is complete and the full
-        written summary or report is out, never before the summary and never mid-work. Nothing follows it but, at most,
-        a closing line.
 - **Commits**: the subject is `[Category] Short description` (`.githooks/commit-msg`). Use the `commit` skill; the
     category list lives there.
 - **After a requested code change is verified** (it compiles and the relevant tests pass), build and send the debug
