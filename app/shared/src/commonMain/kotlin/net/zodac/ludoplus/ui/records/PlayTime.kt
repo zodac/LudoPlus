@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -42,6 +43,11 @@ private const val SECONDS_PER_MINUTE = 60
 private const val SECONDS_PER_HOUR = 3_600
 private const val SECONDS_PER_DAY = 86_400
 
+/** [PlayTimeLine]'s style: without `labelMedium`'s added letter spacing, which spreads the digits apart at this size. */
+internal val playTimeStyle: TextStyle
+    @Composable
+    get() = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.sp)
+
 /** How long until [seconds] of play time would show differently: seconds count up for the first minute, then minutes do. */
 internal fun untilPlayTimeChanges(seconds: Int): Duration =
     (if (seconds < SECONDS_PER_MINUTE) 1 else SECONDS_PER_MINUTE - seconds % SECONDS_PER_MINUTE).seconds
@@ -65,16 +71,16 @@ internal fun LivePlayTimeLine(read: suspend () -> Int, modifier: Modifier = Modi
             lifecycle.delayWhileResumed(untilPlayTimeChanges(shown).inWholeMilliseconds)
         }
     }
-    seconds?.let { PlayTimeLine(it, modifier) } ?: HoldPageCover()
+    seconds?.let { PlayTimeLine(it, modifier.fillMaxWidth()) } ?: HoldPageCover()
 }
 
 /**
- * The time played on every device, whatever the Statistics page: seconds for the first minute, then minutes, then hours
+ * The time played: on every device on Statistics, whatever its page, and in the one game under its title. Seconds for the first minute, then minutes, then hours
  * and minutes, then from 24 hours days, hours, and minutes, however many days, with the numbers gold in the brand font. Spoken in words, without a part that's zero, and only
  * when it's reached: it isn't a live region, so the count isn't read out as it goes.
  */
 @Composable
-internal fun PlayTimeLine(seconds: Int, modifier: Modifier = Modifier) {
+internal fun PlayTimeLine(seconds: Int, modifier: Modifier = Modifier, style: TextStyle = playTimeStyle) {
     val days = seconds / SECONDS_PER_DAY
     val hours = seconds % SECONDS_PER_DAY / SECONDS_PER_HOUR
     val minutes = seconds % SECONDS_PER_HOUR / SECONDS_PER_MINUTE
@@ -103,9 +109,8 @@ internal fun PlayTimeLine(seconds: Int, modifier: Modifier = Modifier) {
             val offset = line.lastIndexOf(shown)
             for (number in playTimeNumbers(shown)) addStyle(numberStyle, offset + number.first, offset + number.last + 1)
         },
-        modifier = modifier.fillMaxWidth().semantics { contentDescription = description },
-        // Without the style's added letter spacing, which spreads the digits apart at this size.
-        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.sp),
+        modifier = modifier.semantics { contentDescription = description },
+        style = style,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
     )

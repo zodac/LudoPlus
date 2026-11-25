@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
@@ -45,12 +46,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlin.math.abs
 import net.zodac.ludoplus.resources.Res
 import net.zodac.ludoplus.resources.common_back_cd
@@ -138,6 +149,8 @@ fun TwoPanes(
  * title off the bar's centre or onto two lines, so a page can make them smaller.
  * The whole page, app bar included, sees [LocalLandscapePage].
  *
+ * [subtitle] goes under the title, taking no room of its own (see [PageTopBar]).
+ *
  * [underlay] is drawn over the backdrop and under the content, from the foot of the app bar to the bottom of the screen:
  * the game screen's background style. It doesn't fade in with the content.
  */
@@ -156,6 +169,7 @@ fun ScreenScaffold(
     startActions: @Composable RowScope.() -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     onTitleCrowded: () -> Unit = {},
+    subtitle: (@Composable () -> Unit)? = null,
     underlay: (@Composable BoxScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -173,6 +187,7 @@ fun ScreenScaffold(
                         startActions = startActions,
                         actions = actions,
                         onTitleCrowded = onTitleCrowded,
+                        subtitle = subtitle,
                         contentColumn = ContentColumn(
                             maxWidth = if (wide && LocalLandscapePage.current) wideColumnMaxWidth(padding) else CONTENT_MAX_WIDTH,
                             padding = padding,
@@ -270,6 +285,10 @@ data class ContentColumn(val maxWidth: Dp, val padding: Dp)
  *
  * Given its page's [contentColumn], a landscape bar spans that column rather than the screen, with its [BackArrow] lined
  * up on the content's start edge as the game screen's is. Without one, or in portrait, it spans the screen.
+ *
+ * A [subtitle], a line of [pageSubtitleStyle], goes under the title in the bar's spare height, so the bar is no taller and
+ * the page stays where it is. Where the spare height is short (in landscape, at a large font) the title moves up for it, and
+ * at a large font both shrink, to their size at 100% at the least. The title is then on one line, shrunk to fit it.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -281,19 +300,33 @@ fun PageTopBar(
     startActions: @Composable RowScope.() -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     onTitleCrowded: () -> Unit = {},
+    subtitle: (@Composable () -> Unit)? = null,
 ) {
     val landscape = LocalLandscapePage.current
+    // Shorter in landscape, where a page's height is what's short.
+    val barHeight = pageBarHeight()
+    val titleStyle = pageTitleStyle
+    val subtitledTitleStyle = titleStyle.scaled(subtitledScale())
+    // How far the bar's foot is below the title's: centred in the bar, and with a subtitle between them.
+    val underCentredTitle = (barHeight - subtitledTitleStyle.drawnLineHeight()) / 2
+    val underTitle = maxOf(underCentredTitle, pageSubtitleStyle.drawnLineHeight())
+    val titleLift = underTitle - underCentredTitle
     val crowding = remember { TitleCrowding() }
     crowding.onCrowded = onTitleCrowded
-    val bar = @Composable { barModifier: Modifier, windowInsets: WindowInsets ->
+    val appBar = @Composable { barModifier: Modifier, windowInsets: WindowInsets ->
         CenterAlignedTopAppBar(
             title = {
-                Text(
-                    text = title,
-                    style = pageTitleStyle,
-                    onTextLayout = { if (it.lineCount > 1) onTitleCrowded() },
-                    modifier = Modifier.semantics { heading() }.onGloballyPositioned { crowding.title = it },
-                )
+                val titleModifier = Modifier.semantics { heading() }.onGloballyPositioned { crowding.title = it }
+                if (subtitle == null) {
+                    Text(
+                        text = title,
+                        style = titleStyle,
+                        onTextLayout = { if (it.lineCount > 1) onTitleCrowded() },
+                        modifier = titleModifier,
+                    )
+                } else {
+                    OneLineTitle(title, subtitledTitleStyle, onCrowded = onTitleCrowded, modifier = Modifier.offset(y = -titleLift).then(titleModifier))
+                }
             },
             navigationIcon = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -302,8 +335,7 @@ fun PageTopBar(
                 }
             },
             actions = actions,
-            // Shorter in landscape, where a page's height is what's short.
-            expandedHeight = if (landscape) LANDSCAPE_APP_BAR_HEIGHT else TopAppBarDefaults.TopAppBarExpandedHeight,
+            expandedHeight = barHeight,
             windowInsets = windowInsets,
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Transparent,
@@ -311,6 +343,22 @@ fun PageTopBar(
             ),
             modifier = barModifier.onGloballyPositioned { crowding.bar = it },
         )
+    }
+    val bar = @Composable { barModifier: Modifier, windowInsets: WindowInsets ->
+        if (subtitle == null) {
+            appBar(barModifier, windowInsets)
+        } else {
+            Box {
+                appBar(barModifier, windowInsets)
+                Box(
+                    modifier = Modifier.align(Alignment.BottomCenter).layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        // From the title's foot, and never past the bar's: the page's background may be anything.
+                        layout(placeable.width, 0) { placeable.place(0, minOf(-underTitle.roundToPx(), -placeable.height)) }
+                    },
+                ) { subtitle() }
+            }
+        }
     }
     if (landscape && contentColumn != null) {
         // Centred in the same room as the content (inside the side insets), and as wide as its column.
@@ -328,6 +376,79 @@ fun PageTopBar(
         bar(modifier, TopAppBarDefaults.windowInsets)
     }
 }
+
+/** How tall a page's app bar is, under the status bar. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun pageBarHeight(): Dp = if (LocalLandscapePage.current) LANDSCAPE_APP_BAR_HEIGHT else TopAppBarDefaults.TopAppBarExpandedHeight
+
+/** A page subtitle's style (see [PageTopBar]), shrunk as its title is at a large font. */
+val pageSubtitleStyle: TextStyle
+    @Composable
+    get() = fullSubtitleStyle.scaled(subtitledScale())
+
+/** [pageSubtitleStyle] before it's shrunk: without `labelMedium`'s added letter spacing, which spreads digits apart at this size. */
+private val fullSubtitleStyle: TextStyle
+    @Composable
+    get() = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.sp)
+
+/** What a title and its subtitle are scaled by for both to fit their bar's height: 1 at 100%, less at a large font that needs it. */
+@Composable
+private fun subtitledScale(): Float {
+    val density = LocalDensity.current
+    if (!density.isLargeFont) return 1f
+    return (pageBarHeight() / (pageTitleStyle.drawnLineHeight() + fullSubtitleStyle.drawnLineHeight())).coerceAtMost(1f)
+}
+
+/** How tall a line of this style is drawn, measured, with the brand face in it as well: taller than its own line height at a large font. */
+@Composable
+private fun TextStyle.drawnLineHeight(): Dp {
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val brand = SpanStyle(fontFamily = SoraFontFamily, fontWeight = FontWeight.Bold)
+    val height = remember(this, brand, measurer, density) {
+        val sample = buildAnnotatedString {
+            append(LINE_SAMPLE)
+            withStyle(brand) { append(LINE_SAMPLE) }
+        }
+        measurer.measure(sample, this).size.height
+    }
+    return with(density) { height.toDp() }
+}
+
+// Text as tall as any title or subtitle, to measure a line by (not shown).
+private const val LINE_SAMPLE = "Ág" // i18n: not translated - measured, never shown
+
+/** This style with its text and lines [scale] of their size on screen. */
+@Composable
+private fun TextStyle.scaled(scale: Float): TextStyle =
+    if (scale == 1f) this else with(LocalDensity.current) { copy(fontSize = (fontSize.toDp() * scale).toSp(), lineHeight = (lineHeight.toDp() * scale).toSp()) }
+
+/** A page's [title] on one line, shrunk as far as it needs to fit the width, to [MIN_ONE_LINE_TITLE] of its size at the least: [onCrowded] is told when it is. */
+@Composable
+private fun OneLineTitle(title: String, style: TextStyle, onCrowded: () -> Unit, modifier: Modifier) {
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints(contentAlignment = Alignment.Center) {
+        val width = constraints.maxWidth
+        val fit = remember(title, style, width, measurer) {
+            fitFontSize(style.fontSize, style.fontSize * MIN_ONE_LINE_TITLE, ONE_LINE_TITLE_STEP) { size ->
+                measurer.measure(title, style.copy(fontSize = size), maxLines = 1, softWrap = false).size.width <= width
+            }
+        }
+        Text(
+            text = title,
+            style = style.copy(fontSize = fit.size),
+            // Cut short only where even its least size doesn't fit.
+            maxLines = if (fit.wraps) 1 else Int.MAX_VALUE,
+            overflow = if (fit.wraps) TextOverflow.Ellipsis else TextOverflow.Clip,
+            onTextLayout = { if (fit.size != style.fontSize) onCrowded() },
+            modifier = modifier,
+        )
+    }
+}
+
+private const val MIN_ONE_LINE_TITLE = 0.6f
+private val ONE_LINE_TITLE_STEP = 0.5.sp
 
 /**
  * Where [PageTopBar]'s title and the bar itself were last placed: whichever is placed second checks that the title is

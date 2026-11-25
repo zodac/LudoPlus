@@ -403,19 +403,26 @@ class GameViewModelTest {
         clock += 4_000
         viewModel.roll()
         assertEquals(4_000, assertNotNull(viewModel.game.value).playMillis)
+        // Up to now, between rolls too: what the screen shows.
+        clock += 300
+        assertEquals(4_300, viewModel.playMillis())
+        clock -= 300
         // Off screen: not counted, and what was played is saved as it goes.
         clock += 1_000
         viewModel.setForeground(false)
         runCurrent()
         assertEquals(5_000, assertNotNull(saved.load()).playMillis)
         clock += 60_000
+        assertEquals(5_000, viewModel.playMillis())
         viewModel.setForeground(true)
         // Under the leave dialog: not counted either.
         clock += 2_000
         viewModel.setHeld(true)
         clock += 30_000
+        assertEquals(7_000, viewModel.playMillis())
         viewModel.setHeld(false)
         clock += 500
+        assertEquals(7_500, viewModel.playMillis())
         repeat(200) { if (viewModel.state.phase == TurnPhase.AwaitingRoll) viewModel.roll() }
         assertEquals(7_500, assertNotNull(viewModel.game.value).playMillis)
     }

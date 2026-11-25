@@ -164,7 +164,7 @@ private val SIDE_PANEL_WIDTH = 280.dp
 private enum class FinishedView { BOARD, RESULTS, REVIEW }
 
 /**
- * The game screen: the players across the top, the board, the die with a line saying what to do now, and under them
+ * The game screen: the time played under its title, the players across the top, the board, the die with a line saying what to do now, and under them
  * the log of every move so far ([MoveLogPanel]). In landscape the players, die, line, and log sit beside the board. Once the game is over and its last move has
  * played out, the results ([GameOverScreen]).
  */
@@ -254,6 +254,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
             onMove = { viewModel.move(it) },
             onBack = leave,
             onResults = { finishedView = FinishedView.RESULTS },
+            playMillis = viewModel::playMillis,
             settled = settled,
             rollShown = rollShown,
             notice = netplayNotice(guestState, awaySeats, started),
@@ -398,7 +399,8 @@ private fun GameFeedback(state: GameState) {
  * The game screen's content for [started]: rolling calls [onRoll], a tap on a movable pawn [onMove], the back arrow
  * [onBack], and the finished game's button [onResults]. The die can't be rolled until the last action has played out
  * ([settled]). Until a roll with no move has been shown ([rollShown]), the turn stays its roller's, and the log doesn't tell
- * of it. The move log is on screen with [showLog]; without it, TalkBack still hears its newest line.
+ * of it. The move log is on screen with [showLog]; without it, TalkBack still hears its newest line. Under the title is how
+ * long it has been played, [playMillis] ([GameTime]): not in the tutorial, which isn't timed.
  */
 @Composable
 fun GameContent(
@@ -412,6 +414,7 @@ fun GameContent(
     notice: String? = null,
     tutorial: TutorialView? = null,
     showLog: Boolean = true,
+    playMillis: () -> Long = { started.playMillis },
 ) {
     val seatColours = List(started.state.board.seats) { seat ->
         started.state.players.indexOfFirst { it.seat == seat }.takeIf { it >= 0 }?.let { started.players[it].colour }
@@ -452,6 +455,7 @@ fun GameContent(
         onBack = onBack,
         driftingDice = false,
         wide = true,
+        subtitle = if (tutorial == null) ({ GameTime(gameKey = started.startedAtEpochMillis, running = !started.state.isFinished, playMillis = playMillis) }) else null,
         underlay = { TableBackgroundFill(background) },
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {

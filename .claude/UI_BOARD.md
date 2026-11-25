@@ -11,6 +11,15 @@ The board, the player cards, the die, and the move log. The general rules are in
         heading and a line, never under 60% (`portraitBoardSide`). Its size allows for the die alone, so a long
         prompt, or the winner's line, takes its room from the log and never resizes the board.
     - On a screen too short for it all, the player cards close up (`compact`).
+- **The time played** (`GameTime`, the maintainer, 2026-11-26) is under the title, the same line as Statistics'
+    (`PlayTimeLine`: "Time played: 12m", seconds for the first minute alone, the numbers gold): `StartedGame.playMillis` up
+    to now, so it stops off screen and under the leave dialog, and at the end. Not in the tutorial.
+    - It's in the app bar's spare height (`PageTopBar`'s `subtitle`), so the cards and the board are where they'd be
+        without it, and so is the title in portrait at 100%. In landscape the title moves up 6dp for it. At a large font
+        both shrink to fit the bar, to their 100% size at the least. It never leaves the bar: the background under that may
+        be any colour.
+    - The game's title is on one line, shrunk to fit, so a long custom mode's name leaves it room.
+    - TalkBack hears "Time played: 12 minutes" on reaching it, never as it counts. `GameTimeTest`.
 - **Landscape**: the board at the screen's height, and beside it, at least 280dp wide, the cards, the die, and the log.
 - Over the cards: a Nearby game's notice (`NetplayNotice`), and in Survival how long until its next stage
     (`SuddenDeathNotice`), both polite live regions. The tutorial's coach card takes the cards' place (`TUTORIAL.md`).

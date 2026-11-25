@@ -140,6 +140,9 @@ class GameViewModel(
     /** When the play time last counted from, while a game is on screen and not over; null otherwise. */
     private var playMark: Long? = null
 
+    /** How long the game has been played up to now: [StartedGame.playMillis], and the time since it was last brought up to date. */
+    fun playMillis(): Long = (_game.value?.playMillis ?: 0) + (playMark?.let { elapsedMillis() - it } ?: 0)
+
     private fun foregroundChanged() {
         val value = onScreen && !held
         if (value == foreground.value) return
