@@ -296,10 +296,10 @@ class ModeAchievementsTest {
 
     @Test
     fun `the feats a mode makes free aren't earned in it`() {
-        // Survival's pawns start out together, all on the board, and walk on in pairs; and a stack is captured together.
+        // Survival's pawns start out together, all on the board; and a stack is captured together.
         val stack = Steps(game(GameMode.SURVIVAL, listOf(1, 3, 0, 0, 0, 0), listOf(42, 42, 42, 0, 0, 0))).play(2)
         assertTrue(GOTCHA in stack.earned)
-        for (free in listOf(BUDDY_SYSTEM, ALL_HANDS_ON_DECK, TWO_FOR_ONE, HAT_TRICK)) assertFalse(free in stack.earned, "$free")
+        for (free in listOf(ALL_HANDS_ON_DECK, TWO_FOR_ONE, HAT_TRICK)) assertFalse(free in stack.earned, "$free")
         assertTrue(FULL_HOUSE in Steps(game(GameMode.CLASSIC, listOf(50, 52, 53, 54))).play(1).earned)
         assertTrue(UNTOUCHABLE in win(GameMode.CHAOS).earned)
     }

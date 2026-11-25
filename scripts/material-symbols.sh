@@ -22,10 +22,8 @@ from concurrent.futures import ThreadPoolExecutor
 GLYPHS = """
 Abc abc
 AcUnit ac_unit
-Acute acute
 Add add
 Air air
-Album album
 Anchor anchor
 Android android
 ArrowBack arrow_back mirror
@@ -33,11 +31,9 @@ ArrowDownward arrow_downward
 ArrowDropDown arrow_drop_down
 ArrowForward arrow_forward mirror
 ArrowUpward arrow_upward
-AssignmentTurnedIn assignment_turned_in
 AutoAwesome auto_awesome
 AvgPace avg_pace
 BackHand back_hand
-Badge badge
 Block block
 Bolt bolt
 Cabin cabin
@@ -45,12 +41,12 @@ Calculate calculate
 Cancel cancel
 Casino casino
 Castle castle
-Celebration celebration
 Check check
 CheckCircle check_circle
 ChessPawn chess_pawn
 Close close
 ContentCut content_cut
+Cookie cookie
 Cottage cottage
 Crown crown
 Dangerous dangerous
@@ -60,18 +56,17 @@ DeveloperMode developer_mode
 DirectionsRun directions_run
 Diversity3 diversity_3
 DoorOpen door_open
+Doorbell doorbell
 Download download
 Elderly elderly
 EmojiEvents emoji_events
 EventRepeat event_repeat
-FastForward fast_forward
 Favorite favorite
 FileOpen file_open
 Filter4 filter_4
 Filter6 filter_6
 Filter7 filter_7
 FilterNone filter_none
-FitnessCenter fitness_center
 Flag flag
 FlutterDash flutter_dash
 FormatListNumbered format_list_numbered
@@ -80,7 +75,6 @@ Functions functions
 Gavel gavel
 GridView grid_view
 GridViewOutlined grid_view fill0
-Groups groups
 Handshake handshake
 Healing healing
 HeartBroken heart_broken
@@ -99,9 +93,6 @@ KeyboardArrowLeft keyboard_arrow_left mirror
 KeyboardArrowRight keyboard_arrow_right mirror
 KeyboardArrowUp keyboard_arrow_up
 KeyboardDoubleArrowDown keyboard_double_arrow_down
-KeyboardDoubleArrowUp keyboard_double_arrow_up
-Landscape landscape
-Landslide landslide
 LocalCafe local_cafe
 LocalFireDepartment local_fire_department
 LocalFlorist local_florist
@@ -112,6 +103,7 @@ Logout logout mirror
 Looks3 looks_3
 Looks6 looks_6
 LooksOne looks_one
+LunchDining lunch_dining
 Memory memory
 MilitaryTech military_tech
 ModeHeat mode_heat
@@ -124,7 +116,6 @@ OpenInNew open_in_new mirror
 OtherHouses other_houses
 Palette palette
 Pause pause
-PedalBike pedal_bike
 Person person
 PersonRemove person_remove
 PersonalInjury personal_injury
@@ -136,7 +127,6 @@ Public public
 PushPin push_pin
 QuestionMark question_mark
 Quiz quiz
-RecordVoiceOver record_voice_over
 Redo redo mirror
 Remove remove
 Repeat repeat
@@ -148,7 +138,6 @@ RocketLaunch rocket_launch
 Savings savings
 Schedule schedule
 ScreenRotation screen_rotation
-SentimentDissatisfied sentiment_dissatisfied
 SentimentNeutral sentiment_neutral
 Skull skull
 SlowMotionVideo slow_motion_video
@@ -157,6 +146,7 @@ Sort sort mirror
 Speed speed
 SportsBar sports_bar
 SportsEsports sports_esports
+SportsMma sports_mma
 Sprint sprint
 Stairs2 stairs_2
 Star star
@@ -171,24 +161,24 @@ Sync sync
 SyncAlt sync_alt
 Target target
 Texture texture
-ThumbDown thumb_down
 ThumbUp thumb_up
 Timeline timeline
 Timer timer
 TravelExplore travel_explore
 TrendingDown trending_down mirror
 TrendingUp trending_up mirror
+UTurnLeft u_turn_left
 Undo undo mirror
 Update update
 Upgrade upgrade
 Vibration vibration
-Visibility visibility
 VolumeUp volume_up mirror
 Wallpaper wallpaper
 WavingHand waving_hand
 WbSunny wb_sunny
 Whatshot whatshot
 WorkspacePremium workspace_premium
+WrongLocation wrong_location
 """
 
 BASE = "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web"

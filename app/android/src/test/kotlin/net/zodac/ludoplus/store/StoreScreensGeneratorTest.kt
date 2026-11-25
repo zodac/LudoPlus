@@ -22,7 +22,6 @@ import net.zodac.ludoplus.app.AchievementEvent
 import net.zodac.ludoplus.app.AchievementEvents
 import net.zodac.ludoplus.app.AppContainer
 import net.zodac.ludoplus.device.AndroidAppContainer
-import net.zodac.ludoplus.model.Achievement
 import net.zodac.ludoplus.ui.game.StartedGame
 import org.junit.Rule
 import org.junit.Test
@@ -206,8 +205,8 @@ class StoreScreensGeneratorTest {
             StoreAssets.save(compose.captureScreen(), File(dir, "%d-%s.png".format(++number, name)))
         }
         StoreState.seed(container)
-        // Earned already, so no banner covers a screen but the last's own: a landscape game is an achievement itself (Sideways).
-        StoreState.unlockAllBut(container, Scenes.LOCKED - Achievement.SIDEWAYS)
+        // Earned already, so no banner covers a screen but the last's own.
+        StoreState.unlockAllBut(container, Scenes.LOCKED)
 
         // A game in full swing, Sam to choose between moves, one of them a capture.
         resume(Scenes.midGame())

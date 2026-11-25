@@ -32,9 +32,9 @@ class AchievementModeTest {
     @Test
     fun `the achievements kept out of a mode they'd be free in or measure something else in`() {
         val kept = Achievement.entries.filter { it.notEarnableIn.isNotEmpty() }.associateWith { it.notEarnableIn }
-        val twoDice = setOf(BOTTOM_OF_THE_BARREL, COUNTING_UP, DRY_SPELL, EXPRESS_DELIVERY, FULL_SPREAD)
+        val twoDice = setOf(BOTTOM_OF_THE_BARREL, COUNTING_UP, DRY_SPELL, EXPRESS_DELIVERY, LOADED_DICE)
         val survival = setOf(
-            ALL_HANDS_ON_DECK, BUDDY_SYSTEM, CLEAN_SWEEP, HAT_TRICK, INSULT_TO_INJURY, LEAPFROG, SITTING_DUCKS, TWO_FOR_ONE, WIRE_TO_WIRE,
+            ALL_HANDS_ON_DECK, CLEAN_SWEEP, HAT_TRICK, INSULT_TO_INJURY, LEAPFROG, SITTING_DUCKS, TWO_FOR_ONE, WIRE_TO_WIRE,
         )
         val guards = mapOf(
             GameMode.CLASSIC to emptySet(),
@@ -58,7 +58,7 @@ class AchievementModeTest {
                 NOT_SO_FAST, TALL_POPPY, PARTING_SHOT, HOME_SWEET_HOME, HOMECOMING, EARLY_BIRD, DOUBLE_DELIVERY, EXPRESS_DELIVERY, LAP_OF_HONOUR, FULL_HOUSE,
                 GLOBETROTTER, COMEBACK_KID, FRONT_RUNNER, LATE_BLOOMER, NEVER_SAY_DIE, PHOTO_FINISH, BACK_TO_SQUARE_ONE,
                 DEFEAT_FROM_THE_JAWS_OF_VICTORY, GROUNDHOG_DAY, LOCKED_OUT, NEVER_LEFT_HOME, PIPPED_TO_THE_POST, PUNCHING_BAG, DEJA_VU, INCH_BY_INCH,
-                SO_NEAR_YET_SO_FAR, ONE_BY_ONE, THE_GREAT_ESCAPE,
+                SO_NEAR_YET_SO_FAR, FULL_RETREAT, HUNGRY_FOR_6S, ONE_BY_ONE, THE_GREAT_ESCAPE,
             ),
             impossible[GameMode.SURVIVAL],
         )

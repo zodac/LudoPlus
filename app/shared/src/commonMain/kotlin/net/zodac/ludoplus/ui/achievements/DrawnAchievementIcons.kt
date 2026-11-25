@@ -66,6 +66,16 @@ internal val TIME_MACHINE_CAR_ICON: ImageVector by lazy {
     )
 }
 
+/** Two dice, corner to corner, showing the same three. For Loaded Dice, the same number again and again. */
+internal val LOADED_DICE_ICON: ImageVector by lazy {
+    fun pip(x: Float, y: Float) = "M${x - DIE_PIP},${y}a$DIE_PIP,$DIE_PIP 0 1,0 ${2 * DIE_PIP},0a$DIE_PIP,$DIE_PIP 0 1,0 ${-2 * DIE_PIP},0Z"
+    fun die(x: Float, y: Float) = roundSquare(x, y, DIE_SIDE, corner = 2f) + listOf(0.24f, 0.5f, 0.76f).joinToString("") { pip(x + DIE_SIDE * it, y + DIE_SIDE * it) }
+    cutOutIcon("LoadedDice", die(0.5f, 0.5f) + die(12.3f, 12.3f))
+}
+
+private const val DIE_SIDE = 11.2f
+private const val DIE_PIP = 1.35f
+
 /** A ghost as Haunted House's are, its eyes and mouth cut out. For Living To Tell The Tale. */
 internal val GHOST_ICON: ImageVector by lazy {
     cutOutIcon(

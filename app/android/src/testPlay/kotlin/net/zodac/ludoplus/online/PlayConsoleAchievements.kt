@@ -13,7 +13,7 @@ import net.zodac.ludoplus.model.AchievementCategory
  * and Very Hard lowered to 55 the same day for My Favourite Spot and We're All Friends Here; Off The Mark moved to
  * Trivial for Can't Wait To Get Going. The Hard, Very Hard, and Extreme tiers lowered, and Off The Mark back in Easy,
  * 2026-11-24, for those of the game modes and house rules; Hard back to 25 the same day, when eight were removed, and
- * Very Hard 50 and Extreme 90, and Payback Medium, when four more were.
+ * Very Hard 50 and Extreme 90, and Revenge Is Sweet (then Payback) Medium, when four more were.
  */
 internal enum class PlayPointsTier(val points: Int) {
     TRIVIAL(5),
@@ -40,13 +40,13 @@ internal val playPointsTiers: Map<Achievement, PlayPointsTier> = buildMap {
         PlayPointsTier.EASY,
         WARMING_UP, GETTING_COMFORTABLE, PEST, HOMECOMING, WELCOME_PARTY,
         STRAIGHT_OUT_THE_GATE, NOT_SO_FAST, ALL_HANDS_ON_DECK, BACK_TO_SQUARE_ONE, BOTTOM_OF_THE_BARREL, DRY_SPELL,
-        INSULT_TO_INJURY, LOCKED_OUT, TOO_MUCH_OF_A_GOOD_THING, INCH_BY_INCH, LEAPFROG, DEJA_VU, BUDDY_SYSTEM, OFF_THE_MARK,
+        INSULT_TO_INJURY, LOCKED_OUT, TOO_MUCH_OF_A_GOOD_THING, INCH_BY_INCH, LEAPFROG, DEJA_VU, LOADED_DICE, OFF_THE_MARK,
         PAINT_THE_TOWN_RED, DOUBLE_OR_NOTHING, THROUGH_THE_LOOKING_GLASS, LAST_PAWN_STANDING, AGENT_OF_CHAOS,
         LIVING_TO_TELL_THE_TALE, THERE_AND_BACK_AGAIN,
     )
     tier(
         PlayPointsTier.MEDIUM,
-        CHAMPION, HOT_STREAK, REGULAR, SIX_SHOOTER, FULL_SPREAD, TWO_FOR_ONE, HAT_TRICK, TALL_POPPY, PARTING_SHOT,
+        CHAMPION, HOT_STREAK, REGULAR, SIX_SHOOTER, VISITING_THE_NEIGHBOURS, TWO_FOR_ONE, HAT_TRICK, TALL_POPPY, PARTING_SHOT,
         PICKING_ON_YOU, NOBODY_IS_SAFE, DOUBLE_DELIVERY, FULL_HOUSE, FRONT_RUNNER, LATE_BLOOMER,
         LIFE_OF_THE_PARTY, PACIFIST, PHOTO_FINISH, UNTOUCHABLE, NEVER_LEFT_HOME, GROUNDHOG_DAY,
         PIPPED_TO_THE_POST, SPOON_COLLECTOR, SO_NEAR_YET_SO_FAR, PUNCHING_BAG, SITTING_DUCKS,

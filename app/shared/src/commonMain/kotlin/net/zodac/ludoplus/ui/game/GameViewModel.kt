@@ -506,11 +506,6 @@ class GameViewModel(
     private val _toastMessages = Channel<String>(Channel.BUFFERED)
     val toastMessages: Flow<String> = _toastMessages.receiveAsFlow()
 
-    /** The game is on screen with the phone on its side: "Sideways", for a game (never the tutorial). */
-    fun onShownSideways() {
-        record(AchievementEngine.atSideways().earnableIn(_game.value?.state ?: return))
-    }
-
     /** Whether superuser mode can be turned on here: a debug build's game, never the tutorial. */
     val hasSuperuserMode: Boolean
         get() = isDebugBuild && tutorial == null

@@ -6,7 +6,8 @@ Achievements, banners, Styles, Leaderboard and menu decisions. The general rules
 ## The achievements list
 
 **One list, grouped by theme, easiest first** (the declaration order of `Achievement`), Completionist last of the Milestones. Winning, Misfortune, and
-Miscellaneous run in alphabetical order instead, and so do the Easter Eggs, which come last.
+Miscellaneous run in alphabetical order instead (Cutlery Collector aside, straight after Wooden Spoon), and so do the
+Easter Eggs, which come last.
 
 - **Unlocking doesn't move a row.** It's highlighted in place, with its own icon and a raised `secondaryContainer`
     card, so a ladder reads as a ladder.

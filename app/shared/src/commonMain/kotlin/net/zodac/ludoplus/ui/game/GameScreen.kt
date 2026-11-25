@@ -46,7 +46,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -234,9 +233,6 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
     val rollShown by viewModel.rollShown.collectAsStateWithLifecycle()
     val awaySeats by viewModel.awaySeats.collectAsStateWithLifecycle()
     SuperuserRollPicker(viewModel)
-    val window = LocalWindowInfo.current.containerSize
-    val sideways = window.width > window.height
-    LaunchedEffect(sideways) { if (sideways) viewModel.onShownSideways() }
     // The player's picks on the Styles page, or the defaults until they've loaded.
     val picks by viewModel.savedStyles.collectAsStateWithLifecycle()
     val showLog by viewModel.showMoveLog.collectAsStateWithLifecycle()

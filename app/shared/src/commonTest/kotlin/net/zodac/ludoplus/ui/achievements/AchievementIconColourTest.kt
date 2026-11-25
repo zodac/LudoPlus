@@ -22,9 +22,8 @@ class AchievementIconColourTest {
                 Achievement.BIG_FAN,
                 Achievement.CANT_WAIT_TO_GET_GOING,
                 Achievement.MIDNIGHT_RUN,
-                Achievement.ONE_BY_ONE, Achievement.SIDEWAYS, Achievement.THE_GREAT_ESCAPE,
+                Achievement.FULL_RETREAT, Achievement.HUNGRY_FOR_6S, Achievement.ONE_BY_ONE, Achievement.THE_GREAT_ESCAPE,
                 Achievement.TIME_FLIES,
-                Achievement.WHOS_LUDO,
             ),
             fixed,
         )

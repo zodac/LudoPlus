@@ -36,9 +36,12 @@ class AchievementTextTest {
         assertEquals(emptyList(), missing.filterNot { it in base })
         assertEquals(Achievement.entries.size, titles.count { it.first == "values" })
 
-        // Easter Eggs, Miscellaneous, Misfortune, and Winning run alphabetically by title, not easiest-first.
+        // Easter Eggs, Miscellaneous, Misfortune, and Winning run alphabetically by title, not easiest-first -
+        // but for Cutlery Collector, straight after Wooden Spoon.
+        val byTitle = Achievement.entries - Achievement.SPOON_COLLECTOR
+        assertEquals(Achievement.WOODEN_SPOON.ordinal + 1, Achievement.SPOON_COLLECTOR.ordinal)
         listOf(AchievementCategory.EASTER_EGGS, AchievementCategory.MISCELLANEOUS, AchievementCategory.MISFORTUNE, AchievementCategory.WINNING).forEach { category ->
-            val categoryTitles = Achievement.entries.filter { it.category == category }.map { base.getValue("achievement_${it.name.lowercase()}_title") }
+            val categoryTitles = byTitle.filter { it.category == category }.map { base.getValue("achievement_${it.name.lowercase()}_title") }
             assertEquals(categoryTitles.sortedBy { it.lowercase() }, categoryTitles, category.name)
         }
     }

@@ -23,14 +23,14 @@ For each achievement a new mode, modifier, or setting changes, decide:
 
 | Family | Achievements | Ask |
 | --- | --- | --- |
-| Pawn count | Wire To Wire, All Hands On Deck, Full House, Lap Of Honour, Comeback Kid, Defeat From The Jaws Of Victory, Photo Finish, Pipped To The Post, Tall Poppy, Parting Shot, So Near, Yet So Far, Buddy System, My Favourite Spot, Double Delivery | Do "all but one pawn", "every pawn", or "two pawns" mean the same with fewer or more pawns? |
-| Track length | Speed Demon, Express Delivery, Locked Out, Not So Fast!, Back To Square One, Welcome Party, Leapfrog, Ultramarathon | Are the turn and square thresholds still fast or slow, and is there still a last square before the home column? |
-| Rolls | Too Much Of A Good Thing, Inch By Inch, Locked Out, So Near, Yet So Far, Off The Mark, Full Spread, Six Pack, Dry Spell, Bottom Of The Barrel, Six Shooter, Counting Up | Is there a roll-again limit, a 1, a 6, and a roll that leaves the yard? Two dice change all of these |
-| Captures | Gotcha!, Pest, Two For One, Straight Out The Gate, Hat Trick, Payback, Picking On You, Nobody Is Safe, On The Warpath, Déjà Vu, Bouncer, Menace, Public Enemy, Sitting Ducks, Insult To Injury, Groundhog Day, Punching Bag, Stop Picking On Me, Pacifist, Untouchable, Conqueror, Never Say Die | Can pawns still be captured, more than one at once, and does a capture still give a roll? |
-| Table | How Do You Do, Fellow CPUs?, Life Of The Party, Nobody Is Safe, We're All Friends Here | Still three opponents (Fellow CPUs), or eight players (Life Of The Party)? |
-| Game end | Wooden Spoon, Spoon Collector, Never Left Home, Early Bird, Late Bloomer, Front-Runner, Homecoming, the games-played ladder, the win counts and both streaks | Is every player still placed, and does a game still take its usual time? |
+| Pawn count | Wire To Wire, All Hands On Deck, Full House, Lap Of Honour, Comeback Kid, Defeat From The Jaws Of Victory, Photo Finish, Pipped To The Post, Tall Poppy, Parting Shot, So Near, Yet So Far, Visiting The Neighbours, My Favourite Spot, Double Delivery, Full Retreat, Hungry For 6s | Do "all but one pawn", "every pawn", or "two pawns" mean the same with fewer or more pawns? |
+| Track length | Speed Demon, Express Delivery, Locked Out, Not So Fast!, Back To Square One, Wrong Neighbourhood, Leapfrog, Ultramarathon | Are the turn and square thresholds still fast or slow, and is there still a last square before the home column? |
+| Rolls | Too Much Of A Good Thing, Inch By Inch, Locked Out, So Near, Yet So Far, Off The Mark, Loaded Dice, Six Pack, Dry Spell, Bottom Of The Barrel, Six Shooter, Counting Up | Is there a roll-again limit, a 1, a 6, and a roll that leaves the yard? Two dice change all of these |
+| Captures | Gotcha!, Pest, Two For One, Straight Out The Gate, Hat Trick, Revenge Is Sweet, Picking On You, Nobody Is Safe, On The Warpath, Déjà Vu, Bouncer, Menace, Public Enemy, Sitting Ducks, Insult To Injury, Groundhog Day, Stop Hitting Yourself, Stop Picking On Me, Pacifist, Untouchable, Conqueror, Never Say Die, Full Retreat | Can pawns still be captured, more than one at once, and does a capture still give a roll? |
+| Table | How Do You Do, Fellow CPUs?, Life Of The Party, Nobody Is Safe, We're All Friends Here, Visiting The Neighbours | Still three opponents (Fellow CPUs), eight players (Life Of The Party), or a pawn for each player (Visiting The Neighbours)? |
+| Game end | Wooden Spoon, Cutlery Collector, Never Left Home, Early Bird, Late Bloomer, Front-Runner, Homecoming, the games-played ladder, the win counts and both streaks | Is every player still placed, and does a game still take its usual time? |
 
-Punching Bag's number came from simulated games (2,000 a difficulty, 2026-11-17): a player is captured about 6 times a
+Stop Hitting Yourself's number came from simulated games (2,000 a difficulty, 2026-11-17): a player is captured about 6 times a
 game (15 or more about 1-3%), and a win takes player 1 about 80 turns. Re-measure it for a mode that changes the track
 or the die. Speed Demon is a win within 5 minutes on screen (the maintainer, 2026-11-23), so anything that shortens a
 game makes it easier: fewer players and a lower Animations level, as well as a mode.
@@ -41,9 +41,9 @@ A rules setting, not a modifier: games with it count on the Leaderboard and earn
 
 - **Nothing is free.** The game ends at the first winner, and the others are placed as they stand.
 - **Easier:** the games-played ladder (finished games come quicker, a game counted the moment player 1 is placed, as
-    in a full game); Wooden Spoon and Spoon Collector (last place is given on the spot, rather than being the last left
-    racing); Never Left Home (the game can end before a pawn gets out). Left unguarded, as reported to the maintainer
-    (2026-11-17).
+    in a full game); Wooden Spoon and Cutlery Collector (last place is given on the spot, rather than being the last left
+    racing). Left unguarded, as reported to the maintainer (2026-11-17). Never Left Home is judged at the first win either
+    way, so is no easier (25% with it on or off).
 - **Harder:** nothing a full game gives is taken away, but a game it ends early has fewer turns in which to earn the
     in-play achievements.
 
@@ -97,7 +97,19 @@ Stop Picking On Me is 11% of four-player Classic games (31% with two players, 5%
 so it's kept out of none. A ghost's catch is nobody's, and a partner isn't one of the players.
 
 Express Delivery is Classic's alone (the maintainer, 2026-11-24): Chaos's Swap had made it 28% there, after Portals' 40% and
-Two Dice's 84%. Its description says so.
+Two Dice's 84%. Its description says so. Those, and the mode sections' figures for it, were measured at 12 turns; it's 15
+from 2026-11-25 (the maintainer), 23% of Classic games (12% with Stop at first winner).
+
+Dry Spell is 15 rolls without a 6, not 30, and Never Left Home at least one pawn in the yard, captured ones included, not
+all of them (the maintainer, 2026-11-25). Measured again over 600 games a mode of four Medium CPUs: Dry Spell is 75% in
+Classic (47% in Colour Rush to 87% in Haunted House), and Never Left Home 25% (17% in Chaos to 46% in Colour Rush).
+
+Loaded Dice is 8.0% of four-player Classic games (3.3% in Colour Rush to 9.5% in Haunted House; 5.8% with two players, 27%
+with eight). Visiting The Neighbours is 1.0% (0.1-1.0% in the other modes), but 78% of Classic games with two players, 18%
+with three, and none with five or more, which four pawns can't cover. It's kept out of nothing (the maintainer, 2026-11-25).
+
+Full Retreat (an Easter Egg) is 7.2% of four-player Classic games (0.3% with two players, 42% with eight; 0.5% in Portals to
+13% in Haunted House), and Hungry For 6s (another) 0.6% (8.5% with two; 0.3-0.9% in the other modes), the last over 2,000 games.
 
 ## Colour Rush (a mode)
 
@@ -108,7 +120,7 @@ Over as soon as the track is claimed, in about half of Classic's turns.
 | Clean Sweep | 5.0%, against 0.0%: few pawns are home by then |
 | Speed Demon | Half the game in the same five minutes |
 
-**Easier:** Never Left Home (4.1%, against 0.1%), and the games-played and win counters (games end sooner). **Harder:** what
+**Easier:** Never Left Home (46%, against 25%), and the games-played and win counters (games end sooner). **Harder:** what
 comes late in a race (Photo Finish, Pipped To The Post, Parting Shot, So Near, Yet So Far, Lap Of Honour).
 
 ## Two Dice (a mode)
@@ -117,7 +129,7 @@ Both dice count as rolls, and either may be a first-roll 6.
 
 | Kept out | Why |
 | --- | --- |
-| Bottom Of The Barrel, Counting Up, Dry Spell, Full Spread | A run of rolls is one die's: two at once measure something else |
+| Bottom Of The Barrel, Counting Up, Dry Spell, Loaded Dice | A run of rolls is one die's: two at once measure something else |
 | Express Delivery | 84%, against 9.3% |
 
 **Can't be earned:** Too Much Of A Good Thing (doubles roll again, not 6s). **Easier:** Off The Mark (31%, against 15%), Hat
@@ -138,14 +150,13 @@ end.
 | Kept out | Survival, against Classic |
 | --- | --- |
 | All Hands On Deck | The opening stack: 100% |
-| Buddy System | 96%, against 69%, its start square left out (2026-11-25): six pawns, all out from the first |
 | Clean Sweep, Wire To Wire | Nobody brings a pawn home: every win |
 | Two For One, Hat Trick | Stacks are captured together: 19% and 13%, against 2.2% and 2.3% |
 | Sitting Ducks, Insult To Injury | The same, lost: 26% and 43%, against 2.8% and 8.3% |
 | Leapfrog | 64%, against 42%: a stack is three pawns |
 
 **Can't be earned:** everything about home, a yard, a last square, or a pawn captured twice (`AchievementModeTest`
-lists them). **Easier:** Payback (29%, against 16%), We're All Friends Here.
+lists them). **Easier:** Revenge Is Sweet (29%, against 16%), We're All Friends Here.
 
 ## Chaos (a mode)
 
@@ -153,7 +164,7 @@ lists them). **Easier:** Payback (29%, against 16%), We're All Friends Here.
 
 ## Haunted House (a mode)
 
-A ghost's catch is nobody's capture (`timesHaunted`), so Untouchable, Punching Bag, and the rest are of rivals' alone.
+A ghost's catch is nobody's capture (`timesHaunted`), so Untouchable, Stop Hitting Yourself, and the rest are of rivals' alone.
 **Easier**, for the longer games: Six Pack (40%, against 7.3%), On The Warpath (21%, against 13%), and Time Flies.
 
 ## Custom modes (New Game)

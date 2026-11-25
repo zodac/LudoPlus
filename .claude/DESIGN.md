@@ -469,8 +469,9 @@ in `GameRecordRepository.statistics`, off the main thread. Each figure is read w
 
 - **Ids.**
     - The enum constant is the English title in snake case; the stored `id` is that in lower case
-        (`GETTING_COMFORTABLE`/`"getting_comfortable"`). `AchievementEngineTest` enforces it. Permanent once released.
-    - Removed achievements' ids are kept in `RETIRED_ACHIEVEMENT_IDS`, never to be used again (eleven, 2026-11-23, and ten, 2026-11-24).
+        (`GETTING_COMFORTABLE`/`"getting_comfortable"`), and a title renamed since release leaves both alone (Revenge Is Sweet is
+        `PAYBACK`). `AchievementEngineTest` enforces it. Permanent once released.
+    - Removed achievements' ids are kept in `RETIRED_ACHIEVEMENT_IDS`, never to be used again (eleven, 2026-11-23, ten, 2026-11-24, and four, 2026-11-25).
     - String keys follow the constant: `achievement_<constant>_title`, `_description`.
 - **Player 1 only.** The person in seat 1 earns them; every other seat, person or CPU, is an opponent. The tutorial
     earns nothing.
@@ -478,22 +479,25 @@ in `GameRecordRepository.statistics`, off the main thread. Each figure is read w
     them, Completionist last), The Die (5), Captures (10), Racing (10), Winning (15), Game Modes (15), Misfortune (15), Miscellaneous (10,
     hidden), and Easter Eggs (10, hidden, outside Completionist and the page's total): 100 counted. Each entry's
     description is its rule; the thresholds are the tracker's constants (`AchievementTracker`'s companion). The maintainer asked for 100, plus 10
-    Easter Eggs, on 2026-11-17 ("a variety of them in groups, like DiceFive"), removed eleven on 2026-11-23 and
-    twelve on 2026-11-24 (two of them never released), and is
+    Easter Eggs, on 2026-11-17 ("a variety of them in groups, like DiceFive"), removed eleven on 2026-11-23,
+    twelve on 2026-11-24 (two of them never released), and four on 2026-11-25, and is
     adding new ones: My Favourite Spot (every pawn on one square, not the start square, home column included) and
-    We're All Friends Here (a pawn of every player on one track square, by anyone's move) on 2026-11-23, when Pest and
-    Completionist moved to Milestones and the Collection category went. Buddy System leaves out the start square too (the
-    maintainer, 2026-11-25).
+    We're All Friends Here (every player with a pawn on one track square, by anyone's move) on 2026-11-23, when Pest and
+    Completionist moved to Milestones and the Collection category went. Loaded Dice (one number 5 times in a
+    row) replaced Full Spread, and Visiting The Neighbours (a pawn of player 1's on every player's start square at once, their
+    own included) Buddy System, on 2026-11-25. Visiting The Neighbours is kept out of nothing, though four pawns can't do it
+    against more than three others (the maintainer).
     - Speed Demon is a win within 5 minutes of the game on screen (`StartedGame.playMillis`, as Time Flies counts it; the
         maintainer, 2026-11-23). Locked Out is 5 turns, and Lifetime Achievement 500 games.
-    - Punching Bag (15 captured) comes from simulated games: a player is captured about 6 times a game.
+    - Stop Hitting Yourself (15 captured) comes from simulated games: a player is captured about 6 times a game.
     - Easter Eggs: Alliteration (every name starting with one letter), Are You A Developer? (the version tapped seven
         times), Big Fan (a person named "zodac", exactly), Can't Wait To Get Going (the main menu's logo pawn tapped,
-        which hops three times; added 2026-11-23), Midnight Run (a new game from midnight to 6am), One By One
+        which hops three times; added 2026-11-23), Full Retreat (every pawn on the board at once, then every one back in the yard,
+        captured or caught by a ghost; in place of Who's Ludo?, 2026-11-25), Hungry For 6s (every pawn of player 1's out of the yard before any other
+        player, a partner included, has brought one out; in place of Sideways, 2026-11-25), Midnight Run (a new game from midnight to 6am), One By One
         (every pawn home, none ever brought out with another on the board, by a move or Call Up, banked or not, seen from the first roll),
-        Sideways (a game shown with the phone on its side), The Great Escape (all four pawns out together, each brought out
-        within the last four turns; both 2026-11-24), Time Flies (an hour of one game on screen), Who's Ludo? (anyone named
-        "Ludo", any case).
+        The Great Escape (all four pawns out together, each brought out within the last four turns; both 2026-11-24),
+        and Time Flies (an hour of one game on screen).
     - Wire To Wire needs the whole game seen (from player 1's first roll): one continued from its save can't earn it.
     - Opening About (Who Made This?) earns a hidden one. So does tapping the menu's logo pawn (Can't Wait To Get Going,
         `MenuScreen`'s `onLogoPawnTapped`, unlocked in `LudoPlusNavHost`). The tutorial earns nothing.
@@ -529,7 +533,8 @@ in `GameRecordRepository.statistics`, off the main thread. Each figure is read w
     - Declaration order is display order: grouped by `AchievementCategory`, easiest first; Milestones is the firsts, then a
         ladder at a time (rolls, games played, wins, win streaks, and captures; the maintainer, 2026-11-24), Completionist last. `AchievementEngineTest`
         fails if a category is split, or a counter's ladder is out of order; `AchievementTextTest` holds Winning,
-        Misfortune, Miscellaneous, and Easter Eggs alphabetical.
+        Misfortune, Miscellaneous, and Easter Eggs alphabetical, but for Cutlery Collector, straight after Wooden Spoon (the
+        maintainer, 2026-11-25).
     - Every Miscellaneous and Easter Egg achievement is `HIDDEN` (the title is shown, the description is "???" until
         earned), and only those are.
 - **Progress banners.** A streak announces every step. A running total announces only at quarter marks (or every

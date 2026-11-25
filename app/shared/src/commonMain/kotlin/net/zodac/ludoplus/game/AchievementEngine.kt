@@ -63,9 +63,6 @@ object AchievementEngine {
     /** [Achievement.BIG_FAN]'s opponent's name, matched exactly. */
     private const val CREATOR_NAME = "zodac"
 
-    /** [Achievement.WHOS_LUDO]'s player's name, in any case. */
-    private const val LUDO_NAME = "Ludo"
-
     /** The hours a new game starts in for [Achievement.MIDNIGHT_RUN]: midnight up to 6am. */
     private val MIDNIGHT_HOURS = 0 until 6
 
@@ -88,14 +85,10 @@ object AchievementEngine {
             if (previousGame != null && previousGame.isFinished && !previousGame.rules.hasHouseRules && previousGame.placeOf(mySeat) != 1) add(Achievement.ONE_MORE_TIME)
             if (players.withIndex().any { (seat, it) -> seat != mySeat && it.type in people && it.name == CREATOR_NAME }) add(Achievement.BIG_FAN)
             if (localHour in MIDNIGHT_HOURS) add(Achievement.MIDNIGHT_RUN)
-            if (players.any { it.name.equals(LUDO_NAME, ignoreCase = true) }) add(Achievement.WHOS_LUDO)
             if (players.map { it.name.firstOrNull()?.lowercaseChar() }.distinct().singleOrNull()?.isLetter() == true) add(Achievement.ALLITERATION)
         }
         return GameFeats(earned).let { if (game == null) it else it.earnableIn(game) }
     }
-
-    /** What a game shown with the phone on its side earns. */
-    fun atSideways(): GameFeats = GameFeats(setOf(Achievement.SIDEWAYS))
 
     /** What continuing a saved game earns. */
     fun atGameResume(): GameFeats = GameFeats(setOf(Achievement.LETS_FINISH_THIS))

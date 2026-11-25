@@ -62,9 +62,6 @@ class AchievementTracker(
     /** Player 1's turns in a row missed with only their last pawn left, a square from home. */
     private var nearMisses = 0
 
-    /** Player 1's rolls this game, from its first, while that's been seen: null for a game continued from its save. */
-    private var firstRolls: MutableList<Int>? = null
-
     /** Player 1's 6s this game. */
     private var gameSixes = 0
 
@@ -73,6 +70,10 @@ class AchievementTracker(
 
     /** Player 1's 1s in a row. */
     private var onesInARow = 0
+
+    /** Player 1's last roll, and how many times in a row they've rolled it. */
+    private var lastRoll = 0
+    private var sameInARow = 0
 
     /** Player 1's last few rolls, in order, one turn after another. */
     private val recentRolls = ArrayDeque<Int>()
@@ -109,6 +110,9 @@ class AchievementTracker(
 
     /** The power-ups player 1 has taken this game. */
     private val powerUpsTaken = mutableSetOf<PowerUp>()
+
+    /** Whether player 1 has had every pawn on the board at once: for [Achievement.FULL_RETREAT]. */
+    private var hadAllOnBoard = false
 
     /** What's been earned already, so it isn't earned again. */
     private val earned = mutableSetOf<Achievement>()
@@ -172,8 +176,11 @@ class AchievementTracker(
         }
         for (caught in after.ghostMove?.caught.orEmpty()) if (caught.player == mySeat) sentBack(caught.pawn)
         if (after.players[mySeat].timesCaptured >= PUNCHING_BAG_CAPTURES) feats += Achievement.PUNCHING_BAG
+        if (listOf(before, after).any { state -> state.players[mySeat].pawns.all { it in 0..<board.homeProgress } }) hadAllOnBoard = true
+        if (hadAllOnBoard && after.players[mySeat].pawns.all { it == PawnPosition.YARD_PROGRESS }) feats += Achievement.FULL_RETREAT
         if (after.claimed != before.claimed && after.longestRunOf(mySeat) >= COORDINATED_SQUARES) feats += Achievement.COLOUR_COORDINATED
         if (event is GameEvent.Moved && everyPlayerSharesASquare(after)) feats += Achievement.WERE_ALL_FRIENDS_HERE
+        if (event is GameEvent.Moved && isOnEveryStart(after)) feats += Achievement.VISITING_THE_NEIGHBOURS
         // A partner isn't an opponent: in a team game, they're racing for player 1's place too.
         val opponents = after.players.indices.filter { it != mySeat && !after.rules.arePartners(mySeat, it) }
         val myHome = after.players[mySeat].pawnsHome(board)
@@ -257,13 +264,7 @@ class AchievementTracker(
         val first = startsTurn && before.players[mySeat].turns == 0
         if (first) {
             seenFromStart = true
-            firstRolls = mutableListOf()
             if (sixes > 0) feats += Achievement.OFF_THE_MARK
-        }
-        firstRolls?.let { rolls ->
-            rolls += roll
-            if (rolls.size == FULL_SPREAD_ROLLS && rolls.toSet() == (1..SIX).toSet()) feats += Achievement.FULL_SPREAD
-            if (rolls.size >= FULL_SPREAD_ROLLS) firstRolls = null
         }
         if (sixes > 0) {
             pending.add(AchievementCounter.SIXES_ROLLED, sixes)
@@ -278,6 +279,9 @@ class AchievementTracker(
         if (recentRolls.toList() == COUNTING_UP) feats += Achievement.COUNTING_UP
         onesInARow = if (roll == 1) onesInARow + 1 else 0
         if (onesInARow >= ONES_IN_A_ROW) feats += Achievement.BOTTOM_OF_THE_BARREL
+        sameInARow = if (roll == lastRoll) sameInARow + 1 else 1
+        lastRoll = roll
+        if (sameInARow >= SAME_IN_A_ROW) feats += Achievement.LOADED_DICE
     }
 
     private fun playerOneMoved(
@@ -370,8 +374,10 @@ class AchievementTracker(
         if (move.owner == null && leftYardOnTurn.size == pawnsPerPlayer && leftYardOnTurn.values.all { it > turn - ESCAPE_TURNS }) feats += Achievement.THE_GREAT_ESCAPE
         if (move.owner == null && seenFromStart && oneByOne && pawns.all { it == board.homeProgress }) feats += Achievement.ONE_BY_ONE
         val onBoard = pawns.filter { it in 0..<board.homeProgress }
-        val offStart = onBoard.filter { it != 0 }
-        if (offStart.size != offStart.toSet().size) feats += Achievement.BUDDY_SYSTEM
+        val othersNeverOut = before.players.withIndex().all { (seat, player) ->
+            seat == mySeat || player.pawns.all { it == PawnPosition.YARD_PROGRESS } && player.timesCaptured == 0 && player.timesHaunted == 0
+        }
+        if (othersNeverOut && PawnPosition.YARD_PROGRESS in me.pawns && PawnPosition.YARD_PROGRESS !in pawns) feats += Achievement.HUNGRY_FOR_6S
         if (pawns.distinct().singleOrNull().let { it != null && it in 1..<board.homeProgress }) feats += Achievement.MY_FAVOURITE_SPOT
         if (onBoard.size == pawnsPerPlayer) feats += Achievement.ALL_HANDS_ON_DECK
         if (pawns.all { it in board.trackSteps..<board.homeProgress }) feats += Achievement.FULL_HOUSE
@@ -385,6 +391,14 @@ class AchievementTracker(
             .map { player -> player.pawns.filter { it in 0..<board.trackSteps }.map { board.trackSquare(player.seat, it) }.toSet() }
             .reduce { shared, squares -> shared intersect squares }
             .isNotEmpty()
+    }
+
+    /** Whether player 1 has a pawn on the start square of every player in [state], their own included. */
+    private fun isOnEveryStart(state: GameState): Boolean {
+        val board = state.board
+        val me = state.players[mySeat]
+        val squares = me.pawns.filter { it in 0..<board.trackSteps }.map { board.trackSquare(me.seat, it) }.toSet()
+        return state.players.all { board.startSquare(it.seat) in squares }
     }
 
     /** How many opponents' pawns stand on the track squares [move] passes over, between where it starts and lands. */
@@ -435,7 +449,7 @@ class AchievementTracker(
         if (ledBadly) add(Achievement.DEFEAT_FROM_THE_JAWS_OF_VICTORY)
         val me = after.players[mySeat]
         if (me.isOneFromFinishing(after)) add(Achievement.PIPPED_TO_THE_POST)
-        if (me.pawns.all { it == PawnPosition.YARD_PROGRESS }) add(Achievement.NEVER_LEFT_HOME)
+        if (me.pawns.any { it == PawnPosition.YARD_PROGRESS }) add(Achievement.NEVER_LEFT_HOME)
     }
 
     /** Whether this player has every pawn home but one, and that one in their home column. */
@@ -463,11 +477,11 @@ class AchievementTracker(
         const val LOCKED_OUT_TURNS = 5
         const val PUNCHING_BAG_CAPTURES = 15
         const val COORDINATED_SQUARES = 8
-        const val FULL_SPREAD_ROLLS = 6
         const val SIX_PACK_SIXES = 30
-        const val DRY_SPELL_ROLLS = 30
+        const val DRY_SPELL_ROLLS = 15
         const val ONES_IN_A_ROW = 3
-        const val EXPRESS_TURNS = 12
+        const val SAME_IN_A_ROW = 5
+        const val EXPRESS_TURNS = 15
         const val ESCAPE_TURNS = 4
         val COUNTING_UP = (1..SIX).toList()
         const val TIME_FLIES_MILLIS = 60 * 60 * 1_000L

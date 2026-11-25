@@ -68,8 +68,7 @@ landscape (`w1280dp-h800dp-land-xhdpi`); the phone is 9:16 (`w412dp-h732dp-xxhdp
     `Scenes.LOCKED` (the Starry and Neon ones) is drawn as the default.
 - **The history** is `StoreState.seed`: 24 finished games over seven weeks for Sam, Jo, and Alex and the CPU Ada, each
     played to its end by the CPU, which the Leaderboard and Statistics show.
-    Every achievement but `Scenes.LOCKED` is recorded as earned, so no banner covers a screen but the last's own. The
-    screenshots earn Sideways too, as a landscape game would, so their Achievements page reads "95 of 100".
+    Every achievement but `Scenes.LOCKED` is recorded as earned, so no banner covers a screen but the last's own.
 
 ## How it works, and the traps
 

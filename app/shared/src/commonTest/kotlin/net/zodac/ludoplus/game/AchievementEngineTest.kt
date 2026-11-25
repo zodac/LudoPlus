@@ -102,7 +102,6 @@ class AchievementEngineTest {
         assertTrue(Achievement.MIDNIGHT_RUN !in AchievementEngine.atGameStart(PLAYERS, null, 23).achievements)
 
         assertEquals(GameFeats(setOf(Achievement.LETS_FINISH_THIS)), AchievementEngine.atGameResume())
-        assertEquals(GameFeats(setOf(Achievement.SIDEWAYS)), AchievementEngine.atSideways())
     }
 
     @Test
@@ -113,13 +112,6 @@ class AchievementEngineTest {
         assertTrue(Achievement.ALLITERATION !in AchievementEngine.atGameStart(PLAYERS, null, 14).achievements, "Me, P2, P3, P4")
         val digits = PLAYERS.mapIndexed { i, player -> player.copy(name = "${i}x") }
         assertTrue(Achievement.ALLITERATION !in AchievementEngine.atGameStart(digits, null, 14).achievements)
-    }
-
-    @Test
-    fun `a player named Ludo is Who's Ludo`() {
-        val ludo = PLAYERS.toMutableList().apply { this[3] = PlayerConfig(4, PlayerType.AI, "ludo") }
-        assertTrue(Achievement.WHOS_LUDO in AchievementEngine.atGameStart(ludo, null, 14).achievements)
-        assertTrue(Achievement.WHOS_LUDO !in AchievementEngine.atGameStart(PLAYERS, null, 14).achievements)
     }
 
     @Test

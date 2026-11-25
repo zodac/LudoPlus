@@ -16,14 +16,14 @@ import androidx.compose.ui.unit.dp
 import net.zodac.ludoplus.model.Achievement
 import net.zodac.ludoplus.ui.icons.Symbols
 import net.zodac.ludoplus.ui.theme.AchievementDeveloperCyan
-import net.zodac.ludoplus.ui.theme.AchievementBadgeViolet
+import net.zodac.ludoplus.ui.theme.AchievementBurgerTan
 import net.zodac.ludoplus.ui.theme.AchievementClockAmber
 import net.zodac.ludoplus.ui.theme.AchievementEscapeOrange
 import net.zodac.ludoplus.ui.theme.AchievementHeartRed
 import net.zodac.ludoplus.ui.theme.AchievementHomeGreen
 import net.zodac.ludoplus.ui.theme.AchievementPawnRed
+import net.zodac.ludoplus.ui.theme.AchievementRetreatViolet
 import net.zodac.ludoplus.ui.theme.AchievementInkBlue
-import net.zodac.ludoplus.ui.theme.AchievementSidewaysTeal
 
 /**
  * The glyph an unlocked [Achievement] shows on the Achievements page and its banner: its own, never a stock trophy, and
@@ -65,7 +65,7 @@ val Achievement.icon: ImageVector
         // ---- The Die ------------------------------------------------------------------------
         Achievement.OFF_THE_MARK -> Symbols.Start
         Achievement.SIX_SHOOTER -> Symbols.Filter6
-        Achievement.FULL_SPREAD -> Symbols.FormatListNumbered
+        Achievement.LOADED_DICE -> LOADED_DICE_ICON
         Achievement.SIX_PACK -> Symbols.SportsBar
         // Steps up, one number at a time.
         Achievement.COUNTING_UP -> Symbols.Stairs2
@@ -74,11 +74,11 @@ val Achievement.icon: ImageVector
         Achievement.GOTCHA -> Symbols.Target
         // Two stacked, for two pawns with one move.
         Achievement.TWO_FOR_ONE -> Symbols.FilterNone
-        Achievement.WELCOME_PARTY -> Symbols.Celebration
+        Achievement.WELCOME_PARTY -> Symbols.WrongLocation
         Achievement.STRAIGHT_OUT_THE_GATE -> Symbols.DoorOpen
         Achievement.HAT_TRICK -> Symbols.Looks3
-        // Justice done, on the very next turn.
-        Achievement.PAYBACK -> Symbols.Gavel
+        // Something sweet.
+        Achievement.PAYBACK -> Symbols.Cookie
         Achievement.PARTING_SHOT -> Symbols.NearMe
         Achievement.PICKING_ON_YOU -> Symbols.PersonRemove
         // The whole world: every opponent.
@@ -150,14 +150,14 @@ val Achievement.icon: ImageVector
         Achievement.LOCKED_OUT -> Symbols.HourglassEmpty
         Achievement.NEVER_LEFT_HOME -> Symbols.Cottage
         Achievement.PIPPED_TO_THE_POST -> Symbols.Timer
-        Achievement.PUNCHING_BAG -> Symbols.SentimentDissatisfied
         Achievement.SITTING_DUCKS -> Symbols.Cancel
-        Achievement.SPOON_COLLECTOR -> Symbols.Restaurant
+        // A boxing glove.
+        Achievement.PUNCHING_BAG -> Symbols.SportsMma
         Achievement.TOO_MUCH_OF_A_GOOD_THING -> Symbols.Looks6
         Achievement.WOODEN_SPOON -> Symbols.TrendingDown
+        Achievement.SPOON_COLLECTOR -> Symbols.Restaurant
 
         // ---- Miscellaneous (hidden) ---------------------------------------------------------
-        Achievement.BUDDY_SYSTEM -> Symbols.Groups
         Achievement.DEJA_VU -> Symbols.Repeat
         Achievement.INCH_BY_INCH -> Symbols.SlowMotionVideo
         Achievement.LEAPFROG -> Symbols.Redo
@@ -166,6 +166,8 @@ val Achievement.icon: ImageVector
         Achievement.SO_NEAR_YET_SO_FAR -> Symbols.SentimentNeutral
         // Cut down to size.
         Achievement.TALL_POPPY -> Symbols.ContentCut
+        // At the door.
+        Achievement.VISITING_THE_NEIGHBOURS -> Symbols.Doorbell
         Achievement.WERE_ALL_FRIENDS_HERE -> Symbols.Handshake
         Achievement.WHO_MADE_THIS -> Symbols.Info
 
@@ -175,14 +177,15 @@ val Achievement.icon: ImageVector
         Achievement.ARE_YOU_A_DEVELOPER -> Symbols.DeveloperMode
         Achievement.BIG_FAN -> Symbols.Favorite
         Achievement.CANT_WAIT_TO_GET_GOING -> Symbols.ChessPawn
+        // All the way back.
+        Achievement.FULL_RETREAT -> Symbols.UTurnLeft
+        Achievement.HUNGRY_FOR_6S -> Symbols.LunchDining
         // A crescent moon and two stars, for the small hours it was earned in.
         Achievement.MIDNIGHT_RUN -> rememberMidnightIcon()
         Achievement.ONE_BY_ONE -> Symbols.HomeWork
-        Achievement.SIDEWAYS -> Symbols.ScreenRotation
         // Making a run for it.
         Achievement.THE_GREAT_ESCAPE -> Symbols.DirectionsRun
         Achievement.TIME_FLIES -> Symbols.Schedule
-        Achievement.WHOS_LUDO -> Symbols.Badge
     }
 
 /**
@@ -196,12 +199,12 @@ fun Achievement.iconTintOrUnspecified(tint: Color): Color = when (this) {
     Achievement.ARE_YOU_A_DEVELOPER -> AchievementDeveloperCyan
     Achievement.BIG_FAN -> AchievementHeartRed
     Achievement.CANT_WAIT_TO_GET_GOING -> AchievementPawnRed
+    Achievement.FULL_RETREAT -> AchievementRetreatViolet
+    Achievement.HUNGRY_FOR_6S -> AchievementBurgerTan
     Achievement.MIDNIGHT_RUN -> Color.Unspecified
     Achievement.ONE_BY_ONE -> AchievementHomeGreen
-    Achievement.SIDEWAYS -> AchievementSidewaysTeal
     Achievement.THE_GREAT_ESCAPE -> AchievementEscapeOrange
     Achievement.TIME_FLIES -> AchievementClockAmber
-    Achievement.WHOS_LUDO -> AchievementBadgeViolet
     else -> tint
 }
 

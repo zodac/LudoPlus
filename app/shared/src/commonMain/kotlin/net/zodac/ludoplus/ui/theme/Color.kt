@@ -190,14 +190,14 @@ val AchievementPawnRed = Color(0xFFF2675F)
 /** Are You A Developer?'s icon: Android's developer cyan. */
 val AchievementDeveloperCyan = Color(0xFF3FE6FF)
 
-/** Who's Ludo?'s name badge: the brand's own violet seed. */
-val AchievementBadgeViolet = Color(0xFF9C6BFF)
+/** Full Retreat's turn back: the brand's own violet seed. */
+val AchievementRetreatViolet = Color(0xFF9C6BFF)
 
 /** Alliteration's letters: fountain-pen ink blue. */
 val AchievementInkBlue = Color(0xFF6FA8FF)
 
-/** Sideways' turning phone: teal. */
-val AchievementSidewaysTeal = Color(0xFF4FD1C5)
+/** Hungry For 6s' burger: a toasted bun's tan. */
+val AchievementBurgerTan = Color(0xFFE0A76B)
 
 /** Time Flies' clock: amber. */
 val AchievementClockAmber = Color(0xFFFFB74D)

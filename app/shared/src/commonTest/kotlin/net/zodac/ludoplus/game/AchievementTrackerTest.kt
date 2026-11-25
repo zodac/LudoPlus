@@ -151,7 +151,7 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `Payback captures whoever last captured player 1 on player 1's very next turn - not a turn later`() {
+    fun `Revenge Is Sweet captures whoever last captured player 1 on player 1's very next turn - not a turn later`() {
         fun capturedByGreen() = Play(game(listOf(4, 20, Y, Y), listOf(42, Y, Y, Y), current = GREEN, turns = 5)).play(1, pawn = 0)
 
         // Back to red for their next turn: red's pawn on square 20 catches green's on 22 (13 + 9).
@@ -216,20 +216,11 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `All Hands On Deck is every pawn on the board - Buddy System two on one square but not the start square`() {
+    fun `All Hands On Deck is every pawn on the board`() {
         val deck = Play(game(listOf(1, 2, 3, Y))).play(6, pawn = 3)
         assertTrue(Achievement.ALL_HANDS_ON_DECK in deck.earned)
         val home = Play(game(listOf(HOME, 2, 3, Y))).play(6, pawn = 3)
         assertFalse(Achievement.ALL_HANDS_ON_DECK in home.earned, "a pawn home isn't on the board")
-
-        assertEquals(setOf(Achievement.BUDDY_SYSTEM), Play(game(listOf(1, 3, Y, Y))).play(2, pawn = 0).earned)
-        assertEquals(emptySet(), Play(game(listOf(1, 3, Y, Y))).play(1, pawn = 0).earned)
-        assertTrue(Achievement.BUDDY_SYSTEM in Play(game(listOf(LAST_TRACK, 52, Y, Y))).play(2, pawn = 0).earned, "the home column counts")
-
-        assertFalse(Achievement.BUDDY_SYSTEM in Play(game(listOf(0, Y, Y, Y))).play(6, pawn = 1).earned, "the start square doesn't count")
-        assertEquals(emptySet(), Play(game(listOf(0, 0, 10, Y))).play(1, pawn = 2).earned, "a pair left on the start square doesn't count")
-        assertFalse(Achievement.BUDDY_SYSTEM in Play(game(listOf(HOME, HOME - 1, Y, Y))).play(1, pawn = 1).earned, "home isn't a square")
-        assertTrue(Achievement.BUDDY_SYSTEM in Play(game(listOf(0, 0, 7, 10))).play(3, pawn = 2).earned, "a pair off it does, whatever is on it")
     }
 
     @Test
@@ -264,7 +255,7 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `Punching Bag is the 15th of player 1's pawns captured in a game`() {
+    fun `Stop Hitting Yourself is the 15th of player 1's pawns captured in a game`() {
         val play = Play(game(listOf(4, Y, Y, Y), listOf(42, Y, Y, Y), current = GREEN, timesCaptured = 13)).play(1, pawn = 0)
         assertFalse(Achievement.PUNCHING_BAG in play.earned)
         val fifteenth = Play(game(listOf(4, Y, Y, Y), listOf(42, Y, Y, Y), current = GREEN, timesCaptured = 14)).play(1, pawn = 0)
@@ -368,34 +359,35 @@ class AchievementTrackerTest {
 
     @Test
     fun `nothing is earned twice in a game`() {
-        val play = Play(game(listOf(1, 3, 5, Y)))
-        play.play(2, pawn = 0)
-        assertTrue(Achievement.BUDDY_SYSTEM in play.last.achievements)
-        play.skipTo(play.state.copy(current = RED)).play(2, pawn = 1)
-        assertFalse(Achievement.BUDDY_SYSTEM in play.last.achievements)
+        val play = Play(game(listOf(3, Y, Y, Y), listOf(43, 44, Y, Y)))
+        play.play(1, pawn = 0)
+        assertTrue(Achievement.GOTCHA in play.last.achievements)
+        play.play(1, pawn = 0)
+        assertEquals(2, play.counts[AchievementCounter.CAPTURES])
+        assertFalse(Achievement.GOTCHA in play.last.achievements)
     }
     /** Player 1 rolls each of [rolls] with the turn passing straight back to them after each: for rolls with no move. */
     private fun Play.rollEach(vararg rolls: Int) = apply { rolls.forEach { roll(it).skipTo(state.copy(current = RED, rollingAgain = false)) } }
 
     @Test
-    fun `Off The Mark is a 6 with the game's first roll - Full Spread every number in the first six`() {
+    fun `Off The Mark is a 6 with the game's first roll`() {
         assertTrue(Achievement.OFF_THE_MARK in Play(game()).roll(6).earned)
         assertFalse(Achievement.OFF_THE_MARK in Play(game(turns = 3)).roll(6).earned)
-
-        // Every pawn home but one stuck two squares short, so no roll but a 1 or 2 moves: the turn passes back each time.
-        val stuck = listOf(HOME, HOME, HOME, HOME - 2)
-        val spread = Play(game(stuck)).rollEach(3, 4, 5, 6).play(1, pawn = 3)
-        assertFalse(Achievement.FULL_SPREAD in spread.earned)
-        spread.skipTo(spread.state.copy(current = RED)).roll(2)
-        assertTrue(Achievement.FULL_SPREAD in spread.earned)
-        val play = Play(game(stuck)).rollEach(3, 4, 5, 6, 3)
-        assertFalse(Achievement.FULL_SPREAD in play.roll(2).earned, "a 3 twice, and no 1")
-        assertFalse(Achievement.FULL_SPREAD in Play(game(stuck, turns = 1)).rollEach(3, 4, 5, 6).play(1, pawn = 3).roll(2).earned, "not the game's first rolls")
     }
 
     @Test
-    fun `Dry Spell is 30 rolls without a 6 - Bottom Of The Barrel three 1s in a row - Six Pack 30 6s in a game`() {
-        val dry = Play(game()).rollEach(*IntArray(29) { 2 })
+    fun `Loaded Dice is any one number 5 times in a row - whatever the others roll between`() {
+        val twos = Play(game()).rollEach(2, 2, 2, 2)
+        assertFalse(Achievement.LOADED_DICE in twos.earned)
+        twos.skipTo(twos.state.copy(current = GREEN)).roll(3).skipTo(twos.state.copy(current = RED))
+        assertTrue(Achievement.LOADED_DICE in twos.roll(2).earned)
+        assertTrue(Achievement.LOADED_DICE in Play(game()).rollEach(4, 5, 5, 5, 5, 5).earned)
+        assertFalse(Achievement.LOADED_DICE in Play(game()).rollEach(2, 2, 2, 3, 2, 2, 2, 2).earned, "a 3 between")
+    }
+
+    @Test
+    fun `Dry Spell is 15 rolls without a 6 - Bottom Of The Barrel three 1s in a row - Six Pack 30 6s in a game`() {
+        val dry = Play(game()).rollEach(*IntArray(14) { 2 })
         assertFalse(Achievement.DRY_SPELL in dry.earned)
         assertTrue(Achievement.DRY_SPELL in dry.rollEach(3).earned)
 
@@ -473,15 +465,15 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `Express Delivery takes a pawn yard to home within 12 turns`() {
+    fun `Express Delivery takes a pawn yard to home within 15 turns`() {
         fun lap(homeTurn: Int): Set<Achievement> {
             val play = Play(game()).play(6, pawn = 0)
             // Out on turn 1; home on [homeTurn].
             val far = play.state.copy(current = RED, rollingAgain = false, players = play.state.players.mapIndexed { i, p -> if (i == RED) p.copy(pawns = listOf(HOME - 6, Y, Y, Y), turns = homeTurn - 1) else p })
             return play.skipTo(far).play(6, pawn = 0).earned
         }
-        assertTrue(Achievement.EXPRESS_DELIVERY in lap(12))
-        assertFalse(Achievement.EXPRESS_DELIVERY in lap(13))
+        assertTrue(Achievement.EXPRESS_DELIVERY in lap(15))
+        assertFalse(Achievement.EXPRESS_DELIVERY in lap(16))
     }
 
     @Test
@@ -516,6 +508,49 @@ class AchievementTrackerTest {
 
         val noBlue = Play(game(listOf(5, Y, Y, Y), listOf(47, Y, Y, Y), listOf(34, Y, Y, Y), listOf(20, Y, Y, Y))).play(3, pawn = 0)
         assertFalse(Achievement.WERE_ALL_FRIENDS_HERE in noBlue.earned, "Blue's pawn is a square short")
+    }
+
+    @Test
+    fun `Visiting The Neighbours is a pawn of player 1's on every player's start square, their own included`() {
+        assertTrue(Achievement.VISITING_THE_NEIGHBOURS in Play(game(listOf(0, 13, 26, 38))).play(1, pawn = 3).earned)
+        assertTrue(Achievement.VISITING_THE_NEIGHBOURS in Play(game(listOf(Y, 13, 26, 39))).play(6, pawn = 0).earned, "their own last")
+        assertFalse(Achievement.VISITING_THE_NEIGHBOURS in Play(game(listOf(0, 13, 26, 37))).play(1, pawn = 3).earned, "a square short of Blue's")
+        assertFalse(Achievement.VISITING_THE_NEIGHBOURS in Play(game(listOf(1, 13, 26, 38))).play(1, pawn = 3).earned, "none on their own")
+        assertFalse(Achievement.VISITING_THE_NEIGHBOURS in Play(game(listOf(0, 13, 26, 37), listOf(Y, Y, Y, Y), listOf(Y, Y, Y, Y), listOf(0, Y, Y, Y))).play(1, pawn = 3).earned, "Blue's own pawn doesn't count")
+
+        // Two players sit opposite: red's start square, and yellow's.
+        val two = GameState.new(GameMode.CLASSIC, playerCount = 2)
+        val start = two.copy(players = two.players.mapIndexed { i, player -> if (i == RED) player.copy(pawns = listOf(0, 25, Y, Y)) else player })
+        assertTrue(Achievement.VISITING_THE_NEIGHBOURS in Play(start, configs().take(2)).play(1, pawn = 1).earned)
+    }
+
+    @Test
+    fun `Full Retreat is every pawn on the board at once - then every one back in the yard`() {
+        // Green's pawn on 42 captures red's on 4 (green's 43) with a 1.
+        val lastOut = game(listOf(4, Y, Y, Y), listOf(42, Y, Y, Y), current = GREEN)
+        val retreat = Play(game(listOf(4, 5, 9, Y))).play(6, pawn = 3)
+        assertFalse(Achievement.FULL_RETREAT in retreat.earned, "all four on the board")
+        retreat.skipTo(game(listOf(4, 10, Y, Y), listOf(42, Y, Y, Y), current = GREEN)).play(1, pawn = 0)
+        assertFalse(Achievement.FULL_RETREAT in retreat.earned, "one still on the board")
+        assertTrue(Achievement.FULL_RETREAT in retreat.skipTo(lastOut).play(1, pawn = 0).earned)
+
+        assertFalse(Achievement.FULL_RETREAT in Play(lastOut).play(1, pawn = 0).earned, "never four on the board")
+        val stack = Play(game(listOf(4, 4, 4, 4), listOf(42, Y, Y, Y), current = GREEN)).play(1, pawn = 0)
+        assertTrue(Achievement.FULL_RETREAT in stack.earned, "all four at once, from the board as it's first seen")
+    }
+
+    @Test
+    fun `Hungry For 6s is every pawn of player 1's out of the yard before any other player has brought one out`() {
+        assertTrue(Achievement.HUNGRY_FOR_6S in Play(game(listOf(0, 5, 9, Y))).play(6, pawn = 3).earned)
+        assertTrue(Achievement.HUNGRY_FOR_6S in Play(game(listOf(HOME, 5, 9, Y))).play(6, pawn = 3).earned, "one home is out of the yard")
+        assertFalse(Achievement.HUNGRY_FOR_6S in Play(game(listOf(0, 5, Y, Y))).play(6, pawn = 2).earned, "one still in the yard")
+        assertFalse(Achievement.HUNGRY_FOR_6S in Play(game(listOf(0, 5, 9, Y), listOf(20, Y, Y, Y))).play(6, pawn = 3).earned, "Green has one out")
+
+        // Back in the yard, but out before: captured, or caught by a ghost.
+        fun greenBack(change: PlayerState.() -> PlayerState) =
+            game(listOf(0, 5, 9, Y)).let { new -> new.copy(players = new.players.mapIndexed { i, player -> if (i == GREEN) player.change() else player }) }
+        assertFalse(Achievement.HUNGRY_FOR_6S in Play(greenBack { copy(timesCaptured = 1) }).play(6, pawn = 3).earned)
+        assertFalse(Achievement.HUNGRY_FOR_6S in Play(greenBack { copy(timesHaunted = 1) }).play(6, pawn = 3).earned)
     }
 
     @Test
@@ -591,13 +626,14 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `Never Left Home is every pawn still in the yard when another player wins`() {
+    fun `Never Left Home is at least one pawn in the yard when another player wins`() {
         assertTrue(Achievement.NEVER_LEFT_HOME in Play(game(listOf(Y, Y, Y, Y), listOf(HOME, HOME, HOME, HOME - 1), current = GREEN)).play(1, pawn = 3).earned)
-        assertFalse(Achievement.NEVER_LEFT_HOME in Play(game(listOf(Y, Y, Y, 3), listOf(HOME, HOME, HOME, HOME - 1), current = GREEN)).play(1, pawn = 3).earned)
+        assertTrue(Achievement.NEVER_LEFT_HOME in Play(game(listOf(Y, HOME, 10, 3), listOf(HOME, HOME, HOME, HOME - 1), current = GREEN)).play(1, pawn = 3).earned)
+        assertFalse(Achievement.NEVER_LEFT_HOME in Play(game(listOf(0, HOME, 10, 3), listOf(HOME, HOME, HOME, HOME - 1), current = GREEN)).play(1, pawn = 3).earned)
     }
 
     @Test
-    fun `finishing last counts toward Spoon Collector`() {
+    fun `finishing last counts toward Cutlery Collector`() {
         val rules = GameRules(stopAtFirstWinner = true)
         val play = Play(game(listOf(Y, Y, Y, Y), listOf(HOME, HOME, HOME, HOME - 1), listOf(10, Y, Y, Y), listOf(5, Y, Y, Y), current = GREEN, rules = rules)).play(1, pawn = 3)
         assertEquals(1, play.counts[AchievementCounter.LAST_PLACES])
