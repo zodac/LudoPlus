@@ -138,20 +138,17 @@ data class GameState(
 
     /**
      * The absolute track square a pawn of [player] with [progress] can claim, where squares are ([GameRules.claims]): null
-     * off the track, and on a start or star square.
+     * off the track, and on a start square.
      */
     fun claimableSquare(player: Int, progress: Int): Int? {
         if (!rules.claims || progress !in 0..<board.trackSteps) return null
-        return board.trackSquare(players[player].seat, progress).takeUnless(board::isSafe)
+        return board.trackSquare(players[player].seat, progress).takeUnless(board::isStart)
     }
 
-    /** The most squares in a row [player] has claimed, round the whole track, start and star squares passed over. */
+    /** The most squares in a row [player] has claimed: a start square, which can't be, ends a run, the track's numbering starting on one. */
     fun longestRunOf(player: Int): Int {
-        val mine = (0..<board.trackLength).filterNot(board::isSafe).map { claimed[it] == player }
-        if (mine.all { it }) return mine.size
         var run = 0
-        // Twice round, for a run over the end of the numbering.
-        return (mine + mine).maxOf { held -> run = if (held) run + 1 else 0; run }
+        return (0..<board.trackLength).maxOf { square -> run = if (claimed[square] == player) run + 1 else 0; run }
     }
 
     /** How many squares [player] has claimed. */

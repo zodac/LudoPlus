@@ -289,8 +289,8 @@ object SavedGameJson {
         } else {
             emptyMap()
         }
-        require(claimed.isEmpty() || rules.claims && claimed.all { (square, player) -> square in 0..<board.trackLength && !board.isSafe(square) && player in players.indices }) {
-            "A square is claimed off the track, on a safe square, or by nobody"
+        require(claimed.isEmpty() || rules.claims && claimed.all { (square, player) -> square in 0..<board.trackLength && !board.isStart(square) && player in players.indices }) {
+            "A square is claimed off the track, on a start square, or by nobody"
         }
         val ghosts = if (rules.ghosts) obj.array("ghosts").ints() else emptyList()
         require(ghosts.size == (if (rules.ghosts) Ghosts.count(playerCount) else 0) && ghosts.all { it in 0..<board.trackLength }) { "The ghosts aren't on the track" }

@@ -88,7 +88,7 @@ interface TableBackground : TableArt {
 /**
  * Which parts of a board are drawn: whether a start square is in its seat's colour ([starts]) or a plain one, the star
  * squares have their marks ([stars]), and there's a home, with its columns ([homes]). Each of [claims], an absolute track
- * square and its player's colour, is drawn as a home column's square of that colour is.
+ * square and its player's colour, is drawn as a home column's square of that colour is, a star's mark smaller on it.
  */
 data class BoardParts(val starts: Boolean = true, val stars: Boolean = true, val homes: Boolean = true, val claims: Map<Int, Color> = emptyMap())
 

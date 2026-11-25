@@ -912,7 +912,7 @@
     <string name="achievement_paint_the_town_red_title">Paint The Town Red</string>
     <string name="achievement_paint_the_town_red_description">Win a game of `Colour Rush` mode</string>
     <string name="achievement_colour_coordinated_title">Colour Coordinated</string>
-    <string name="achievement_colour_coordinated_description">Hold eight squares in a row in `Colour Rush` mode, not counting start squares and stars</string>
+    <string name="achievement_colour_coordinated_description">Hold eight squares in a row in `Colour Rush` mode</string>
     <string name="achievement_double_or_nothing_title">Double Or Nothing</string>
     <string name="achievement_double_or_nothing_description">Win a game of `Two Dice` mode</string>
     <string name="achievement_two_birds_two_stones_title">Two Birds, Two Stones</string>
@@ -1187,8 +1187,8 @@
     <string name="rules_winning_2">The first player to bring all four pawns home wins, and everyone else plays on for the places.</string>
     <string name="rules_winning_3">With *Stop at first winner* on in Settings, the game ends as soon as one player has every pawn home. Everyone else is placed by how far their pawns have come.</string>
     <!-- The Game Modes pages: a page a mode beyond Classic, titled by its name (mode_*). -->
-    <string name="rules_colour_rush_1">In Colour Rush the first pawn to land on a square of the track claims it, and it takes that player's colour. Claiming a square doesn't make it safe. Start squares and stars can't be claimed.</string>
-    <string name="rules_colour_rush_2">A claimed square only changes hands when another player captures a pawn on it, whoever's pawn that was.</string>
+    <string name="rules_colour_rush_1">In Colour Rush the first pawn to land on a square of the track claims it, and it takes that player's colour. Claiming a square doesn't make it safe. Stars can be claimed too, but start squares can't.</string>
+    <string name="rules_colour_rush_2">A claimed square only changes hands when another player captures a pawn on it, whoever's pawn that was. Pawns on stars can't be captured, so a claimed star never changes hands.</string>
     <string name="rules_colour_rush_3">The game ends when every square that can be claimed is, or when a player (or a team) has every pawn home. The most squares wins. If that's a tie, it goes to whoever's pawns have come furthest.</string>
     <string name="rules_colour_rush_records">The Leaderboard ranks Colour Rush wins by the most squares. Your pawns home and your captures count in Statistics.</string>
     <string name="rules_two_dice_1">Two Dice rolls two dice at once. Move a pawn by each die, one after the other, in either order: the same pawn twice, or two pawns. Tap a die to pick the one your next move uses.</string>

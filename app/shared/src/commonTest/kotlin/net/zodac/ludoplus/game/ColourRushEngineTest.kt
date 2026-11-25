@@ -34,11 +34,11 @@ private fun GameState.play(roll: Int, pawn: Int = 0) = LudoEngine.move(LudoEngin
 class ColourRushEngineTest {
 
     @Test
-    fun `the first pawn to land on a square claims it - but a start or star square - and those passed over not`() {
+    fun `the first pawn to land on a square claims it - star squares too, but not a start - and those passed over not`() {
         assertEquals(mapOf(5 to RED), game(listOf(2, Y, Y, Y)).play(3).claimed)
         assertEquals(emptyMap(), game().play(6).claimed, "its own start, out of the yard")
         assertEquals(emptyMap(), game(listOf(10, Y, Y, Y)).play(3).claimed, "green's start")
-        assertEquals(emptyMap(), game(listOf(2, Y, Y, Y)).play(6).claimed, "a star")
+        assertEquals(mapOf(8 to RED), game(listOf(2, Y, Y, Y)).play(6).claimed, "a star")
         assertEquals(emptyMap(), game(listOf(50, Y, Y, Y)).play(2).claimed, "the home column isn't the track's")
         assertEquals(emptyMap(), GameState.new(GameMode.CLASSIC, 4).let { it.copy(players = it.players.map { side -> side.copy(pawns = listOf(2, Y, Y, Y)) }) }.play(3).claimed)
     }
@@ -55,11 +55,21 @@ class ColourRushEngineTest {
     }
 
     @Test
-    fun `every square can be claimed but each seat's start and star`() {
-        assertEquals(listOf(44, 42, 44, 55, 66, 77, 88), (2..8).map { BoardGeometry.forPlayers(it).claimableSquares })
+    fun `a claimed star stays its first player's - whoever lands there after - as no pawn there can be captured`() {
+        // Green's pawn on the star (47 is square 8), red landing beside it.
+        val shared = game(listOf(2, Y, Y, Y), listOf(47, Y, Y, Y), claimed = mapOf(8 to GREEN)).play(6)
+        assertEquals(emptyList(), (shared.lastEvent as GameEvent.Moved).allCaptures)
+        assertEquals(mapOf(8 to GREEN), shared.claimed)
+        // Unclaimed, it's the next to land's, green's pawn there or not.
+        assertEquals(mapOf(8 to RED), game(listOf(2, Y, Y, Y), listOf(47, Y, Y, Y)).play(6).claimed)
+    }
+
+    @Test
+    fun `every square can be claimed but each seat's start`() {
+        assertEquals(listOf(48, 45, 48, 60, 72, 84, 96), (2..8).map { BoardGeometry.forPlayers(it).claimableSquares })
         for (players in 2..8) {
             val board = BoardGeometry.forPlayers(players)
-            assertEquals((0..<board.trackLength).count { !board.isSafe(it) }, board.claimableSquares)
+            assertEquals((0..<board.trackLength).count { !board.isStart(it) }, board.claimableSquares)
         }
     }
 
@@ -95,11 +105,11 @@ class ColourRushEngineTest {
     @Test
     fun `the last square claimed ends the game`() {
         val board = GameState.new(GameMode.COLOUR_RUSH, 4).board
-        val all = (0..<52).filterNot(board::isSafe).withIndex().associate { (i, square) -> square to if (square == 5 || i % 2 == 0) RED else GREEN }
+        val all = (0..<52).filterNot(board::isStart).withIndex().associate { (i, square) -> square to if (square == 5 || i % 2 == 0) RED else GREEN }
         val over = game(listOf(2, Y, Y, Y), claimed = all - 5).play(3)
         assertTrue(over.isFinished)
         assertEquals(listOf(RED, GREEN), over.finishingOrder.take(2))
-        assertEquals(44, over.claimed.size)
+        assertEquals(48, over.claimed.size)
         assertFalse((over.lastEvent as GameEvent.Moved).finished)
         assertFalse(game(listOf(2, Y, Y, Y), claimed = all - 5 - 6).play(3).isFinished)
     }
@@ -172,7 +182,7 @@ class ColourRushEngineTest {
                     else -> LudoEngine.roll(state, random)
                 }
                 assertTrue(state.claimed.keys.containsAll(before.keys))
-                assertTrue(state.claimed.keys.none(state.board::isSafe))
+                assertTrue(state.claimed.keys.none(state.board::isStart))
             }
             val squares = state.finishingOrder.map(state::squaresOf)
             assertEquals(squares.sortedDescending(), squares)

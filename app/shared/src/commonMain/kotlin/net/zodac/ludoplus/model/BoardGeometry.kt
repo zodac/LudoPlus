@@ -50,10 +50,13 @@ data class BoardGeometry(
     fun progressAt(seat: Int, square: Int): Int? = (square - startSquare(seat)).mod(trackLength).takeIf { it < trackSteps }
 
     /** Whether the absolute track [square] is safe: a start square or a star square. */
-    fun isSafe(square: Int): Boolean = square % seatSpacing == 0 || square % seatSpacing == starOffset
+    fun isSafe(square: Int): Boolean = isStart(square) || square % seatSpacing == starOffset
 
-    /** How many squares can be claimed, where they are ([GameRules.claims]): every one of the track but the safe ones. */
-    val claimableSquares: Int get() = trackLength - SAFE_SQUARES_A_SEAT * seats
+    /** Whether the absolute track [square] is a seat's start square, whether or not anyone sits there. */
+    fun isStart(square: Int): Boolean = square % seatSpacing == 0
+
+    /** How many squares can be claimed, where they are ([GameRules.claims]): every one of the track but the start squares. */
+    val claimableSquares: Int get() = trackLength - seats
 
     /** The seats [players] players sit at, spread as evenly round the board as they go: 2 on 4 seats sit opposite. */
     fun seatsFor(players: Int): List<Int> {
@@ -70,9 +73,6 @@ data class BoardGeometry(
          * as on the classic board (11 on).
          */
         val THREE_SEAT = BoardGeometry(seats = 3, trackLength = 48, seatSpacing = 16, starOffset = 11, homeColumnLength = 5)
-
-        /** A start square and a star square. */
-        private const val SAFE_SQUARES_A_SEAT = 2
 
         /** An endless board's track steps: over any game's, so a pawn there is always on the track. */
         private const val ENDLESS_STEPS = 1_000_000

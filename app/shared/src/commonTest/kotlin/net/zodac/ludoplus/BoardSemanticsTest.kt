@@ -230,21 +230,24 @@ class BoardSemanticsTest : UiTest() {
     @Test
     fun `Colour Rush - a square says whose it is - a move that it claims one - and a card how many`() = uiTest(TestScreen(411, 891)) {
         val new = GameState.new(GameMode.COLOUR_RUSH, 4)
-        val pawns = listOf(listOf(2, 20, 3, Y), listOf(44, Y, Y, Y))
+        val pawns = listOf(listOf(2, 20, 3, 31), listOf(44, Y, Y, Y))
         val state = new.copy(
             players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }) },
-            claimed = mapOf(5 to 1, 23 to 2, 7 to 0, 9 to 0),
+            claimed = mapOf(5 to 1, 23 to 2, 7 to 0, 8 to 3, 9 to 0),
         )
         show(LudoEngine.applyRoll(state, 3))
         listOf(
             "Square 1, Red start, safe, empty",
             "Square 8, Red's square, empty",
+            "Square 9, safe, Blue's square, empty",
             "Square 24, Yellow's square, empty",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
         // A capture takes green's; yellow's, with nobody on it, stays; and nobody's is claimed.
         compose.onNode(onClickLabel("Move Red pawn 1 3 squares, capturing Green pawn 1, claiming the square")).assertExists()
         compose.onNode(onClickLabel("Move Red pawn 2 3 squares")).assertExists()
         compose.onNode(onClickLabel("Move Red pawn 3 3 squares, claiming the square")).assertExists()
+        // A star nobody has (34).
+        compose.onNode(onClickLabel("Move Red pawn 4 3 squares, claiming the square")).assertExists()
         compose.onNode(hasText("Alex") and stateSays("0 pawns home, 2 squares, playing now, currently 1st")).assertExists()
         compose.onNode(hasText("Gambit") and stateSays("0 pawns home, 1 square, currently joint 2nd")).assertExists()
     }

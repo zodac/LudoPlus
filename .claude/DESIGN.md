@@ -108,16 +108,17 @@ screen has a Game Modes group, a page a mode beyond Classic.
 
 **Colour Rush** (`GameRules.claims`, `ColourRushEngineTest`; the maintainer, 2026-11-24, in place of Quick). The first pawn to
 end a move on a square of the track claims it for its player (`GameState.claimed`), and it's no safer for it. It only changes
-hands when another player captures there, whoever's pawn that was. Start and star squares can't be claimed, whoever sits where
-(`GameState.claimableSquare`; the maintainer), nor can squares passed over, home columns, and home: 44 of the classic board's
-52 can (`BoardGeometry.claimableSquares`). The game ends with every one of them claimed, or a player (in teams, a team) with
-every pawn home; everyone is placed at once, by squares (a team's together), a tie by how far their pawns have come, then by
-who plays sooner. Four Medium CPUs claim them all in 96% of games, two in 22%; games are about half of Classic's turns with
-four, and the player who's home wins half of two-player games. A claimed square is drawn as its player's home column is, in
-every style (`BoardParts.claims`, `ClaimedSquareTest`), part of the board's painted image, once the pawn has landed. Cards
-have a count on a square of the player's colour; the Leaderboard ranks the most squares (`GameResult.squares`), then
-captures, with no online board. TalkBack: "Square 24, Yellow's square, empty", "Move Red pawn 1 3 squares, claiming the
-square", "0 pawns home, 2 squares".
+hands when another player captures there, whoever's pawn that was. Star squares can be claimed (the maintainer, 2026-11-25),
+and never change hands, as no pawn there can be captured. Start squares can't be, whoever sits where
+(`GameState.claimableSquare`), nor can squares passed over, home columns, and home: 48 of the classic board's 52 can
+(`BoardGeometry.claimableSquares`). The game ends with every one of them claimed, or a player (in teams, a team) with every
+pawn home; everyone is placed at once, by squares (a team's together), a tie by how far their pawns have come, then by who
+plays sooner. Four Medium CPUs claim them all in 96% of games, two in 23%; games are about half of Classic's turns with four,
+and the player who's home wins over half of two-player games. A claimed square is drawn as its player's home column is, in
+every style (`BoardParts.claims`, `ClaimedSquareTest`), a star's mark smaller on it (`drawClaimedMark`), part of the board's
+painted image, once the pawn has landed. Cards have a count on a square of the player's colour; the Leaderboard ranks the most
+squares (`GameResult.squares`), then captures, with no online board. TalkBack: "Square 24, Yellow's square, empty", "Move Red
+pawn 1 3 squares, claiming the square", "0 pawns home, 2 squares".
 
 **Two Dice** (`GameRules.dice`, `rollAgainOnDoubles`). A roll is both dice (`LudoEngine.applyDice`); the move phase
 holds the dice still to move, the whole roll, and whether it has earned another roll (`TurnPhase.AwaitingMove.dice`,

@@ -7,11 +7,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
@@ -54,6 +56,9 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
 
     /** A safe square's mark, on the square centred on [centre]. */
     protected abstract fun DrawScope.drawSafeMark(centre: Offset, unit: Float)
+
+    /** [drawSafeMark] on a square claimed: smaller, so its player's colour shows round it. */
+    protected open fun DrawScope.drawClaimedMark(centre: Offset, unit: Float) = scale(CLAIMED_MARK_SCALE, centre) { drawSafeMark(centre, unit) }
 
     /**
      * A seat's yard on the classic board in [colour], [unit] a square from [topLeft], round a court with a spot at each of
@@ -119,7 +124,9 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
             if (parts.homes) drawHomeTriangle(layout.homeArea(s).map { it * unit }, unit, seat(s))
         }
         for (square in 0..<board.trackLength) {
-            if (parts.stars && square % board.seatSpacing == board.starOffset) drawSafeMark(layout.trackSquare(square).centre * unit, unit)
+            if (!parts.stars || square % board.seatSpacing != board.starOffset) continue
+            val centre = layout.trackSquare(square).centre * unit
+            if (square in parts.claims) drawClaimedMark(centre, unit) else drawSafeMark(centre, unit)
         }
         if (disc != null) {
             clipPath(disc) { drawFinish(extent, unit) }
@@ -135,6 +142,9 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
         drawCircle(line, radius * 1.12f, spot, style = Stroke(maxOf(0.75.dp.toPx(), radius * 0.07f)))
     }
 }
+
+/** How big a claimed star square's mark is, against one nobody has claimed. */
+internal const val CLAIMED_MARK_SCALE = 0.7f
 
 /** How light a board's plain squares are, at least, for its star squares to be darker than them rather than lighter. */
 private const val SAFE_FILL_LIGHT = 0.5f
@@ -561,6 +571,13 @@ class StarryBoardStyle(
         drawPath(starPath(centre, unit * 0.36f), gold)
     }
 
+    /** Edged in night, so that gold shows on yellow. */
+    override fun DrawScope.drawClaimedMark(centre: Offset, unit: Float) {
+        val star = starPath(centre, unit * 0.36f * CLAIMED_MARK_SCALE)
+        drawPath(star, gold)
+        drawPath(star, night, style = Stroke(maxOf(1.dp.toPx(), unit * 0.05f), join = StrokeJoin.Round))
+    }
+
     override fun DrawScope.drawYard(topLeft: Offset, unit: Float, colour: Color, spots: List<Offset>) {
         drawRect(colour, topLeft, Size(ClassicBoardLayout.YARD_SIZE * unit, ClassicBoardLayout.YARD_SIZE * unit))
         drawRoundRectCourt(topLeft, unit)
@@ -781,6 +798,19 @@ class RetroBoardStyle(id: String, private val block: Color, private val screen: 
                 if (pixel == '#') drawRect(screen, origin + Offset(column * p, row * p), Size(p, p))
             }
         }
+    }
+
+    /** One shape, so no seams show between its pixels off the pixel grid. */
+    override fun DrawScope.drawClaimedMark(centre: Offset, unit: Float) {
+        val p = unit * CLAIMED_MARK_SCALE / RETRO_PIXELS
+        val origin = centre - Offset(p * PixelStar.size / 2f, p * PixelStar.size / 2f)
+        val star = Path()
+        PixelStar.forEachIndexed { row, pixels ->
+            pixels.forEachIndexed { column, pixel ->
+                if (pixel == '#') star.addRect(Rect(origin + Offset(column * p, row * p), Size(p, p)))
+            }
+        }
+        drawPath(star, screen)
     }
 
     /** A disc [radius] pixels across at [centre], snapped to the pixel grid. */

@@ -436,7 +436,7 @@ object LudoEngine {
 
     /**
      * [state] with the square [owner]'s pawn [pawn] has come to rest on claimed for [owner], where squares are: if it's
-     * nobody's, or the move [captured] there. As it is off the track, and on a start or star square.
+     * nobody's, or the move [captured] there. As it is off the track, and on a start square.
      */
     private fun claim(state: GameState, owner: Int, pawn: Int, captured: Boolean): GameState {
         val square = state.claimableSquare(owner, state.players[owner].pawns[pawn]) ?: return state

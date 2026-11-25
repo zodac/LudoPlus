@@ -88,18 +88,21 @@ class ModeAchievementsTest {
     }
 
     @Test
-    fun `Colour Coordinated holds eight squares in a row - start and star squares passed over - as the game goes on`() {
+    fun `Colour Coordinated holds eight squares in a row - stars counted, and not over a start - as the game goes on`() {
         // Red lands on 5, or wherever its roll from 2 takes it.
         fun landing(claimed: Set<Int>, roll: Int = 3, from: Int = 2): Set<Achievement> =
             Steps(game(GameMode.COLOUR_RUSH, listOf(from, Y, Y, Y)).copy(claimed = claimed.associateWith { RED })).play(roll).earned
-        assertTrue(COLOUR_COORDINATED in landing(setOf(1, 2, 3, 4, 6, 7, 9)), "over the star on 8")
-        assertFalse(COLOUR_COORDINATED in landing(setOf(1, 2, 3, 4, 6, 7, 10)), "9 is nobody's")
+        assertTrue(COLOUR_COORDINATED in landing(setOf(1, 2, 3, 4, 6, 7, 8)), "the star on 8")
+        assertTrue(COLOUR_COORDINATED in landing(setOf(1, 2, 3, 4, 5, 6, 7), roll = 6), "landing on the star")
+        assertTrue(COLOUR_COORDINATED in landing(setOf(5, 6, 7, 9, 10, 11, 12), roll = 6), "up to green's start")
+        assertFalse(COLOUR_COORDINATED in landing(setOf(1, 2, 3, 4, 6, 7, 9)), "the star on 8 is nobody's")
         assertFalse(COLOUR_COORDINATED in landing(setOf(1, 2, 3, 4, 6, 7)))
-        assertTrue(COLOUR_COORDINATED in landing(setOf(48, 49, 50, 51, 1, 2, 3), roll = 2), "over red's start, at the end of the numbering")
+        assertFalse(COLOUR_COORDINATED in landing(setOf(48, 49, 50, 51, 1, 2, 3), roll = 2), "over red's start, at the end of the numbering")
+        assertFalse(COLOUR_COORDINATED in landing(setOf(8, 9, 10, 11, 12, 14, 15, 16), roll = 5), "over green's start")
         // Nobody else's run is player 1's, nor one with another's square in it.
-        val green = game(GameMode.COLOUR_RUSH, listOf(2, Y, Y, Y)).copy(claimed = setOf(1, 2, 3, 4, 6, 7, 9, 10).associateWith { GREEN })
+        val green = game(GameMode.COLOUR_RUSH, listOf(2, Y, Y, Y)).copy(claimed = setOf(1, 2, 3, 4, 6, 7, 8, 9).associateWith { GREEN })
         assertFalse(COLOUR_COORDINATED in Steps(green).play(3).earned)
-        assertFalse(COLOUR_COORDINATED in Steps(green.copy(claimed = setOf(1, 2, 3, 4, 7, 9, 10).associateWith { RED } + (6 to GREEN))).play(3).earned)
+        assertFalse(COLOUR_COORDINATED in Steps(green.copy(claimed = setOf(1, 2, 3, 4, 7, 8, 9).associateWith { RED } + (6 to GREEN))).play(3).earned)
     }
 
     @Test

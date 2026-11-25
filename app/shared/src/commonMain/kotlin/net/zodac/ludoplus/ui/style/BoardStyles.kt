@@ -41,7 +41,7 @@ object ClassicBoardStyle : BoardStyle, Swatched {
             val startOf = if (parts.starts && square % board.seatSpacing == 0) square / board.seatSpacing else null
             val star = parts.stars && square % board.seatSpacing == board.starOffset
             shape(cell.corners, startOf?.let { seatColours.colourOf(it) } ?: parts.claims[square] ?: if (star) SafeShade else BoardIvory)
-            if (star) drawStar(cell.centre * unit, unit * 0.36f, BoardInk.copy(alpha = 0.8f))
+            if (star) drawStar(cell.centre * unit, unit * 0.36f * (if (square in parts.claims) CLAIMED_MARK_SCALE else 1f), BoardInk.copy(alpha = 0.8f))
         }
         for (seat in 0..<board.seats) {
             val colour = seatColours.colourOf(seat)

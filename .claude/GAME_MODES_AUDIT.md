@@ -79,7 +79,7 @@ and reported to the maintainer. Counters (games, wins, streaks, captures, rolls)
 
 | Mode | Own, and how often (a game) |
 | --- | --- |
-| Colour Rush | Paint The Town Red (the win), Colour Coordinated 9% with four (35% with two, 13% with three, 10% with six or eight) |
+| Colour Rush | Paint The Town Red (the win), Colour Coordinated 8% with four (26% with two, 12% with three, 8% with six, 7% with eight; measured again 2026-11-25 over 1,000 games, with stars claimed and counted, and a start square ending a run) |
 | Two Dice | Double Or Nothing, Two Birds, Two Stones 12% |
 | Portals | Through The Looking Glass, There And Back Again 45% |
 | Survival | Last Pawn Standing, Barely A Scratch 3.3% (a sixth of wins) |

@@ -58,5 +58,36 @@ class ClaimedSquareTest : UiTest() {
         }
     }
 
+    @Test
+    fun `on every board a claimed star square shows its player's colour and its mark - whatever the colour`() = uiTest {
+        var style by mutableStateOf<BoardStyle>(ClassicBoardStyle)
+        var stars by mutableStateOf(true)
+        var claimedBy by mutableStateOf(PlayerColour.RED)
+        val seats = List(4) { PlayerColour.defaultFor(it).color }
+        val star = ClassicBoardLayout.geometry.starOffset
+        compose.setContent {
+            Canvas(Modifier.size(600.dp).testTag(BOARD)) {
+                with(style) { drawBoard(ClassicBoardLayout, size.width / ClassicBoardLayout.size, seats, parts = BoardParts(stars = stars, claims = mapOf(star to claimedBy.color))) }
+            }
+        }
+        val grid = (-15..15).flatMap { x -> (-15..15).map { y -> Offset(x * 0.03f, y * 0.03f) } }
+        fun square(): List<Color> {
+            compose.waitForIdle()
+            val pixels = compose.onNodeWithTag(BOARD).captureToImage().toPixelMap()
+            val unit = pixels.width / ClassicBoardLayout.size
+            return grid.map { (ClassicBoardLayout.trackSquare(star).centre + it) * unit }.map { pixels[it.x.toInt(), it.y.toInt()] }
+        }
+        for (board in BoardStyles.all) for (colour in PlayerColour.entries) {
+            style = board
+            claimedBy = colour
+            stars = true
+            val marked = square()
+            stars = false
+            val share = marked.zip(square()).count { (a, b) -> difference(a, b) > 0.2f }.toFloat() / grid.size
+            assertTrue(share > 0.04f, "${board.id}, $colour: the star's mark doesn't show ($share)")
+            assertTrue(share < 0.5f, "${board.id}, $colour: the star's mark covers its player's colour ($share)")
+        }
+    }
+
     private fun difference(a: Color, b: Color): Float = abs(a.red - b.red) + abs(a.green - b.green) + abs(a.blue - b.blue)
 }

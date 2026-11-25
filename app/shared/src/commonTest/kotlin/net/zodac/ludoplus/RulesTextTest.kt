@@ -139,8 +139,8 @@ class RulesTextTest : UiTest() {
             "Colour Rush",
             "Colour Rush",
             listOf(
-                "In Colour Rush the first pawn to land on a square of the track claims it, and it takes that player's colour. Claiming a square doesn't make it safe. Start squares and stars can't be claimed.",
-                "A claimed square only changes hands when another player captures a pawn on it, whoever's pawn that was.",
+                "In Colour Rush the first pawn to land on a square of the track claims it, and it takes that player's colour. Claiming a square doesn't make it safe. Stars can be claimed too, but start squares can't.",
+                "A claimed square only changes hands when another player captures a pawn on it, whoever's pawn that was. Pawns on stars can't be captured, so a claimed star never changes hands.",
                 "The game ends when every square that can be claimed is, or when a player (or a team) has every pawn home. The most squares wins. If that's a tie, it goes to whoever's pawns have come furthest.",
                 "The Leaderboard ranks Colour Rush wins by the most squares. Your pawns home and your captures count in Statistics.",
             ),

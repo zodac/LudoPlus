@@ -206,7 +206,7 @@ data class GameRules(
     /** Whether sudden death comes, round by round, making the start squares unsafe, then the stars, and then taking squares from the track ([suddenDeathRound]). */
     val suddenDeath: Boolean = false,
     /**
-     * Whether the track's squares are claimed, all but the start and star squares: each is the first player's whose pawn
+     * Whether the track's squares are claimed, all but the start squares: each is the first player's whose pawn
      * lands on it, and another's only by a capture there. The game ends once every one is claimed, or a player (or team) has every pawn home, and the players
      * (or teams) are placed by how many they have.
      */
