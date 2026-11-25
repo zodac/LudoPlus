@@ -122,6 +122,18 @@ class StyleCategoryPageTest : UiTest() {
         assertEquals(0f, scrollAndFirstLine().first, "backgrounds at 130%")
     }
 
+    @Test
+    fun `boards and pawns all fit a 374 x 827dp phone at full size without scrolling - their lines closed up a little`() = uiTest(TestScreen(374, 795)) {
+        // 827dp less the phone's 32dp status bar, which isn't drawn here. With some styles locked, as with none.
+        for (achievements in listOf(AchievementsState(), everything)) {
+            for (category in listOf(StyleCategory.BOARD, StyleCategory.PAWNS)) {
+                open(category, stylesViewModel(picks(achievements)))
+                assertEquals(0f, scrollAndFirstLine().first, "$category")
+                assertTrue(compose.onAllNodes(tiles).fetchSemanticsNodes().all { it.size.width == 97 && it.size.height == 76 }, "$category")
+            }
+        }
+    }
+
     /** How far down the page is scrolled, in px. */
     private fun scrolled(): Float = compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange)).fetchSemanticsNodes()
         .single().config[SemanticsProperties.VerticalScrollAxisRange].value()

@@ -673,7 +673,8 @@ internal fun StyleCategoryScaffold(
         }
         CompositionLocalProvider(LocalTileLabelMeasurer provides labelMeasurer, LocalStyleTileJump provides jump) {
             BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f).onGloballyPositioned { viewport[0] = it }) {
-                // At a larger font or display size, smaller tiles where that fits them all on the page (fittedTileScale):
+                // The tiles' lines closed up a little where that's all it takes to fit them on the page (fittedLineSpacing).
+                // Otherwise, at a larger font or display size, smaller tiles where that fits them all on the page (fittedTileScale):
                 // smaller dp, the same sp, so the names keep their size. Never at the device's own sizes, where a long
                 // category scrolls at full size. Worked out for every tile, shown or not, so the Unlocked switch never
                 // resizes them.
@@ -683,8 +684,11 @@ internal fun StyleCategoryScaffold(
                 val labelStyle = MaterialTheme.typography.labelSmall
                 val labelHeight = remember(labelMeasurer, labelStyle) { labelMeasurer.measure(LABEL_SAMPLE, labelStyle).size.height.toFloat() }
                 val tileCount = remember(loaded.access) { category.tileCount(loaded.access) }
-                val scale = remember(fits, category, tileCount, constraints.maxWidth, constraints.maxHeight, density, labelHeight) {
-                    if (fits) fittedTileScale(category, tileCount, constraints.maxWidth, constraints.maxHeight, density.density, labelHeight) else 1f
+                val lineSpacing = remember(category, tileCount, constraints.maxWidth, constraints.maxHeight, density, labelHeight) {
+                    fittedLineSpacing(category, tileCount, constraints.maxWidth, constraints.maxHeight, density.density, labelHeight)
+                }
+                val scale = remember(fits, category, tileCount, constraints.maxWidth, constraints.maxHeight, density, labelHeight, lineSpacing) {
+                    if (fits && lineSpacing == TILE_LINE_SPACING) fittedTileScale(category, tileCount, constraints.maxWidth, constraints.maxHeight, density.density, labelHeight) else 1f
                 }
                 val tilesDensity = remember(density, scale) {
                     if (scale == 1f) density else Density(density.density * scale, density.textScale / scale)
@@ -692,7 +696,7 @@ internal fun StyleCategoryScaffold(
                 Column(modifier = Modifier.verticalScroll(pageScroll)) {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         CompositionLocalProvider(LocalDensity provides tilesDensity) {
-                            StyleCategoryTiles(category = category, picks = loaded, onSelect = onSelect, focus = focus, unlockedOnly = unlockedOnly)
+                            StyleCategoryTiles(category = category, picks = loaded, onSelect = onSelect, focus = focus, unlockedOnly = unlockedOnly, lineSpacing = lineSpacing)
                         }
                     }
                 }

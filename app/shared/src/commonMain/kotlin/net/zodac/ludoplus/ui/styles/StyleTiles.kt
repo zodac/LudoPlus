@@ -102,6 +102,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.math.PI
 import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlinx.coroutines.CoroutineScope
@@ -195,9 +196,14 @@ private const val FLASH_OVER_ART_ALPHA = 0.55f
 // ScreenScaffold's side margin, which the page's scrollbar sits in.
 internal val PAGE_MARGIN = 20.dp
 
-/** The Styles screen's categories, in its order. */
 // The gap between tiles side by side, and between lines of them.
 private val TILE_SPACING = 12.dp
+
+/** The room between a gallery's lines, and above its first and below its last, where the page has the height for it ([fittedLineSpacing]). */
+internal val TILE_LINE_SPACING = 12.dp
+
+/** The least [fittedLineSpacing] closes a gallery's lines up to. */
+internal val MIN_TILE_LINE_SPACING = 8.dp
 
 /**
  * The families a category's page shows, in its order: every unlocked one, then the locked ones - less any
@@ -300,7 +306,8 @@ internal fun StyleCategory.tileCount(access: StyleAccess): Int {
 
 /**
  * Every tile of one category, as its page shows them ([StyleCategoryScreen]) and [StylesWarmUp] draws them: a grid of
- * the category's styles, the pick outlined in gold. With [warmUp], just those tiles - see [StylesWarmUp].
+ * the category's styles, the pick outlined in gold, its lines [lineSpacing] apart. With [warmUp], just those tiles - see
+ * [StylesWarmUp].
  */
 @Composable
 internal fun StyleCategoryTiles(
@@ -310,6 +317,7 @@ internal fun StyleCategoryTiles(
     warmUp: IntRange? = null,
     focus: StyleScrollRequest? = null,
     unlockedOnly: Boolean = false,
+    lineSpacing: Dp = TILE_LINE_SPACING,
 ) {
     val access = picks.access
     when (category) {
@@ -328,6 +336,7 @@ internal fun StyleCategoryTiles(
                 warmUp = warmUp,
                 focus = focus,
                 unlockedOnly = unlockedOnly,
+                lineSpacing = lineSpacing,
             ) { style ->
                 DicePreview(style, roll = roll.takeIf { it.dieId == style.id })
             }
@@ -344,6 +353,7 @@ internal fun StyleCategoryTiles(
                 warmUp = warmUp,
                 focus = focus,
                 unlockedOnly = unlockedOnly,
+                lineSpacing = lineSpacing,
                 flashOverArt = true,
             ) { board ->
                 BoardCornerPreview(board, modifier = Modifier.matchParentSize())
@@ -361,6 +371,7 @@ internal fun StyleCategoryTiles(
                 warmUp = warmUp,
                 focus = focus,
                 unlockedOnly = unlockedOnly,
+                lineSpacing = lineSpacing,
                 flashOverArt = true,
             ) { pawns ->
                 PawnPreview(pawns, modifier = Modifier.matchParentSize())
@@ -378,6 +389,7 @@ internal fun StyleCategoryTiles(
                 warmUp = warmUp,
                 focus = focus,
                 unlockedOnly = unlockedOnly,
+                lineSpacing = lineSpacing,
                 flashOverArt = true,
             ) { background ->
                 background.Animate()
@@ -522,6 +534,7 @@ private fun <T : TableArt> StyleFamilyTiles(
     focus: StyleScrollRequest? = null,
     flashOverArt: Boolean = false,
     unlockedOnly: Boolean = false,
+    lineSpacing: Dp = TILE_LINE_SPACING,
     preview: @Composable BoxScope.(T) -> Unit,
 ) {
     // The styles of this category a banner asked to be shown: brought into view, and flashed for a moment.
@@ -596,10 +609,11 @@ private fun <T : TableArt> StyleFamilyTiles(
             GalleryGrid(
                 slotWidth = previewSize.width,
                 spacing = spacing,
+                lineSpacing = lineSpacing,
                 modifier = Modifier
                     .fillMaxWidth()
                     .semantics { collectionInfo = CollectionInfo(rowCount = 1, columnCount = shownCount) }
-                    .padding(start = TILES_SIDE_PADDING, top = TILES_END_PADDING, end = TILES_SIDE_PADDING, bottom = TILES_END_PADDING),
+                    .padding(horizontal = TILES_SIDE_PADDING, vertical = lineSpacing),
             ) {
                 for (index in 0 until shownCount) {
                     slots[index] { Tile(index) }
@@ -672,17 +686,17 @@ private fun HiddenTiles(tileWidth: Dp, modifier: Modifier = Modifier, content: @
  * A category's tiles in a gallery, every one laid out at once, left-aligned and spaced by [spacing]: [TileSpacing.columns]
  * to a line, each in its preview's [slotWidth] with [TileSpacing.gap] between. A name wider than its preview (at a large font, say) centres under it and
  * spills a little into the gaps, rather than pushing the line's last tile onto the next. Lines are as
- * tall as their tallest tile, [TILE_SPACING] apart.
+ * tall as their tallest tile, [lineSpacing] apart.
  */
 @Composable
-private fun GalleryGrid(slotWidth: Dp, spacing: TileSpacing, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun GalleryGrid(slotWidth: Dp, spacing: TileSpacing, lineSpacing: Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(content = content, modifier = modifier) { measurables, constraints ->
         val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0)) }
         val width = constraints.maxWidth
         if (placeables.isEmpty()) return@Layout layout(width, 0) {}
         val slot = slotWidth.toPx()
         val step = slot + spacing.gap.toPx()
-        val lineGap = TILE_SPACING.roundToPx()
+        val lineGap = lineSpacing.roundToPx()
         val lines = placeables.chunked(spacing.columns)
         val lineHeights = lines.map { line -> line.maxOf { it.height } }
         layout(width, lineHeights.sum() + lineGap * (lines.size - 1)) {
@@ -702,9 +716,6 @@ private val GALLERY_MIN_TILE_SPACING = 4.dp
 // The room either side of a card's tiles: what lets four dice fit across a 360dp phone's gallery (20dp page padding
 // each side), and still wide enough for the longest name to spill into.
 private val TILES_SIDE_PADDING = 8.dp
-
-// The room above a category's first line of tiles and below its last.
-private val TILES_END_PADDING = 12.dp
 
 // Between a tile's preview and its name (StyleFamilyTile's column).
 private val TILE_LABEL_GAP = 4.dp
@@ -728,15 +739,10 @@ internal fun StyleCategory.minTileFitScale(): Float =
  */
 internal fun fittedTileScale(category: StyleCategory, count: Int, width: Int, height: Int, density: Float, labelHeight: Float): Float {
     if (count == 0 || height <= 0) return 1f
-    val preview = category.previewSize
     fun contentHeight(scale: Float): Float {
         val dp = density * scale
-        val columns = ((width - TILES_SIDE_PADDING.value * dp * 2 + GALLERY_MIN_TILE_SPACING.value * dp) /
-            ((preview.width.value + GALLERY_MIN_TILE_SPACING.value) * dp)).toInt().coerceIn(1, count)
-        val lines = (count + columns - 1) / columns
-        // Each part rounded up to whole pixels, as the layout places them, so their rounding can't add up past the room.
-        val line = ceil(preview.height.value * dp) + ceil(TILE_LABEL_GAP.value * dp) + ceil(labelHeight)
-        return ceil(TILES_END_PADDING.value * dp) * 2 + lines * line + (lines - 1) * ceil(TILE_SPACING.value * dp)
+        val lines = galleryLines(category, count, width, dp)
+        return lines * galleryLineHeight(category, dp, labelHeight) + (lines + 1) * ceil(TILE_LINE_SPACING.value * dp)
     }
     if (contentHeight(1f) <= height) return 1f
     val floor = category.minTileFitScale()
@@ -747,6 +753,34 @@ internal fun fittedTileScale(category: StyleCategory, count: Int, width: Int, he
     }
     return 1f
 }
+
+/**
+ * The room between a category page's lines of tiles, and above the first and below the last: [TILE_LINE_SPACING], or less
+ * - down to [MIN_TILE_LINE_SPACING] - where closing up by just that much fits all [count] full-size tiles of [category] on
+ * [height] px of page, [width] px wide, without scrolling. [TILE_LINE_SPACING] again where even that doesn't. Names are
+ * [labelHeight] px a line.
+ */
+internal fun fittedLineSpacing(category: StyleCategory, count: Int, width: Int, height: Int, density: Float, labelHeight: Float): Dp {
+    if (count == 0 || height <= 0) return TILE_LINE_SPACING
+    val lines = galleryLines(category, count, width, density)
+    // In whole pixels, as the layout places it, so a fit is a fit to the pixel.
+    val spacing = (floor((height - lines * galleryLineHeight(category, density, labelHeight)) / (lines + 1)) / density).dp
+    return if (spacing < MIN_TILE_LINE_SPACING) TILE_LINE_SPACING else minOf(spacing, TILE_LINE_SPACING)
+}
+
+/** How many lines [count] tiles of [category] take across [width] px of card at [dp] px to a dp, as [TileSpacing] lays them out. */
+private fun galleryLines(category: StyleCategory, count: Int, width: Int, dp: Float): Int {
+    val columns = ((width - TILES_SIDE_PADDING.value * dp * 2 + GALLERY_MIN_TILE_SPACING.value * dp) /
+        ((category.previewSize.width.value + GALLERY_MIN_TILE_SPACING.value) * dp)).toInt().coerceIn(1, count)
+    return (count + columns - 1) / columns
+}
+
+/**
+ * How tall a line of [category]'s tiles is in px, at [dp] px to a dp, with names [labelHeight] px: each part rounded up to
+ * whole pixels, as the layout places them, so their rounding can't add up past the room.
+ */
+private fun galleryLineHeight(category: StyleCategory, dp: Float, labelHeight: Float): Float =
+    ceil(category.previewSize.height.value * dp) + ceil(TILE_LABEL_GAP.value * dp) + ceil(labelHeight)
 
 // How finely fittedTileScale steps down: a pixel or so of a tile at a time.
 private const val TILE_FIT_STEP = 0.005f

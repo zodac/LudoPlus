@@ -252,7 +252,12 @@ Styles page, those fields flashed; opening one hands the request on (`CategoryFo
     (`StyleCategoryPageTest`), and three boards or pawns.
 - **Tile sizes.** Dice are 72x72dp. Backgrounds are 72x80dp (a phone's game screen, a little taller than wide). Boards
     and pawns are 97x76dp, so three fit across: a board's corner, `CORNER_VIEW_WIDTH` (9) squares across, or one pawn.
-- **Fitting the screen** (decided 2026-11-10): only at a larger font or display size (`isDisplayZoomed`: the screen's
+- **Closing up to fit** (the maintainer, 2026-11-26): a category page that only just scrolls closes up the room between
+    its lines of tiles, and above the first and below the last, from 12dp to as little as 8dp
+    (`MIN_TILE_LINE_SPACING`), just far enough to fit (`fittedLineSpacing`). The tiles stay full size. On the
+    maintainer's 374x827dp phone (no ad) the six lines of boards and of pawns fit this way (`StyleCategoryPageTest`);
+    the dice are far too many, so they scroll at the full 12dp.
+- **Fitting the screen** (decided 2026-11-10): where closing up isn't enough, and only at a larger font or display size (`isDisplayZoomed`: the screen's
     density above `PlatformServices.defaultDensity`), a category page that would scroll draws its tiles smaller to fit
     (`fittedTileScale`): smaller dp, the same sp, so the names keep their size, and a smaller tile can gain a column.
     No smaller than 64/88 of its size (`MIN_TILE_FIT_SCALE`), nor any tile under the 48dp touch target; where even that

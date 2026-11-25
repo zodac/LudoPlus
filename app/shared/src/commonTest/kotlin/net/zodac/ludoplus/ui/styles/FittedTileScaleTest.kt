@@ -1,5 +1,6 @@
 package net.zodac.ludoplus.ui.styles
 
+import androidx.compose.ui.unit.Dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -8,7 +9,7 @@ import net.zodac.ludoplus.game.style.StyleCategory
 /**
  * How a category page's tiles are sized to its screen at a larger font or display size: full size where they fit,
  * smaller where that fits them (down to [MIN_TILE_FIT_SCALE], and never a tile under 48dp), and full size again,
- * scrolling, where even that doesn't.
+ * scrolling, where even that doesn't. And how far its lines close up to fit full-size tiles, at any size.
  */
 class FittedTileScaleTest {
 
@@ -54,5 +55,34 @@ class FittedTileScaleTest {
     fun `no tiles, or no room measured yet, are full size`() {
         assertEquals(1f, fittedTileScale(StyleCategory.BACKGROUND, 0, width, 1000, density, label))
         assertEquals(1f, fittedTileScale(StyleCategory.BACKGROUND, 20, width, 0, density, label))
+    }
+
+    private fun lineSpacing(heightDp: Int, count: Int = 20): Dp =
+        fittedLineSpacing(StyleCategory.BACKGROUND, count, width, (heightDp * density).toInt(), density, label)
+
+    // Five lines have six gaps, counting above the first and below the last: 5 x 100 + 6 x 12 = 572dp, or 6 x 8 = 548dp.
+    @Test
+    fun `lines of tiles that fit keep their spacing`() {
+        assertEquals(TILE_LINE_SPACING, lineSpacing(572))
+        assertEquals(TILE_LINE_SPACING, lineSpacing(700))
+    }
+
+    @Test
+    fun `lines a little too tall close up just enough to fit - no closer than the least`() {
+        for (height in 548 until 572) {
+            val spacing = lineSpacing(height)
+            assertTrue(spacing >= MIN_TILE_LINE_SPACING && spacing < TILE_LINE_SPACING, "$height: $spacing")
+            // Fits, with less than a pixel left over for each gap.
+            val spare = height - 500f - spacing.value * 6
+            assertTrue(spare > -0.01f && spare < 6 / density, "$height: $spacing leaves $spare")
+        }
+        assertEquals(MIN_TILE_LINE_SPACING, lineSpacing(548))
+    }
+
+    @Test
+    fun `lines that wouldn't fit even closed up keep their spacing - and so do none`() {
+        assertEquals(TILE_LINE_SPACING, lineSpacing(547))
+        assertEquals(TILE_LINE_SPACING, lineSpacing(700, count = 0))
+        assertEquals(TILE_LINE_SPACING, lineSpacing(0))
     }
 }
