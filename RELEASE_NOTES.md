@@ -1,4 +1,0 @@
-- Tap a player's card to see their in-game stats (captures and rolls)
-- Hold a yard to see its pawns' numbers, as used in the move log
-- The time played for the current game is now shown
-- Pawns now better fit into the available space (yard, home, tiles)
