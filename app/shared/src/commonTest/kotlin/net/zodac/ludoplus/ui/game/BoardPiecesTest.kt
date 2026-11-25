@@ -31,9 +31,9 @@ class BoardPiecesTest {
         assertEquals(listOf(listOf(0), listOf(1, 2), listOf(3)), red.map { it.pawns }.sortedBy { it.first() })
         assertEquals(ClassicBoardLayout.yardSpot(0, 0), red.single { it.pawns == listOf(0) }.centre)
         assertEquals(ClassicBoardLayout.trackCell(10).centre, red.single { it.pawns == listOf(1, 2) }.centre)
-        assertEquals(ClassicBoardLayout.homeSpot(0, 3), red.single { it.pawns == listOf(3) }.centre)
-        // Every pawn home is seen, each on its own spot: never one pawn with a count.
-        assertEquals(listOf(ClassicBoardLayout.homeSpot(1, 0), ClassicBoardLayout.homeSpot(1, 1)), marks.filter { it.player == 1 && it.pawns.single() <= 1 }.map { it.centre })
+        assertEquals(ClassicBoardLayout.homeStand(0, 0, 1), red.single { it.pawns == listOf(3) }.centre)
+        // Every pawn home is seen, each on its own spot, of as many as are home: never one pawn with a count.
+        assertEquals(listOf(ClassicBoardLayout.homeStand(1, 0, 2), ClassicBoardLayout.homeStand(1, 1, 2)), marks.filter { it.player == 1 && it.pawns.single() <= 1 }.map { it.centre })
         // Red's three marks, green's two home and two yard pawns, and yellow's and blue's four yard pawns each.
         assertEquals(3 + 4 + 4 + 4, marks.size)
     }
@@ -187,6 +187,44 @@ class BoardPiecesTest {
         assertEquals(ClassicBoardLayout.trackSquare(13).centre, marks.after(green).square)
         val shift = marks.shifts { it == green || it == PawnRef(0, 0) }.single()
         assertEquals(3 to green, shift.to.player to shift.arriving)
+    }
+
+    @Test
+    fun `a pawn coming home has its share of the room - those home before it making room - on every board`() {
+        for (players in listOf(2, 3, 5, 6, 7, 8)) for (there in 1..5) {
+            val rules = GameMode.CLASSIC.rules.forPlayers(players).withPawns(6)
+            val new = GameState.new(GameMode.CLASSIC, players, rules = rules)
+            val layout = BoardLayout.of(rules.board)
+            val home = rules.board.homeProgress
+            val from = home - 2
+            // Player 0's last pawn comes home to those there; player 1 has pawns home too.
+            val pawns = List(6) { if (it < there || it == 5) home else Y }
+            val move = Move(5, from, home)
+            val after = new.copy(
+                players = new.players.mapIndexed { i, p -> p.copy(pawns = if (i == 0) pawns else List(6) { if (it < 2) home else Y }) },
+                lastEvent = GameEvent.Moved(0, 2, move, finished = there == 5),
+            )
+            val marks = moveMarks(after, after.lastEvent as GameEvent.Moved)
+            val mover = PawnRef(0, 5)
+            val seat = after.players[0].seat
+            assertEquals(layout.homeStand(seat, there, there + 1), marks.after(mover).centre)
+            assertEquals(layout.homePawnRadiusOf(there + 1), marks.after(mover).radius)
+            val shifts = marks.shifts { it == mover }
+            // Only those that stand elsewhere, or at another size: none of player 1's.
+            assertTrue(shifts.all { it.to.player == 0 && it.arriving == mover }, "$players players, $there home")
+            val about = "$players players, $there home"
+            for (pawn in 0..<there) {
+                val (was, now) = layout.homeStand(seat, pawn, there) to layout.homeStand(seat, pawn, there + 1)
+                val sizes = layout.homePawnRadiusOf(there) to layout.homePawnRadiusOf(there + 1)
+                val shift = shifts.singleOrNull { it.to.pawns == listOf(pawn) }
+                if (was == now && sizes.first == sizes.second) {
+                    assertEquals(null, shift, about)
+                } else {
+                    assertEquals(was to now, shift?.from?.centre to shift?.to?.centre, about)
+                    assertEquals(sizes, shift?.from?.radius to shift?.to?.radius, about)
+                }
+            }
+        }
     }
 
     @Test

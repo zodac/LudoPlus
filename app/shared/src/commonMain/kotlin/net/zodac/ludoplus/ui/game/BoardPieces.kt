@@ -15,16 +15,14 @@ import net.zodac.ludoplus.model.PawnPosition
 /**
  * One mark drawn on the board: [pawns] (indices) of [player], standing together at [centre] with [radius], both in
  * board units ([BoardLayout]). More than one pawn draws as one with a count. [square] is the centre of the square it
- * stands on, which it may share, and stands a little above if it's turned ([BoardSquare.stand]); a yard's or home's is its
- * own spot.
+ * stands on, which it may share, and stands a little above if it's turned ([BoardSquare.stand]); a yard's is its own spot,
+ * and a home's, shared by its player's pawns there, the middle of their part of it.
  */
 data class PawnMark(val player: Int, val pawns: List<Int>, val centre: Offset, val radius: Float, val square: Offset = centre)
 
 /** How big a lone pawn is, in squares across; pawns of several colours on one square share it, each a quarter. */
 internal const val PAWN_RADIUS = 0.38f
-/** A pawn home: sized so four stand side by side along a triangle's base ([BoardLayout.homeSpot]), all but touching. */
-const val HOME_PAWN_RADIUS = 0.22f
-/** A pawn in a classic yard; another board's yards size theirs to fit ([BoardLayout.yardPawnRadiusOf]). */
+/** A pawn in a classic yard; another board's yards size theirs to fit ([BoardLayout.yardPawnRadiusOf]), as every home does ([BoardLayout.homePawnRadiusOf]). */
 internal const val YARD_PAWN_RADIUS = 0.5f
 private const val SHARED_PAWN_RADIUS = 0.24f
 private const val SHARED_OFFSET = 0.24f
@@ -33,22 +31,30 @@ private const val CROWDED_RING = 0.3f
 private const val CROWDED_PAWN_RADIUS = 0.18f
 
 /**
- * Every mark on the board for [state]: each yard pawn on its own spot, each home pawn on its own spot in its triangle
- * (each one seen, never a count), and each square's pawns by player, a quarter of the square each when colours share it
+ * Every mark on the board for [state]: each yard pawn on its own spot, each home pawn on its own spot in its triangle,
+ * of as many as are home (each one seen, never a count), and each square's pawns by player, a quarter of the square each when colours share it
  * (a ring of them when more than four colours do). [without] is a pawn left out, as if it stood nowhere.
- * [lift] is how far the pawns' style rises on a turned square ([BoardSquare.stand]).
+ * [lift] is how far the pawns' style rises on a turned square ([BoardSquare.stand]), or home ([BoardLayout.homeStand]).
  */
 fun pawnMarks(state: GameState, without: PawnRef? = null, lift: Float = 1f): List<PawnMark> {
     val layout = BoardLayout.of(state.board)
     val marks = mutableListOf<PawnMark>()
     val onSquares = mutableMapOf<BoardSquare, MutableMap<Int, MutableList<Int>>>()
     state.players.forEachIndexed { player, side ->
-        side.pawns.indices.filter { PawnRef(player, it) != without }.forEach { pawn ->
+        val placed = side.pawns.indices.filter { PawnRef(player, it) != without }
+        val home = placed.filter { state.position(player, it) == PawnPosition.Home }
+        placed.forEach { pawn ->
             when (val position = state.position(player, pawn)) {
                 PawnPosition.Yard -> marks += PawnMark(player, listOf(pawn), layout.yardSpotOf(side.seat, pawn, side.pawns.size), layout.yardPawnRadiusOf(side.pawns.size))
                 // Drawn in its yard's tally ([drawFallen]), not as a pawn.
                 PawnPosition.Out -> Unit
-                PawnPosition.Home -> marks += PawnMark(player, listOf(pawn), layout.homeSpot(side.seat, pawn, side.pawns.size), layout.homePawnRadiusOf(side.pawns.size))
+                PawnPosition.Home -> marks += PawnMark(
+                    player,
+                    listOf(pawn),
+                    layout.homeStand(side.seat, home.indexOf(pawn), home.size, lift),
+                    layout.homePawnRadiusOf(home.size),
+                    square = layout.homeSpot(side.seat, 0, 1),
+                )
                 is PawnPosition.Track -> onSquares.square(layout.trackSquare(state.board.trackSquare(side.seat, position.steps)), player) += pawn
                 is PawnPosition.HomeColumn -> onSquares.square(layout.homeColumnSquare(side.seat, position.index), player) += pawn
             }

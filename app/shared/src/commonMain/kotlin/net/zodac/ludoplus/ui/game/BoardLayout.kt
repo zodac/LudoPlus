@@ -138,21 +138,41 @@ sealed interface BoardLayout {
     /** The corners of [seat]'s part of home, in the centre: its side is the one its home column joins. */
     fun homeArea(seat: Int): List<Offset>
 
-    /** Where [seat]'s pawn [slot] stands once home, of a game of [pawns] each: each on a spot of its own in its part of home. */
-    fun homeSpot(seat: Int, slot: Int, pawns: Int = YARD_SPOTS): Offset
+    /** The two ends of the side of [seat]'s part of home that its home column joins. */
+    fun homeBase(seat: Int): Pair<Offset, Offset>
 
-    /** How big a pawn home is drawn, of a game of [pawns] each. */
-    fun homePawnRadiusOf(pawns: Int): Float = if (pawns > YARD_SPOTS) HOME_PAWN_RADIUS * CROWDED_HOME_SHARE else HOME_PAWN_RADIUS
+    /** How pawns stand in a part of home, the same in every seat's. */
+    val homeRows: HomeRows
+
+    /** The middle of [seat]'s spot [slot] in its part of home, with [pawns] of its pawns home. */
+    fun homeSpot(seat: Int, slot: Int, pawns: Int): Offset {
+        val (from, to) = homeBase(seat)
+        val base = (from + to) / 2f
+        val across = (to - from) / (to - from).getDistance()
+        val inward = (Offset(size / 2, size / 2) - base).let { it / it.getDistance() }
+        return homeRows.spot(slot, pawns).let { base + across * it.x + inward * it.y }
+    }
+
+    /**
+     * Where the pawn [slot] of [seat]'s [pawns] home stands: on a spot of its own, a little above its middle where that keeps
+     * every pawn's foot as clear of the lines under it as its head is of those over it, of a style that takes [lift] (as on a
+     * turned square, [BoardSquare.stand]).
+     */
+    fun homeStand(seat: Int, slot: Int, pawns: Int, lift: Float = 1f): Offset =
+        homeSpot(seat, slot, pawns) - Offset(0f, homeRows.rise(seat, pawns) * lift)
+
+    /** How big a pawn home is drawn, one of [pawns] of its player's: as big as its spot takes, clear of the lines round it, and never bigger than on the track. */
+    fun homePawnRadiusOf(pawns: Int): Float = min(PAWN_RADIUS, homeRows.spotRadius(pawns) * SNUG_HOME_SHARE)
 
     /** The box round home, the whole centre. */
     val homeBounds: Rect
 
-    /** The centre of where a pawn of [seat] at [position] stands ([slot], of [pawns] each, places a yard or home pawn), of a style that takes [lift] on a turned square. */
+    /** The centre of where a pawn of [seat] at [position] stands ([slot], of [pawns] each, places a yard pawn, and of [pawns] there, one home), of a style that takes [lift] on a turned square or home. */
     fun centreOf(seat: Int, position: PawnPosition, slot: Int, pawns: Int = YARD_SPOTS, lift: Float = 1f): Offset = when (position) {
         PawnPosition.Yard, PawnPosition.Out -> yardSpotOf(seat, slot, pawns)
         is PawnPosition.Track -> trackSquare((geometry.startSquare(seat) + position.steps) % geometry.trackLength).stand(lift)
         is PawnPosition.HomeColumn -> homeColumnSquare(seat, position.index).stand(lift)
-        PawnPosition.Home -> homeSpot(seat, slot, pawns)
+        PawnPosition.Home -> homeStand(seat, slot, pawns, lift)
     }
 
     companion object {
@@ -161,8 +181,9 @@ sealed interface BoardLayout {
         /** How big the classic yard's spots are, and the biggest any yard's are. */
         internal const val YARD_SPOT_RADIUS = 0.62f
 
-        /** The most of a small spot its pawn fills. */
+        /** The most of a small spot its pawn fills, in a yard and home. */
         private const val SNUG_PAWN_SHARE = 0.9f
+        private const val SNUG_HOME_SHARE = 0.85f
 
         /** How far apart the points [yardBadges] weighs up are, and how many it takes each way from a yard's middle. */
         private const val BADGE_STEP = 0.1f
@@ -174,9 +195,6 @@ sealed interface BoardLayout {
 
         /** How far a standing pawn reaches from its centre, of its radius. */
         private const val PAWN_REACH = 1.1f
-
-        /** How much smaller five or six pawns home are than four. */
-        private const val CROWDED_HOME_SHARE = 0.75f
 
         /** The layout that draws [geometry]: an endless board's squares lie where the same board's with a home do. */
         fun of(geometry: BoardGeometry): BoardLayout = geometry.copy(endless = false).let { board ->
@@ -216,10 +234,7 @@ data class BoardSquare(val corners: List<Offset>) {
 
     /** How far above its centre a lone classic pawn stands. */
     private val rise: Float by lazy {
-        val sides = insideSides(corners)
-        (0..STAND_STEPS).map { it * STAND_STEP }.maxBy { lift ->
-            PAWN_OUTLINE.minOf { (at, reach) -> sides.minOf { it.distanceTo(centre + at * PAWN_RADIUS - Offset(0f, lift)) } - reach * PAWN_RADIUS }
-        }
+        clearestRise(insideSides(corners), listOf(centre), PAWN_RADIUS)
     }
 
     /** The box round it. */
@@ -228,14 +243,19 @@ data class BoardSquare(val corners: List<Offset>) {
     private companion object {
         const val QUARTER_TURN = 90f
         const val TURN_TOLERANCE = 0.1f
-
-        /** How far apart the rises tried are, in squares, and how many are: a tenth of a square at most. */
-        const val STAND_STEP = 0.005f
-        const val STAND_STEPS = 20
-
-        /** The circles a standing classic pawn reaches as far as, outline and all: its foot's two corners, and its head, in its radii from its centre. */
-        val PAWN_OUTLINE = listOf(Offset(-0.66f, 0.76f) to 0.205f, Offset(0.66f, 0.76f) to 0.205f, Offset(0f, -0.62f) to 0.425f)
     }
+}
+
+/** How far apart the rises tried are, in squares, and how many are: a tenth of a square at most. */
+private const val STAND_STEP = 0.005f
+private const val STAND_STEPS = 20
+
+/** The circles a standing classic pawn reaches as far as, outline and all: its foot's two corners, and its head, in its radii from its centre. */
+private val PAWN_OUTLINE = listOf(Offset(-0.66f, 0.76f) to 0.205f, Offset(0.66f, 0.76f) to 0.205f, Offset(0f, -0.62f) to 0.425f)
+
+/** How far above [centres] classic pawns of [radius] are clearest of [sides]. */
+private fun clearestRise(sides: List<InsideSide>, centres: List<Offset>, radius: Float): Float = (0..STAND_STEPS).map { it * STAND_STEP }.maxBy { rise ->
+    centres.minOf { centre -> PAWN_OUTLINE.minOf { (at, reach) -> sides.minOf { it.distanceTo(centre + at * radius - Offset(0f, rise)) } - reach * radius } }
 }
 
 /** One square of the classic grid: [column] from the left and [row] from the top, from 0. */
@@ -267,12 +287,6 @@ object ClassicBoardLayout : BoardLayout {
     /** How far apart a yard of six's spots are: across from the middle one, and its rows from the middle. */
     private const val CROWDED_ACROSS = 1.3f
     private const val CROWDED_DOWN = 1.3f
-
-    /** How far into its triangle a line of pawns home stands, and how far apart they are: up to four, then five or six. */
-    private const val HOME_IN = 6.4f
-    private const val HOME_SPACING = 0.5f
-    private const val CROWDED_HOME_IN = 6.32f
-    private const val CROWDED_HOME_SPACING = 0.36f
 
     /** How many quarters clockwise seat 0's part is turned from the top-left corner it's set out in: to the bottom left. */
     private const val SEAT_0_TURN = 3
@@ -338,14 +352,9 @@ object ClassicBoardLayout : BoardLayout {
 
     override fun homeArea(seat: Int): List<Offset> = homeTriangle(seat)
 
-    /**
-     * In a line along its triangle's base, close together, about its middle. In a line, not a
-     * block, so the upright pawns never stand in front of one another whichever way a seat's triangle points.
-     */
-    override fun homeSpot(seat: Int, slot: Int, pawns: Int): Offset {
-        val (into, apart) = if (pawns > YARD_SPOTS) CROWDED_HOME_IN to CROWDED_HOME_SPACING else HOME_IN to HOME_SPACING
-        return Offset(into, CENTRE + (slot - (pawns - 1) / 2f) * apart).turned(seat)
-    }
+    override fun homeBase(seat: Int): Pair<Offset, Offset> = homeTriangle(seat).let { (from, to) -> from to to }
+
+    override val homeRows: HomeRows by lazy { HomeRows(this) }
 
     private fun square(left: Float, top: Float, side: Float) =
         listOf(Offset(left, top), Offset(left + side, top), Offset(left + side, top + side), Offset(left, top + side))
@@ -555,17 +564,9 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
         listOf(point(seat, armStart, -HALF_ARM), point(seat, armStart, HALF_ARM), middle)
     }
 
-    /** Along the side its home column joins, as on the classic board; the three-seat board's homes have room for a block. */
-    override fun homeSpot(seat: Int, slot: Int, pawns: Int): Offset = when {
-        hexagon && pawns > YARD_SPOTS ->
-            point(seat, armStart * HEXAGON_HOME_DEPTH + (slot / 3 * 2 - 1) * HEXAGON_HOME_SPREAD_OUT, (slot % 3 - if (slot / 3 == 1) (pawns - 4) / 2.0 else 1.0) * HEXAGON_HOME_SPREAD_ACROSS)
-        hexagon && pawns == 1 -> point(seat, armStart * HEXAGON_HOME_DEPTH, 0.0)
-        // The last of three on its own in its row's middle.
-        hexagon && pawns == 3 && slot == 2 -> point(seat, armStart * HEXAGON_HOME_DEPTH + HEXAGON_HOME_SPREAD_OUT, 0.0)
-        hexagon -> point(seat, armStart * HEXAGON_HOME_DEPTH + (slot / 2 * 2 - 1) * HEXAGON_HOME_SPREAD_OUT, (slot % 2 * 2 - 1) * HEXAGON_HOME_SPREAD_ACROSS)
-        pawns > YARD_SPOTS -> point(seat, armStart - CROWDED_HOME_INSET, (slot - (pawns - 1) / 2.0) * CROWDED_HOME_SPACING)
-        else -> point(seat, armStart - HOME_INSET, (slot - (pawns - 1) / 2.0) * HOME_SPACING)
-    }
+    override fun homeBase(seat: Int): Pair<Offset, Offset> = point(seat, armStart, -HALF_ARM) to point(seat, armStart, HALF_ARM)
+
+    override val homeRows: HomeRows by lazy { HomeRows(this) }
 
     override val homeBounds: Rect = (0..<seats).flatMap { homeArea(it) }.let { points ->
         Rect(points.minOf { it.x }, points.minOf { it.y }, points.maxOf { it.x }, points.maxOf { it.y })
@@ -604,13 +605,119 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
 
         /** How far each pair of a wedge's pawns is from its tip to its arc, outermost first, by how many pawns there are. */
         val PAIRS_OUT = mapOf(2 to listOf(0.85f), 3 to listOf(1f), 4 to listOf(1f, 0.5f), 5 to listOf(1f, 0.65f), 6 to listOf(1f, 0.685f, 0.37f))
-        const val HOME_INSET = 0.4
-        const val HOME_SPACING = 0.5
-        const val CROWDED_HOME_INSET = 0.32
-        const val CROWDED_HOME_SPACING = 0.36
-        const val HEXAGON_HOME_DEPTH = 0.6
-        const val HEXAGON_HOME_SPREAD_OUT = 0.42
-        const val HEXAGON_HOME_SPREAD_ACROSS = 0.48
+    }
+}
+
+/**
+ * How pawns stand in a part of home on [layout]: in rows, the first along the side its home column joins and the rest nearer
+ * the middle, each as wide as there's room for, and the spots the biggest that so many fit, none on another.
+ */
+class HomeRows(private val layout: BoardLayout) {
+    /** A part of home, its base's middle the origin: across along the base, and down into it. */
+    private val outline: List<Offset>
+
+    init {
+        val (from, to) = layout.homeBase(0)
+        val base = (from + to) / 2f
+        val across = (to - from) / (to - from).getDistance()
+        val inward = (Offset(layout.size / 2, layout.size / 2) - base).let { it / it.getDistance() }
+        outline = layout.homeArea(0).map { corner -> (corner - base).let { Offset(it.x * across.x + it.y * across.y, it.x * inward.x + it.y * inward.y) } }
+    }
+
+    private val sides = insideSides(outline)
+    private val depth = outline.maxOf { it.y }
+    private val packed: List<Lazy<Pair<Float, List<Offset>>>> = ROWS.mapIndexed { i, ways ->
+        lazy {
+            val (radius, spots) = ways.map(::pack).reduce { best, deeper -> if (deeper.first > best.first + WORTH_DEEPER) deeper else best }
+            radius to if (i == 0) spots else inStep(packed[i - 1].value.second, spots)
+        }
+    }
+
+    /** Where pawn [slot] of [pawns] stands: how far across from the middle of the base, and how far in from it. */
+    fun spot(slot: Int, pawns: Int): Offset = packed[pawns - 1].value.second[slot]
+
+    /** How big a spot is with [pawns] of them, across from its centre: each has as much room, clear of the edges and each other. */
+    fun spotRadius(pawns: Int): Float = packed[pawns - 1].value.first
+
+    private val rises = mutableMapOf<Pair<Int, Int>, Float>()
+
+    /** How far above their spots' middles [seat]'s [pawns] classic pawns are clearest of its part of home's lines. */
+    fun rise(seat: Int, pawns: Int): Float = rises.getOrPut(seat to pawns) {
+        clearestRise(insideSides(layout.homeArea(seat)), List(pawns) { layout.homeSpot(seat, it, pawns) }, layout.homePawnRadiusOf(pawns))
+    }
+
+    /** [spots] in the order that moves the pawns on the [fewer] before them the least, the one they make room for last. */
+    private fun inStep(fewer: List<Offset>, spots: List<Offset>): List<Offset> {
+        fun least(from: Int, left: List<Offset>): Pair<Float, List<Offset>> = if (from == fewer.size) {
+            0f to left
+        } else {
+            left.map { spot ->
+                val (moved, rest) = least(from + 1, left - spot)
+                moved + (spot - fewer[from]).getDistanceSquared() to listOf(spot) + rest
+            }.minBy { it.first }
+        }
+        return least(0, spots).second
+    }
+
+    private fun pack(rows: List<Int>): Pair<Float, List<Offset>> {
+        var best = 0f to emptyList<Offset>()
+        var tooBig = depth
+        repeat(SIZE_STEPS) {
+            val radius = (best.first + tooBig) / 2
+            val spots = place(rows, radius)
+            if (spots == null) tooBig = radius else best = radius to spots
+        }
+        return best
+    }
+
+    /** Spots of [radius] in [rows], each as near the base as it goes; null if they don't fit. */
+    private fun place(rows: List<Int>, radius: Float): List<Offset>? {
+        val spots = mutableListOf<Offset>()
+        var down = radius
+        for (count in rows) {
+            var row = row(count, down, radius)
+            while (row == null || row.any { spot -> spots.any { (it - spot).getDistance() < 2 * radius - TOUCHING } }) {
+                down += DOWN_STEP
+                if (down > depth) return null
+                row = row(count, down, radius)
+            }
+            spots += row
+        }
+        return spots
+    }
+
+    /** A row of [count] spots of [radius], [down] from the base, spread to the sides; null if there isn't room. */
+    private fun row(count: Int, down: Float, radius: Float): List<Offset>? {
+        val middle = Offset(0f, down)
+        if (sides.any { it.distanceTo(middle) < radius - TOUCHING }) return null
+        if (count == 1) return listOf(middle)
+        // How far the row's last spot can be from the middle: each side nears it by so much a square.
+        val furthest = sides.minOf { side ->
+            val nearing = side.distanceTo(middle) - side.distanceTo(middle + Offset(1f, 0f))
+            if (nearing <= 0f) Float.MAX_VALUE else (side.distanceTo(middle) - radius).coerceAtLeast(0f) / nearing
+        }
+        val apart = 2 * furthest / (count - 1)
+        return if (apart < 2 * radius - TOUCHING) null else List(count) { Offset((it - (count - 1) / 2f) * apart, down) }
+    }
+
+    private companion object {
+        /** How many pawns stand in each row, from the base in, for one pawn, two, and so on: the first way, or on a board with deep homes, the next. */
+        val ROWS = listOf(
+            listOf(listOf(1)),
+            listOf(listOf(2)),
+            listOf(listOf(2, 1)),
+            listOf(listOf(3, 1), listOf(2, 1, 1)),
+            listOf(listOf(3, 2), listOf(2, 2, 1)),
+            listOf(listOf(3, 2, 1)),
+        )
+
+        /** How much bigger a spot has to be, in squares, for the next way to be worth it. */
+        const val WORTH_DEEPER = 0.02f
+
+        /** How many halvings find the biggest spot, how far apart the rows tried are, and how near to touching counts as clear. */
+        const val SIZE_STEPS = 14
+        const val DOWN_STEP = 0.01f
+        const val TOUCHING = 1e-4f
     }
 }
 

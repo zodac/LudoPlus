@@ -350,8 +350,8 @@ fun LudoBoard(
 
 /**
  * A move being shown: [player]'s pawn (its owner's, a partner's if one was rolled for) on [path] (board-unit centres,
- * square by square), hopping along it unless it's leaving its yard, and [landingRadius] across where it lands (smaller on
- * its spot when it reaches [home], or on a square it comes to share), sending [sent], and the pawns in [shifts] making
+ * square by square), hopping along it unless it's leaving its yard, and [landingRadius] across where it lands (its share
+ * of home's room when it reaches [home], or of a square it comes to share), sending [sent], and the pawns in [shifts] making
  * room. Through a portal, [path] ends where it goes in, and it
  * comes out at [warpTo].
  */

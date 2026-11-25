@@ -63,22 +63,74 @@ class BoardLayoutTest {
     }
 
     @Test
-    fun `each pawn home has its own spot inside its seat's triangle - close together but never overlapping`() {
-        for (seat in 0..3) {
-            val (a, b, c) = ClassicBoardLayout.homeTriangle(seat)
-            val spots = (0..3).map { ClassicBoardLayout.homeSpot(seat, it) }
-            for (centre in spots) {
-                // Inside: on the same side of each edge as the third corner.
-                fun side(p: Offset, q: Offset, r: Offset) = (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)
-                // The whole pawn inside, not just its centre: each edge at least a radius away.
-                fun distanceToEdge(p: Offset, q: Offset) = abs(side(p, q, centre)) / (q - p).getDistance()
-                assertTrue(listOf(Triple(a, b, c), Triple(b, c, a), Triple(c, a, b)).all { (p, q, r) -> side(p, q, centre) * side(p, q, r) > 0 }, "$seat: $centre")
-                assertTrue(listOf(a to b, b to c, c to a).all { (p, q) -> distanceToEdge(p, q) >= HOME_PAWN_RADIUS - 0.01f }, "$seat: $centre crosses an edge")
+    fun `every pawn home has the whole of its spot in its own part of home - none overlapping - on every board with any number of pawns`() {
+        for (geometry in (2..8).map(BoardGeometry::forPlayers)) {
+            val layout = BoardLayout.of(geometry)
+            for (seat in 0..<geometry.seats) for (pawns in 1..6) {
+                val about = about(geometry, seat, pawns)
+                val spots = List(pawns) { layout.homeSpot(seat, it, pawns) }
+                val radius = layout.homeRows.spotRadius(pawns) - 0.001f
+                val area = layout.homeArea(seat)
+                for ((i, spot) in spots.withIndex()) {
+                    for (other in spots.drop(i + 1)) assertTrue((spot - other).getDistance() >= 2 * radius, "$about: $spots")
+                    val turns = area.indices.map { c ->
+                        val side = area[(c + 1) % area.size] - area[c]
+                        (side.x * (spot.y - area[c].y) - side.y * (spot.x - area[c].x)) / side.getDistance()
+                    }
+                    assertTrue(turns.all { it >= radius } || turns.all { it <= -radius }, "$about: spot $i is $turns from its edges")
+                }
             }
-            val gaps = spots.indices.flatMap { i -> (i + 1..<spots.size).map { j -> (spots[i] - spots[j]).getDistance() } }
-            assertTrue(gaps.all { it >= 2 * HOME_PAWN_RADIUS - 0.01f }, "$seat: pawns overlap")
-            // Close: neighbours all but touch.
-            assertTrue(gaps.min() <= 2 * HOME_PAWN_RADIUS + 0.1f, "$seat: pawns spread apart")
+        }
+    }
+
+    @Test
+    fun `a classic pawn home stands clear of its part of home's lines, head and foot - on every board with any number of pawns`() {
+        // A standing pawn's foot's two corners and its head, in its radii.
+        val outline = listOf(Offset(-0.66f, 0.76f) to 0.205f, Offset(0.66f, 0.76f) to 0.205f, Offset(0f, -0.62f) to 0.425f)
+        for (geometry in (2..8).map(BoardGeometry::forPlayers)) {
+            val layout = BoardLayout.of(geometry)
+            for (seat in 0..<geometry.seats) for (pawns in 1..6) for (pawn in 0..<pawns) {
+                val area = layout.homeArea(seat)
+                val radius = layout.homePawnRadiusOf(pawns)
+                for ((at, reach) in outline) {
+                    val point = layout.homeStand(seat, pawn, pawns) + at * radius
+                    val turns = area.indices.map { c ->
+                        val side = area[(c + 1) % area.size] - area[c]
+                        (side.x * (point.y - area[c].y) - side.y * (point.x - area[c].x)) / side.getDistance()
+                    }
+                    val clear = maxOf(turns.min(), -turns.max()) - reach * radius
+                    assertTrue(clear >= 0f, "${about(geometry, seat, pawns)}, pawn $pawn: $clear")
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `the pawns home keep to their sides as one more comes - the third and fourth between them`() {
+        for (geometry in (2..8).map(BoardGeometry::forPlayers)) {
+            val rows = BoardLayout.of(geometry).homeRows
+            for (pawns in 2..4) {
+                // The first two on the left and right of the row along the base, and the third and fourth between them.
+                val (left, right) = rows.spot(0, pawns) to rows.spot(1, pawns)
+                assertTrue(left.x < 0f && right.x > 0f && left.y == right.y, "$geometry: $pawns")
+                for (slot in 2..<pawns) assertEquals(0f, rows.spot(slot, pawns).x, 0.001f, "$geometry: $pawns")
+            }
+        }
+    }
+
+    @Test
+    fun `pawns home are as big as there's room for - the fewer the bigger, as big as on the track where they can be, and never bigger`() {
+        for (geometry in (2..8).map(BoardGeometry::forPlayers)) {
+            val layout = BoardLayout.of(geometry)
+            val radii = (1..6).map { layout.homePawnRadiusOf(it) }
+            assertTrue(radii.zipWithNext().all { (fewer, more) -> fewer >= more - 0.001f }, "$geometry: $radii")
+            assertTrue(radii.all { it <= PAWN_RADIUS }, "$geometry: $radii")
+            for (pawns in 1..6) assertTrue(radii[pawns - 1] <= layout.homeRows.spotRadius(pawns) * 0.86f, "$geometry, $pawns pawns: within its spot")
+            // A lone pawn is as big as on the track, and two are all but.
+            assertEquals(PAWN_RADIUS, radii[0], "$geometry")
+            assertTrue(radii[1] >= PAWN_RADIUS - 0.01f, "$geometry: $radii")
+            // Four: as big as fit the classic triangle, and more where there's more room.
+            assertTrue(radii[3] >= if (geometry.seats == 4) 0.285f else 0.32f, "$geometry: $radii")
         }
     }
 

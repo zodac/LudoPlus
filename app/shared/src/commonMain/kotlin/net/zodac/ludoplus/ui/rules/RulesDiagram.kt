@@ -40,7 +40,6 @@ import net.zodac.ludoplus.resources.rules_winning_diagram_cd
 import net.zodac.ludoplus.ui.common.stringResource
 import net.zodac.ludoplus.ui.game.ClassicBoardLayout
 import net.zodac.ludoplus.ui.game.GameDie
-import net.zodac.ludoplus.ui.game.HOME_PAWN_RADIUS
 import net.zodac.ludoplus.ui.style.ClassicBoardStyle
 import net.zodac.ludoplus.ui.style.ClassicPawnStyle
 import net.zodac.ludoplus.ui.theme.BoardInk
@@ -140,14 +139,14 @@ private val CAPTURE_DIAGRAM = Diagram(
 /** How far from home the winning diagram's pawn is: the roll it needs. */
 private const val WINNING_ROLL = 3
 
-/** Winning: a red pawn 3 squares from home needs exactly a 3; another is already home. */
+/** Winning: a red pawn 3 squares from home needs exactly a 3; another is already home, to one side, clear of the arrow. */
 private val WINNING_DIAGRAM = Diagram(
     view = Rect(0f, 5.5f, 9f, 9.5f),
     redSeat = CLOSE_UP,
     description = Res.string.rules_winning_diagram_cd,
     pawns = listOf(
         DiagramPawn(0, at(CLOSE_UP, board.homeProgress - WINNING_ROLL)),
-        DiagramPawn(0, ClassicBoardLayout.homeSpot(CLOSE_UP, 0), radius = HOME_PAWN_RADIUS),
+        DiagramPawn(0, ClassicBoardLayout.homeStand(CLOSE_UP, 0, 3), radius = ClassicBoardLayout.homePawnRadiusOf(3)),
     ),
     arrows = listOf(DiagramArrow((board.homeProgress - WINNING_ROLL..<board.homeProgress).map { at(CLOSE_UP, it) } + Offset(6.2f, 7.5f))),
     die = WINNING_ROLL,

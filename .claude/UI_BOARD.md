@@ -43,6 +43,13 @@ The board, the player cards, the die, and the move log. The general rules are in
         rows.
     - 3 players: up to four in a line along the yard, and five or six in two rows.
     - 5 to 8: in pairs down the court's two straight sides, an odd one at its inner tip.
+- **Where pawns stand home** (`BoardLayout.homeStand`, `HomeRows`; the maintainer, 2026-11-26): in rows, the first along the
+    side the home column joins (2, 2+1, 3+1, 3+2, and 3+2+1; on the deep homes of 6 to 8 players, four are 2+1+1, and eight
+    players' five are 2+2+1), spread and sized to fill their part of home for that board and number of pawns home
+    (`BoardLayoutTest`). A pawn is as big as on the track where there's room, and never bigger.
+    Those home share the room by how many there are now, so the first keeps its size, and they shrink and make room as each of the rest comes,
+    in its last half hop, as on a shared square (`moveMarks`). A pawn fills a little less of its spot than in a yard, and stands a
+    little above its middle where that keeps its foot off the lines (`PawnStyle.lift`).
 - **`LudoBoard`** draws it in four parts, so a move redraws only the move (`BENCHMARKS.md`). What a mode adds is drawn
     under the pawns: portals (`PortalArt.kt`), power-ups (`PowerUpArt.kt`), Survival's arena (`SurvivalArt.kt`), and
     ghosts (`GhostArt.kt`).

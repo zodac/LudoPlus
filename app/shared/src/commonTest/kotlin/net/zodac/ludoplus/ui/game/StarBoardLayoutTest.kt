@@ -202,18 +202,6 @@ class StarBoardLayoutTest {
     }
 
     @Test
-    fun `each pawn home stands inside its own part of home - never overlapping another`() {
-        for (layout in layouts) {
-            for (seat in 0..<layout.geometry.seats) {
-                val spots = (0..3).map { layout.homeSpot(seat, it) }
-                spots.forEach { assertTrue(inside(layout.homeArea(seat), it, HOME_PAWN_RADIUS - 0.01f), "${layout.geometry.seats} seats, seat $seat: $it") }
-                val gaps = spots.indices.flatMap { i -> (i + 1..<4).map { j -> (spots[i] - spots[j]).getDistance() } }
-                assertTrue(gaps.min() >= 2 * HOME_PAWN_RADIUS - 0.01f, "${layout.geometry.seats} seats: home pawns overlap")
-            }
-        }
-    }
-
-    @Test
     fun `no yard covers a track square`() {
         for (layout in layouts) {
             val board = layout.geometry
