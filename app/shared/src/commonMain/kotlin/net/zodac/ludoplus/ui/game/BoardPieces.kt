@@ -22,7 +22,7 @@ data class PawnMark(val player: Int, val pawns: List<Int>, val centre: Offset, v
 internal const val PAWN_RADIUS = 0.38f
 /** A pawn home: sized so four stand side by side along a triangle's base ([BoardLayout.homeSpot]), all but touching. */
 const val HOME_PAWN_RADIUS = 0.22f
-/** A pawn in a classic yard; a star board's yards size theirs to fit ([BoardLayout.yardPawnRadius]). */
+/** A pawn in a classic yard; another board's yards size theirs to fit ([BoardLayout.yardPawnRadiusOf]). */
 internal const val YARD_PAWN_RADIUS = 0.5f
 private const val SHARED_PAWN_RADIUS = 0.24f
 private const val SHARED_OFFSET = 0.24f

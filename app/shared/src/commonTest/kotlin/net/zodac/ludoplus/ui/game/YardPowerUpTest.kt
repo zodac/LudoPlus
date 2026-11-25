@@ -88,7 +88,10 @@ class YardPowerUpTest : UiTest() {
         assertEquals(0, state.value.players[1].callUps)
         val length = 2 * PAWN_STEP_MILLIS + CAPTURE_FLIGHT_MILLIS + RECALL_MILLIS
         val along = frames(length + 100, PowerUp.CALL_UP)
-        assertTrue(along.indexOfFirst { it.isEmpty() } * FRAME >= length - FRAME, "Too soon: $along")
+        val shown = along.dropLastWhile { it.isEmpty() }
+        assertTrue(shown.size * FRAME >= length - FRAME, "Too soon: $along")
+        // There all along, but for the moment the captured pawn flies over it.
+        assertTrue(shown.count { it.isEmpty() } * FRAME <= CAPTURE_FLIGHT_MILLIS / 4, "Gone and back: $along")
         assertEquals(emptyList(), along.last())
     }
 
@@ -136,7 +139,8 @@ class YardPowerUpTest : UiTest() {
         val pixels = onNodeWithTag(BOARD).captureToImage().toPixelMap()
         val unit = pixels.width / ClassicBoardLayout.size
         return (0..3).filter { seat ->
-            val at = (ClassicBoardLayout.yardBadges(seat, 4, YARD_BADGE_ROOM)[if (powerUp == PowerUp.DOUBLE) 0 else 1].centre + Offset(0f, YARD_BADGE_RADIUS * 0.72f)) * unit
+            val badge = ClassicBoardLayout.yardBadges(seat, 4)[if (powerUp == PowerUp.DOUBLE) 0 else 1]
+            val at = (badge.centre + Offset(0f, yardBadgeRadius(badge) * 0.72f)) * unit
             pixels[at.x.toInt(), at.y.toInt()] == powerUp.color
         }
     }

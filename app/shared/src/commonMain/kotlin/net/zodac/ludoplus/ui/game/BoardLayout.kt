@@ -4,7 +4,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.asin
 import kotlin.math.atan2
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.max
@@ -39,81 +41,96 @@ sealed interface BoardLayout {
     /** The square of [seat]'s home column square [index] (0 nearest the track). */
     fun homeColumnSquare(seat: Int, index: Int): BoardSquare
 
-    /** The outline of [seat]'s yard. */
+    /** The outline of [seat]'s yard, convex: a round side is many short ones. */
     fun yard(seat: Int): List<Offset>
 
-    /** The outline of [seat]'s yard's court, the plain inside round its pawns' spots. */
+    /** The outline of [seat]'s yard's court, the plain inside round its pawns' spots; round where the yard is. */
     fun yardCourt(seat: Int): List<Offset>
 
-    /** The centre of the yard spot [slot] (0-3) of [seat]. */
-    fun yardSpot(seat: Int, slot: Int): Offset
+    /** The centre of the yard spot [slot] (0-3) of [seat]: where its pawns wait in a game of four each. */
+    fun yardSpot(seat: Int, slot: Int): Offset = yardSpotOf(seat, slot, YARD_SPOTS)
 
-    /**
-     * Where [seat]'s pawn [pawn] waits in its yard, of a game of [pawns] each: its own spot; alone, the yard's middle; with two pawns, opposite
-     * corners (the first spot and the last), so the pair sits balanced in the yard's four; three make a triangle
-     * ([trioYardSpot]). More than four have spots of their own ([crowdedYardSpot]), smaller.
-     */
-    fun yardSpotOf(seat: Int, pawn: Int, pawns: Int): Offset = when {
-        pawns > YARD_SPOTS -> crowdedYardSpot(seat, pawn, pawns)
-        pawns == 3 -> trioYardSpot(seat, pawn)
-        pawns == 2 -> yardSpot(seat, pawn * 3)
-        pawns == 1 -> loneYardSpot(seat)
-        else -> yardSpot(seat, pawn)
-    }
+    /** Where [seat]'s pawn [pawn] waits in its yard, of a game of [pawns] each: a spot of its own, alone the yard's middle. */
+    fun yardSpotOf(seat: Int, pawn: Int, pawns: Int): Offset
 
     /** The middle of [seat]'s yard, where a lone pawn waits. */
     fun loneYardSpot(seat: Int): Offset
 
-    /** The centre of spot [slot] (0-2) of [seat]'s yard laid out for three, upright in every yard. */
-    fun trioYardSpot(seat: Int, slot: Int): Offset
-
-    /** The centre of spot [slot] of [seat]'s yard laid out for [pawns], five or six. */
-    fun crowdedYardSpot(seat: Int, slot: Int, pawns: Int): Offset
-
     /** How big a spot is drawn in a yard of [pawns], across from its centre. */
-    fun yardSpotRadiusOf(pawns: Int): Float = if (pawns > YARD_SPOTS) yardSpotRadius * CROWDED_SPOT_SHARE else yardSpotRadius
+    fun yardSpotRadiusOf(pawns: Int): Float
 
-    /** How big a pawn is drawn in a yard of [pawns]. */
-    fun yardPawnRadiusOf(pawns: Int): Float = if (pawns > YARD_SPOTS) yardSpotRadiusOf(pawns) * CROWDED_PAWN_SHARE else yardPawnRadius
+    /** How big a pawn is drawn in a yard of [pawns]: as the classic yard's is to its spot, or as big as on the track if its spot takes that. */
+    fun yardPawnRadiusOf(pawns: Int): Float = yardSpotRadiusOf(pawns).let { max(it * YARD_PAWN_RADIUS / YARD_SPOT_RADIUS, min(PAWN_RADIUS, it * SNUG_PAWN_SHARE)) }
 
     /**
-     * The two places [seat]'s yard shows what's in force for its player, in a game of [pawns] each: where there's the most
-     * room clear of the yard's edge and its pawns, straight out from the yard's middle (away from the board's), in from it,
-     * to either side of it, or towards one of its corners. The
-     * first is the first of those with room [wanted], or if none has, the one with the most; the second, the one with the most
-     * that's clear of the first.
+     * The two places [seat]'s yard shows what's in force for its player, in a game of [pawns] each: on its court, clear of its
+     * edge, its pawns, and each other. They're opposite each other about the yard's middle, or where there's clearly more
+     * room, both on a line through it or one each side of one. Both have the same room, the most there is.
      */
-    fun yardBadges(seat: Int, pawns: Int, wanted: Float): List<YardBadge> {
-        val outline = yard(seat)
-        val from = loneYardSpot(seat)
-        val outward = (from - Offset(size / 2, size / 2)).let { it / it.getDistance() }
-        val side = Offset(-outward.y, outward.x)
-        val corners = outline.map { corner -> (corner - from).let { it / it.getDistance() } }
+    fun yardBadges(seat: Int, pawns: Int): List<YardBadge> {
+        val sides = insideSides(yardCourt(seat))
         val spots = List(pawns) { yardSpotOf(seat, it, pawns) }
         // A pawn stands a little taller than its radius.
         val spotReach = max(yardSpotRadiusOf(pawns), yardPawnRadiusOf(pawns) * PAWN_REACH)
-        fun badges(ways: List<Offset>, clearOf: YardBadge?): List<YardBadge> = ways.map { way ->
-            (0..BADGE_STEPS).map { from + way * (size / 2 * it / BADGE_STEPS) }
-                .filter { it.isInside(outline) }
-                .map { spot ->
-                    val toSpots = spots.minOf { (it - spot).getDistance() } - spotReach
-                    val toOther = clearOf?.let { (it.centre - spot).getDistance() - min(it.room, wanted) } ?: toSpots
-                    YardBadge(spot, minOf(edgeDistance(outline, spot), toSpots, toOther))
-                }
-                .maxBy { it.room }
+
+        /** How much room there is at [point], looked into no further once it's no more than [atLeast]. */
+        fun room(point: Offset, atLeast: Float): Float {
+            var room = Float.MAX_VALUE
+            for (spot in spots) {
+                room = min(room, (spot - point).getDistance() - spotReach)
+                if (room <= atLeast) return room
+            }
+            for (edge in sides) {
+                room = min(room, edge.distanceTo(point))
+                if (room <= atLeast) return room
+            }
+            return room
         }
-        val firsts = badges(listOf(outward, -outward, side, -side) + corners, clearOf = null)
-        val first = firsts.firstOrNull { it.room >= wanted } ?: firsts.maxBy { it.room }
-        val seconds = badges(listOf(side, -side, -outward, outward) + corners, clearOf = first)
-        // A tie goes to the same side in every yard.
-        return listOf(first, seconds.first { second -> second.room >= seconds.maxOf { it.room } - BADGE_TIE })
+
+        val from = loneYardSpot(seat)
+        val axis = badgeAxis(seat)
+        val side = Offset(-axis.y, axis.x)
+        val ways = listOf(axis, side, (axis + side) / sqrt(2f), (axis - side) / sqrt(2f))
+        val steps = -BADGE_STEPS..BADGE_STEPS
+        var most = 0f
+        var best: Pair<Offset, Offset>? = null
+        fun weigh(first: Offset, second: Offset) {
+            // A tie goes to the same places in every yard.
+            val wanted = most + BADGE_TIE
+            val apart = (first - second).getDistance() / 2
+            if (apart <= wanted) return
+            val one = room(first, wanted)
+            if (one <= wanted) return
+            val found = minOf(apart, one, room(second, wanted))
+            if (found <= wanted) return
+            most = found
+            best = first to second
+        }
+        // Opposite each other about the yard's middle.
+        for (way in ways) for (out in 1..BADGE_STEPS) (way * (out * BADGE_STEP)).let { weigh(from + it, from - it) }
+        val opposite = most
+        val balanced = best
+        // Anywhere on a line through it, or one each side of one, if there's enough more room.
+        best = null
+        most = opposite + BADGE_BALANCE
+        for (way in ways) {
+            val across = Offset(-way.y, way.x)
+            val line = steps.map { from + way * (it * BADGE_STEP) }.filter { room(it, most) > most }
+            for ((i, second) in line.withIndex()) for (first in line.drop(i + 1)) weigh(first, second)
+            for (step in steps) for (out in 1..BADGE_STEPS) {
+                val middle = from + way * (step * BADGE_STEP)
+                (across * (out * BADGE_STEP)).let { weigh(middle + it, middle - it) }
+            }
+        }
+        val found = best ?: checkNotNull(balanced) { "No room in a yard of $pawns" }
+        val room = if (best == null) opposite else most
+        fun along(point: Offset) = point.x * axis.x + point.y * axis.y
+        val (first, second) = if (along(found.second) > along(found.first) + BADGE_TIE) found.second to found.first else found
+        return listOf(YardBadge(first, room), YardBadge(second, room))
     }
 
-    /** How big a yard spot is drawn, across from its centre. */
-    val yardSpotRadius: Float
-
-    /** How big a pawn in its yard is drawn. */
-    val yardPawnRadius: Float
+    /** The way through [seat]'s yard its badges are placed about: the first is the one further along it. */
+    fun badgeAxis(seat: Int): Offset
 
     /** The corners of [seat]'s part of home, in the centre: its side is the one its home column joins. */
     fun homeArea(seat: Int): List<Offset>
@@ -138,15 +155,19 @@ sealed interface BoardLayout {
     companion object {
         private val stars = mutableMapOf<BoardGeometry, StarBoardLayout>()
 
-        /** How much smaller the spots of a yard of six are than of four, and how much of one its pawn fills. */
-        private const val CROWDED_SPOT_SHARE = 0.86f
-        private const val CROWDED_PAWN_SHARE = 0.72f
+        /** How big the classic yard's spots are, and the biggest any yard's are. */
+        internal const val YARD_SPOT_RADIUS = 0.62f
 
-        /** How many points out from a yard's middle [yardBadges] weighs up, to half the board's width away. */
-        private const val BADGE_STEPS = 200
+        /** The most of a small spot its pawn fills. */
+        private const val SNUG_PAWN_SHARE = 0.9f
 
-        /** How near two places' room is to count as as much. */
-        private const val BADGE_TIE = 0.02f
+        /** How far apart the points [yardBadges] weighs up are, and how many it takes each way from a yard's middle. */
+        private const val BADGE_STEP = 0.1f
+        private const val BADGE_STEPS = 55
+
+        /** How near two places' room is to count as as much, and how much more it takes for them not to be opposite each other. */
+        private const val BADGE_TIE = 0.01f
+        private const val BADGE_BALANCE = 0.03f
 
         /** How far a standing pawn reaches from its centre, of its radius. */
         private const val PAWN_REACH = 1.1f
@@ -207,8 +228,8 @@ object ClassicBoardLayout : BoardLayout {
     private const val CENTRE = SIZE / 2f
 
     /** How far apart a yard of six's spots are: across from the middle one, and its rows from the middle. */
-    private const val CROWDED_ACROSS = 1.28f
-    private const val CROWDED_DOWN = 0.95f
+    private const val CROWDED_ACROSS = 1.3f
+    private const val CROWDED_DOWN = 1.3f
 
     /** How far into its triangle a line of pawns home stands, and how far apart they are: up to four, then five or six. */
     private const val HOME_IN = 6.4f
@@ -224,13 +245,11 @@ object ClassicBoardLayout : BoardLayout {
         (1..5).map { Cell(it, 6) } + (5 downTo 0).map { Cell(6, it) } + Cell(7, 0) + Cell(8, 0)
 
     /** Seat 0's yard pawns' spots as set out, centres in board units. */
-    private val SEAT_0_YARD_SPOTS = listOf(Offset(2f, 2f), Offset(4f, 2f), Offset(2f, 4f), Offset(4f, 4f))
+    private val SEAT_0_YARD_SPOTS = listOf(Offset(1.8f, 1.8f), Offset(4.2f, 1.8f), Offset(1.8f, 4.2f), Offset(4.2f, 4.2f))
 
     override val geometry: BoardGeometry = BoardGeometry.CLASSIC
     override val size: Float = SIZE.toFloat()
     override val round: Boolean = false
-    override val yardSpotRadius: Float = 0.62f
-    override val yardPawnRadius: Float = YARD_PAWN_RADIUS
     override val homeBounds: Rect = Rect(6f, 6f, 9f, 9f)
 
     /** The grid square of absolute track square [square]. */
@@ -253,19 +272,28 @@ object ClassicBoardLayout : BoardLayout {
 
     override fun yardCourt(seat: Int): List<Offset> = yardOrigin(seat).let { square(it.column + 1f, it.row + 1f, YARD_SIZE - 2f) }
 
-    override fun yardSpot(seat: Int, slot: Int): Offset = SEAT_0_YARD_SPOTS[slot].turned(seat)
+    /**
+     * Its own spot of the four; with two pawns, opposite corners (the first spot and the last), so the pair sits balanced in
+     * them; three are one above two; and five or six are two rows, the second of five having two: both upright in every yard.
+     */
+    override fun yardSpotOf(seat: Int, pawn: Int, pawns: Int): Offset = when {
+        pawns > YARD_SPOTS -> {
+            val second = pawn / 3
+            val across = pawn % 3 - if (second == 1) (pawns - 3 - 1) / 2f else 1f
+            loneYardSpot(seat) + Offset(across * CROWDED_ACROSS, (second * 2 - 1) * CROWDED_DOWN)
+        }
+        pawns == 3 -> loneYardSpot(seat) + listOf(Offset(0f, -1.15f), Offset(-1.2f, 1.1f), Offset(1.2f, 1.1f))[pawn]
+        pawns == 2 -> SEAT_0_YARD_SPOTS[pawn * 3].turned(seat)
+        pawns == 1 -> loneYardSpot(seat)
+        else -> SEAT_0_YARD_SPOTS[pawn].turned(seat)
+    }
+
+    override fun yardSpotRadiusOf(pawns: Int): Float = BoardLayout.YARD_SPOT_RADIUS
 
     override fun loneYardSpot(seat: Int): Offset = yardOrigin(seat).let { Offset(it.column + YARD_SIZE / 2f, it.row + YARD_SIZE / 2f) }
 
-    /** One above two. */
-    override fun trioYardSpot(seat: Int, slot: Int): Offset = loneYardSpot(seat) + listOf(Offset(0f, -1f), Offset(-1f, 0.9f), Offset(1f, 0.9f))[slot]
-
-    /** Two rows of three, upright in every yard; the second of five has two. */
-    override fun crowdedYardSpot(seat: Int, slot: Int, pawns: Int): Offset {
-        val second = slot / 3
-        val across = slot % 3 - if (second == 1) (pawns - 3 - 1) / 2f else 1f
-        return loneYardSpot(seat) + Offset(across * CROWDED_ACROSS, (second * 2 - 1) * CROWDED_DOWN)
-    }
+    /** Leftwards, so they're the same way round in every yard. */
+    override fun badgeAxis(seat: Int): Offset = Offset(-1f, 0f)
 
     /** The three corners of [seat]'s triangle of home, in the centre: its base on the side its home column joins. */
     fun homeTriangle(seat: Int): List<Offset> =
@@ -304,7 +332,8 @@ object ClassicBoardLayout : BoardLayout {
 
 /**
  * A board of one arm a seat round a centre, as approved from renders (2026-11-18): each arm the classic board's, 3 squares
- * wide and 6 long, and between two arms a yard reaching out to the board's round edge. The centre is a polygon of a side
+ * wide and 6 long, and between two arms a yard reaching out to the board's round edge, its outer side an arc of a circle
+ * about the board's middle. The centre is a polygon of a side
  * an arm, but for three seats ([BoardGeometry.THREE_SEAT]), whose centre is a hexagon with the arms on every other side,
  * so each home has room; its track runs 3 squares along each yard's side of it.
  *
@@ -390,7 +419,8 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
 
     override fun homeColumnSquare(seat: Int, index: Int): BoardSquare = armSquare(seat, index + 1, MIDDLE_LANE)
 
-    override fun yard(seat: Int): List<Offset> {
+    /** The corners of [seat]'s yard, its arc's middle among them. */
+    fun yardCorners(seat: Int): List<Offset> {
         val rim = middle + (if (hexagon) yardSideOut(seat) else (innerCorner(seat) - middle).let { it / it.getDistance() }) * reach.toFloat()
         val armEnd = point(seat, armStart + ARM_LENGTH, HALF_ARM)
         val nextArmEnd = point(seat + 1, armStart + ARM_LENGTH, -HALF_ARM)
@@ -401,57 +431,79 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
         }
     }
 
+    override fun yard(seat: Int): List<Offset> = yardWithin(seat, 0f)
+
+    /** The outline of [seat]'s yard, shrunk by [by] on every side: its straight sides, and the arc between its arms' ends. */
+    private fun yardWithin(seat: Int, by: Float): List<Offset> {
+        val radius = reach - by
+        val side = HALF_ARM + by
+        // Where the arc meets the sides along the two arms, in turn from the middle of its own arm and the next's.
+        val fromArm = asin(side / radius)
+        val start = angle(seat) + fromArm
+        val sweep = 2 * PI / seats - 2 * fromArm
+        val steps = ceil(sweep / MAX_ARC_STEP).toInt()
+        val arc = (0..steps).map { step ->
+            val turn = start + sweep * step / steps
+            middle + Offset(cos(turn).toFloat(), sin(turn).toFloat()) * radius.toFloat()
+        }
+        // The other corners, all but the arc's two ends and middle.
+        val corners = inset(yardCorners(seat), by)
+        return listOf(corners.first()) + arc + corners.drop(ARC_CORNERS + 1)
+    }
+
     /** Each yard's widest circle, along the line through its middle: its court and spots are set round it. */
     private val yardCircles: List<Pair<Offset, Float>> = List(seats) { seat ->
         val outline = yard(seat)
-        val start = if (hexagon) (outline.first() + outline.last()) / 2f else outline.first()
-        val direction = (outline[2] - start).let { it / it.getDistance() }
-        val length = (outline[2] - start).getDistance()
+        val corners = yardCorners(seat)
+        val start = if (hexagon) (corners.first() + corners.last()) / 2f else corners.first()
+        val direction = (corners[2] - start).let { it / it.getDistance() }
+        val length = (corners[2] - start).getDistance()
         (1..<SEARCH_STEPS).map { start + direction * (length * it / SEARCH_STEPS) }
             .map { it to edgeDistance(outline, it) }
             .maxBy { it.second }
     }
 
-    override fun yardCourt(seat: Int): List<Offset> = inset(yard(seat), min(1f, yardCircles[seat].second * COURT_INSET))
+    /** How wide the yard's colour is round its court. */
+    private val courtBorder: Float = min(1f, yardCircles[0].second * if (hexagon) HEXAGON_COURT_INSET else COURT_INSET)
 
-    override val yardSpotRadius: Float = max(MIN_SPOT_RADIUS, min(CLASSIC_SPOT_RADIUS, yardCircles[0].second * SPOT_SHARE))
-    /** As the classic yard's pawn is to its spot, but never smaller than a pawn on the track. */
-    override val yardPawnRadius: Float = max(PAWN_RADIUS, yardSpotRadius * YARD_PAWN_RADIUS / CLASSIC_SPOT_RADIUS)
+    override fun yardCourt(seat: Int): List<Offset> = yardWithin(seat, courtBorder)
 
-    /** The four spots in a diamond about the yard's widest circle, as the classic yard's square of four is to its corner. */
-    override fun yardSpot(seat: Int, slot: Int): Offset {
-        val (centre, radius) = yardCircles[seat]
-        val outward = (centre - middle).let { it / it.getDistance() }
-        val side = Offset(-outward.y, outward.x)
-        val spread = radius * SPOT_SPREAD
-        return centre + when (slot) {
-            0 -> outward * spread
-            1 -> side * spread
-            2 -> side * -spread
-            else -> outward * -spread
-        }
-    }
-
-    /** How much room the court has about the middle of the yard's widest circle. */
-    private val courtRadius: Float = yardCircles[0].second.let { it - min(1f, it * COURT_INSET) }
-
-    /** Small enough that six fit in a ring in the court, none on another. */
+    /** As big as the classic yard's on the three-seat board; in a wedge, as big as its yard has room for, with its badges, and no bigger than that. */
     override fun yardSpotRadiusOf(pawns: Int): Float =
-        super.yardSpotRadiusOf(pawns).let { if (pawns > YARD_SPOTS) min(it, courtRadius / CROWDED_RING_RADII) else it }
+        if (hexagon) BoardLayout.YARD_SPOT_RADIUS else min(BoardLayout.YARD_SPOT_RADIUS, yardCircles[0].second * SPOT_SHARE.getValue(pawns))
 
     override fun loneYardSpot(seat: Int): Offset = yardCircles[seat].first
 
-    /** In a ring about the yard's widest circle, one at the top. */
-    override fun trioYardSpot(seat: Int, slot: Int): Offset {
-        val (centre, radius) = yardCircles[seat]
-        val angle = -PI / 2 + slot * 2 * PI / 3
-        return centre + Offset(cos(angle).toFloat(), sin(angle).toFloat()) * (radius * SPOT_SPREAD)
+    /** Outwards, so they turn with the yard. */
+    override fun badgeAxis(seat: Int): Offset = (loneYardSpot(seat) - middle).let { it / it.getDistance() }
+
+    override fun yardSpotOf(seat: Int, pawn: Int, pawns: Int): Offset = when {
+        pawns == 1 -> loneYardSpot(seat)
+        hexagon -> longYardSpot(seat, pawn, pawns)
+        else -> wedgeYardSpot(seat, pawn, pawns)
     }
 
-    /** In a ring about the yard's widest circle, as wide as its court takes. */
-    override fun crowdedYardSpot(seat: Int, slot: Int, pawns: Int): Offset {
-        val angle = (if (pawns == 6) PI / 6 else -PI / 2) + slot * 2 * PI / pawns
-        return yardCircles[seat].first + Offset(cos(angle).toFloat(), sin(angle).toFloat()) * (courtRadius - yardSpotRadiusOf(YARD_SPOTS + 1))
+    /** In a line along the three-seat board's long yard; five or six in two rows, the inner of three. */
+    private fun longYardSpot(seat: Int, pawn: Int, pawns: Int): Offset {
+        val centre = loneYardSpot(seat)
+        val outward = badgeAxis(seat)
+        val side = Offset(-outward.y, outward.x)
+        if (pawns <= YARD_SPOTS) return centre + side * ((pawn - (pawns - 1) / 2f) * LINE_SPACING.getValue(pawns))
+        val row = pawn / ROW
+        val across = pawn % ROW - ((if (row == 0) ROW else pawns - ROW) - 1) / 2f
+        return centre + outward * ((row * 2 - 1) * ROWS_OUT) + side * (across * ROW_SPACING)
+    }
+
+    /**
+     * In pairs along a wedge's two straight sides, from its arc in, an odd one at its inner tip: so the middle is clear, and the whole
+     * of each spot is on the court.
+     */
+    private fun wedgeYardSpot(seat: Int, pawn: Int, pawns: Int): Offset {
+        val reach = yardWithin(seat, courtBorder + yardSpotRadiusOf(pawns) + SPOT_MARGIN)
+        val tip = reach.first()
+        if (pawn == pawns - 1 && pawns % 2 == 1) return tip
+        val corner = if (pawn % 2 == 0) reach[1] else reach.last()
+        return tip + (corner - tip) * PAIRS_OUT.getValue(pawns)[pawn / 2]
     }
 
     override fun homeArea(seat: Int): List<Offset> = if (hexagon) {
@@ -492,15 +544,29 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
         const val ARRIVING_LANE = -1.5
         const val YARD_SIDE_SQUARES = 3
 
+        /** The most a yard's arc turns in one of the straight steps it's drawn in, in radians: small enough to look round. */
+        const val MAX_ARC_STEP = PI / 90
+
+        /** How many of a yard's corners are its arc's: its two ends and its middle. */
+        const val ARC_CORNERS = 3
+
         /** The plain margin round the board's furthest corners. */
         const val RIM = 0.4
         const val SEARCH_STEPS = 200
-        const val COURT_INSET = 0.33f
-        const val CLASSIC_SPOT_RADIUS = 0.62f
-        const val MIN_SPOT_RADIUS = 0.45f
-        const val SPOT_SHARE = 0.21f
-        const val SPOT_SPREAD = 0.47f
-        const val CROWDED_RING_RADII = 3.05f
+        const val COURT_INSET = 0.25f
+        const val HEXAGON_COURT_INSET = 0.33f
+        /** How big a wedge's spots are, of its yard's widest circle, by how many pawns there are. */
+        val SPOT_SHARE = mapOf(1 to 0.345f, 2 to 0.345f, 3 to 0.295f, 4 to 0.29f, 5 to 0.25f, 6 to 0.235f)
+        const val SPOT_MARGIN = 0.05f
+
+        /** The three-seat board's yard spots: how far apart in a line of so many, and its two rows of [ROW], from the middle and along. */
+        val LINE_SPACING = mapOf(2 to 2.4f, 3 to 2f, 4 to 1.6f)
+        const val ROW = 3
+        const val ROWS_OUT = 0.8f
+        const val ROW_SPACING = 1.9f
+
+        /** How far each pair of a wedge's pawns is from its tip to its arc, outermost first, by how many pawns there are. */
+        val PAIRS_OUT = mapOf(2 to listOf(0.85f), 3 to listOf(1f), 4 to listOf(1f, 0.5f), 5 to listOf(1f, 0.65f), 6 to listOf(1f, 0.685f, 0.37f))
         const val HOME_INSET = 0.4
         const val HOME_SPACING = 0.5
         const val CROWDED_HOME_INSET = 0.32
@@ -511,17 +577,23 @@ class StarBoardLayout(override val geometry: BoardGeometry) : BoardLayout {
     }
 }
 
-/** A place in a yard for a badge: its [centre], and how much [room] there is round it, in board units. */
+/** A place in a yard's court for a badge: its [centre], and how much [room] there is round it, in board units. */
 class YardBadge(val centre: Offset, val room: Float)
 
-/** Whether this point is inside the convex [outline]. */
-private fun Offset.isInside(outline: List<Offset>): Boolean {
-    val turns = outline.indices.map { i ->
+/** One side of a convex outline: a point on it, and the way in from it. */
+private class InsideSide(private val from: Offset, private val inward: Offset) {
+    /** How far inside this side [point] is, negative outside it. */
+    fun distanceTo(point: Offset): Float = (point.x - from.x) * inward.x + (point.y - from.y) * inward.y
+}
+
+/** The sides of the convex [outline]. */
+private fun insideSides(outline: List<Offset>): List<InsideSide> {
+    val inside = outline.reduce { a, b -> a + b } / outline.size.toFloat()
+    return outline.indices.map { i ->
         val from = outline[i]
-        val side = outline[(i + 1) % outline.size] - from
-        side.x * (y - from.y) - side.y * (x - from.x)
+        val inward = (outline[(i + 1) % outline.size] - from).let { Offset(-it.y, it.x) / it.getDistance() }
+        InsideSide(from, if ((inside - from).let { it.x * inward.x + it.y * inward.y } < 0) -inward else inward)
     }
-    return turns.all { it >= 0f } || turns.all { it <= 0f }
 }
 
 /** How far [point] is from the nearest side of the convex [outline]. */
@@ -531,7 +603,10 @@ private fun edgeDistance(outline: List<Offset>, point: Offset): Float = outline.
     abs(side.x * (point.y - from.y) - side.y * (point.x - from.x)) / side.getDistance()
 }
 
-/** The convex [outline] shrunk by [by] on every side (grown, for a negative [by]): a yard's court, or a frame's inside. */
+/**
+ * The convex [outline] shrunk by [by] on every side (grown, for a negative [by]), a corner for each of its own: a frame's
+ * inside. No side may be so short that it shrinks away, so a yard with a round side takes only a thin frame.
+ */
 internal fun inset(outline: List<Offset>, by: Float): List<Offset> {
     val inside = outline.reduce { a, b -> a + b } / outline.size.toFloat()
     val sides = outline.indices.map { i ->

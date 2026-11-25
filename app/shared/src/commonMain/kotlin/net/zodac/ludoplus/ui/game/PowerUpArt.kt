@@ -49,7 +49,7 @@ internal fun DrawScope.drawInForce(places: List<List<YardBadge>>, unit: Float, i
         for ((badge, shown) in badges.zip(counts)) {
             val (powerUp, count) = shown
             if (count == 0) continue
-            val radius = min(YARD_BADGE_RADIUS, badge.room * YARD_BADGE_SHARE) * unit
+            val radius = yardBadgeRadius(badge) * unit
             val centre = badge.centre * unit
             drawPowerUp(powerUp, centre, radius)
             drawCount(textMeasurer, count, centre + Offset(radius, -radius) * YARD_COUNT_OUT, max(radius * YARD_COUNT_SIZE, unit * PAWN_COUNT_RADIUS))
@@ -59,11 +59,13 @@ internal fun DrawScope.drawInForce(places: List<List<YardBadge>>, unit: Float, i
 
 /**
  * How big a power-up in force is in a yard, across from its centre, in squares, and at most how much of the room there: less
- * than all, so its count is clear too. And how much room is enough.
+ * than all, so its count is clear too.
  */
-internal const val YARD_BADGE_RADIUS = 0.62f
-private const val YARD_BADGE_SHARE = 0.72f
-internal const val YARD_BADGE_ROOM = 0.75f
+private const val YARD_BADGE_RADIUS = 0.62f
+private const val YARD_BADGE_SHARE = 0.67f
+
+/** How big a power-up in force is drawn at [badge], across from its centre, in squares. */
+internal fun yardBadgeRadius(badge: YardBadge): Float = min(YARD_BADGE_RADIUS, badge.room * YARD_BADGE_SHARE)
 
 /** Where the count of a power-up in force is, up and to the right of its centre, and how big, of its radius: never smaller than a pawn's. */
 private const val YARD_COUNT_OUT = 0.74f

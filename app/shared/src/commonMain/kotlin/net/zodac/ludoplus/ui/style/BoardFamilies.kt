@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -206,15 +207,40 @@ private fun DrawScope.drawBevelledShape(outline: List<Offset>, depth: Float, fil
     drawPath(outline.toPath(), fill)
     val inner = inset(outline, depth)
     val centre = outline.reduce { a, b -> a + b } / outline.size.toFloat()
-    for (i in outline.indices) {
+    fun lit(i: Int): Boolean {
         val j = (i + 1) % outline.size
         val side = outline[j] - outline[i]
         var normal = Offset(side.y, -side.x)
         val middle = (outline[i] + outline[j]) / 2f - centre
         if (middle.x * normal.x + middle.y * normal.y < 0) normal = -normal
-        drawPath(listOf(outline[i], outline[j], inner[j], inner[i]).toPath(), if (normal.x + normal.y < 0) light else dark)
+        return normal.x + normal.y < 0
+    }
+    // Each run of sides lit alike is one shape, so no joins show along a round side.
+    val runs = mutableListOf(mutableListOf(0))
+    for (i in 1..outline.lastIndex) if (lit(i) == lit(i - 1)) runs.last() += i else runs += mutableListOf(i)
+    for (run in runs) {
+        val ends = run + (run.last() + 1)
+        val rim = ends.map { outline[it % outline.size] } + ends.reversed().map { inner[it % inner.size] }
+        drawPath(rim.toPath(), if (lit(run.first())) light else dark)
     }
 }
+
+/**
+ * The sides of [outline], each the points it runs through: its two ends, or for a round side (one of many short ones,
+ * each barely turned from the last) every point of it. [outline] starts at a corner.
+ */
+internal fun strokes(outline: List<Offset>): List<List<Offset>> {
+    fun turns(i: Int): Boolean {
+        val before = outline[i] - outline[i - 1]
+        val after = outline[(i + 1) % outline.size] - outline[i]
+        return abs(before.x * after.y - before.y * after.x) > CURVE_TURN * before.getDistance() * after.getDistance()
+    }
+    val corners = listOf(0) + outline.indices.drop(1).filter(::turns) + outline.size
+    return corners.zipWithNext { from, to -> (from..to).map { outline[it % outline.size] } }
+}
+
+/** The sine of the most a round side turns from one of its short sides to the next. */
+private const val CURVE_TURN = 0.1f
 
 internal fun List<Offset>.toPath(): Path = Path().apply {
     moveTo(first().x, first().y)
@@ -684,16 +710,26 @@ class PaperBoardStyle(id: String, private val paper: Color, private val pencil: 
     }
 
     /** A pencil line from [from] to [to], run a little past each end and off true. */
-    private fun DrawScope.pencilLine(from: Offset, to: Offset, unit: Float, random: Random) {
+    private fun DrawScope.pencilLine(from: Offset, to: Offset, unit: Float, random: Random) = pencilLine(listOf(from, to), unit, random)
+
+    /** [pencilLine] through each of [points], a straight line or a curve. */
+    private fun DrawScope.pencilLine(points: List<Offset>, unit: Float, random: Random) {
         fun jitter() = Offset((random.nextFloat() - 0.5f) * unit * 0.06f, (random.nextFloat() - 0.5f) * unit * 0.06f)
-        val along = (to - from) / (to - from).getDistance()
-        drawLine(
-            pencil.copy(alpha = 0.7f + random.nextFloat() * 0.2f),
-            from - along * (unit * 0.05f * random.nextFloat()) + jitter(),
-            to + along * (unit * 0.05f * random.nextFloat()) + jitter(),
-            maxOf(1.dp.toPx(), unit * 0.028f),
-            cap = StrokeCap.Round,
-        )
+        fun along(from: Offset, to: Offset) = (to - from) / (to - from).getDistance()
+        val colour = pencil.copy(alpha = 0.7f + random.nextFloat() * 0.2f)
+        val start = points.first() - along(points[0], points[1]) * (unit * 0.05f * random.nextFloat()) + jitter()
+        val end = points.last() + along(points[points.lastIndex - 1], points.last()) * (unit * 0.05f * random.nextFloat()) + jitter()
+        val width = maxOf(1.dp.toPx(), unit * 0.028f)
+        if (points.size == 2) {
+            drawLine(colour, start, end, width, cap = StrokeCap.Round)
+        } else {
+            val curve = Path().apply {
+                moveTo(start.x, start.y)
+                points.subList(1, points.lastIndex).forEach { lineTo(it.x, it.y) }
+                lineTo(end.x, end.y)
+            }
+            drawPath(curve, colour, style = Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        }
     }
 
     /** Gone over in pencil, three times. */
@@ -743,10 +779,10 @@ class PaperBoardStyle(id: String, private val paper: Color, private val pencil: 
         for (spot in spots) drawCircle(pencil.copy(alpha = 0.7f), unit * 0.58f * scale, spot, style = Stroke(maxOf(1.dp.toPx(), unit * 0.028f)))
     }
 
-    /** A pencil line round each side of [outline]. */
+    /** A pencil line along each side of [outline], a round side being one. */
     private fun DrawScope.pencilShape(outline: List<Offset>, unit: Float) {
         val random = Random(outline.first().hashCode())
-        outline.indices.forEach { pencilLine(outline[it], outline[(it + 1) % outline.size], unit, random) }
+        strokes(outline).forEach { pencilLine(it, unit, random) }
     }
 
     override fun DrawScope.drawHomeTriangle(points: List<Offset>, unit: Float, colour: Color) {
@@ -896,6 +932,13 @@ class RetroBoardStyle(id: String, private val block: Color, private val screen: 
 /** Whether [point] is inside the convex polygon of these points (on an edge counts). */
 private fun List<Offset>.encloses(point: Offset): Boolean {
     fun side(a: Offset, b: Offset) = (b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x)
-    val sides = indices.map { side(this[it], this[(it + 1) % size]) }
-    return sides.all { it >= 0f } || sides.all { it <= 0f }
+    var left = false
+    var right = false
+    for (i in indices) {
+        val side = side(this[i], this[(i + 1) % size])
+        if (side > 0f) left = true
+        if (side < 0f) right = true
+        if (left && right) return false
+    }
+    return true
 }

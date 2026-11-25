@@ -216,7 +216,7 @@ fun LudoBoard(
             val inForce = shownInForce[0]
             if (state.rules.powerUps) {
                 val seats = state.players.map { it.seat }
-                val places = remember(layout, seats, pawns) { seats.map { layout.yardBadges(it, pawns, YARD_BADGE_ROOM) } }
+                val places = remember(layout, seats, pawns) { seats.map { layout.yardBadges(it, pawns) } }
                 if (inForce.any { it.any }) {
                     Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawInForce(places, size.minDimension / layout.size, inForce, textMeasurer) }
                 }

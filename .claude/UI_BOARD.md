@@ -22,6 +22,18 @@ The board, the player cards, the die, and the move log. The general rules are in
 - **`BoardLayout`** (`BoardLayout.kt`) places every square, yard, and home column: the classic 15x15 cross for 2 and 4
     players, a hexagon-like board for 3, and a star of arms for 5 to 8 (`BoardGeometry.forPlayers`). `BoardLayoutTest` and
     `StarBoardLayoutTest` hold it.
+- **A round board's yards are round too**: the outer side of each, and of its court, is an arc about the board's middle (the
+    maintainer, 2026-11-25). `BoardLayout.yard` gives it as many short sides, so a style that draws a yard side by side takes
+    them from `strokes`, where an arc is one; `yardCorners` is its corners alone.
+- **Where pawns wait** (`BoardLayout.yardSpotOf`; the maintainer, 2026-11-25): every whole spot is on its yard's court, whatever
+    the number of pawns (`BoardLayoutTest`). A lone pawn is in the yard's middle.
+    - Spots are as big as the yard has room for with its power-ups, never bigger than the classic board's 0.62 of a square, which
+        every yard for 2 to 4 players has whatever the number of pawns. A pawn fills four fifths of its spot, or up to nine
+        tenths of a small one, so that it's as big as on the track where it can be.
+    - 2 and 4 players: the four near the court's corners, two on opposite ones, three one above two, and five or six in two
+        rows.
+    - 3 players: up to four in a line along the yard, and five or six in two rows.
+    - 5 to 8: in pairs down the court's two straight sides, an odd one at its inner tip.
 - **`LudoBoard`** draws it in four parts, so a move redraws only the move (`BENCHMARKS.md`). What a mode adds is drawn
     under the pawns: portals (`PortalArt.kt`), power-ups (`PowerUpArt.kt`), Survival's arena (`SurvivalArt.kt`), and
     ghosts (`GhostArt.kt`).
@@ -32,8 +44,8 @@ The board, the player cards, the die, and the move log. The general rules are in
     it lands (`ShieldMotionTest`; the maintainer, 2026-11-25).
 - **What's in force for a player is on their yard**, not their card (the maintainer, 2026-11-25): while their rolls count
     double, the Double power-up with how many are left, and while they have any banked, Call Up with how many (`drawInForce`,
-    `YardPowerUpTest`). Each has its own place, clear of the yard's edge and its pawns on every board
-    (`BoardLayout.yardBadges`), and changes as the move that changes it has played out. TalkBack: the yard
+    `YardPowerUpTest`). Each has its own place on the yard's court, never its coloured border, clear of its pawns
+    on every board with any number of them (`BoardLayout.yardBadges`), and changes as the move that changes it has played out. TalkBack: the yard
     says it, "Yellow yard, 4 pawns waiting, 1 doubled roll left, 2 Call Ups banked".
 - **A movable pawn is ringed** in violet. A tap on its square makes the move; where a square holds more than one, a tap
     asks which. The player whose turn it is has a white ring, edged in ink, inside their yard.

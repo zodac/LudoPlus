@@ -263,7 +263,7 @@ the records.
     rules `pawnsChanged`, so the game counts as having a house rule. Its card is the picker's first, and its choices ("3 pawns each" to TalkBack)
     leave out the mode's own number; a
     pick that is it isn't played there, and is kept for other modes. The board stays as it is: only the yards' spots follow
-    (`BoardLayout.yardSpotOf`: one in the middle, two on opposite corners, three in a triangle, five and six smaller), and five
+    (`BoardLayout.yardSpotOf`; `UI_BOARD.md`, "The board"), and five
     or six pawns home are smaller (`homePawnRadiusOf`). A custom mode has none.
 - **On the board.** "On the board" is the track or the home column: not the yard, not home. A Three Tries roll with no
     move keeps the turn (`GameState.yardTriesUsed`, `GameEvent.NoMove.triesLeft`, "Alex rolled 2 and had no move: 2

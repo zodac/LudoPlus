@@ -7,12 +7,15 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import net.zodac.ludoplus.model.BoardGeometry
 
-/** The least room any yard has for its second badge: with eight players. */
-private const val SECOND_BADGE_ROOM = 0.52f
+/** The least room any yard has for a badge, with eight players and six pawns each; and with four players or fewer. */
+private const val LEAST_BADGE_ROOM = 0.5f
+private const val WIDE_BADGE_ROOM = 0.66f
 
 class BoardLayoutTest {
 
     private val board = BoardGeometry.CLASSIC
+
+    private fun about(geometry: BoardGeometry, seat: Int, pawns: Int) = "$geometry seat $seat, $pawns pawns"
 
     // Side by side, or corner to corner where the track turns round the centre (5,6 to 6,5).
     private fun adjacent(a: Cell, b: Cell) = a != b && abs(a.column - b.column) <= 1 && abs(a.row - b.row) <= 1
@@ -80,52 +83,73 @@ class BoardLayoutTest {
     }
 
     @Test
-    fun `a yard's two badges have room in it - clear of its edge, every pawn's spot, and each other - on every board with any number of pawns`() {
+    fun `a yard's two badges are on its court - clear of its edge, every pawn's spot, and each other - on every board with any number of pawns`() {
         for (geometry in (2..8).map(BoardGeometry::forPlayers)) {
             val layout = BoardLayout.of(geometry)
             for (seat in 0..<geometry.seats) for (pawns in 1..6) {
-                val badges = layout.yardBadges(seat, pawns, YARD_BADGE_ROOM)
-                for ((i, badge) in badges.withIndex()) {
-                    val about = "$geometry seat $seat, $pawns pawns, badge $i"
-                    assertTrue(badge.room >= if (i == 0) YARD_BADGE_ROOM else SECOND_BADGE_ROOM, "$about: room for only ${badge.room}")
-                    val yard = layout.yard(seat)
-                    val turns = yard.indices.map { c ->
-                        val side = yard[(c + 1) % yard.size] - yard[c]
-                        (side.x * (badge.centre.y - yard[c].y) - side.y * (badge.centre.x - yard[c].x)) / side.getDistance()
+                val (first, second) = layout.yardBadges(seat, pawns)
+                val court = layout.yardCourt(seat)
+                for (badge in listOf(first, second)) {
+                    val about = about(geometry, seat, pawns)
+                    assertTrue(badge.room >= if (geometry.seats <= 4) WIDE_BADGE_ROOM else LEAST_BADGE_ROOM, "$about: room for only ${badge.room}")
+                    val turns = court.indices.map { c ->
+                        val side = court[(c + 1) % court.size] - court[c]
+                        (side.x * (badge.centre.y - court[c].y) - side.y * (badge.centre.x - court[c].x)) / side.getDistance()
                     }
-                    assertTrue(turns.all { it >= badge.room - 0.01f } || turns.all { it <= 0.01f - badge.room }, "$about: $turns from its edges")
+                    assertTrue(turns.all { it >= badge.room - 0.01f } || turns.all { it <= 0.01f - badge.room }, "$about: $turns from its court's edges")
                     for (pawn in 0..<pawns) {
                         val gap = (layout.yardSpotOf(seat, pawn, pawns) - badge.centre).getDistance() - layout.yardSpotRadiusOf(pawns)
                         assertTrue(gap >= badge.room - 0.01f, "$about: $gap from pawn $pawn's spot")
                     }
                 }
-                val (first, second) = badges
-                val apart = (first.centre - second.centre).getDistance()
-                assertTrue(apart >= minOf(first.room, YARD_BADGE_ROOM) + minOf(second.room, YARD_BADGE_ROOM) - 0.01f, "$geometry seat $seat, $pawns pawns: $apart apart")
+                assertEquals(first.room, second.room)
+                // The same way round in every yard of the classic board, side by side between three pawns or more.
+                if (layout == ClassicBoardLayout && pawns > 2) {
+                    assertTrue(first.centre.x < second.centre.x, about(geometry, seat, pawns))
+                    assertEquals(first.centre.y, second.centre.y, 0.001f, about(geometry, seat, pawns))
+                }
+                assertTrue((first.centre - second.centre).getDistance() >= 2 * first.room - 0.01f, about(geometry, seat, pawns))
             }
         }
     }
 
     @Test
-    fun `a yard of six has a spot a pawn - none overlapping - all on its court - on every board`() {
+    fun `every pawn's whole spot is on its yard's court - none overlapping - on every board with any number of pawns`() {
         for (geometry in (2..8).map(BoardGeometry::forPlayers)) {
             val layout = BoardLayout.of(geometry)
-            assertEquals(layout, BoardLayout.of(geometry.copy(endless = true)))
-            val radius = layout.yardSpotRadiusOf(6)
-            for (seat in 0..<geometry.seats) {
-                val spots = (0..5).map { layout.yardSpotOf(seat, it, 6) }
+            for (seat in 0..<geometry.seats) for (pawns in 1..6) {
+                val about = about(geometry, seat, pawns)
+                val spots = List(pawns) { layout.yardSpotOf(seat, it, pawns) }
+                val radius = layout.yardSpotRadiusOf(pawns)
                 val court = layout.yardCourt(seat)
                 for ((i, spot) in spots.withIndex()) {
-                    for (other in spots.drop(i + 1)) assertTrue((spot - other).getDistance() >= 2 * radius, "$geometry seat $seat")
-                    // Inside every side of the (convex) court.
-                    for (c in court.indices) {
-                        val from = court[c]
-                        val side = court[(c + 1) % court.size] - from
-                        val distance = kotlin.math.abs(side.x * (spot.y - from.y) - side.y * (spot.x - from.x)) / side.getDistance()
-                        assertTrue(distance >= radius * 0.9f, "$geometry seat $seat spot $i: $distance from its court's edge")
+                    for (other in spots.drop(i + 1)) assertTrue((spot - other).getDistance() >= 2 * radius, "$about: $spots")
+                    val turns = court.indices.map { c ->
+                        val side = court[(c + 1) % court.size] - court[c]
+                        (side.x * (spot.y - court[c].y) - side.y * (spot.x - court[c].x)) / side.getDistance()
                     }
+                    assertTrue(turns.all { it >= radius } || turns.all { it <= -radius }, "$about: spot $i is $turns from its court's edges")
                 }
             }
         }
+    }
+
+    @Test
+    fun `spots are as big as the fewer pawns there are - never bigger than the classic board's - each pawn within its spot`() {
+        for (geometry in (2..8).map(BoardGeometry::forPlayers)) {
+            val layout = BoardLayout.of(geometry)
+            val spots = (1..6).map { layout.yardSpotRadiusOf(it) }
+            assertEquals(spots.sortedDescending(), spots, "$geometry")
+            assertTrue(spots.all { it <= ClassicBoardLayout.yardSpotRadiusOf(4) }, "$geometry: $spots")
+            for (pawns in 1..6) {
+                val (spot, pawn) = layout.yardSpotRadiusOf(pawns) to layout.yardPawnRadiusOf(pawns)
+                assertTrue(pawn >= spot * 0.8f && pawn <= spot * 0.91f, "$geometry, $pawns pawns: $pawn on $spot")
+            }
+        }
+    }
+
+    @Test
+    fun `an endless board is laid out as the same board with a home`() {
+        for (geometry in (2..8).map(BoardGeometry::forPlayers)) assertEquals(BoardLayout.of(geometry), BoardLayout.of(geometry.copy(endless = true)))
     }
 }
