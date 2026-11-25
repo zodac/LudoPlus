@@ -107,7 +107,7 @@ private const val HOME_SPARKS = 10
  * seat's yard, start square, home column, and pawns (null for a seat nobody sits at). Until the game is over, the yard of
  * the player whose [turn] it is has a ring round its inside edge, and that of one with a power-up in force has it, and how
  * many are left ([InForce]). The pawns that [moves] can move
- * are ringed (a partner's too, when the player rolls for one), and a tap near one, or a screen reader's action on its
+ * are ringed (a partner's too, when the player rolls for one), and a tap near one, or anywhere in its yard, or a screen reader's action on its
  * square ([BoardSemantics]), makes its move ([onMove]). While [swapping], the pawns ringed and tapped are those the move
  * ([Move.swap]) can swap with, once the pawn has landed on the Swap.
  *
@@ -246,7 +246,7 @@ fun LudoBoard(
                                 tip = if (tip == null && tile in now.powerUps) PowerUpTip(tile, detailed = false) else null
                                 return
                             }
-                            val picked = pawnAt(point, currentMarks, currentMovable)
+                            val picked = pawnAt(point, currentMarks, currentMovable) ?: yardPawnAt(point, now, currentMarks, currentMovable)
                             currentMoves.firstOrNull { picked != null && it.picked(now, currentSwapping) == picked }?.let(currentOnMove)
                         }
                         detectTapGestures(

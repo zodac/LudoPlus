@@ -202,6 +202,20 @@ fun pawnAt(point: Offset, marks: List<PawnMark>, movable: Set<PawnRef>): PawnRef
         .minByOrNull { it.second }
         ?.first?.let { mark -> PawnRef(mark.player, mark.pawns.first { PawnRef(mark.player, it) in movable }) }
 
+/**
+ * The pawn a tap at [point] (board units) near none of [movable] ([pawnAt]) picks: the nearest of those waiting in the yard
+ * it's in, anywhere in it, as their spots are too far apart to reach all of it. Null for a tap in no yard, or one with none.
+ */
+internal fun yardPawnAt(point: Offset, state: GameState, marks: List<PawnMark>, movable: Set<PawnRef>): PawnRef? {
+    val layout = BoardLayout.of(state.board)
+    val player = state.players.indexOfFirst { layout.isInYard(it.seat, point) }
+    return marks.filter { it.player == player }
+        .flatMap { mark -> mark.pawns.map { PawnRef(player, it) to (mark.centre - point).getDistance() } }
+        .filter { (pawn, _) -> pawn in movable && state.position(player, pawn.pawn) == PawnPosition.Yard }
+        .minByOrNull { it.second }
+        ?.first
+}
+
 /** The pawn a tap picks this move by: the one it moves, or while [swapping], the one it swaps with. */
 internal fun Move.picked(state: GameState, swapping: Boolean): PawnRef? = if (swapping) swap else PawnRef(ownerIn(state), pawn)
 

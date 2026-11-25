@@ -60,6 +60,39 @@ class BoardPiecesTest {
     }
 
     @Test
+    fun `a tap in the middle of a yard picks a pawn that can leave it, whichever can - on every board with any number of pawns`() {
+        for (players in listOf(2, 3, 5, 6, 7, 8)) for (pawns in 1..6) {
+            val rules = GameMode.CLASSIC.rules.forPlayers(players).withPawns(pawns)
+            val state = GameState.new(GameMode.CLASSIC, players, rules = rules)
+            val layout = BoardLayout.of(rules.board)
+            val marks = pawnMarks(state)
+            for ((player, side) in state.players.withIndex()) {
+                val about = "$players players, $pawns pawns, player $player"
+                val yard = layout.yard(side.seat)
+                // The middle of the yard's box, which is the middle of its place for a screen reader.
+                val middle = Offset((yard.minOf { it.x } + yard.maxOf { it.x }) / 2, (yard.minOf { it.y } + yard.maxOf { it.y }) / 2)
+                val all = List(pawns) { PawnRef(player, it) }.toSet()
+                // Whichever can move, as with the tutorial's one.
+                for (one in all) {
+                    for (point in listOf(middle, layout.loneYardSpot(side.seat))) {
+                        assertEquals(one, pawnAt(point, marks, setOf(one)) ?: yardPawnAt(point, state, marks, setOf(one)), "$about: ${one.pawn}")
+                    }
+                }
+                // The nearest of several, and none of another player's, or where none can move.
+                assertEquals(PawnRef(player, pawns - 1), yardPawnAt(layout.yardSpotOf(side.seat, pawns - 1, pawns), state, marks, all), about)
+                val other = PawnRef((player + 1) % players, 0)
+                assertNull(yardPawnAt(middle, state, marks, setOf(other)), about)
+                assertNull(yardPawnAt(middle, state, marks, emptySet()), about)
+            }
+        }
+        // A pawn out on the track isn't its yard's to pick, nor one waiting a tap's elsewhere.
+        val out = state(listOf(10, Y, Y, Y))
+        val middle = ClassicBoardLayout.loneYardSpot(0)
+        assertNull(yardPawnAt(middle, out, pawnMarks(out), setOf(PawnRef(0, 0))))
+        assertNull(yardPawnAt(ClassicBoardLayout.trackCell(30).centre, out, pawnMarks(out), setOf(PawnRef(0, 1))))
+    }
+
+    @Test
     fun `a lone pawn stands in the middle of an upright square - and a little above a turned one's`() {
         for (square in 0..<ClassicBoardLayout.geometry.trackLength) ClassicBoardLayout.trackSquare(square).let { assertEquals(it.centre, it.stand(1f)) }
         // Every other arm of the eight-seat board is turned an eighth.

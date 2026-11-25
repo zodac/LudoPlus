@@ -67,8 +67,9 @@ The board, the player cards, the die, and the move log. The general rules are in
     `YardPowerUpTest`). Each has its own place on the yard's court, never its coloured border, clear of its pawns
     on every board with any number of them (`BoardLayout.yardBadges`), and changes as the move that changes it has played out. TalkBack: the yard
     says it, "Yellow yard, 4 pawns waiting, 1 doubled roll left, 2 Call Ups banked".
-- **A movable pawn is ringed** in violet. A tap on its square makes the move; where a square holds more than one, a tap
-    asks which. The player whose turn it is has a white ring, edged in ink, inside their yard.
+- **A movable pawn is ringed** in violet. A tap on its square makes the move, and one anywhere in its yard the move of the
+    nearest there (`yardPawnAt`); where a square holds more than one, a tap asks which.
+    The player whose turn it is has a white ring, edged in ink, inside their yard.
 - **A mode's own tiles** (`BoardTiles.kt`, `BoardTilesTest`; the maintainer, 2026-11-24). While a portal is pressed, it and
     its pair are bigger and ringed in gold, and everything else on the board fades to a fifth (`BOARD_FADE`). While a Swap's
     other pawn is picked, once its own has landed, everything fades as far but that pawn, unringed, and the pawns it can be
