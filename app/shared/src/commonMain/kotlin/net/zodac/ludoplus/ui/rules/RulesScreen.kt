@@ -280,9 +280,13 @@ private fun GroupTabRow(currentGroup: Int, onSelect: (Int) -> Unit) {
             // Transparent over the backdrop, like the app bar above it, and flush with the page text.
             containerColor = Color.Transparent,
             edgePadding = 0.dp,
+            // Placed as the page row's is (pagerIndicatorLayout), at currentGroup: Material's own offset centres it as if
+            // under tab 0, which is out wherever the tabs differ in width.
             indicator = {
                 TabRowDefaults.PrimaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(currentGroup, matchContentSize = true),
+                    modifier = Modifier.tabIndicatorLayout { measurable, constraints, tabPositions ->
+                        pagerIndicatorLayout(measurable, constraints, tabPositions, currentGroup.toFloat())
+                    }.testTag(GROUP_INDICATOR_TAG),
                     width = Dp.Unspecified,
                     height = TAB_INDICATOR_HEIGHT,
                 )
@@ -539,8 +543,8 @@ fun MeasureScope.pagerIndicatorLayout(
     val widthPx = width.roundToPx()
     val placeable = measurable.measure(constraints.copy(minWidth = widthPx, maxWidth = widthPx))
     // Material then places the indicator itself, centred under the row's *selected* tab: in by half of that tab's
-    // width less the indicator's own (SecondaryScrollableTabRow, for the tab `selectedTabIndex` names - always 0 here,
-    // see PageTabRow; not clamped at 0 in material3 1.4.0, as it later is - RulesTabIndicatorTest catches an upgrade changing
+    // width less the indicator's own (PrimaryScrollableTabRow and SecondaryScrollableTabRow alike, for the tab
+    // `selectedTabIndex` names - always 0 here, see GroupTabRow and PageTabRow; not clamped at 0 in material3 1.4.0, as it later is - RulesTabIndicatorTest catches an upgrade changing
     // it). Whatever that comes to is already added, so it's taken off - leaving it in puts the indicator out by half the
     // difference between tab 0's width and the shown tab's, which only shows once the tabs differ in width.
     val materialInset = (tabPositions[0].width.roundToPx() - placeable.width) / 2
@@ -552,6 +556,9 @@ fun MeasureScope.pagerIndicatorLayout(
 
 /** Test tag of the page row's indicator, so a test can check it sits under the selected tab. */
 internal const val TAB_INDICATOR_TAG = "rulesTabIndicator"
+
+/** Test tag of the group row's indicator. */
+internal const val GROUP_INDICATOR_TAG = "rulesGroupIndicator"
 
 /** How far a [Tab]'s label is padded in from each side of it - Material's own padding, which the group row has to count in when it sizes its tabs. */
 private val TAB_LABEL_PADDING = 16.dp

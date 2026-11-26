@@ -2,10 +2,12 @@ package net.zodac.ludoplus
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -22,6 +24,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
@@ -125,25 +128,44 @@ class RulesTabIndicatorTest : UiTest() {
      * is out by half the difference between tab 0's width and the shown tab's.
      */
     @OptIn(ExperimentalMaterial3Api::class)
-    private fun checkIndicatorUnderUnevenTabs(position: Float, rtl: Boolean = false) {
+    private fun checkIndicatorUnderUnevenTabs(position: Float, rtl: Boolean = false, primary: Boolean = false) {
         val widths = listOf(90.dp, 200.dp, 130.dp, 160.dp)
         showcase.show {
             CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                 val pagePosition = remember { mutableFloatStateOf(position) }
-                SecondaryScrollableTabRow(
-                    selectedTabIndex = 0,
-                    edgePadding = 0.dp,
-                    indicator = {
-                        TabRowDefaults.SecondaryIndicator(
-                            modifier = Modifier.tabIndicatorLayout { measurable, constraints, tabPositions ->
-                                pagerIndicatorLayout(measurable, constraints, tabPositions, pagePosition.floatValue)
-                            }.testTag("rulesTabIndicator"),
-                        )
-                    },
-                ) {
+                val tabs = @Composable {
                     widths.forEachIndexed { index, width ->
                         Tab(selected = index == 0, onClick = {}, text = { Text("Tab $index") }, modifier = Modifier.width(width))
                     }
+                }
+                // The group row is a primary row, the page row a secondary one: Material places each one's indicator itself.
+                if (primary) {
+                    PrimaryScrollableTabRow(
+                        selectedTabIndex = 0,
+                        edgePadding = 0.dp,
+                        indicator = {
+                            TabRowDefaults.PrimaryIndicator(
+                                modifier = Modifier.tabIndicatorLayout { measurable, constraints, tabPositions ->
+                                    pagerIndicatorLayout(measurable, constraints, tabPositions, pagePosition.floatValue)
+                                }.testTag("rulesTabIndicator"),
+                                width = Dp.Unspecified,
+                            )
+                        },
+                        tabs = tabs,
+                    )
+                } else {
+                    SecondaryScrollableTabRow(
+                        selectedTabIndex = 0,
+                        edgePadding = 0.dp,
+                        indicator = {
+                            TabRowDefaults.SecondaryIndicator(
+                                modifier = Modifier.tabIndicatorLayout { measurable, constraints, tabPositions ->
+                                    pagerIndicatorLayout(measurable, constraints, tabPositions, pagePosition.floatValue)
+                                }.testTag("rulesTabIndicator"),
+                            )
+                        },
+                        tabs = tabs,
+                    )
                 }
             }
         }
@@ -160,6 +182,27 @@ class RulesTabIndicatorTest : UiTest() {
         checkIndicatorUnderUnevenTabs(1f)
         checkIndicatorUnderUnevenTabs(2f)
         checkIndicatorUnderUnevenTabs(2.5f)
+    }
+
+    @Test
+    @Config(qualifiers = "w600dp-h800dp")
+    fun `the group row's indicator is under a tab of a different width than the first`() = uiTest {
+        checkIndicatorUnderUnevenTabs(1f, primary = true)
+        checkIndicatorUnderUnevenTabs(2f, primary = true)
+    }
+
+    @Test
+    fun `the group row's indicator is under each group's tab`() = uiTest {
+        showRules()
+        for (index in RULES_GROUPS.indices) {
+            compose.tapTab(compose.onAllNodes(isTab)[index])
+            compose.mainClock.advanceTimeBy(2_000)
+            compose.waitForIdle()
+            // Unclipped: at the row's end, a tab's bounds are cut off where the row fades out.
+            val tab = compose.onAllNodes(isTab)[index].fetchSemanticsNode().let { it.positionInRoot.x + it.size.width / 2f }
+            val indicator = compose.onNodeWithTag("rulesGroupIndicator").fetchSemanticsNode().boundsInRoot
+            assertEquals(tab, indicator.center.x, 2f, "indicator $indicator vs group $index's centre $tab")
+        }
     }
 
     @Test
