@@ -6,14 +6,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.PathNode
+import androidx.compose.ui.graphics.vector.VectorGroup
+import androidx.compose.ui.graphics.vector.VectorPath
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.unit.dp
 import net.zodac.ludoplus.model.PlayerColour
+import net.zodac.ludoplus.ui.icons.Symbols
 import net.zodac.ludoplus.ui.theme.CrystalTrophyCyan
 import net.zodac.ludoplus.ui.theme.CrystalTrophyIce
 import net.zodac.ludoplus.ui.theme.CrystalTrophyViolet
 import net.zodac.ludoplus.ui.theme.CrystalTrophyWhite
+import net.zodac.ludoplus.ui.theme.GooglyEyePupil
+import net.zodac.ludoplus.ui.theme.GooglyEyeRim
+import net.zodac.ludoplus.ui.theme.GooglyEyeWhite
 import net.zodac.ludoplus.ui.theme.color
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 // Achievement icons drawn for this app where Material Symbols has nothing that fits. Each is one colour, as a
 // Symbol is - the row or banner tints it like any other - with any detail inside cut out of the shape rather than
@@ -85,6 +95,121 @@ internal val GHOST_ICON: ImageVector by lazy {
     )
 }
 
+/** One die showing its 6, the pips cut out. For Six Pack, 30 6s in one game. */
+internal val SIX_DIE_ICON: ImageVector by lazy { cutOutIcon("SixDie", sixFace(2f, 2f, 20f)) }
+
+/** Three dice in a triangle, each showing 6, the pips cut out. For Too Much Of A Good Thing, three 6s and the turn lost. */
+internal val THREE_SIXES_ICON: ImageVector by lazy {
+    cutOutIcon("ThreeSixes", sixFace(6.6f, 0.8f, 10.8f) + sixFace(0.8f, 12.4f, 10.8f) + sixFace(12.4f, 12.4f, 10.8f))
+}
+
+/** A die [side] across from ([x], [y]) showing 6, its pips to be cut out. */
+private fun sixFace(x: Float, y: Float, side: Float): String =
+    roundSquare(x, y, side, corner = side * 0.2f) +
+        listOf(0.3f, 0.7f).flatMap { across -> listOf(0.24f, 0.5f, 0.76f).map { down -> circle(x + side * across, y + side * down, side * 0.09f) } }
+            .joinToString("")
+
+/**
+ * Four of Material Symbols' chess pawns in single file, the front one well ahead of the rest. For One By One, each pawn
+ * brought home before the next leaves the yard.
+ */
+internal val SINGLE_FILE_ICON: ImageVector by lazy {
+    val pawn = Symbols.ChessPawn.pathNodes()
+    ImageVector.Builder(name = "SingleFile", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f).apply {
+        for (x in listOf(-1.2f, 3.4f, 8f, 15.4f)) {
+            addGroup(translationX = x, translationY = 8.5f, scaleX = PAWN_SCALE, scaleY = PAWN_SCALE)
+            addGroup(translationY = 960f)
+            addPath(pawn, fill = INK)
+            clearGroup()
+            clearGroup()
+        }
+    }.build()
+}
+
+private const val PAWN_SCALE = 0.0105f
+
+/**
+ * One die showing 2, its pips cut out, over two of Material Symbols' chess pawns knocked over on their sides, heads
+ * together. For Two Birds, Two Stones, a capture with each die of one roll.
+ */
+internal val DIE_AND_TWO_PAWNS_ICON: ImageVector by lazy {
+    val pawn = Symbols.ChessPawn.pathNodes()
+    ImageVector.Builder(name = "DieAndTwoPawns", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f).apply {
+        addPath(
+            addPathNodes(roundSquare(7.2f, 0.6f, 9.6f, corner = 2f) + circle(9.8f, 3.2f, 1.05f) + circle(14.2f, 7.6f, 1.05f)),
+            fill = INK,
+            pathFillType = PathFillType.EvenOdd,
+        )
+        for ((x, turn) in listOf(-2.2f to 90f, 12.2f to -90f)) {
+            val half = 480f * TIPPED_PAWN_SCALE
+            addGroup(rotate = turn, pivotX = x + half, pivotY = TIPPED_PAWN_TOP + half)
+            addGroup(translationX = x, translationY = TIPPED_PAWN_TOP, scaleX = TIPPED_PAWN_SCALE, scaleY = TIPPED_PAWN_SCALE)
+            addGroup(translationY = 960f)
+            addPath(pawn, fill = INK)
+            clearGroup()
+            clearGroup()
+            clearGroup()
+        }
+    }.build()
+}
+
+private const val TIPPED_PAWN_SCALE = 0.0145f
+private const val TIPPED_PAWN_TOP = 10.2f
+
+/** Every path's data in this icon, whatever group it sits in. */
+private fun ImageVector.pathNodes(): List<PathNode> {
+    fun VectorGroup.nodes(): List<PathNode> = flatMap { node ->
+        when (node) {
+            is VectorGroup -> node.nodes()
+            is VectorPath -> node.pathData
+        }
+    }
+    return root.nodes()
+}
+
+/**
+ * A generic caped hero, hands on hips and a star cut into the chest, the cape flaring out either side. For One Of
+ * Everything, every power-up taken in one game.
+ */
+internal val CAPED_HERO_ICON: ImageVector by lazy {
+    val star = (0 until 10).joinToString("", "M", "Z") { i ->
+        val r = if (i % 2 == 0) 1.6f else 0.65f
+        val angle = (-90.0 + i * 36) * PI / 180
+        "${12 + r * cos(angle).toFloat()},${11 + r * sin(angle).toFloat()}" + if (i < 9) "L" else ""
+    }
+    val body = "M8.6,7.6L15.4,7.6C16.2,7.6 16.7,8.1 17,8.8L18.4,12L14.7,14.2L15,22.4L12.9,22.4L12,16.6L11.1,22.4L9,22.4L9.3,14.2" +
+        "L5.6,12L7,8.8C7.3,8.1 7.8,7.6 8.6,7.6Z" + "M14.6,10.2L16.2,11.7L14.6,12.6Z" + "M9.4,10.2L7.8,11.7L9.4,12.6Z" + circle(12f, 4.2f, 2.6f) + star
+    val cape = "M6.4,13.4L8.5,15L8.1,21.2L3.4,21.8Z" + "M17.6,13.4L15.5,15L15.9,21.2L20.6,21.8Z"
+    cutOutIcon("CapedHero", body + cape)
+}
+
+/** A wooden spoon on the diagonal, its bowl at the top right. For Wooden Spoon, last place. */
+internal val WOODEN_SPOON_ICON: ImageVector by lazy {
+    ImageVector.Builder(name = "WoodenSpoon", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f)
+        .addGroup(rotate = 45f, pivotX = 12f, pivotY = 12f)
+        .addPath(
+            addPathNodes(
+                "M12,1.2C15.2,1.2 16.6,4 16.6,6.6C16.6,9.4 14.8,11.2 13.2,11.8L13.3,21.4A1.3,1.3 0,0 1,10.7 21.4L10.8,11.8" +
+                    "C9.2,11.2 7.4,9.4 7.4,6.6C7.4,4 8.8,1.2 12,1.2Z",
+            ),
+            fill = INK,
+        )
+        .clearGroup()
+        .build()
+}
+
+/** Two ducks side by side, facing left, each eye cut out. For Sitting Ducks, two pawns captured with one move. */
+internal val DUCKS_ICON: ImageVector by lazy {
+    fun duck(x: Float, y: Float) =
+        "M${x + 0.4f},${y + 8.6f}L${x + 2.7f},${y + 7.5f}A2.45,2.45 0,1 1,${x + 7.2f} ${y + 9.2f}L${x + 7.6f},${y + 11f}" +
+            "C${x + 8.6f},${y + 11.1f} ${x + 10.2f},${y + 10.6f} ${x + 11.4f},${y + 9.2f}C${x + 11.9f},${y + 11f} ${x + 11.6f},${y + 13.5f} ${x + 10.6f},${y + 15f}" +
+            "C${x + 9.6f},${y + 16.3f} ${x + 8f},${y + 16.8f} ${x + 6.4f},${y + 16.8f}C${x + 4.4f},${y + 16.8f} ${x + 3.2f},${y + 14.8f} ${x + 3.4f},${y + 12.6f}" +
+            "C${x + 3.5f},${y + 11.6f} ${x + 3.9f},${y + 10.8f} ${x + 3.4f},${y + 9.7f}L${x + 2.8f},${y + 9.4f}Z" + circle(x + 5.3f, y + 7.4f, 0.6f)
+    cutOutIcon("Ducks", duck(0f, 1.5f) + duck(11.8f, 1.5f))
+}
+
+private fun circle(cx: Float, cy: Float, r: Float): String = "M${cx - r},${cy}a$r,$r 0 1,0 ${2 * r},0a$r,$r 0 1,0 ${-2 * r},0Z"
+
 // ---- Fixed colours --------------------------------------------------------------------------------------------------
 // Shown untinted (Achievement.iconTintOrUnspecified gives them Color.Unspecified).
 
@@ -129,4 +254,16 @@ internal val TRACK_CORNER_ICON: ImageVector by lazy {
     val row = listOf(0 to 4, 0 to 3, 0 to 2, 0 to 1, 0 to 0, 1 to 0, 2 to 0, 3 to 0).map { it to PlayerColour.RED }
     val others = listOf((2 to 2) to PlayerColour.GREEN, (3 to 2) to PlayerColour.YELLOW, (2 to 3) to PlayerColour.BLUE, (3 to 3) to PlayerColour.GREEN)
     squaresIcon("TrackCorner", side = 4.05f, corner = 0.7f, (row + others).map { (at, colour) -> Offset(3.15f + at.first * 4.55f, 0.87f + at.second * 4.55f) to colour })
+}
+
+/**
+ * A googly eye: a white eye with a dark rim, its black pupil slid down to the lower right with a glint in it. For
+ * Everything Everywhere All At Once, the win with every house rule piled on.
+ */
+internal val GOOGLY_EYE_ICON: ImageVector by lazy {
+    ImageVector.Builder(name = "GooglyEye", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f).apply {
+        addPath(addPathNodes(circle(12f, 12f, 10f)), fill = SolidColor(GooglyEyeWhite), stroke = SolidColor(GooglyEyeRim), strokeLineWidth = 1.1f)
+        addPath(addPathNodes(circle(15.2f, 15.4f, 4.2f)), fill = SolidColor(GooglyEyePupil))
+        addPath(addPathNodes(circle(16.6f, 13.6f, 1.1f)), fill = SolidColor(GooglyEyeWhite))
+    }.build()
 }

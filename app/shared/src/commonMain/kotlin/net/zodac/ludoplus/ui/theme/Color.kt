@@ -214,6 +214,11 @@ val CrystalTrophyIce = Color(0xFFCDEFFF)
 val CrystalTrophyCyan = Color(0xFF8EC5EC)
 val CrystalTrophyViolet = Color(0xFF6F7FD8)
 
+/** Everything Everywhere All At Once's googly eye: a white eye with a dark rim, a black pupil and its glint. */
+val GooglyEyeWhite = Color(0xFFFFFFFF)
+val GooglyEyeRim = Color(0xFF20232B)
+val GooglyEyePupil = Color(0xFF14161C)
+
 // Styles: the die and background art, for ui.style. Deliberately not colour roles:
 // the table is a rendered object, not app chrome. The navy felt is the default background.
 val FeltNavyGlow = Color(0xFF2A5590)

@@ -41,9 +41,9 @@ val Achievement.icon: ImageVector
         Achievement.THE_JOURNEY_BEGINS -> Symbols.RocketLaunch
         Achievement.LETS_FINISH_THIS -> Symbols.History
         Achievement.ONE_MORE_TIME -> Symbols.Replay
-        Achievement.WARMING_UP -> Symbols.Whatshot
+        Achievement.WARMING_UP -> Symbols.Fireplace
         Achievement.WELL_ROLLED -> Symbols.Casino
-        Achievement.GETTING_COMFORTABLE -> Symbols.Numbers
+        Achievement.GETTING_COMFORTABLE -> Symbols.Chair
         Achievement.REGULAR -> Symbols.EventRepeat
         Achievement.SEASONED -> Symbols.MilitaryTech
         Achievement.OLD_HAND -> Symbols.Elderly
@@ -58,7 +58,8 @@ val Achievement.icon: ImageVector
         // Shown the door.
         Achievement.BOUNCER -> Symbols.Logout
         Achievement.MENACE -> Symbols.Dangerous
-        Achievement.PUBLIC_ENEMY -> Symbols.Skull
+        // A police light.
+        Achievement.PUBLIC_ENEMY -> Symbols.E911Emergency
         // Drawn for this app: the trophy in crystal, for the last of them all.
         Achievement.COMPLETIONIST -> CRYSTAL_TROPHY_ICON
 
@@ -66,40 +67,40 @@ val Achievement.icon: ImageVector
         Achievement.OFF_THE_MARK -> Symbols.Start
         Achievement.SIX_SHOOTER -> Symbols.Filter6
         Achievement.LOADED_DICE -> LOADED_DICE_ICON
-        Achievement.SIX_PACK -> Symbols.SportsBar
+        // Drawn for this app: one die showing its 6.
+        Achievement.SIX_PACK -> SIX_DIE_ICON
         // Steps up, one number at a time.
         Achievement.COUNTING_UP -> Symbols.Stairs2
 
         // ---- Captures -----------------------------------------------------------------------
         Achievement.GOTCHA -> Symbols.Target
-        // Two stacked, for two pawns with one move.
-        Achievement.TWO_FOR_ONE -> Symbols.FilterNone
+        Achievement.TWO_FOR_ONE -> Symbols.GroupRemove
         Achievement.WELCOME_PARTY -> Symbols.WrongLocation
         Achievement.STRAIGHT_OUT_THE_GATE -> Symbols.DoorOpen
         Achievement.HAT_TRICK -> Symbols.Looks3
         // Something sweet.
         Achievement.PAYBACK -> Symbols.Cookie
-        Achievement.PARTING_SHOT -> Symbols.NearMe
+        Achievement.PARTING_SHOT -> Symbols.ArrowOutward
         Achievement.PICKING_ON_YOU -> Symbols.PersonRemove
-        // The whole world: every opponent.
-        Achievement.NOBODY_IS_SAFE -> Symbols.Public
+        // Every opponent on the screen.
+        Achievement.NOBODY_IS_SAFE -> Symbols.Radar
         Achievement.ON_THE_WARPATH -> Symbols.Swords
 
         // ---- Racing -------------------------------------------------------------------------
         Achievement.HOME_SWEET_HOME -> Symbols.House
-        Achievement.HOMECOMING -> Symbols.Cabin
-        Achievement.EARLY_BIRD -> Symbols.FlutterDash
+        Achievement.HOMECOMING -> Symbols.HomePin
+        Achievement.EARLY_BIRD -> Symbols.Raven
         Achievement.ALL_HANDS_ON_DECK -> Symbols.WavingHand
         Achievement.DOUBLE_DELIVERY -> Symbols.LocalShipping
-        Achievement.EXPRESS_DELIVERY -> Symbols.Rocket
+        Achievement.EXPRESS_DELIVERY -> Symbols.DeliveryTruckSpeed
         // A runner on a lap of the board.
         Achievement.LAP_OF_HONOUR -> Symbols.Sprint
         Achievement.FULL_HOUSE -> Symbols.HolidayVillage
-        Achievement.GLOBETROTTER -> Symbols.TravelExplore
-        Achievement.ULTRAMARATHON -> Symbols.Hiking
+        Achievement.GLOBETROTTER -> Symbols.Luggage
+        Achievement.ULTRAMARATHON -> Symbols.Steps
 
         // ---- Winning ------------------------------------------------------------------------
-        Achievement.CLEAN_SWEEP -> Symbols.DeleteSweep
+        Achievement.CLEAN_SWEEP -> Symbols.CleaningServices
         Achievement.COMEBACK_KID -> Symbols.TrendingUp
         Achievement.CONQUEROR -> Symbols.Castle
         Achievement.FIRST_VICTORY -> Symbols.Flag
@@ -108,13 +109,12 @@ val Achievement.icon: ImageVector
         Achievement.LATE_BLOOMER -> Symbols.LocalFlorist
         Achievement.LIFE_OF_THE_PARTY -> Symbols.Diversity3
         Achievement.NEVER_SAY_DIE -> Symbols.Healing
-        Achievement.PACIFIST -> Symbols.ThumbUp
+        Achievement.PACIFIST -> Symbols.VolunteerActivism
         Achievement.PHOTO_FINISH -> Symbols.PhotoCamera
         Achievement.SPEED_DEMON -> Symbols.Bolt
         // Enough: a hand held up.
         Achievement.STOP_PICKING_ON_ME -> Symbols.BackHand
-        // Locked away, out of reach: never captured.
-        Achievement.UNTOUCHABLE -> Symbols.Lock
+        Achievement.UNTOUCHABLE -> Symbols.Shield
         Achievement.WIRE_TO_WIRE -> Symbols.Timeline
 
         // ---- Game Modes ---------------------------------------------------------------------
@@ -123,43 +123,49 @@ val Achievement.icon: ImageVector
         Achievement.PAINT_THE_TOWN_RED -> RED_SQUARES_ICON
         Achievement.COLOUR_COORDINATED -> TRACK_CORNER_ICON
         Achievement.DOUBLE_OR_NOTHING -> Symbols.Savings
-        Achievement.TWO_BIRDS_TWO_STONES -> Symbols.MoveUp
+        // Drawn for this app: one die, and a pawn knocked over either side of it.
+        Achievement.TWO_BIRDS_TWO_STONES -> DIE_AND_TWO_PAWNS_ICON
         Achievement.THROUGH_THE_LOOKING_GLASS -> Symbols.AutoAwesome
         Achievement.THERE_AND_BACK_AGAIN -> Symbols.SyncAlt
         // Holding fast.
         Achievement.LAST_PAWN_STANDING -> Symbols.Anchor
-        Achievement.BARELY_A_SCRATCH -> Symbols.Stars
-        Achievement.AGENT_OF_CHAOS -> Symbols.Psychology
-        Achievement.ONE_OF_EVERYTHING -> Symbols.GridView
+        Achievement.BARELY_A_SCRATCH -> Symbols.SentimentVerySatisfied
+        Achievement.AGENT_OF_CHAOS -> Symbols.Cyclone
+        // Drawn for this app: a caped hero, every power-up taken.
+        Achievement.ONE_OF_EVERYTHING -> CAPED_HERO_ICON
         Achievement.LIVING_TO_TELL_THE_TALE -> GHOST_ICON
         // Gone like the wind.
         Achievement.NOT_A_GHOST_OF_A_CHANCE -> Symbols.Air
-        // The sum of them all.
-        Achievement.EVERYTHING_EVERYWHERE_ALL_AT_ONCE -> Symbols.Functions
-        Achievement.GRAND_TOUR -> Symbols.MyLocation
+        // A googly eye, for the film the title quotes.
+        Achievement.EVERYTHING_EVERYWHERE_ALL_AT_ONCE -> GOOGLY_EYE_ICON
+        Achievement.GRAND_TOUR -> Symbols.TravelExplore
 
         // ---- Misfortune ---------------------------------------------------------------------
-        Achievement.BACK_TO_SQUARE_ONE -> Symbols.RestartAlt
+        Achievement.BACK_TO_SQUARE_ONE -> Symbols.SkipPrevious
         Achievement.BOTTOM_OF_THE_BARREL -> Symbols.KeyboardDoubleArrowDown
         // Drawn for this app: a trophy cracked in two - the win that broke at the last.
         Achievement.DEFEAT_FROM_THE_JAWS_OF_VICTORY -> CRACKED_TROPHY_ICON
         Achievement.DRY_SPELL -> Symbols.WbSunny
-        Achievement.GROUNDHOG_DAY -> Symbols.Update
-        Achievement.I_ROBOT -> Symbols.Android
+        Achievement.GROUNDHOG_DAY -> Symbols.Cycle
+        Achievement.I_ROBOT -> Symbols.SmartToy
         Achievement.INSULT_TO_INJURY -> Symbols.PersonalInjury
-        Achievement.LOCKED_OUT -> Symbols.HourglassEmpty
-        Achievement.NEVER_LEFT_HOME -> Symbols.Cottage
+        Achievement.LOCKED_OUT -> Symbols.Lock
+        Achievement.NEVER_LEFT_HOME -> Symbols.Bed
         Achievement.PIPPED_TO_THE_POST -> Symbols.Timer
-        Achievement.SITTING_DUCKS -> Symbols.Cancel
+        // Drawn for this app: two ducks.
+        Achievement.SITTING_DUCKS -> DUCKS_ICON
         // A boxing glove.
         Achievement.PUNCHING_BAG -> Symbols.SportsMma
-        Achievement.TOO_MUCH_OF_A_GOOD_THING -> Symbols.Looks6
-        Achievement.WOODEN_SPOON -> Symbols.TrendingDown
+        // Drawn for this app: three dice, each showing 6.
+        Achievement.TOO_MUCH_OF_A_GOOD_THING -> THREE_SIXES_ICON
+        // Drawn for this app: a wooden spoon.
+        Achievement.WOODEN_SPOON -> WOODEN_SPOON_ICON
         Achievement.SPOON_COLLECTOR -> Symbols.Restaurant
 
         // ---- Miscellaneous (hidden) ---------------------------------------------------------
         Achievement.DEJA_VU -> Symbols.Repeat
-        Achievement.INCH_BY_INCH -> Symbols.SlowMotionVideo
+        // A ruler.
+        Achievement.INCH_BY_INCH -> Symbols.Straighten
         Achievement.LEAPFROG -> Symbols.Redo
         Achievement.MY_FAVOURITE_SPOT -> Symbols.PushPin
         Achievement.NOT_SO_FAST -> Symbols.Block
@@ -182,7 +188,8 @@ val Achievement.icon: ImageVector
         Achievement.HUNGRY_FOR_6S -> Symbols.LunchDining
         // A crescent moon and two stars, for the small hours it was earned in.
         Achievement.MIDNIGHT_RUN -> rememberMidnightIcon()
-        Achievement.ONE_BY_ONE -> Symbols.HomeWork
+        // Drawn for this app: four pawns in single file, the front one well ahead.
+        Achievement.ONE_BY_ONE -> SINGLE_FILE_ICON
         // Making a run for it.
         Achievement.THE_GREAT_ESCAPE -> Symbols.DirectionsRun
         Achievement.TIME_FLIES -> Symbols.Schedule
@@ -191,10 +198,11 @@ val Achievement.icon: ImageVector
 /**
  * [tint] as given, except for the fixed-colour icons: every Easter Egg means a colour of its own, not whatever
  * container holds it (Big Fan's heart is always [AchievementHeartRed]; [Color.Unspecified] shows a drawn icon's own
- * fills), and so do Completionist's crystal and Colour Rush's squares.
+ * fills), and so do Completionist's crystal, Colour Rush's squares, and Everything Everywhere All At Once's googly eye.
  */
 fun Achievement.iconTintOrUnspecified(tint: Color): Color = when (this) {
-    Achievement.COMPLETIONIST, Achievement.PAINT_THE_TOWN_RED, Achievement.COLOUR_COORDINATED -> Color.Unspecified
+    Achievement.COMPLETIONIST, Achievement.PAINT_THE_TOWN_RED, Achievement.COLOUR_COORDINATED,
+    Achievement.EVERYTHING_EVERYWHERE_ALL_AT_ONCE -> Color.Unspecified
     Achievement.ALLITERATION -> AchievementInkBlue
     Achievement.ARE_YOU_A_DEVELOPER -> AchievementDeveloperCyan
     Achievement.BIG_FAN -> AchievementHeartRed

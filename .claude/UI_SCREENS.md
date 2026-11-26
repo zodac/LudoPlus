@@ -60,8 +60,13 @@ Robolectric test shares one process, so a test that opens the screen calls it fi
 
 - Glyphs are Material Symbols, Rounded and filled, from `ui/icons/Symbols.kt`, which `scripts/material-symbols.sh`
     generates from Google's path data. Add a glyph to the script's list and run it; never edit `Symbols.kt` by hand.
-- Bespoke drawings are allowed where Symbols has nothing that fits: `DrawnAchievementIcons.kt` (path data on the 24 grid,
-    one colour with details cut out), and drawables (`ic_stairs`, `ic_cowboy_hat`).
+- Bespoke drawings are allowed where Symbols has nothing that fits: `ImageVector`s in `DrawnAchievementIcons.kt`, path
+    data on the 24 grid (or Symbols' 960 one, to build on a Symbol such as the trophy), one colour with details cut out.
+    A Symbol's own paths can be placed, scaled, and turned in one (`pathNodes()`: One By One's and Two Birds, Two
+    Stones' chess pawns). The few in fixed colours sit at that file's end, and Midnight Run's moon is in
+    `AchievementIcons.kt`. There are no drawable resources for achievement icons.
+- A Symbol is Google's current drawing, which can differ from its name or an older look: `Whatshot` is now a rising
+    arrow in a circle, not a flame. Render a new glyph before choosing it.
 - An icon is not a field on `Achievement`, so the model stays free of Compose.
 - **A mode or modifier named in a description is in `backticks`**, drawn bold gold (`tooltipMarkup`) on the list and the
     banner. TalkBack and the Play Console export drop the backticks. `AchievementTextTest` checks they pair, and that no
@@ -70,9 +75,13 @@ Robolectric test shares one process, so a test that opens the screen calls it fi
 - **Fixed colours** via `iconTintOrUnspecified`, rather than the row's tint:
     - every Easter Egg (Big Fan's red heart, Are You A Developer?'s cyan, Can't Wait To Get Going's red pawn, Midnight
         Run's moon). A new Easter Egg adds its case there;
-    - and the few whose point is a colour: Completionist's crystal trophy, and Colour Rush's squares (Paint The Town
-        Red's nine, Colour Coordinated's corner of the track).
-- When adding one, grep that the glyph is unused. `PlayConsoleExportTest` fails if two achievements draw the same.
+    - and the few whose point is a colour: Completionist's crystal trophy, Colour Rush's squares (Paint The Town
+        Red's nine, Colour Coordinated's corner of the track), and Everything Everywhere All At Once's googly eye (from
+        DiceFive).
+- When adding one, grep that the glyph is unused. `AchievementIconsTest` and `PlayConsoleExportTest` fail if two
+    achievements draw the same.
+- **Never a brand's mascot or logo**, even where Symbols has one: the Android robot needs a CC BY credit, and Flutter's
+    Dash is Flutter's. I, Robot is `SmartToy`, a generic robot.
 
 ## Achievement banners
 

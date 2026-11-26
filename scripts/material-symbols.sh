@@ -25,39 +25,42 @@ AcUnit ac_unit
 Add add
 Air air
 Anchor anchor
-Android android
 ArrowBack arrow_back mirror
 ArrowDownward arrow_downward
 ArrowDropDown arrow_drop_down
 ArrowForward arrow_forward mirror
+ArrowOutward arrow_outward
 ArrowUpward arrow_upward
 AutoAwesome auto_awesome
 AvgPace avg_pace
 BackHand back_hand
+Bed bed
 Block block
 Bolt bolt
-Cabin cabin
 Calculate calculate
-Cancel cancel
 Casino casino
 Castle castle
+Chair chair
 Check check
 CheckCircle check_circle
 ChessPawn chess_pawn
+CleaningServices cleaning_services
 Close close
 ContentCut content_cut
 Cookie cookie
-Cottage cottage
 Crown crown
+Cycle cycle
+Cyclone cyclone
 Dangerous dangerous
 DeleteForever delete_forever
-DeleteSweep delete_sweep
+DeliveryTruckSpeed delivery_truck_speed
 DeveloperMode developer_mode
 DirectionsRun directions_run
 Diversity3 diversity_3
 DoorOpen door_open
 Doorbell doorbell
 Download download
+E911Emergency e911_emergency
 Elderly elderly
 EmojiEvents emoji_events
 EventRepeat event_repeat
@@ -66,25 +69,22 @@ FileOpen file_open
 Filter4 filter_4
 Filter6 filter_6
 Filter7 filter_7
-FilterNone filter_none
+Fireplace fireplace
 Flag flag
-FlutterDash flutter_dash
 FormatListNumbered format_list_numbered
 FormatPaint format_paint
-Functions functions
 Gavel gavel
-GridView grid_view
 GridViewOutlined grid_view fill0
+GroupRemove group_remove
 Handshake handshake
 Healing healing
 HeartBroken heart_broken
 Help help mirror
 HelpOutline help fill0 mirror
-Hiking hiking
 History history
 HistoryEdu history_edu
 HolidayVillage holiday_village
-HomeWork home_work
+HomePin home_pin
 HourglassEmpty hourglass_empty
 House house
 Info info
@@ -101,17 +101,13 @@ Lock lock
 LockOpen lock_open
 Logout logout mirror
 Looks3 looks_3
-Looks6 looks_6
 LooksOne looks_one
+Luggage luggage
 LunchDining lunch_dining
 Memory memory
 MilitaryTech military_tech
 ModeHeat mode_heat
 MotionPhotosOff motion_photos_off
-MoveUp move_up
-MyLocation my_location
-NearMe near_me
-Numbers numbers
 OpenInNew open_in_new mirror
 OtherHouses other_houses
 Palette palette
@@ -122,29 +118,29 @@ PersonalInjury personal_injury
 PestControl pest_control
 PhotoCamera photo_camera
 PlayArrow play_arrow
-Psychology psychology
 Public public
 PushPin push_pin
 QuestionMark question_mark
 Quiz quiz
+Radar radar
+Raven raven
 Redo redo mirror
 Remove remove
 Repeat repeat
 Replay replay
-RestartAlt restart_alt
 Restaurant restaurant
-Rocket rocket
 RocketLaunch rocket_launch
 Savings savings
 Schedule schedule
 ScreenRotation screen_rotation
 SentimentNeutral sentiment_neutral
-Skull skull
-SlowMotionVideo slow_motion_video
+SentimentVerySatisfied sentiment_very_satisfied
+Shield shield
+SkipPrevious skip_previous
+SmartToy smart_toy
 SocialLeaderboard social_leaderboard
 Sort sort mirror
 Speed speed
-SportsBar sports_bar
 SportsEsports sports_esports
 SportsMma sports_mma
 Sprint sprint
@@ -154,14 +150,15 @@ Stars stars
 Start start mirror
 StayCurrentLandscape stay_current_landscape
 StayCurrentPortrait stay_current_portrait
+Steps steps
 Storefront storefront
+Straighten straighten
 Style style
 Swords swords
 Sync sync
 SyncAlt sync_alt
 Target target
 Texture texture
-ThumbUp thumb_up
 Timeline timeline
 Timer timer
 TravelExplore travel_explore
@@ -169,14 +166,13 @@ TrendingDown trending_down mirror
 TrendingUp trending_up mirror
 UTurnLeft u_turn_left
 Undo undo mirror
-Update update
 Upgrade upgrade
 Vibration vibration
 VolumeUp volume_up mirror
+VolunteerActivism volunteer_activism
 Wallpaper wallpaper
 WavingHand waving_hand
 WbSunny wb_sunny
-Whatshot whatshot
 WorkspacePremium workspace_premium
 WrongLocation wrong_location
 """
