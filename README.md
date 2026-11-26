@@ -13,18 +13,72 @@ and be the first to get all four home. Land on a rival to send them back to the 
 
 ## What's in it
 
-- **The classic rules** for 2 to 8 players, on a board made for each size, alone or in teams, against friends passing
-    the phone around or computer opponents at three levels
-- **Game modes and house rules**: Colour Rush, Two Dice, Portals, Survival, Chaos, and Haunted House, and ten house rules
-    to mix in
+- **The classic rules** for 2 to 8 players, on a board made for each size, alone or in teams (with 4, 6, or 8
+    players), against friends passing the phone around or computer opponents at three levels: Easy, Medium, and Hard
+- **Seven game modes**: Classic, Colour Rush, Two Dice, Portals, Survival, Chaos, and Haunted House (see
+    [below](#game-modes)), and **ten house rules** to mix in
 - **Play together on phones in the same room** (the Google Play version): one game across several phones, linked
     directly with no server, and a player whose phone drops out can rejoin
-- **A guided tutorial** that teaches the game in four short parts, and the rules with a diagram for each idea
-- **A Leaderboard** of the best wins, and **Statistics** for every player: wins, streaks, and captures
+- **A guided tutorial** that teaches the game in four short parts, and the rules with a diagram for each idea and a
+    board for each mode
+- **A Leaderboard** of the best wins for every mode and player count, and **Statistics** for every player: wins,
+    streaks, captures, and your total time played
 - **Achievements** to chase: over 100 of them, for captures, comebacks, close finishes, and a few hidden surprises
 - **Styles** they unlock: 17 boards, 18 sets of pawns, 35 dice, and 20 backgrounds for the table
 - Built for **TalkBack** and large fonts, with no accounts: your games stay on your phone
 - The Google Play version shows a small ad banner, which an optional purchase removes; this GitHub version has no ads
+
+## Game modes
+
+Every mode has its own Leaderboard, its own page in Statistics, and achievements of its own.
+
+- **Classic**: roll a 6 to bring a pawn out of the yard, race all four a lap of the board and up your home column, and
+    land on a rival to send them back. A 6, a capture, and a pawn reaching home each earn another roll; three 6s in a
+    row end your turn. Star squares and start squares are safe.
+- **Colour Rush**: the first pawn to land on a square claims it for its colour, and a capture there takes it over.
+    Claimed stars are yours for good. The game ends once every square is claimed or someone gets all their pawns home,
+    and the most squares wins.
+- **Two Dice**: roll two dice and move by each one in turn, with the same pawn or two different ones. A 6 on either
+    brings a pawn out, and doubles roll again.
+- **Portals**: pairs of portals on the track, open to every colour. End a move on one and come out at its pair: a
+    short hop, or a long jump most of the way round the board, or most of the way back.
+- **Survival**: six pawns each, all starting on the board, and no home: pawns lap the board for as long as they last. A
+    captured pawn is out of the game, and the last player with a pawn left wins. Hold on too long and Overtime makes
+    the start squares unsafe, Sudden Death the stars, and then the Cataclysm makes squares vanish from the track until
+    there's nowhere left to hide. Its Leaderboard ranks the furthest travelled.
+- **Chaos**: power-ups on the track, taken by the pawn that ends its move on one. **Double** makes your next three
+    rolls move twice as far, **Shield** bounces a rival off your pawn, **Roll Again** does what it says, **Call Up**
+    brings a pawn out of the yard (or saves one for the next pawn captured), and **Swap** trades places with any other
+    pawn on the track.
+- **Haunted House**: ghosts drift round the track, a die's roll at a time and in either direction, and send any pawn
+    they land on back to its yard, unless it's safe.
+
+### House rules
+
+Mix any of these into any mode from New Game, once you've finished your first game. A game with house rules doesn't
+go on the Leaderboard or in Statistics, and earns only the house rules' own achievements.
+
+- **Pawns**: one to six pawns each, instead of the mode's own number
+- **No Capture Roll**: capturing a pawn doesn't earn another roll
+- **No Home Roll**: bringing a pawn home doesn't earn another roll
+- **Endless 6s**: three 6s in a row don't end your turn
+- **Out on a 1**: a 1 brings a pawn out of the yard, as well as a 6
+- **Free Start**: while none of your pawns is on the board, any roll brings one out
+- **Three Tries**: while none of your pawns is on the board, roll up to three times to bring one out
+- **Blockades**: two of your pawns on one square make a blockade that no other player's pawn can pass or land on
+- **Must Capture**: if a move can capture, you have to make a capture
+- **Guarded Starts**: a start square is safe only for its own colour
+
+## At the table
+
+- **Tap a player's card** to see their captures and times captured, against each opponent, and how many times they've
+    rolled each number.
+- **The move log** follows every roll and move, naming pawns by number (it can be turned off in Settings).
+- **Your game is saved as you play**: leave at any time and pick it up again with Continue.
+- **Make it yours** in Settings: sound effects, vibration, stopping at the first winner, a locked portrait or
+    landscape screen, and how much the app animates, down to none at all.
+- **Keep your progress** in this GitHub version by exporting it to a file in Settings, and importing it on another
+    phone or after a reinstall: your achievements, records, and settings are merged, never overwritten.
 
 <table>
 <tr>
