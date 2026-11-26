@@ -479,7 +479,7 @@
     <string name="gameover_tutorial_done">Done</string>
     <string name="gameover_tutorial_new_game">New Game</string>
     <!-- Rules' How to Play page, above its button, and New Game's link while no game has been finished. -->
-    <string name="rules_how_to_play_tutorial">Want to see it played? The tutorial takes you through it in four short parts. Nothing in it counts: no records and no saved game.</string>
+    <string name="rules_how_to_play_tutorial">Want to see it played? The tutorial takes you through the basics.</string>
     <string name="rules_tutorial_start">Play the Tutorial</string>
     <string name="setup_tutorial_link">New to the game? Play the tutorial</string>
     <string name="game_leave_title">Leave game?</string>
@@ -1131,8 +1131,8 @@
     <string name="rules_how_to_play_title">How to Play %1$s</string>
     <!-- A tab: keep it short. -->
     <string name="rules_how_to_play_tab">How to Play</string>
-    <string name="rules_how_to_play_1">Race your four pawns a full lap of the board and into home, in the middle. The first player to bring all four pawns home wins.</string>
-    <string name="rules_how_to_play_2">Players take turns clockwise, each rolling one die. The first player listed on New Game goes first.</string>
+    <string name="rules_how_to_play_1">Race against other players to get your pawns around the board and back home. The first player to bring all four pawns home wins!</string>
+    <string name="rules_how_to_play_2">Each player rolls one die per turn. The first player is in the bottom left corner, then you go clockwise around the board.</string>
 
     <!-- Rules screen: everything else (ui/rules/RulesScreen.kt) -->
     <string name="rules_title">Rules</string>
@@ -1167,7 +1167,7 @@
 
     <!-- The game modes, and the rules. -->
     <string name="mode_classic">Classic</string>
-    <string name="mode_classic_description">The classic rules: roll a 6 to leave the yard, and race all four pawns home</string>
+    <string name="mode_classic_description">The classic rules: roll a `6` to leave the yard, and race all four pawns home</string>
     <string name="mode_colour_rush">Colour Rush</string>
     <string name="mode_colour_rush_description">Claim the squares you land on first, and take others with a capture: the most squares wins</string>
     <string name="mode_two_dice">Two Dice</string>
@@ -1180,7 +1180,7 @@
     <string name="mode_chaos_description">The classic rules with power-ups on the track: land on one to shield a pawn, double your rolls, swap places, and more</string>
     <!-- Chaos's power-ups: each one's name, and what it does, as a sentence. -->
     <string name="power_up_double">Double</string>
-    <string name="power_up_double_description">Your next 3 rolls move a pawn twice as far. A roll that would take it past home counts once.</string>
+    <string name="power_up_double_description">Your next three rolls move a pawn twice as far. A roll that would take it past home counts once.</string>
     <string name="power_up_shield">Shield</string>
     <string name="power_up_shield_description">The next pawn to land on yours bounces off to the square before it, and the shield breaks.</string>
     <string name="power_up_roll_again">Roll Again</string>
@@ -1196,24 +1196,24 @@
     <string name="settings_motion_pawn_move">Pawn moves</string>
     <string name="rules_board_title">The Board</string>
     <string name="rules_board_tab">The Board</string>
-    <string name="rules_board_1">Each player has four pawns, waiting in their own coloured yard.</string>
-    <string name="rules_board_2">The track runs all the way round the board, and everyone shares it. Each colour joins it at its own start square.</string>
-    <string name="rules_board_3">After a full lap, a pawn turns into its own home column and races to home, in the middle of the board.</string>
+    <string name="rules_board_1">Each player has four pawns, waiting in their own coloured yard. Each colour has their own start square.</string>
+    <string name="rules_board_2">The track runs around the board, and you share it with other players.</string>
+    <string name="rules_board_3">After a full lap, a pawn enters its own home column and heads home in the middle of the board.</string>
     <string name="rules_turn_title">Your Turn</string>
     <string name="rules_turn_tab">Your Turn</string>
     <string name="rules_turn_1">Roll the die, then move one of your pawns that many squares.</string>
-    <string name="rules_turn_2">Only a 6 brings a pawn out of the yard, onto its start square.</string>
-    <string name="rules_turn_3">Roll a 6 and you roll again. So does capturing a pawn, or bringing one home. Roll three 6s in a row and your turn ends.</string>
-    <string name="rules_turn_4">If none of your pawns can move, your turn passes.</string>
+    <string name="rules_turn_2">You must roll a `6` to bring a pawn out of the yard onto the board.</string>
+    <string name="rules_turn_3">Every time you roll a `6`, you may roll again (so does capturing a pawn, or bringing one home). However, roll three `6`s in a row and your turn ends!</string>
+    <string name="rules_turn_4">If you have no valid moves, your turn passes.</string>
     <string name="rules_capture_title">Captures</string>
     <string name="rules_capture_tab">Captures</string>
-    <string name="rules_capture_1">Land on a rival's pawns to send them back to their yard.</string>
-    <string name="rules_capture_2">Start squares and star squares are safe: nobody can be captured there.</string>
+    <string name="rules_capture_1">If you land on a rival's pawns, they are sent back to their yard and must roll another `6` to escape.</string>
+    <string name="rules_capture_2">Start squares and star squares are safe spots: nobody can be captured there.</string>
     <string name="rules_capture_3">Your own pawns can share a square, and any pawn can pass any other.</string>
-    <string name="rules_capture_4">Every capture earns you another roll.</string>
+    <string name="rules_capture_4">If you're lucky, you can chain your captures together!</string>
     <string name="rules_winning_title">Winning</string>
     <string name="rules_winning_tab">Winning</string>
-    <string name="rules_winning_1">A pawn needs the exact roll to reach home.</string>
+    <string name="rules_winning_1">To bring a pawn home, you must roll exactly the number needed.</string>
     <string name="rules_winning_home_roll">Bringing a pawn home earns you another roll, unless it was your last.</string>
     <string name="rules_winning_2">The first player to bring all four pawns home wins, and everyone else plays on for the places.</string>
     <string name="rules_winning_3">With *Stop at first winner* on in Settings, the game ends as soon as one player has every pawn home. Everyone else is placed by how far their pawns have come.</string>
