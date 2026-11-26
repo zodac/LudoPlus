@@ -161,6 +161,9 @@ import net.zodac.ludoplus.ui.theme.color
 /** The narrowest the side panel beside the board gets in landscape. */
 private val SIDE_PANEL_WIDTH = 280.dp
 
+/** The die's side in landscape, on every screen. */
+private val LANDSCAPE_DIE_SIZE = 84.dp
+
 /** What the game screen shows of a finished game: the board until the results come up, then the results, or the board again to review. */
 private enum class FinishedView { BOARD, RESULTS, REVIEW }
 
@@ -457,6 +460,7 @@ fun GameContent(
         onBack = onBack,
         driftingDice = false,
         wide = true,
+        landscapeWidth = Dp.Infinity,
         subtitle = if (tutorial == null) ({ GameTime(gameKey = started.startedAtEpochMillis, running = !started.state.isFinished, playMillis = playMillis) }) else null,
         underlay = { TableBackgroundFill(background) },
     ) {
@@ -478,7 +482,7 @@ fun GameContent(
                     board(Modifier.size(minOf(height, width - SIDE_PANEL_WIDTH)))
                     Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         players(false)
-                        TurnPanel(started, offered, seatColours, onRoll, onMove, onResults, settled = settled, unshown = unshown, onDeclineSwap = declineSwap, dieSize = 64.dp, tutorial = tutorial, rollStep = rollStep, dice = dice)
+                        TurnPanel(started, offered, seatColours, onRoll, onMove, onResults, settled = settled, unshown = unshown, onDeclineSwap = declineSwap, dieSize = LANDSCAPE_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice)
                         MoveLogPanel(logged, seatColours, tutorial = tutorial != null, shown = showLog, modifier = Modifier.weight(1f))
                     }
                 }

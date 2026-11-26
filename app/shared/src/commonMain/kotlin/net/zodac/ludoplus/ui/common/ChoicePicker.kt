@@ -102,7 +102,8 @@ private val PICKER_SCROLLBAR_CLEARANCE = 12.dp
 /**
  * The closed state of every picker: an outlined field with a [headline], a [supporting] line under
  * it and an arrow to the page it opens. One merged node for a screen reader - a button named [title] whose
- * state is the headline and supporting line.
+ * state is the headline and supporting line. The supporting line is in [parseInlineMarkup]'s markup, which is drawn
+ * and not spoken.
  */
 @Composable
 private fun PickerField(
@@ -113,7 +114,8 @@ private fun PickerField(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val state = stringResource(Res.string.common_picker_state_spoken, headline, supporting)
+    val styledSupporting = remember(supporting) { parseInlineMarkup(supporting) }
+    val state = stringResource(Res.string.common_picker_state_spoken, headline, styledSupporting.text)
     OutlinedCard(
         // The blue of a chosen segment (the player count beside it on the setup screen), so a picker reads as a choice made.
         colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
@@ -141,7 +143,7 @@ private fun PickerField(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
-                Text(text = supporting, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Text(text = styledSupporting, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
             }
             // Pointing onward, not down: tapped, this opens a page, not a menu. Mirrored right to left.
             Icon(imageVector = Symbols.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -197,13 +199,14 @@ private fun PickerDialog(
     }
 }
 
-/** A row's name and its one-line description, as every picker row writes them. */
+/** A row's name and its one-line description (in [parseInlineMarkup]'s markup), as every picker row writes them. */
 @Composable
 private fun PickerRowText(label: String, description: String, modifier: Modifier = Modifier) {
+    val styledDescription = remember(description) { parseInlineMarkup(description) }
     Column(modifier = modifier) {
         // The name in the brand face, like a heading; the description stays in the system font, quieter beneath it.
         Text(text = label, style = MaterialTheme.typography.bodyLarge, fontFamily = SoraFontFamily, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-        Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = styledDescription, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

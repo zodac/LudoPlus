@@ -65,6 +65,7 @@ import net.zodac.ludoplus.resources.leaderboard_travelled_unknown_short
 import net.zodac.ludoplus.resources.leaderboard_turns
 import net.zodac.ludoplus.ui.common.EmptyStateCard
 import net.zodac.ludoplus.ui.common.HoldPageCover
+import net.zodac.ludoplus.ui.common.LocalLandscapePage
 import net.zodac.ludoplus.ui.common.ScreenScaffold
 import net.zodac.ludoplus.ui.common.joinClauses
 import net.zodac.ludoplus.ui.common.ordinal
@@ -96,7 +97,8 @@ private val TABLE_END_PADDING = 4.dp
 /**
  * The Leaderboard: the fastest wins for the mode and player count picked (2 to 8; at first, the mode last picked here and
  * the count New Game last started), fewest turns first (or where the last standing wins, most pawns left) and then most
- * captures, the top three ranked in gold, silver, and bronze. The mode's drop-down stays at the top while the rest scrolls.
+ * captures, the top three ranked in gold, silver, and bronze. The mode's drop-down stays at the top while the rest scrolls;
+ * in landscape the player counts share its row, and the page is at most [LANDSCAPE_TABLE_WIDTH] wide.
  * Where a name hasn't room beside the number columns (a large font), each row is two lines: the rank and name, then its
  * turns and captures. A screen reader reads each row as one: its rank, name, turns, and captures.
  *
@@ -105,11 +107,22 @@ private val TABLE_END_PADDING = 4.dp
 @Composable
 fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit, driftingDice: Boolean = true) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    ScreenScaffold(title = stringResource(Res.string.leaderboard_title), onBack = onBack, driftingDice = driftingDice) {
+    ScreenScaffold(title = stringResource(Res.string.leaderboard_title), onBack = onBack, driftingDice = driftingDice, landscapeWidth = LANDSCAPE_TABLE_WIDTH) {
         // Nothing until the board is read, so the empty card never flashes up before a board that has rows.
         val (board, rows) = state ?: return@ScreenScaffold HoldPageCover()
         val (mode, count) = board
-        LeaderboardModePicker(selected = mode, onSelect = viewModel::selectMode)
+        val landscape = LocalLandscapePage.current
+        val counts = @Composable { modifier: Modifier ->
+            PlayerCountRow(options = PLAYER_COUNTS, selected = count, onSelect = { viewModel.selectPlayerCount(it!!) }, modifier = modifier)
+        }
+        if (landscape) {
+            LandscapeRecordsControls(
+                picker = { LeaderboardModePicker(selected = mode, onSelect = viewModel::selectMode, modifier = it) },
+                counts = counts,
+            )
+        } else {
+            LeaderboardModePicker(selected = mode, onSelect = viewModel::selectMode)
+        }
         val services = LocalGameServices.current
         // The same board on the online service, while signed in to one: shown with or without rows here.
         val online = services.state.collectAsStateWithLifecycle().value is GameServicesState.SignedIn && services.canShowLeaderboardUi
@@ -121,10 +134,8 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit, drift
             RecordsList { width ->
                 val compact = width < columnsWidth
                 item(key = "heading") { BoardHeading(mode, modifier = Modifier.padding(bottom = PART_GAP)) }
-                item(key = "counts") {
-                    Box(modifier = Modifier.padding(bottom = PART_GAP)) {
-                        PlayerCountRow(options = PLAYER_COUNTS, selected = count, onSelect = { viewModel.selectPlayerCount(it!!) })
-                    }
+                if (!landscape) {
+                    item(key = "counts") { Box(modifier = Modifier.padding(bottom = PART_GAP)) { counts(Modifier) } }
                 }
                 if (online) {
                     item(key = "global") {

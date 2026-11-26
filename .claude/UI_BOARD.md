@@ -21,6 +21,10 @@ The board, the player cards, the die, and the move log. The general rules are in
     - The game's title is on one line, shrunk to fit, so a long custom mode's name leaves it room.
     - TalkBack hears "Time played: 12 minutes" on reaching it, never as it counts. `GameTimeTest`.
 - **Landscape**: the board at the screen's height, and beside it, at least 280dp wide, the cards, the die, and the log.
+    The page takes the screen's whole width there (`ScreenScaffold`'s `landscapeWidth`), so on a tablet the panel has
+    all the width the board leaves.
+    - The die is 84dp there on every screen (`LANDSCAPE_DIE_SIZE`; the maintainer, 2026-11-26), and Two Dice's pair is
+        sized from it. `LandscapeDieSizeTest`.
 - Over the cards: a Nearby game's notice (`NetplayNotice`), and in Survival how long until its next stage
     (`SuddenDeathNotice`), both polite live regions. The tutorial's coach card takes the cards' place (`TUTORIAL.md`).
 - The background style fills the page from the foot of the app bar down (`ScreenScaffold`'s `underlay`).

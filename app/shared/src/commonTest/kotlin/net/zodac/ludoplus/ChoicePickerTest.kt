@@ -57,6 +57,23 @@ class ChoicePickerTest : UiTest() {
     }
 
     @Test
+    fun aDescriptionsMarkupIsDrawnNotShownOrSpoken() = uiTest {
+        compose.setContent {
+            LudoPlusTheme {
+                ChoicePicker(title = "Mode", options = options, selected = picked, onSelect = { picked = it }, label = { it }, description = { "Roll a `6` to start" })
+            }
+        }
+        // The closed field: its line without the backticks, and spoken without them.
+        compose.onNodeWithText("Roll a 6 to start", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("`", substring = true, useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithContentDescription("Mode").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Option 1. Roll a 6 to start"))
+
+        // And each row of the open list.
+        compose.onNodeWithText("Option 1").performClick()
+        compose.onNodeWithText("`", substring = true, useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
     fun theModifierPickerSummarisesTogglesStepsAndTakesATypedValueOnlyWithinItsRange() = uiTest {
         // It summarises, toggles, and shows the values only while on.
         var on by mutableStateOf(false)

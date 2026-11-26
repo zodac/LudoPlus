@@ -437,6 +437,8 @@ never changes.** Every die and background follows it. Examples:
 - **Opt-in width.** A `wide` page's column may take `wideColumnMaxWidth` in landscape; any other keeps
     `CONTENT_MAX_WIDTH`, a readable line. Portrait is never changed.
     - That's `WIDE_CONTENT_MAX_WIDTH` (two 460dp panes) and the padding.
+    - `landscapeWidth` sets a page's own instead, app bar included: the Leaderboard's 640dp (`LANDSCAPE_TABLE_WIDTH`), and
+        the game's whole screen, so a tablet's side panel has the width the board at the screen's height leaves.
 - **The back arrow lines up with the content's start edge**, its 48dp target reaching `BACK_ARROW_OUTSET` (12dp) past
     it: the game screen's beside the board, and a landscape app bar's, which spans the page's content column
     (`ContentColumn`), not the screen. Its title centres on that column and its `actions` end level with the content.
@@ -452,7 +454,12 @@ never changes.** Every die and background follows it. Examples:
         scroll position is remembered by key.
     - Styles: two rows of two fields, the count after the back arrow. A category's page puts its count there too, and
         its Unlocked switch at the app bar's end, as Achievements' Unearned switch.
-    - Rules: the group and page tabs share a row, text at most 640dp wide.
+    - Leaderboard: the drop-down and the player counts share a row over the table, the page 640dp wide.
+    - Statistics: the drop-down and the player counts share a row, and the cards are two to a row (an odd last one keeps
+        its half).
+    - Rules: the group and page tabs share a row, the group tabs at their labels' width (at most half the row), so their
+        row never scrolls a few pixels and puts its chevron over a label. Text at most 640dp wide; a page's diagram or
+        board goes beside it (at most 45% of the width, as tall as the page has room for), not under it.
     - Game Over: the results beside the buttons.
 
 ## Scrollbars

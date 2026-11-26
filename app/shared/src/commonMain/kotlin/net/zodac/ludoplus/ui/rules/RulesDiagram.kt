@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -160,6 +161,9 @@ enum class RulesDiagramKind(internal val diagram: Diagram) {
     CAPTURE(CAPTURE_DIAGRAM),
     WINNING(WINNING_DIAGRAM),
 }
+
+/** The width [kind]'s diagram draws at to be [height] tall. */
+internal fun diagramWidthFor(kind: RulesDiagramKind, height: Dp): Dp = height * (kind.diagram.view.width / kind.diagram.view.height)
 
 /**
  * A Rules card's diagram ([kind]): a part of the classic board in the default seat colours, with its pawns, arrows, and

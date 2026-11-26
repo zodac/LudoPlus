@@ -311,6 +311,9 @@ players.
 - **Global**, while signed in to a service with a board for the mode: a button to it, with rows or without.
 - **Statistics** is a card a person: the name as a heading, then each figure with its label as one item. The time played
     is over them, with players or without.
+- **Landscape** (`UI.md`, "Landscape pages"): the player counts leave the list for the drop-down's row
+    (`LandscapeRecordsControls`), so the table or cards have the height. Statistics' cards are two to a row, read left
+    then right.
 
 ## The menu's backdrop and logo
 

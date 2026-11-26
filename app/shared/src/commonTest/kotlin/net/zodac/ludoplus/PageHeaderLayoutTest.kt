@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -39,9 +42,9 @@ class PageHeaderLayoutTest : UiTest() {
     @BeforeTest
     fun openAtTheTop() = resetAchievementsScrollMemory()
 
-    private fun showPage(wide: Boolean, scrollable: Boolean) = compose.setContent {
+    private fun showPage(wide: Boolean, scrollable: Boolean, landscapeWidth: Dp? = null) = compose.setContent {
         LudoPlusTheme {
-            ScreenScaffold(title = "Page", onBack = {}, wide = wide, scrollable = scrollable) {
+            ScreenScaffold(title = "Page", onBack = {}, wide = wide, scrollable = scrollable, landscapeWidth = landscapeWidth) {
                 Box(Modifier.fillMaxWidth().height(10.dp).testTag(CONTENT))
             }
         }
@@ -58,6 +61,24 @@ class PageHeaderLayoutTest : UiTest() {
         val title = compose.onNodeWithText("Page").getBoundsInRoot()
         assertNear(content.left + ARROW_HALF, (back.left + back.right) / 2, "back arrow's centre")
         assertNear((content.left + content.right) / 2, (title.left + title.right) / 2, "title's centre")
+    }
+
+    @Test
+    fun `in landscape a page's own width holds its content and its app bar - Dp Infinity the screen's whole width`() = uiTest(TestScreen(1280, 800, 2f)) {
+        var width by mutableStateOf<Dp?>(640.dp)
+        compose.setContent {
+            LudoPlusTheme {
+                ScreenScaffold(title = "Page", onBack = {}, landscapeWidth = width) { Box(Modifier.fillMaxWidth().height(10.dp).testTag(CONTENT)) }
+            }
+        }
+        var content = compose.onNodeWithTag(CONTENT).getBoundsInRoot()
+        val back = compose.onNodeWithContentDescription("Back").getBoundsInRoot()
+        assertNear(640.dp, content.right - content.left, "content's width")
+        assertNear(content.left + ARROW_HALF, (back.left + back.right) / 2, "back arrow's centre")
+        width = Dp.Infinity
+        compose.waitForIdle()
+        content = compose.onNodeWithTag(CONTENT).getBoundsInRoot()
+        assertTrue(content.right - content.left > 1200.dp, "the content isn't the screen's width: $content")
     }
 
     @Test

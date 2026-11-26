@@ -3,10 +3,14 @@ package net.zodac.ludoplus.ui.records
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,6 +49,7 @@ import net.zodac.ludoplus.resources.stats_win_rate_value
 import net.zodac.ludoplus.resources.stats_wins
 import net.zodac.ludoplus.ui.common.EmptyStateCard
 import net.zodac.ludoplus.ui.common.HoldPageCover
+import net.zodac.ludoplus.ui.common.LocalLandscapePage
 import net.zodac.ludoplus.ui.common.ScreenScaffold
 import net.zodac.ludoplus.ui.common.pluralStringResource
 import net.zodac.ludoplus.ui.common.stringResource
@@ -52,10 +57,14 @@ import net.zodac.ludoplus.ui.common.stringResource
 /** Between the list's parts. */
 private val PART_GAP = 16.dp
 
+/** Player cards to a row in landscape. */
+private const val LANDSCAPE_COLUMNS = 2
+
 /**
  * Statistics: the time played in the app ([LivePlayTimeLine]), the modes (one, or all) and the player counts (all, or 2
  * to 8), then a card per person, in name order, adding up every game they've played of the mode and count picked. The time
- * played and the mode's drop-down stay at the top while the rest scrolls. A screen reader reads the name as a heading, then
+ * played and the mode's drop-down stay at the top while the rest scrolls; in landscape the player counts share the
+ * drop-down's row, and the cards are two to a row. A screen reader reads the name as a heading, then
  * each figure with its label as one.
  */
 @Composable
@@ -63,28 +72,48 @@ fun StatisticsScreen(viewModel: StatisticsViewModel, onBack: () -> Unit) {
     val statistics by viewModel.statistics.collectAsStateWithLifecycle()
     val playerCount by viewModel.playerCount.collectAsStateWithLifecycle()
     val page by viewModel.page.collectAsStateWithLifecycle()
-    ScreenScaffold(title = stringResource(Res.string.stats_title), onBack = onBack) {
+    ScreenScaffold(title = stringResource(Res.string.stats_title), onBack = onBack, wide = true) {
         // Every player's and none, at the top whether anyone has a card or not.
         LivePlayTimeLine(viewModel.readPlaySeconds)
         // Nothing until the figures are read, so the empty card never flashes up before players who have some.
         val all = statistics ?: return@ScreenScaffold HoldPageCover()
         val onPage = page ?: return@ScreenScaffold HoldPageCover()
         if (all.isEmpty) return@ScreenScaffold EmptyStateCard(stringResource(Res.string.stats_empty))
-        StatisticsModePicker(selected = onPage, onSelect = viewModel::selectPage)
+        val landscape = LocalLandscapePage.current
+        val counts = @Composable { modifier: Modifier ->
+            PlayerCountRow(options = listOf(null) + PLAYER_COUNTS, selected = playerCount, onSelect = viewModel::selectPlayerCount, modifier = modifier)
+        }
+        if (landscape) {
+            LandscapeRecordsControls(
+                picker = { StatisticsModePicker(selected = onPage, onSelect = viewModel::selectPage, modifier = it) },
+                counts = counts,
+            )
+        } else {
+            StatisticsModePicker(selected = onPage, onSelect = viewModel::selectPage)
+        }
         val players = all.players(playerCount, onPage.mode)
+        // Only a race is timed, and a mode with no home brings no pawns there.
+        val mode = onPage.mode
+        val race = mode == null || mode.ranking == LeaderboardRanking.FEWEST_TURNS
+        val home = mode?.rules?.lastStanding != true
         // Each page its own list, so it starts at its top. A count is only picked from the top, where its row is, and keeps
         // the list: a screen reader stays on the count it picked.
         key(onPage) {
             RecordsList {
-                item(key = "counts") { PlayerCountRow(options = listOf(null) + PLAYER_COUNTS, selected = playerCount, onSelect = viewModel::selectPlayerCount) }
+                if (!landscape) item(key = "counts") { counts(Modifier) }
                 if (players.isEmpty()) {
-                    item(key = "empty") { Box(modifier = Modifier.padding(top = PART_GAP)) { EmptyStateCard(emptyText(onPage.mode, playerCount)) } }
+                    // The controls' row is the list's top in landscape, with its own gap under it.
+                    item(key = "empty") { Box(modifier = Modifier.padding(top = if (landscape) 0.dp else PART_GAP)) { EmptyStateCard(emptyText(onPage.mode, playerCount)) } }
                 }
-                items(players, key = { "player ${it.playerName}" }) { player ->
-                    // Only a race is timed, and a mode with no home brings no pawns there.
-                    val mode = onPage.mode
-                    Box(modifier = Modifier.padding(top = PART_GAP)) {
-                        PlayerCard(player, race = mode == null || mode.ranking == LeaderboardRanking.FEWEST_TURNS, home = mode?.rules?.lastStanding != true)
+                // Two cards to a row in landscape (an odd last one keeps its half); one otherwise.
+                val columns = if (landscape) LANDSCAPE_COLUMNS else 1
+                itemsIndexed(players.chunked(columns), key = { _, row -> "player ${row.first().playerName}" }) { index, row ->
+                    Row(
+                        modifier = Modifier.padding(top = if (landscape && index == 0) 0.dp else PART_GAP).height(IntrinsicSize.Min),
+                        horizontalArrangement = Arrangement.spacedBy(PART_GAP),
+                    ) {
+                        for (player in row) PlayerCard(player, race = race, home = home, modifier = Modifier.weight(1f).fillMaxHeight())
+                        repeat(columns - row.size) { Spacer(modifier = Modifier.weight(1f)) }
                     }
                 }
             }
@@ -105,9 +134,9 @@ private fun emptyText(mode: GameMode?, playerCount: Int?): String {
 }
 
 @Composable
-private fun PlayerCard(player: PlayerStatistics, race: Boolean, home: Boolean) {
+private fun PlayerCard(player: PlayerStatistics, race: Boolean, home: Boolean, modifier: Modifier = Modifier) {
     val totals: RecordTotals = player.totals
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = player.playerName,

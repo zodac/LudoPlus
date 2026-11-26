@@ -258,4 +258,35 @@ class RecordsScreensTest : UiTest() {
         field("Statistics", "Classic").assertDoesNotExist()
         compose.onNode(hasContentDescription("All games")).assertDoesNotExist()
     }
+
+    @Test
+    fun `in landscape the Leaderboard's counts share the drop-down's row - over a table at most 640dp wide`() = uiTest(TestScreen(891, 411)) {
+        val viewModel = LeaderboardViewModel(records(row("Alex", 1, 38, 4, 1), row("Jo", 1, 42, 2, 2)))
+        showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
+        compose.waitUntil { compose.onAllNodes(hasText("Classic: fastest wins")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("1st, Alex, 38 turns, 4 captures")).assertIsDisplayed()
+        val picker = field("Leaderboard", "Classic").fetchSemanticsNode().boundsInRoot
+        val count = compose.onNode(hasContentDescription("4 players")).fetchSemanticsNode().boundsInRoot
+        assertTrue(count.left >= picker.right, "the counts aren't beside the drop-down: $count, $picker")
+        assertTrue(count.top < picker.bottom && count.bottom > picker.top, "the counts aren't on the drop-down's row: $count, $picker")
+        val rowWidth = count.right - picker.left
+        assertTrue(rowWidth <= 640f, "the row is ${rowWidth}dp wide")
+    }
+
+    @Test
+    fun `in landscape Statistics has its counts on the drop-down's row - and two cards to a row, the odd one out on its own`() = uiTest(TestScreen(891, 411)) {
+        val viewModel = StatisticsViewModel(records(row("Alex", 1, 38, 4, 1), row("Jo", 2, 42, 2, 1), row("Sam", 3, 50, 1, 1)))
+        showcase.show { LudoPlusTheme { StatisticsScreen(viewModel, onBack = {}) } }
+        compose.waitUntil { compose.onAllNodes(hasText("Alex")).fetchSemanticsNodes().isNotEmpty() }
+        val picker = field("Statistics", "Classic").fetchSemanticsNode().boundsInRoot
+        val all = compose.onNode(hasContentDescription("All games")).fetchSemanticsNode().boundsInRoot
+        assertTrue(all.left >= picker.right && all.top < picker.bottom, "the counts aren't beside the drop-down: $all, $picker")
+        val alex = compose.onNodeWithText("Alex").fetchSemanticsNode().boundsInRoot
+        val jo = compose.onNodeWithText("Jo").fetchSemanticsNode().boundsInRoot
+        assertEquals(alex.top, jo.top, "Alex's and Jo's cards aren't side by side")
+        assertTrue(jo.left > alex.right, "Jo's card isn't right of Alex's")
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Sam"))
+        val sam = compose.onNodeWithText("Sam").fetchSemanticsNode().boundsInRoot
+        assertEquals(alex.left, sam.left, "Sam's card isn't under Alex's")
+    }
 }

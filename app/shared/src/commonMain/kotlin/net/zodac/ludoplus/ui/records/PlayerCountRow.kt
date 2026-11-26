@@ -20,7 +20,7 @@ internal val PLAYER_COUNTS: List<Int?> = (BoardGeometry.MIN_PLAYERS..BoardGeomet
  * "All" ("All games").
  */
 @Composable
-internal fun PlayerCountRow(options: List<Int?>, selected: Int?, onSelect: (Int?) -> Unit) {
+internal fun PlayerCountRow(options: List<Int?>, selected: Int?, onSelect: (Int?) -> Unit, modifier: Modifier = Modifier) {
     FittedSegmentedChoiceRow(
         options = options,
         selected = selected,
@@ -28,6 +28,6 @@ internal fun PlayerCountRow(options: List<Int?>, selected: Int?, onSelect: (Int?
         label = { count -> count?.toString() ?: stringResource(Res.string.stats_count_all) },
         compactLabel = { count -> count?.toString() ?: stringResource(Res.string.stats_count_all) },
         spokenLabel = { count -> if (count == null) stringResource(Res.string.stats_count_all_spoken) else pluralStringResource(Res.plurals.setup_player_count_spoken, count, count) },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     )
 }

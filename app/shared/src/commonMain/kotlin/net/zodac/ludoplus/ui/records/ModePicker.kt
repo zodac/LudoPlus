@@ -17,14 +17,14 @@ import net.zodac.ludoplus.ui.common.stringResource
  * [DropdownChoiceField], "Leaderboard, Classic".
  */
 @Composable
-internal fun LeaderboardModePicker(selected: GameMode, onSelect: (GameMode) -> Unit) {
+internal fun LeaderboardModePicker(selected: GameMode, onSelect: (GameMode) -> Unit, modifier: Modifier = Modifier) {
     DropdownChoiceField(
         options = GameMode.entries,
         selected = selected,
         onSelect = onSelect,
         label = stringResource(Res.string.leaderboard_title),
         optionText = { stringResource(it.displayName) },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         dividerAfterFirst = true,
     )
 }
@@ -34,14 +34,14 @@ internal fun LeaderboardModePicker(selected: GameMode, onSelect: (GameMode) -> U
  * TalkBack: as [DropdownChoiceField], "Statistics, Classic".
  */
 @Composable
-internal fun StatisticsModePicker(selected: ModePage, onSelect: (ModePage) -> Unit) {
+internal fun StatisticsModePicker(selected: ModePage, onSelect: (ModePage) -> Unit, modifier: Modifier = Modifier) {
     DropdownChoiceField(
         options = ModePage.all,
         selected = selected,
         onSelect = onSelect,
         label = stringResource(Res.string.stats_title),
         optionText = { page -> stringResource(page.mode?.displayName ?: Res.string.stats_mode_all) },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         dividerAfterFirst = true,
         dividerBeforeLast = true,
     )

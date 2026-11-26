@@ -141,7 +141,9 @@ fun TwoPanes(
  * pieces sized for a narrower margin.
  *
  * [wide] lets the content take up to [wideColumnMaxWidth] in landscape, for a page that splits into [TwoPanes] there;
- * any other keeps [CONTENT_MAX_WIDTH], a readable line, either way.
+ * any other keeps [CONTENT_MAX_WIDTH], a readable line, either way. [landscapeWidth], where given, is the content's widest
+ * in landscape instead, its side padding not included: [Dp.Infinity] for the game, whose side panel has the room the board
+ * at the screen's height leaves, and the Leaderboard's table width for it.
  *
  * [startActions] sit after the back arrow and [actions] at the app bar's end - where a landscape page moves controls that
  * would otherwise take a row of its height. In landscape the app bar spans the content's column, not the screen, so its
@@ -166,6 +168,7 @@ fun ScreenScaffold(
     verticalPadding: Dp = PAGE_VERTICAL_PADDING,
     verticalSpacing: Dp = PAGE_VERTICAL_SPACING,
     wide: Boolean = false,
+    landscapeWidth: Dp? = null,
     startActions: @Composable RowScope.() -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     onTitleCrowded: () -> Unit = {},
@@ -189,7 +192,7 @@ fun ScreenScaffold(
                         onTitleCrowded = onTitleCrowded,
                         subtitle = subtitle,
                         contentColumn = ContentColumn(
-                            maxWidth = if (wide && LocalLandscapePage.current) wideColumnMaxWidth(padding) else CONTENT_MAX_WIDTH,
+                            maxWidth = landscapeColumnMaxWidth(wide, landscapeWidth, padding),
                             padding = padding,
                         ),
                     )
@@ -236,7 +239,7 @@ fun ScreenScaffold(
                                 modifier = Modifier
                                     .fillMaxHeight()
                                     .widthIn(
-                                        max = if (LocalLandscapePage.current && wide) wideColumnMaxWidth(FIXED_PAGE_HORIZONTAL_PADDING) else CONTENT_MAX_WIDTH,
+                                        max = landscapeColumnMaxWidth(wide, landscapeWidth, FIXED_PAGE_HORIZONTAL_PADDING),
                                     )
                                     .padding(horizontal = FIXED_PAGE_HORIZONTAL_PADDING, vertical = 8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -249,6 +252,15 @@ fun ScreenScaffold(
             }
         }
     }
+}
+
+/** The widest [ScreenScaffold]'s content column is, its side [padding] included: see its `wide` and `landscapeWidth`. */
+@Composable
+private fun landscapeColumnMaxWidth(wide: Boolean, landscapeWidth: Dp?, padding: Dp): Dp = when {
+    !LocalLandscapePage.current -> CONTENT_MAX_WIDTH
+    landscapeWidth != null -> landscapeWidth + padding * 2
+    wide -> wideColumnMaxWidth(padding)
+    else -> CONTENT_MAX_WIDTH
 }
 
 /** [content], told through [LocalLandscapePage] whether the room it's given is wider than it's tall. */

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -91,6 +92,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.unit.min
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -188,10 +190,16 @@ fun RulesScreen(onBack: () -> Unit, modifier: Modifier = Modifier, onStartTutori
         if (RULES_GROUPS.size == 1) {
             pageTabs()
         } else if (landscape) {
-            // One row in landscape, the groups then their pages, leaving the height to the page.
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
-                Box(modifier = Modifier.weight(LANDSCAPE_GROUP_TABS_WEIGHT)) { groupTabs() }
-                Box(modifier = Modifier.weight(1f)) { pageTabs() }
+            // One row in landscape, the groups then their pages, leaving the height to the page. The groups take the
+            // width their labels need, so their row doesn't scroll by a few pixels and put its chevron over a label, up
+            // to LANDSCAPE_GROUP_TABS_MAX_SHARE of it; the pages have the rest.
+            val groupsWidth = groupTabsNaturalWidth(RULES_GROUPS.map { stringResource(it.label) })
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val rowWidth = maxWidth
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
+                    Box(modifier = Modifier.width(min(groupsWidth, rowWidth * LANDSCAPE_GROUP_TABS_MAX_SHARE))) { groupTabs() }
+                    Box(modifier = Modifier.weight(1f)) { pageTabs() }
+                }
             }
         } else {
             groupTabs()
@@ -220,26 +228,64 @@ fun RulesScreen(onBack: () -> Unit, modifier: Modifier = Modifier, onStartTutori
             ) { page ->
                 val rulesPage = RULES_PAGES[page]
                 val shownBlocks = rememberShownBlocks(rulesPage.blocks.size)
-                // A readable line however wide the page: the text keeps to READABLE_PAGE_WIDTH, centred, in landscape.
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(pageScrollStates[page])
-                        .wrapContentWidth()
-                        .widthIn(max = if (landscape) READABLE_PAGE_WIDTH else Dp.Infinity)
-                        .padding(bottom = pageBottomPadding),
-                ) {
-                    Text(
-                        text = stringResource(rulesPage.title, stringResource(Res.string.app_name)),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontFamily = SoraFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    for (block in rulesPage.blocks.take(shownBlocks)) {
-                        RulesBlockView(block, onStartTutorial)
+                // In landscape a page's picture (its last block) goes beside the text, as tall as the page has room for,
+                // so it's seen without scrolling; elsewhere it's under the text.
+                val picture = rulesPage.blocks.last().takeIf { landscape && (it is RulesDiagramBlock || it is RulesBoardBlock) }
+                val textBlocks = if (picture == null) rulesPage.blocks else rulesPage.blocks.dropLast(1)
+                val pageText = @Composable { modifier: Modifier ->
+                    // A readable line however wide the page: the text keeps to READABLE_PAGE_WIDTH in landscape.
+                    Column(
+                        modifier = modifier
+                            .verticalScroll(pageScrollStates[page])
+                            .padding(bottom = pageBottomPadding),
+                    ) {
+                        Text(
+                            text = stringResource(rulesPage.title, stringResource(Res.string.app_name)),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontFamily = SoraFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.semantics { heading() },
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        for (block in textBlocks.take(shownBlocks)) {
+                            RulesBlockView(block, onStartTutorial)
+                        }
+                    }
+                }
+                if (picture == null) {
+                    pageText(Modifier.fillMaxSize().wrapContentWidth().widthIn(max = if (landscape) READABLE_PAGE_WIDTH else Dp.Infinity))
+                } else {
+                    // Text then picture, read in that order, the pair centred on the page.
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.spacedBy(PICTURE_GAP, Alignment.CenterHorizontally),
+                    ) {
+                        pageText(Modifier.weight(1f, fill = false).widthIn(max = READABLE_PAGE_WIDTH).fillMaxHeight())
+                        // Measured before the text all the same (a Row measures what has no weight first), at no more than its
+                        // share of the width.
+                        BoxWithConstraints(modifier = Modifier.fillMaxHeight().padding(bottom = pageBottomPadding)) {
+                            val height = maxHeight - PICTURE_TOP_PADDING
+                            val width = min(
+                                maxWidth * LANDSCAPE_PICTURE_MAX_SHARE,
+                                when (picture) {
+                                    is RulesDiagramBlock -> diagramWidthFor(picture.kind, height)
+                                    is RulesBoardBlock -> boardWidthFor(picture.kind, height)
+                                    else -> 0.dp
+                                },
+                            )
+                            if (shownBlocks == rulesPage.blocks.size) {
+                                Box(modifier = Modifier.padding(top = PICTURE_TOP_PADDING).width(width)) {
+                                    when (picture) {
+                                        is RulesDiagramBlock -> RulesDiagram(picture.kind)
+                                        is RulesBoardBlock -> RulesBoard(picture.kind)
+                                        else -> Unit
+                                    }
+                                }
+                            } else {
+                                Spacer(modifier = Modifier.width(width))
+                            }
+                        }
                     }
                 }
             }
@@ -254,8 +300,17 @@ fun RulesScreen(onBack: () -> Unit, modifier: Modifier = Modifier, onStartTutori
     }
 }
 
-/** In landscape, the group tabs' share of the row they share with the page tabs, against the page tabs' 1. */
-private const val LANDSCAPE_GROUP_TABS_WEIGHT = 0.6f
+/** In landscape, the most of the row the group tabs take beside the page tabs. Past it, their row scrolls. */
+private const val LANDSCAPE_GROUP_TABS_MAX_SHARE = 0.5f
+
+/** In landscape, the most of a page's width its picture takes beside the text. */
+private const val LANDSCAPE_PICTURE_MAX_SHARE = 0.45f
+
+/** Between a page's text and its picture beside it, in landscape. */
+private val PICTURE_GAP = 32.dp
+
+/** Above a page's picture beside the text, as above it under the text. */
+private val PICTURE_TOP_PADDING = 6.dp
 
 /** Widest a page's text is laid out in landscape: a comfortable line, rather than the whole width. */
 private val READABLE_PAGE_WIDTH = 640.dp
@@ -574,13 +629,9 @@ private val TAB_LABEL_PADDING = 16.dp
  */
 @Composable
 private fun groupTabWidths(labels: List<String>, rowWidthPx: Int): List<Dp> {
-    val measurer = rememberTextMeasurer()
-    val style = MaterialTheme.typography.titleSmall
+    val natural = naturalGroupTabWidths(labels)
     val density = LocalDensity.current
-    return remember(labels, style, rowWidthPx, density) {
-        val padding = with(density) { (TAB_LABEL_PADDING * 2).roundToPx() }
-        // A pixel over, so a label measured at exactly its width isn't cut off by rounding.
-        val natural = labels.map { label -> measurer.measure(label, style, maxLines = 1, softWrap = false).size.width + 1 + padding }
+    return remember(natural, rowWidthPx, density) {
         val equal = rowWidthPx / labels.size
         val base = if (natural.all { it <= equal }) List(labels.size) { 0 } else natural
         val left = (rowWidthPx - base.sum()).coerceAtLeast(0)
@@ -589,6 +640,27 @@ private fun groupTabWidths(labels: List<String>, rowWidthPx: Int): List<Dp> {
         val widths = base.mapIndexed { index, width -> width + left / labels.size + if (index < left % labels.size) 1 else 0 }
         with(density) { widths.map { it.toDp() } }
     }
+}
+
+/** Each group tab's width in pixels at its label's natural width, its padding included. */
+@Composable
+private fun naturalGroupTabWidths(labels: List<String>): List<Int> {
+    val measurer = rememberTextMeasurer()
+    val style = MaterialTheme.typography.titleSmall
+    val density = LocalDensity.current
+    return remember(labels, style, density) {
+        val padding = with(density) { (TAB_LABEL_PADDING * 2).roundToPx() }
+        // A pixel over, so a label measured at exactly its width isn't cut off by rounding.
+        labels.map { label -> measurer.measure(label, style, maxLines = 1, softWrap = false).size.width + 1 + padding }
+    }
+}
+
+/** The group tabs' row at its labels' natural width: the least it needs not to scroll. */
+@Composable
+private fun groupTabsNaturalWidth(labels: List<String>): Dp {
+    val natural = naturalGroupTabWidths(labels)
+    // A dp over, so the row isn't a pixel short of them once its width is rounded.
+    return with(LocalDensity.current) { natural.sum().toDp() } + 1.dp
 }
 
 /** Where each tab of a scrolling row was last placed along it, by its index: its start and end in pixels, from the

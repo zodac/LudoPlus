@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import net.zodac.ludoplus.game.Cataclysm
 import net.zodac.ludoplus.game.GameState
@@ -133,8 +134,14 @@ private val MAX_BOARD_WIDTH = 420.dp
 /** How big each die under a board is. */
 private val DIE_SIZE = 48.dp
 
+/** Between the board and its dice. */
+private val BOARD_DICE_GAP = 10.dp
+
 /** Each seat's default colour, as the board's own diagrams have them. */
 private val SEAT_COLOURS: List<PlayerColour?> = List(board.seats) { PlayerColour.defaultFor(it) }
+
+/** The width [kind]'s board draws at to be [height] tall, its dice under it included. */
+internal fun boardWidthFor(kind: RulesBoardKind, height: Dp): Dp = if (kind.dice.isEmpty()) height else height - BOARD_DICE_GAP - DIE_SIZE
 
 /**
  * A Game Modes page's board ([kind]): the game's own board, in the default colours, as a game of the mode might stand,
@@ -151,7 +158,7 @@ fun RulesBoard(kind: RulesBoardKind, modifier: Modifier = Modifier) {
                 contentDescription = description
                 role = Role.Image
             },
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(BOARD_DICE_GAP),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
