@@ -1,0 +1,3 @@
+- Sign in to Google Play Games from Settings: your achievements on Google Play Games, and your progress saved to the cloud and shared across your devices
+- Global leaderboards on Google Play Games for every game mode and player count
+- In-app purchases: unlock all styles, remove ads, or both together
