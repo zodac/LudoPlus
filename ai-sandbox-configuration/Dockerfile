@@ -94,7 +94,7 @@ ARG EMULATOR_API=37.0
 #   JDK 25  — self-contained under /opt/java/openjdk, portable onto glibc Debian.
 #             LTS; see the file-header note above for how a new major is adopted.
 # (Node, for Claude Code and Playwright, is in the shared base.)
-FROM eclipse-temurin:25.0.5_8-jdk AS jdk
+FROM eclipse-temurin:25.0.5.1_2-jdk AS jdk
 
 # ── Download stage: curl + unzip for the Android and ImageMagick stages ───────
 # Unpinned on purpose, unlike every other package in this file: nothing installed
@@ -256,7 +256,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN --mount=type=cache,id=playwright-apt-cache,target=/var/cache/apt,sharing=locked --mount=type=cache,id=playwright-npm,target=/root/.npm,sharing=locked \
     apt-get update \
     && apt-mark showmanual | sort > /tmp/before \
-    && npx --yes playwright@1.64.1 install-deps chromium \
+    && npx --yes playwright@1.65.1 install-deps chromium \
     && apt-mark showmanual | sort | comm -13 /tmp/before - > /playwright-packages.txt \
     && test -s /playwright-packages.txt
 
