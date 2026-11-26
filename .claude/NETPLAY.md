@@ -53,6 +53,8 @@ Connections: no server, no accounts. This file is the plan and the one source on
     its own seat (`StartedGame.guestSeat`), sends its roll and move, saves nothing, and records and earns for its own
     seat alone (`AchievementTracker(mySeat)`, `AchievementEngine.atGameStart(mySeat)`, `GameRecordRepository.recordGame`).
     A finished game can now be sent (`SavedGameJson`'s `finished` flag), never continued.
+    The `GameViewModel` keeps hosting in `NearbyHosting` (the lobby, guests' actions, turn timeouts, away seats) and
+    joining in `NearbyJoining` (the link, rolls and moves sent, reconnecting); each reaches the game only through it.
 4. **Built** (2026-11-18; untested on phones): reconnecting, turn timeouts, and the CPU stepping in.
     - A guest that sends `Leave` is gone for good: the CPU takes its seat (`PlayerType.AI`) and its token is forgotten.
     - A guest whose link drops in the game is **away** (`HostSession.away`): its seat stays Nearby, the CPU plays it,
