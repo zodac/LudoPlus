@@ -1181,17 +1181,17 @@
 
     <!-- The game modes, and the rules. -->
     <string name="mode_classic">Classic</string>
-    <string name="mode_classic_description">The classic rules: roll a `6` to leave the yard, and race all four pawns home</string>
+    <string name="mode_classic_description">The official rules</string>
     <string name="mode_colour_rush">Colour Rush</string>
-    <string name="mode_colour_rush_description">Claim the squares you land on first, and take others with a capture: the most squares wins</string>
+    <string name="mode_colour_rush_description">Land on a square to claim it: most squares wins</string>
     <string name="mode_two_dice">Two Dice</string>
-    <string name="mode_two_dice_description">Roll two dice and move by each in turn. A 6 on either brings a pawn out, and doubles roll again</string>
+    <string name="mode_two_dice_description">Classic mode, but each turn rolls two dice</string>
     <string name="mode_portals">Portals</string>
-    <string name="mode_portals_description">The classic rules with portals on the track: land on one and come out at its pair, further on or further back</string>
+    <string name="mode_portals_description">The board has portals that warp you to a new location</string>
     <string name="mode_survival">Survival</string>
-    <string name="mode_survival_description">Six pawns each, no home, and no way back for a captured pawn: the last player with a pawn wins</string>
+    <string name="mode_survival_description">Start with 6 pawns on the board, and try to survive!</string>
     <string name="mode_chaos">Chaos</string>
-    <string name="mode_chaos_description">The classic rules with power-ups on the track: land on one to shield a pawn, double your rolls, swap places, and more</string>
+    <string name="mode_chaos_description">Squares contain power-ups to help you win!</string>
     <!-- Chaos's power-ups: each one's name, and what it does, as a sentence. -->
     <string name="power_up_double">Double</string>
     <string name="power_up_double_description">Your next three rolls move a pawn twice as far. A roll that would take it past home counts once.</string>
@@ -1204,7 +1204,7 @@
     <string name="power_up_swap">Swap</string>
     <string name="power_up_swap_description">Your pawn swaps places with any other player's pawn on the track, if you like. You pick which.</string>
     <string name="mode_haunted_house">Haunted House</string>
-    <string name="mode_haunted_house_description">The classic rules with ghosts on the track, which send any pawn they land on back to its yard</string>
+    <string name="mode_haunted_house_description">Ghosts move randomly on the board to capture your pawns!</string>
     <string name="player_colour_yellow">Yellow</string>
     <string name="settings_motion_die_roll">Die roll</string>
     <string name="settings_motion_pawn_move">Pawn moves</string>
