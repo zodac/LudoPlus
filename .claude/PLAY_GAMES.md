@@ -205,8 +205,10 @@ Play's overlay: an edge tab that slides out achievements, streaks, offers and re
 
 ## Play Console
 
-- **Project**: none yet (2026-11-18). Until it exists, `games-ids.xml`'s `game_services_project_id` is 0 and the id
-    maps are empty; the play app's sign-in can't work, and only a Play install would try it. When it does:
+- **Project**: created 2026-11-26, id 246505904027 (`games-ids.xml`'s `game_services_project_id`). The id maps stay
+    empty until the Console has achievements and boards. Play Console won't enable the project's APIs ("Add the Play
+    Games Services SDK to your APK") until it has a bundle carrying the SDK and the project id: a release with the id,
+    uploaded to the internal track. Setting it up:
     1. Create the Play Games Services project, turn on Saved Games, and put its project id in `games-ids.xml`.
     2. Add an Android credential for each signing key's SHA-1: Play's app signing key (every install from a Play track)
         and the upload key (the `RELEASE_KEY*` secrets).

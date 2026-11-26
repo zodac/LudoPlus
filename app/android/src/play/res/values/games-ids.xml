@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- The Play Games Services project id (Play Console > Play Games Services > Configuration), read by the SDK
-         through the APP_ID meta-data in AndroidManifest.xml. 0 until LudoPlus's Play Console project exists
-         (.claude/PLAY_GAMES.md, "Play Console"): the SDK is only started for a Play install, which needs it. -->
-    <string name="game_services_project_id" translatable="false">0</string>
+         through the APP_ID meta-data in AndroidManifest.xml (.claude/PLAY_GAMES.md, "Play Console"). The SDK is only
+         started for a Play install. -->
+    <string name="game_services_project_id" translatable="false">246505904027</string>
 </resources>
