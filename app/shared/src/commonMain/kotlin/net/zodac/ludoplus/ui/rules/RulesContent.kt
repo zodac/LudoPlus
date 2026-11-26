@@ -98,6 +98,9 @@ internal data class RulesHouseRule(val rule: HouseRule) : RulesBlock
 /** A power-up, as its name in italics and what it does. */
 internal data class RulesPowerUp(val powerUp: PowerUp) : RulesBlock
 
+/** The board as a game of a mode might stand ([RulesBoard]). */
+internal data class RulesBoardBlock(val kind: RulesBoardKind) : RulesBlock
+
 /** A diagram of part of the board ([RulesDiagram]). */
 internal data class RulesDiagramBlock(val kind: RulesDiagramKind) : RulesBlock
 
@@ -159,39 +162,42 @@ private val HOUSE_RULES = RulesGroup(
     ),
 )
 
-/** The game modes beyond Classic: a page each. */
+/** The game modes beyond Classic: a page each, ending with its board. */
 private val GAME_MODES = RulesGroup(
     Res.string.rules_group_modes,
     listOf(
         RulesPage(
             Res.string.mode_colour_rush,
             Res.string.mode_colour_rush,
-            texts(Res.string.rules_colour_rush_1, Res.string.rules_colour_rush_2, Res.string.rules_colour_rush_3, Res.string.rules_colour_rush_records),
+            texts(Res.string.rules_colour_rush_1, Res.string.rules_colour_rush_2, Res.string.rules_colour_rush_3, Res.string.rules_colour_rush_records) +
+                RulesBoardBlock(RulesBoardKind.COLOUR_RUSH),
         ),
         RulesPage(
             Res.string.mode_two_dice,
             Res.string.mode_two_dice,
-            texts(Res.string.rules_two_dice_1, Res.string.rules_two_dice_2, Res.string.rules_two_dice_3, Res.string.rules_modes_records),
+            texts(Res.string.rules_two_dice_1, Res.string.rules_two_dice_2, Res.string.rules_two_dice_3, Res.string.rules_modes_records) + RulesBoardBlock(RulesBoardKind.TWO_DICE),
         ),
         RulesPage(
             Res.string.mode_portals,
             Res.string.mode_portals,
-            texts(Res.string.rules_portals_1, Res.string.rules_portals_2, Res.string.rules_portals_3, Res.string.rules_modes_records),
+            texts(Res.string.rules_portals_1, Res.string.rules_portals_2, Res.string.rules_portals_3, Res.string.rules_modes_records) + RulesBoardBlock(RulesBoardKind.PORTALS),
         ),
         RulesPage(
             Res.string.mode_survival,
             Res.string.mode_survival,
-            texts(Res.string.rules_survival_1, Res.string.rules_survival_2, Res.string.rules_survival_3, Res.string.rules_survival_4, Res.string.rules_survival_5, Res.string.rules_survival_records),
+            texts(Res.string.rules_survival_1, Res.string.rules_survival_2, Res.string.rules_survival_3, Res.string.rules_survival_4, Res.string.rules_survival_5, Res.string.rules_survival_records) +
+                RulesBoardBlock(RulesBoardKind.SURVIVAL),
         ),
         RulesPage(
             Res.string.mode_chaos,
             Res.string.mode_chaos,
-            texts(Res.string.rules_chaos_1) + PowerUp.entries.map(::RulesPowerUp) + texts(Res.string.rules_chaos_2, Res.string.rules_chaos_3, Res.string.rules_modes_records),
+            texts(Res.string.rules_chaos_1) + PowerUp.entries.map(::RulesPowerUp) + texts(Res.string.rules_chaos_2, Res.string.rules_chaos_3, Res.string.rules_modes_records) +
+                RulesBoardBlock(RulesBoardKind.CHAOS),
         ),
         RulesPage(
             Res.string.mode_haunted_house,
             Res.string.mode_haunted_house,
-            texts(Res.string.rules_haunted_house_1, Res.string.rules_haunted_house_2, Res.string.rules_modes_records),
+            texts(Res.string.rules_haunted_house_1, Res.string.rules_haunted_house_2, Res.string.rules_modes_records) + RulesBoardBlock(RulesBoardKind.HAUNTED_HOUSE),
         ),
     ),
 )

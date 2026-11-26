@@ -478,6 +478,9 @@ private fun RulesBlockView(block: RulesBlock, onStartTutorial: () -> Unit) {
         is RulesDiagramBlock -> Box(modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = BLOCK_GAP), contentAlignment = Alignment.Center) {
             RulesDiagram(block.kind)
         }
+        is RulesBoardBlock -> Box(modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = BLOCK_GAP), contentAlignment = Alignment.Center) {
+            RulesBoard(block.kind)
+        }
     }
 }
 

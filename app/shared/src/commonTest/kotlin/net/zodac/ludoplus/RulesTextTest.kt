@@ -30,7 +30,7 @@ class RulesTextTest : UiTest() {
     private val isHeading = SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)
     private val isImage = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Image)
 
-    /** A page: its tab, its title, its paragraphs, and what its diagram says (null for none). */
+    /** A page: its tab, its title, its paragraphs, and what its diagram or board says (null for none). */
     private class Page(val tab: String, val title: String, val paragraphs: List<String>, val diagram: String?)
 
     private val pages = listOf(
@@ -144,7 +144,7 @@ class RulesTextTest : UiTest() {
                 "The game ends when every square that can be claimed is, or when a player (or a team) has every pawn home. The most squares wins. If that's a tie, it goes to whoever's pawns have come furthest.",
                 "The Leaderboard ranks Colour Rush wins by the most squares. Your pawns home and your captures count in Statistics.",
             ),
-            diagram = null,
+            diagram = "Board: a game of Colour Rush. The squares each player has claimed are in their colour, behind their pawns. Red has claimed the most.",
         ),
         Page(
             "Two Dice",
@@ -155,7 +155,7 @@ class RulesTextTest : UiTest() {
                 "Roll a double and you roll again once both dice are moved, but three doubles in a row end your turn. A capture, or a pawn brought home, still earns another roll.",
                 "Each mode has its own Leaderboard, its own page in Statistics, and achievements of its own.",
             ),
-            diagram = null,
+            diagram = "Board: a game of Two Dice, with pawns of every colour out on the track. Under it, the dice show 6 and 3.",
         ),
         Page(
             "Portals",
@@ -166,7 +166,7 @@ class RulesTextTest : UiTest() {
                 "Long portals, with a split ring, reach into the next player's stretch of the track. One reaches past your own start square: going through it takes your pawn most of the way home, or most of the way back.",
                 "Each mode has its own Leaderboard, its own page in Statistics, and achievements of its own.",
             ),
-            diagram = null,
+            diagram = "Board: a game of Portals, with every pair of portals on the track. A red pawn waits on one.",
         ),
         Page(
             "Survival",
@@ -179,7 +179,7 @@ class RulesTextTest : UiTest() {
                 "Ten turns after that comes the Cataclysm: after every five turns, up to three squares with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven squares left, so nobody can keep away for ever.",
                 "The Leaderboard ranks Survival wins by the furthest travelled: the most squares the winner's pawns moved.",
             ),
-            diagram = null,
+            diagram = "Board: a game of Survival in the Cataclysm. Six squares of the track have vanished, the start and star squares are crossed out as no longer safe, and each yard crosses out the pawns its player has lost.",
         ),
         Page(
             "Chaos",
@@ -195,7 +195,7 @@ class RulesTextTest : UiTest() {
                 "Bouncing off a shield earns no roll unless your pawn captures where it settles. A pawn brought out of the yard can't bounce, so a shield doesn't stop it.",
                 "Each mode has its own Leaderboard, its own page in Statistics, and achievements of its own.",
             ),
-            diagram = null,
+            diagram = "Board: a game of Chaos, with one of each power-up on the track. A green pawn has a shield, and Red's yard shows 2 doubled rolls left and 1 Call Up banked.",
         ),
         Page(
             "Haunted House",
@@ -205,7 +205,7 @@ class RulesTextTest : UiTest() {
                 "A ghost sends every pawn on the square it lands on back to its yard, whoever's they are, unless the square is safe. Landing on a ghost yourself does no harm: it only catches pawns when it moves.",
                 "Each mode has its own Leaderboard, its own page in Statistics, and achievements of its own.",
             ),
-            diagram = null,
+            diagram = "Board: a game of Haunted House, with its two ghosts on the track, one 2 squares ahead of a red pawn.",
         ),
     )
 
@@ -247,16 +247,17 @@ class RulesTextTest : UiTest() {
                 compose.onNode(isHeading and hasText(page.title)).assertIsDisplayed()
                 // Nor is a paragraph already in view scrolled to, for the same reason.
                 page.paragraphs.forEach { paragraph -> compose.onNodeWithText(paragraph).let { if (!it.isDisplayed()) it.performScrollTo() } }
-                // The diagram is one image, described in words.
-                page.diagram?.let { compose.onNodeWithContentDescription(it).performScrollTo().assert(isImage) }
+                // The diagram or board is one image, described in words. It isn't scrolled to: a group's last page never
+                // settled, as above.
+                page.diagram?.let { compose.onNodeWithContentDescription(it).assert(isImage) }
             }
         }
-        // The diagrams' dice are part of their pictures, not dice of their own.
+        // The diagrams' and boards' dice are part of their pictures, not dice of their own.
         compose.onAllNodesWithContentDescription("Die showing", substring = true).assertCountEquals(0)
         // Every diagram described is one of the pages' own.
         compose.onAllNodes(isImage).fetchSemanticsNodes().forEach { node ->
             val description = node.config[SemanticsProperties.ContentDescription].single()
-            check(pages.any { it.diagram == description }) { "an image no page describes: $description" }
+            check(groups.any { (_, groupPages) -> groupPages.any { it.diagram == description } }) { "an image no page describes: $description" }
         }
     }
 }

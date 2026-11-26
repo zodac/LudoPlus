@@ -1259,6 +1259,13 @@
     <string name="rules_turn_diagram_cd">Diagram: the die shows 6, so a red pawn comes out of its yard onto its start square.</string>
     <string name="rules_capture_diagram_cd">Diagram: Red rolls 4 and lands on Green's pawn, sending it back to Green's yard. Blue's pawn is safe on a star square.</string>
     <string name="rules_winning_diagram_cd">Diagram: a red pawn 3 squares from home needs exactly 3 to get there. Another red pawn is already home.</string>
+    <!-- What TalkBack says for the board on each Game Modes page of the Rules (ui/rules/RulesBoard.kt). -->
+    <string name="rules_colour_rush_board_cd">Board: a game of Colour Rush. The squares each player has claimed are in their colour, behind their pawns. Red has claimed the most.</string>
+    <string name="rules_two_dice_board_cd">Board: a game of Two Dice, with pawns of every colour out on the track. Under it, the dice show 6 and 3.</string>
+    <string name="rules_portals_board_cd">Board: a game of Portals, with every pair of portals on the track. A red pawn waits on one.</string>
+    <string name="rules_survival_board_cd">Board: a game of Survival in the Cataclysm. Six squares of the track have vanished, the start and star squares are crossed out as no longer safe, and each yard crosses out the pawns its player has lost.</string>
+    <string name="rules_chaos_board_cd">Board: a game of Chaos, with one of each power-up on the track. A green pawn has a shield, and Red's yard shows 2 doubled rolls left and 1 Call Up banked.</string>
+    <string name="rules_haunted_house_board_cd">Board: a game of Haunted House, with its two ghosts on the track, one 2 squares ahead of a red pawn.</string>
 
 
     <!-- Styles -->

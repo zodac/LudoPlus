@@ -722,10 +722,14 @@ Each category is two lists in the same order:
 - **Diagrams** (`RulesDiagram.kt`): a crop of the real board (`drawBoard`, `drawPawn`, and `ClassicBoardLayout`'s positions),
     in the default seat colours, with pawns, ink arrows (dashed for a pawn sent back), and a die. One image to TalkBack,
     described in words (`rules_*_diagram_cd`).
+- **Mode boards** (`RulesBoard.kt`): each Game Modes page ends with the game's own board (`LudoBoard`), in the default
+    seat colours, for four players, as a game of the mode might stand (`RulesBoardKind`, staged by hand): Colour Rush's
+    claimed squares, Two Dice's roll under it, the portals, Survival's Cataclysm, Chaos's power-ups, and the ghosts. One
+    image to TalkBack, described in words (`rules_*_board_cd`).
 - **Accuracy.** The text is kept in step with the engine and `IMPLEMENTATION.md`'s "The classic rules".
 - **New mode or modifier.** It gets its own page; see `GAME_MODES.md`.
-- Tests: `RulesTextTest` (every page's words and diagram), `RulesScreenAccessibilityTest`, `RulesTabIndicatorTest`, and
-    `RulesScrollbarThumbTest`.
+- Tests: `RulesTextTest` (every page's words, diagram, and board), `RulesBoardTest`, `RulesScreenAccessibilityTest`,
+    `RulesTabIndicatorTest`, and `RulesScrollbarThumbTest`.
 
 ## Distribution
 

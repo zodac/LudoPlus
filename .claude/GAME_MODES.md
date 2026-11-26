@@ -52,7 +52,9 @@ with the house rules on.
     The Leaderboard and Statistics pages list `GameMode.entries` in their mode rows.
 - **Achievements**: its win and a feat of its own (`Achievement.mode`, `isModeWin`; `AchievementModeTest`), and an audit of
     every other one in it (`GAME_MODES_AUDIT.md`).
-- **The Rules screen**: a page in the Game Modes group (`RulesContent.kt`), and `RulesTextTest`'s words.
+- **The Rules screen**: a page in the Game Modes group (`RulesContent.kt`), ending with its board: a staged game of
+    the mode in `RulesBoardKind` (`RulesBoard.kt`; `RulesBoardTest`), described in `rules_<id>_board_cd`. And
+    `RulesTextTest`'s words.
 - **Docs**: this table, `DESIGN.md`'s "Game modes", and `IMPLEMENTATION.md`'s Phase 9.
 - **Verify** with the `test` skill's full gate, render the board, then send the debug APK. Commit as
     `[Game Mode] ...`.
