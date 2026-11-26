@@ -61,6 +61,8 @@ Each of these fixed a reported stutter. New work must keep them.
 - **Read changing state where it's used.**
     - The Rules screen reads the current page only where it's shown (`derivedStateOf`), and remembers its tab modifiers.
     - Settings, achievements and the saved-game flag emit only when their own value changes (`distinctUntilChanged`).
+    - Each player card takes what it shows (`PlayerCardInfo`), not the game, so a roll or the play time going on draws
+        no card again (`PlayerCardInfoTest`); its tooltip reads the game only while it's up.
 - **Load ahead of the first use.** The sound clips load a second after launch, off the main thread, not on a game's
     first roll.
 - **Warm a page up off screen with `OffscreenWarmUp`** (`ui/common`): a 1dp clipped box under an opaque screen,

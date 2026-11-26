@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -648,6 +649,10 @@ private fun TutorialCoachCard(tutorial: TutorialView) {
 private fun PlayerCards(game: StartedGame, turn: Int, compact: Boolean) {
     val seats = game.state.players.map { it.seat }
     val rows = remember(game.state.board, seats) { playerCardRows(BoardLayout.of(game.state.board), seats) }
+    val ranks = remember(game.state) { game.state.ranks() }
+    // The tooltip's figures read the game as it is when shown, so that the card itself needn't take each new game.
+    val latest by rememberUpdatedState(game)
+    val currentGame = remember { { latest } }
     Column(verticalArrangement = Arrangement.spacedBy(cardGap(compact)), modifier = Modifier.semantics { isTraversalGroup = true }) {
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -655,7 +660,7 @@ private fun PlayerCards(game: StartedGame, turn: Int, compact: Boolean) {
                     if (index == null) {
                         Box(Modifier.weight(1f))
                     } else {
-                        PlayerCard(game, index, turn, compact, Modifier.weight(1f))
+                        PlayerCard(playerCardInfo(game, index, turn, ranks), index, compact, currentGame, Modifier.weight(1f))
                     }
                 }
             }
@@ -674,33 +679,83 @@ private fun playerCardsHeight(rows: Int, compact: Boolean): Dp {
     return (line + cardPadding(compact) * 2) * rows + cardGap(compact) * (rows - 1)
 }
 
-/** A player's card: a tap on it shows how many captures they have made and had made of them, in all and against each opponent, and their rolls of each face ([PlayerStats]), under their whole name where the card cuts it. It's outlined in dashes while that's up. */
-@Composable
-private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolean, modifier: Modifier) {
+/**
+ * What a player's card shows, worked out from the game: a card is drawn again only when its own changes, not at every
+ * roll or move.
+ */
+internal data class PlayerCardInfo(
+    val name: String,
+    val colour: Color,
+    val isCpu: Boolean,
+    /** Their team's number, or null in a game without teams. */
+    val team: Int?,
+    /** Their rank as the game stands ([GameState.ranks]), or null while everyone is level. */
+    val rank: Int?,
+    /** Whether [rank] is shared with an opponent who isn't placed. */
+    val tied: Boolean,
+    /** Whether they have been placed: the rank is then said as a place. */
+    val placed: Boolean,
+    /** The place shown in place of the dots: once they're out of the race (all home, or none left in Last Standing). */
+    val shownPlace: Int?,
+    /** The card's dots: the pawns home, or where the last standing wins, the pawns still in. */
+    val counted: Int,
+    val pawnsPerPlayer: Int,
+    val lastStanding: Boolean,
+    /** Their squares, in a game where they're claimed; null otherwise. */
+    val squares: Int?,
+    /** Whether it's their turn, in a game not yet over. */
+    val current: Boolean,
+)
+
+/** Player [index]'s card in [game], with [turn] the player shown to be having theirs and [ranks] the game's ([GameState.ranks]). */
+internal fun playerCardInfo(game: StartedGame, index: Int, turn: Int, ranks: List<Int>?): PlayerCardInfo {
     val player = game.players[index]
     val state = game.state
     val side = state.players[index]
-    val colour = player.colour.color
-    val current = turn == index && !state.isFinished
     val lastStanding = state.rules.lastStanding
-    // The card's dots: the pawns home, or where the last standing wins, the pawns still in.
-    val counted = if (lastStanding) side.pawnsLeft else side.pawnsHome(state.board)
-    // A player still racing when the game ended has a place but no pawns all home: their card keeps its dots.
-    val place = state.placeOf(index).takeIf { if (lastStanding) side.pawnsLeft == 0 else side.isFinished(state.board) }
-    val placeText = place?.let { stringResource(Res.string.game_player_place, ordinal(it)) }
-    val team = teamNumber(state, index)
-    val ranks = remember(state) { state.ranks() }
     val rank = ranks?.get(index)
-    // Partners share a rank without being level.
-    val tied = rank != null && state.placeOf(index) == null && state.players.indices.any { ranks[it] == rank && state.rules.teamOf(it) != state.rules.teamOf(index) }
+    return PlayerCardInfo(
+        name = player.name,
+        colour = player.colour.color,
+        isCpu = player.type == PlayerType.AI,
+        team = teamNumber(state, index),
+        rank = rank,
+        // Partners share a rank without being level.
+        tied = rank != null && state.placeOf(index) == null &&
+            state.players.indices.any { ranks[it] == rank && state.rules.teamOf(it) != state.rules.teamOf(index) },
+        placed = state.placeOf(index) != null,
+        // A player still racing when the game ended has a place but no pawns all home: their card keeps its dots.
+        shownPlace = state.placeOf(index).takeIf { if (lastStanding) side.pawnsLeft == 0 else side.isFinished(state.board) },
+        counted = if (lastStanding) side.pawnsLeft else side.pawnsHome(state.board),
+        pawnsPerPlayer = state.rules.pawnsPerPlayer,
+        lastStanding = lastStanding,
+        squares = if (state.rules.claims) state.squaresOf(index) else null,
+        current = turn == index && !state.isFinished,
+    )
+}
+
+/**
+ * A player's card ([info], player [index]'s): a tap on it shows how many captures they have made and had made of them, in
+ * all and against each opponent, and their rolls of each face ([PlayerStats], from [currentGame]), under their whole
+ * name where the card cuts it. It's outlined in dashes while that's up.
+ */
+@Composable
+private fun PlayerCard(info: PlayerCardInfo, index: Int, compact: Boolean, currentGame: () -> StartedGame, modifier: Modifier) {
+    val colour = info.colour
+    val current = info.current
+    val counted = info.counted
+    val team = info.team
+    val rank = info.rank
+    val tied = info.tied
+    val placeText = info.shownPlace?.let { stringResource(Res.string.game_player_place, ordinal(it)) }
     // Once the game is over the rank is the place, said as one even where the card keeps its dots.
     val spokenRank = when {
         rank == null || placeText != null -> null
-        state.placeOf(index) != null -> stringResource(Res.string.game_player_place, ordinal(rank))
+        info.placed -> stringResource(Res.string.game_player_place, ordinal(rank))
         tied -> stringResource(Res.string.game_player_rank_tied_spoken, ordinal(rank))
         else -> stringResource(Res.string.game_player_rank_spoken, ordinal(rank))
     }
-    var nameCut by remember(player.name) { mutableStateOf(false) }
+    var nameCut by remember(info.name) { mutableStateOf(false) }
     // Up until a tap elsewhere: there's more on it than its usual time is enough to read.
     val tooltip = rememberAppTooltipState(persistent = true)
     val scope = rememberCoroutineScope()
@@ -708,8 +763,8 @@ private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolea
     val spoken = joinClauses(
         listOfNotNull(
             team?.let { stringResource(Res.string.game_player_team_spoken, it) },
-            pluralStringResource(if (lastStanding) Res.plurals.game_player_pawns_left_spoken else Res.plurals.game_player_pawns_home_spoken, counted, counted),
-            if (state.rules.claims) state.squaresOf(index).let { pluralStringResource(Res.plurals.gameover_squares, it, it) } else null,
+            pluralStringResource(if (info.lastStanding) Res.plurals.game_player_pawns_left_spoken else Res.plurals.game_player_pawns_home_spoken, counted, counted),
+            info.squares?.let { pluralStringResource(Res.plurals.gameover_squares, it, it) },
             if (current) stringResource(Res.string.game_player_turn_spoken) else null,
             placeText ?: spokenRank,
         ),
@@ -718,7 +773,7 @@ private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolea
     // The box takes the weight: a tooltip's modifier is its content's alone, not its own.
     Box(modifier) {
         AppTooltip(
-            body = { PlayerStats(game, index, named = nameCut) },
+            body = { PlayerStats(currentGame(), index, named = nameCut) },
             state = tooltip,
             enabled = false,
             wide = true,
@@ -745,19 +800,19 @@ private fun PlayerCard(game: StartedGame, index: Int, turn: Int, compact: Boolea
                     if (team != null) TeamBadge(team, Modifier.clearAndSetSemantics { })
                     RankDisc(rank, tied, colour, Modifier.clearAndSetSemantics { })
                     Text(
-                        text = player.name,
+                        text = info.name,
                         style = MaterialTheme.typography.titleSmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         onTextLayout = { nameCut = it.hasVisualOverflow },
                         modifier = Modifier.weight(1f),
                     )
-                    if (player.type == PlayerType.AI) CpuPlayerIcon(size = 16.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (state.rules.claims) SquaresBadge(state.squaresOf(index), colour, Modifier.clearAndSetSemantics { })
+                    if (info.isCpu) CpuPlayerIcon(size = 16.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    info.squares?.let { SquaresBadge(it, colour, Modifier.clearAndSetSemantics { }) }
                     if (placeText != null) {
                         Text(placeText, style = MaterialTheme.typography.labelMedium, color = colour, modifier = Modifier.clearAndSetSemantics { })
                     } else {
-                        PawnDots(counted, state.rules.pawnsPerPlayer, colour, Modifier.clearAndSetSemantics { })
+                        PawnDots(counted, info.pawnsPerPlayer, colour, Modifier.clearAndSetSemantics { })
                     }
                 }
             }
