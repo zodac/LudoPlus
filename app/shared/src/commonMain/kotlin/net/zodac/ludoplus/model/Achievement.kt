@@ -812,30 +812,6 @@ enum class Achievement(
         Res.string.achievement_colour_coordinated_description,
         AchievementCategory.GAME_MODES, mode = GameMode.COLOUR_RUSH,
     ),
-    DOUBLE_OR_NOTHING(
-        "double_or_nothing",
-        Res.string.achievement_double_or_nothing_title,
-        Res.string.achievement_double_or_nothing_description,
-        AchievementCategory.GAME_MODES, mode = GameMode.TWO_DICE, isModeWin = true,
-    ),
-    TWO_BIRDS_TWO_STONES(
-        "two_birds_two_stones",
-        Res.string.achievement_two_birds_two_stones_title,
-        Res.string.achievement_two_birds_two_stones_description,
-        AchievementCategory.GAME_MODES, mode = GameMode.TWO_DICE,
-    ),
-    THROUGH_THE_LOOKING_GLASS(
-        "through_the_looking_glass",
-        Res.string.achievement_through_the_looking_glass_title,
-        Res.string.achievement_through_the_looking_glass_description,
-        AchievementCategory.GAME_MODES, mode = GameMode.PORTALS, isModeWin = true,
-    ),
-    THERE_AND_BACK_AGAIN(
-        "there_and_back_again",
-        Res.string.achievement_there_and_back_again_title,
-        Res.string.achievement_there_and_back_again_description,
-        AchievementCategory.GAME_MODES, mode = GameMode.PORTALS,
-    ),
     LAST_PAWN_STANDING(
         "last_pawn_standing",
         Res.string.achievement_last_pawn_standing_title,
@@ -871,6 +847,30 @@ enum class Achievement(
         Res.string.achievement_not_a_ghost_of_a_chance_title,
         Res.string.achievement_not_a_ghost_of_a_chance_description,
         AchievementCategory.GAME_MODES, mode = GameMode.HAUNTED_HOUSE,
+    ),
+    THROUGH_THE_LOOKING_GLASS(
+        "through_the_looking_glass",
+        Res.string.achievement_through_the_looking_glass_title,
+        Res.string.achievement_through_the_looking_glass_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.PORTALS, isModeWin = true,
+    ),
+    THERE_AND_BACK_AGAIN(
+        "there_and_back_again",
+        Res.string.achievement_there_and_back_again_title,
+        Res.string.achievement_there_and_back_again_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.PORTALS,
+    ),
+    DOUBLE_OR_NOTHING(
+        "double_or_nothing",
+        Res.string.achievement_double_or_nothing_title,
+        Res.string.achievement_double_or_nothing_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.TWO_DICE, isModeWin = true,
+    ),
+    TWO_BIRDS_TWO_STONES(
+        "two_birds_two_stones",
+        Res.string.achievement_two_birds_two_stones_title,
+        Res.string.achievement_two_birds_two_stones_description,
+        AchievementCategory.GAME_MODES, mode = GameMode.TWO_DICE,
     ),
     EVERYTHING_EVERYWHERE_ALL_AT_ONCE(
         "everything_everywhere_all_at_once",

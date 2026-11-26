@@ -212,7 +212,7 @@ class AchievementsTextTest : UiTest() {
         showAchievements(achievementsViewModel())
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Counting Up"))
         // Kept out of Two Dice, so the modes left come first (each name kept on one line).
-        val reward = "Can only be earned in the 'Classic', 'Colour\u00A0Rush', 'Portals', 'Survival', 'Chaos', and 'Haunted\u00A0House' modes\nEarn this to unlock the 'Maths' die style"
+        val reward = "Can only be earned in the 'Classic', 'Colour\u00A0Rush', 'Survival', 'Chaos', 'Haunted\u00A0House', and 'Portals' modes\nEarn this to unlock the 'Maths' die style"
         val row = compose.onNode(hasContentDescription(reward) and SemanticsMatcher.keyIsDefined(SemanticsActions.OnClick))
         assertEquals("Show which style this unlocks", row.fetchSemanticsNode().config[SemanticsActions.OnClick].label)
         // Heard, not seen, until the tap shows it as a tip.
@@ -225,7 +225,7 @@ class AchievementsTextTest : UiTest() {
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Clean Sweep"))
         val modes = compose.onNode(hasText("Clean Sweep"))
         assertEquals("Show which modes can earn this", modes.fetchSemanticsNode().config[SemanticsActions.OnClick].label)
-        modes.assert(hasContentDescription("Can only be earned in the 'Classic', 'Two\u00A0Dice', 'Portals', 'Chaos', and 'Haunted\u00A0House' modes"))
+        modes.assert(hasContentDescription("Can only be earned in the 'Classic', 'Chaos', 'Haunted\u00A0House', 'Portals', and 'Two\u00A0Dice' modes"))
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Agent Of Chaos"))
         assertTrue(SemanticsActions.OnClick !in compose.onNode(hasText("Agent Of Chaos")).fetchSemanticsNode().config)
         // A row with no style behind it has no tap at all.

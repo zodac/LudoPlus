@@ -173,16 +173,6 @@ private val GAME_MODES = RulesGroup(
                 RulesBoardBlock(RulesBoardKind.COLOUR_RUSH),
         ),
         RulesPage(
-            Res.string.mode_two_dice,
-            Res.string.mode_two_dice,
-            texts(Res.string.rules_two_dice_1, Res.string.rules_two_dice_2, Res.string.rules_two_dice_3, Res.string.rules_modes_records) + RulesBoardBlock(RulesBoardKind.TWO_DICE),
-        ),
-        RulesPage(
-            Res.string.mode_portals,
-            Res.string.mode_portals,
-            texts(Res.string.rules_portals_1, Res.string.rules_portals_2, Res.string.rules_portals_3, Res.string.rules_modes_records) + RulesBoardBlock(RulesBoardKind.PORTALS),
-        ),
-        RulesPage(
             Res.string.mode_survival,
             Res.string.mode_survival,
             texts(Res.string.rules_survival_1, Res.string.rules_survival_2, Res.string.rules_survival_3, Res.string.rules_survival_4, Res.string.rules_survival_5, Res.string.rules_survival_records) +
@@ -198,6 +188,16 @@ private val GAME_MODES = RulesGroup(
             Res.string.mode_haunted_house,
             Res.string.mode_haunted_house,
             texts(Res.string.rules_haunted_house_1, Res.string.rules_haunted_house_2, Res.string.rules_modes_records) + RulesBoardBlock(RulesBoardKind.HAUNTED_HOUSE),
+        ),
+        RulesPage(
+            Res.string.mode_portals,
+            Res.string.mode_portals,
+            texts(Res.string.rules_portals_1, Res.string.rules_portals_2, Res.string.rules_portals_3, Res.string.rules_modes_records) + RulesBoardBlock(RulesBoardKind.PORTALS),
+        ),
+        RulesPage(
+            Res.string.mode_two_dice,
+            Res.string.mode_two_dice,
+            texts(Res.string.rules_two_dice_1, Res.string.rules_two_dice_2, Res.string.rules_two_dice_3, Res.string.rules_modes_records) + RulesBoardBlock(RulesBoardKind.TWO_DICE),
         ),
     ),
 )

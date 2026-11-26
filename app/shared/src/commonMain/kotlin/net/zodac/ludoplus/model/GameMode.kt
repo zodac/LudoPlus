@@ -61,27 +61,6 @@ enum class GameMode(
     ),
 
     /**
-     * Two dice, each moved on its own, one after the other, by any pawn: a 6 on either brings a pawn out with that die,
-     * and doubles roll again (three in a row end the turn), not 6s.
-     */
-    TWO_DICE(
-        id = "two_dice",
-        displayName = Res.string.mode_two_dice,
-        description = Res.string.mode_two_dice_description,
-        rules = GameRules(dice = 2, rollAgainRolls = emptySet(), rollAgainOnDoubles = true),
-        onlineLeaderboardKey = "two_dice",
-    ),
-
-    /** The classic rules, with pairs of portals on the track ([BoardGeometry.portals]). */
-    PORTALS(
-        id = "portals",
-        displayName = Res.string.mode_portals,
-        description = Res.string.mode_portals_description,
-        rules = GameRules(portals = true),
-        onlineLeaderboardKey = "portals",
-    ),
-
-    /**
      * No home: pawns lap the track from their start squares, a captured pawn is out of the game, and the last player with
      * one wins. Late in the game sudden death makes the start squares unsafe, then the stars too, then takes the track away.
      */
@@ -111,6 +90,27 @@ enum class GameMode(
         rules = GameRules(ghosts = true),
         onlineLeaderboardKey = "haunted_house",
     ),
+    /** The classic rules, with pairs of portals on the track ([BoardGeometry.portals]). */
+    PORTALS(
+        id = "portals",
+        displayName = Res.string.mode_portals,
+        description = Res.string.mode_portals_description,
+        rules = GameRules(portals = true),
+        onlineLeaderboardKey = "portals",
+    ),
+
+    /**
+     * Two dice, each moved on its own, one after the other, by any pawn: a 6 on either brings a pawn out with that die,
+     * and doubles roll again (three in a row end the turn), not 6s.
+     */
+    TWO_DICE(
+        id = "two_dice",
+        displayName = Res.string.mode_two_dice,
+        description = Res.string.mode_two_dice_description,
+        rules = GameRules(dice = 2, rollAgainRolls = emptySet(), rollAgainOnDoubles = true),
+        onlineLeaderboardKey = "two_dice",
+    ),
+
     ;
 
     /** Its online leaderboard for games of [playerCount]: a bigger board's lap is longer, so each count has its own. */

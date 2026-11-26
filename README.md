@@ -15,7 +15,7 @@ and be the first to get all four home. Land on a rival to send them back to the 
 
 - **The classic rules** for 2 to 8 players, on a board made for each size, alone or in teams (with 4, 6, or 8
     players), against friends passing the phone around or computer opponents at three levels: Easy, Medium, and Hard
-- **Seven game modes**: Classic, Colour Rush, Two Dice, Portals, Survival, Chaos, and Haunted House (see
+- **Seven game modes**: Classic, Colour Rush, Survival, Chaos, Haunted House, Portals, and Two Dice (see
     [below](#game-modes)), and **ten house rules** to mix in
 - **Play together on phones in the same room** (the Google Play version): one game across several phones, linked
     directly with no server, and a player whose phone drops out can rejoin
@@ -38,10 +38,6 @@ Every mode has its own Leaderboard, its own page in Statistics, and achievements
 - **Colour Rush**: the first pawn to land on a square claims it for its colour, and a capture there takes it over.
     Claimed stars are yours for good. The game ends once every square is claimed or someone gets all their pawns home,
     and the most squares wins.
-- **Two Dice**: roll two dice and move by each one in turn, with the same pawn or two different ones. A 6 on either
-    brings a pawn out, and doubles roll again.
-- **Portals**: pairs of portals on the track, open to every colour. End a move on one and come out at its pair: a
-    short hop, or a long jump most of the way round the board, or most of the way back.
 - **Survival**: six pawns each, all starting on the board, and no home: pawns lap the board for as long as they last. A
     captured pawn is out of the game, and the last player with a pawn left wins. Hold on too long and Overtime makes
     the start squares unsafe, Sudden Death the stars, and then the Cataclysm makes squares vanish from the track until
@@ -52,6 +48,10 @@ Every mode has its own Leaderboard, its own page in Statistics, and achievements
     pawn on the track.
 - **Haunted House**: ghosts drift round the track, a die's roll at a time and in either direction, and send any pawn
     they land on back to its yard, unless it's safe.
+- **Portals**: pairs of portals on the track, open to every colour. End a move on one and come out at its pair: a
+    short hop, or a long jump most of the way round the board, or most of the way back.
+- **Two Dice**: roll two dice and move by each one in turn, with the same pawn or two different ones. A 6 on either
+    brings a pawn out, and doubles roll again.
 
 ### House rules
 

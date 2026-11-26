@@ -96,11 +96,11 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 | --- | --- | --- | --- |
 | Classic | The classic rules | Yes | Yes |
 | Colour Rush | The track's squares are claimed: the first to land on one has it, and a capture there takes it; the most at the end wins | Yes, its own, by most squares | Its own, and all but a few |
-| Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | Its own, and all but a few |
-| Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | Its own, and all but a few |
 | Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; Overtime, Sudden Death, and the Cataclysm late on | Yes, its own, by the furthest travelled | Its own, and all but a few |
 | Chaos | Power-ups on the track, taken by the pawn that ends its move on one | Yes, its own | Its own, and all but a few |
 | Haunted House | Ghosts on the track, which send the pawns they land on back to their yards | Yes, its own | Its own, and all but a few |
+| Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | Its own, and all but a few |
+| Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | Its own, and all but a few |
 
 Every mode has its own Leaderboard (one a player count) and its own Statistics page, and earns achievements (the
 maintainer, 2026-11-24; "Achievements"). The Rules

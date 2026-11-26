@@ -274,7 +274,7 @@ class OnlineSyncTest {
             Win(GameMode.COLOUR_RUSH, 3, 18, 18L),
         )
         sync(services, InMemoryAchievementStore(state()), OnlineSettingsRepository(InMemoryPreferences()), wins = wins).reconcile()
-        assertEquals(listOf("classic_2p" to 30L, "classic_4p" to 38L, "colour_rush_3p" to 20L, "two_dice_6p" to 52L, "survival_4p" to 640L), services.posted)
+        assertEquals(listOf("classic_2p" to 30L, "classic_4p" to 38L, "colour_rush_3p" to 20L, "survival_4p" to 640L, "two_dice_6p" to 52L), services.posted)
     }
 
     @Test

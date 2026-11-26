@@ -30,7 +30,7 @@ import net.zodac.ludoplus.ui.records.StatisticsViewModel
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
 
 /** Every mode's name, in the drop-downs' order. */
-private val MODE_NAMES = listOf("Classic", "Colour Rush", "Two Dice", "Portals", "Survival", "Chaos", "Haunted House")
+private val MODE_NAMES = listOf("Classic", "Colour Rush", "Survival", "Chaos", "Haunted House", "Portals", "Two Dice")
 
 /** The Leaderboard and Statistics pages: what they say, to the eye and to a screen reader, full and empty. */
 class RecordsScreensTest : UiTest() {

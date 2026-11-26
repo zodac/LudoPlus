@@ -121,11 +121,11 @@ private val HAUNTED_HOUSE_BOARD = staged(GameMode.HAUNTED_HOUSE, listOf(9, Y, Y,
  */
 enum class RulesBoardKind(internal val state: GameState, internal val description: StringResource, internal val dice: List<Int> = emptyList()) {
     COLOUR_RUSH(COLOUR_RUSH_BOARD, Res.string.rules_colour_rush_board_cd),
-    TWO_DICE(TWO_DICE_BOARD, Res.string.rules_two_dice_board_cd, TWO_DICE_ROLL),
-    PORTALS(PORTALS_BOARD, Res.string.rules_portals_board_cd),
     SURVIVAL(SURVIVAL_BOARD, Res.string.rules_survival_board_cd),
     CHAOS(CHAOS_BOARD, Res.string.rules_chaos_board_cd),
     HAUNTED_HOUSE(HAUNTED_HOUSE_BOARD, Res.string.rules_haunted_house_board_cd),
+    PORTALS(PORTALS_BOARD, Res.string.rules_portals_board_cd),
+    TWO_DICE(TWO_DICE_BOARD, Res.string.rules_two_dice_board_cd, TWO_DICE_ROLL),
 }
 
 /** The widest a mode's board draws, as a diagram does ([RulesDiagram]). */
