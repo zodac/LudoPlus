@@ -34,3 +34,23 @@ subprojects {
         }
     }
 }
+
+// Every dependency any task here could want - each project's resolvable configurations, AGP's lint and Kotlin's compiler
+// among them - downloaded without building anything, by `./gradlew resolveDependencies` (each project's own, as a project
+// may only resolve its own). CI's cache writers run it (.github/scripts/resolve_dependencies.sh), so the jobs after them,
+// which only read the cache, find everything there rather than each fetching it from Maven Central at once. Lenient: a configuration no single variant answers without a task's own attributes is skipped rather
+// than failing the build. The files are resolved as the configuration cache stores the task.
+allprojects {
+    tasks.register("resolveDependencies") {
+        group = "build setup"
+        description = "Downloads this project's dependencies, for CI's Gradle cache."
+        val dependencies = files({
+            configurations.filter { it.isCanBeResolved }.map { configuration ->
+                configuration.incoming.artifactView { lenient(true) }.files
+            }
+        })
+        doLast {
+            logger.lifecycle("Resolved ${dependencies.files.size} files.")
+        }
+    }
+}

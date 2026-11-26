@@ -8,6 +8,9 @@ inputs:
   ffmpeg:
     description: "Install ffmpeg - scripts/normalize-audio.sh needs it for app:android's resources"
     default: "false"
+  cache-writer:
+    description: "Save Gradle's cache at the job's end - only for a job that runs resolveDependencies (see 'Name the Gradle cache')"
+    default: "false"
 
 runs:
   using: composite
@@ -89,5 +92,18 @@ runs:
         # Readable by the cache's save, which runs as the runner's user.
         sudo chmod -R a+rX "$DEBS"
 
+    # One Gradle cache for every job, written by one job alone. setup-gradle keys its entry on the job, and a job restores
+    # its own job's last entry first, so by default each job kept its own copy of the dependencies (hundreds of MB each,
+    # which pushed the repo past GitHub's 10 GB and had entries evicted), and after a version bump each job downloaded the
+    # new ones from Maven Central at once (which answered 429 Too Many Requests). Every job now has the same name in the
+    # key, set for the whole job so the post step saves under it too, and only a job passing cache-writer saves: one that
+    # has run `./gradlew resolveDependencies` first (android-release.yml's dependencies job, and update-dependencies.yml's
+    # update job after a bump). The rest restore the newest entry, whichever writer saved it.
+    - name: Name the Gradle cache
+      shell: bash
+      run: echo "GRADLE_BUILD_ACTION_CACHE_KEY_JOB=gradle" >> "$GITHUB_ENV"
+
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      with:
+        cache-read-only: ${{ inputs.cache-writer != 'true' }}

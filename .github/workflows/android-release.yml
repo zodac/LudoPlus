@@ -31,7 +31,8 @@ name: Android release
 # The checks run side by side, each on a runner of its own - the app's Robolectric tests, the shared
 # module's tests, lint, the upgrade check, and the Baseline Profile, which stops itself if a check fails. The signed APK is
 # built with that profile once it and every check have passed, and the release itself is made only once
-# all of that has. Each job sets itself up through .github/actions/build-setup.
+# all of that has. Each job sets itself up through .github/actions/build-setup. Before them all, the dependencies job
+# downloads what they need into Gradle's cache, which only it saves.
 #
 # Only a push that touches what ships triggers a release: app sources and resources (VERSION
 # included), and the Gradle build. Docs, CI, tooling, test code and Markdown files don't build a new
@@ -113,6 +114,29 @@ jobs:
           echo "previous_tag=$previous_tag" >> "$GITHUB_OUTPUT"
           echo "Releasing: $release (android-v$version, $sha; previous release: ${previous_tag:-none})"
 
+  # The one job here that saves Gradle's cache (.github/actions/build-setup, "Name the Gradle cache"): every dependency
+  # the checks need is downloaded once, here, before they start, so that after a version bump they don't all fetch the
+  # same new ones from Maven Central at once. With nothing new it restores the cache, finds everything there, and
+  # saves nothing new.
+  dependencies:
+    needs: version
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true # code-quality-config: lint's rules, which release builds read too (lintVital)
+          ref: ${{ needs.version.outputs.sha }}
+
+      - name: Set up the build
+        uses: ./.github/actions/build-setup
+        with:
+          cache-writer: "true"
+
+      - name: Download the dependencies
+        run: .github/scripts/resolve_dependencies.sh
+
   # app:android's unit tests - Robolectric, so the slowest of the checks. One runner per flavour, side by side: each
   # runs src/test plus its own src/test<Flavour> (the play and github apps; .claude/DESIGN.md, "Distribution"). Neither
   # leg stops the other, so a failure in one still reports the other's results.
@@ -122,7 +146,7 @@ jobs:
       fail-fast: false
       matrix:
         flavour: [Play, Github]
-    needs: version
+    needs: [version, dependencies]
     if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -167,7 +191,8 @@ jobs:
               exit 0
             fi
             echo "::warning::Robolectric's runtime didn't download (attempt $attempt)"
-            sleep 30
+            # 1, then 2 minutes: Maven Central's 429 Too Many Requests needs longer than seconds to clear.
+            if [ "$attempt" -lt 3 ]; then sleep $((60 * attempt)); fi
           done
           echo "::error::Robolectric's runtime couldn't be downloaded"
           exit 1
@@ -186,7 +211,7 @@ jobs:
   # app:shared's tests as Android runs them (commonTest and androidHostTest, under Robolectric for the UI) - see the
   # testDebugUnitTest task in app/shared/build.gradle.kts.
   shared-tests:
-    needs: version
+    needs: [version, dependencies]
     if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -208,7 +233,7 @@ jobs:
   # compiles before the emulator job, and runs lint, where Deprecated / ObsoleteSdkInt findings are errors - on the
   # release builds too (lintRelease), whose own source sets and manifests the debug lint never sees.
   lint:
-    needs: version
+    needs: [version, dependencies]
     if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -245,7 +270,7 @@ jobs:
   # It runs alongside the checks but is no use once one of them fails (nothing will be released), so it
   # watches them and stops itself when one does - see watch_checks.sh.
   baseline-profile:
-    needs: version
+    needs: [version, dependencies]
     if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 210
@@ -445,7 +470,7 @@ jobs:
   # a retired applicationId (1.0.0's net.zodac.ludo.github) can't be upgraded at all, so the script passes it with a
   # notice: 1.0.1's run checks nothing, and 1.0.2's is the first to upgrade.
   upgrade-check:
-    needs: version
+    needs: [version, dependencies]
     if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60

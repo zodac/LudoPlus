@@ -64,11 +64,14 @@ jobs:
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       # The JDK and SDK packages the build builds against (gradle/android-sdk.properties), ffmpeg (normalizeOggAudio) and Gradle.
-      # A newer platform or NDK the script tries is installed by the script itself.
+      # A newer platform or NDK the script tries is installed by the script itself. One of the two jobs that save Gradle's
+      # cache (.github/actions/build-setup, "Name the Gradle cache"), so the release this starts finds the new versions
+      # there.
       - name: Set up the build
         uses: ./.github/actions/build-setup
         with:
           ffmpeg: "true"
+          cache-writer: "true"
 
       # Builds and tests on every Gradle-side change, steps a breaking bump back down, and exits
       # non-zero if the build still fails or pinned values disagree across files - which stops the
@@ -126,6 +129,12 @@ jobs:
         run: |
           ./gradlew assembleDebug testDebugUnitTest lintDebug lintRelease \
             :app:android:assembleGithubRelease :app:android:bundlePlayRelease --console=plain
+
+      # The rest of what the release's jobs need, the Baseline Profile's among it, into the cache this job saves, so the
+      # release this starts downloads nothing new.
+      - name: Download the release's dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: .github/scripts/resolve_dependencies.sh
 
       # The workflows, shell scripts, Dockerfiles, and Markdown, as lint.yml checks them: also exercises a freshly bumped linter
       # image, or code-quality-config's rules at a new tag, before either is committed.
