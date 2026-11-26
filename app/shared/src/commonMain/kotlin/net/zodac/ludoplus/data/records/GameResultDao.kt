@@ -23,12 +23,15 @@ interface GameResultDao {
     )
     suspend fun leaderboard(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult>
 
-    /** [leaderboard] ranked by the most pawns left (the fewest lost to captures), then most captures, then the earliest. */
+    /**
+     * [leaderboard] ranked by the most squares walked, then most captures, then the earliest: the wins recorded before the
+     * squares were kept (null) after every other.
+     */
     @Query(
         "SELECT * FROM results WHERE gameModeId = :gameModeId AND playedUnmodified = 1 AND won = 1 AND playerCount = :playerCount " +
-            "ORDER BY timesCaptured ASC, captures DESC, endedAtEpochMillis ASC LIMIT :limit OFFSET :offset",
+            "ORDER BY squaresMoved IS NULL, squaresMoved DESC, captures DESC, endedAtEpochMillis ASC LIMIT :limit OFFSET :offset",
     )
-    suspend fun leaderboardByPawnsLeft(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult>
+    suspend fun leaderboardBySquaresMoved(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult>
 
     /** [leaderboard] ranked by the most squares claimed, then most captures, then the earliest. */
     @Query(
@@ -55,13 +58,28 @@ interface GameResultDao {
 
     /**
      * The fewest turns, and the newest end, of player 1's wins in [gameModeId] with [playerCount] players under the mode's
-     * own rules that ended after [afterEpochMillis]: what its online leaderboard hasn't been sent yet. Null turns for none.
+     * own rules that ended after [afterEpochMillis]: what its online leaderboard hasn't been sent yet. A null score for none.
      */
     @Query(
-        "SELECT MIN(turns) AS turns, MAX(endedAtEpochMillis) AS newestEpochMillis FROM results WHERE gameModeId = :gameModeId " +
+        "SELECT MIN(turns) AS score, MAX(endedAtEpochMillis) AS newestEpochMillis FROM results WHERE gameModeId = :gameModeId " +
             "AND playerCount = :playerCount AND playedUnmodified = 1 AND won = 1 AND isPrimaryPlayer = 1 AND endedAtEpochMillis > :afterEpochMillis",
     )
-    suspend fun unpostedWin(gameModeId: String, playerCount: Int, afterEpochMillis: Long): UnpostedWinRow
+    suspend fun unpostedFewestTurns(gameModeId: String, playerCount: Int, afterEpochMillis: Long): UnpostedWinRow
+
+    /** [unpostedFewestTurns] for the most squares walked, from the wins that kept them. */
+    @Query(
+        "SELECT MAX(squaresMoved) AS score, MAX(endedAtEpochMillis) AS newestEpochMillis FROM results WHERE gameModeId = :gameModeId " +
+            "AND playerCount = :playerCount AND playedUnmodified = 1 AND won = 1 AND isPrimaryPlayer = 1 AND endedAtEpochMillis > :afterEpochMillis " +
+            "AND squaresMoved IS NOT NULL",
+    )
+    suspend fun unpostedMostSquaresMoved(gameModeId: String, playerCount: Int, afterEpochMillis: Long): UnpostedWinRow
+
+    /** [unpostedFewestTurns] for the most squares held. */
+    @Query(
+        "SELECT MAX(squares) AS score, MAX(endedAtEpochMillis) AS newestEpochMillis FROM results WHERE gameModeId = :gameModeId " +
+            "AND playerCount = :playerCount AND playedUnmodified = 1 AND won = 1 AND isPrimaryPlayer = 1 AND endedAtEpochMillis > :afterEpochMillis",
+    )
+    suspend fun unpostedMostSquares(gameModeId: String, playerCount: Int, afterEpochMillis: Long): UnpostedWinRow
 
     /** The modes player 1 has finished a game of, with no house rules on. */
     @Query("SELECT DISTINCT gameModeId FROM results WHERE isPrimaryPlayer = 1 AND houseRules = 0")

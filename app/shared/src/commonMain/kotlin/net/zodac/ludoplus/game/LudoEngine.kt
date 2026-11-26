@@ -300,7 +300,12 @@ object LudoEngine {
         val rules = state.rules
         val board = state.board
         val fresh = state.copy(ghostMove = null, justLost = emptyList())
-        val moved = if (phase.swapping) fresh else place(PowerUps.spendDouble(fresh), whose, pawn, Landing(move.to, move.captures, move.brokenShields))
+        val moved = if (phase.swapping) {
+            fresh
+        } else {
+            place(PowerUps.spendDouble(fresh), whose, pawn, Landing(move.to, move.captures, move.brokenShields))
+                .let { placed -> placed.copy(players = placed.players.replace(player) { it.copy(squaresMoved = it.squaresMoved + move.walked) }) }
+        }
         val swaps = if (chances && !phase.swapping && isOnSwap(state, whose, move.to)) swapMoves(moved, whose, pawn, move.roll) else emptyList()
         if (swaps.isNotEmpty()) {
             val out = move.captures.map { it.player }.distinct().filter { moved.players[it].pawnsLeft == 0 }

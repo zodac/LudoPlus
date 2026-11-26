@@ -113,22 +113,24 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
 
 ## Leaderboards
 
-**LudoPlus (decided 2026-11-18):** a board for each mode ranked by turns and player count, 2-8 (5 modes × 7 = 35 of the 70),
-each the turns in seat 1's win under the mode's own rules, smaller better. Play ranks one number, ties by submission time,
+**LudoPlus (decided 2026-11-18; every mode from 2026-11-26):** a board for each mode and player count, 2-8 (7 modes × 7 =
+49 of the 70), each seat 1's win under the mode's own rules by its `GameMode.ranking`: the turns, smaller better; or in
+Colour Rush the squares held, and in Survival the squares travelled, larger better. Play ranks one number, ties by submission time,
 so the local Leaderboard's captures tie-break doesn't carry.
 
-- **35 boards**, one per mode and player count (`playLeaderboardKeys`: `<GameMode.onlineLeaderboardKey>_<n>p`, as
-    `classic_4p`): numeric, smaller is better, from 1, tamper protection on. Ids in `playLeaderboardIds`, empty until the
+- **49 boards**, one per mode and player count (`playLeaderboardKeys`: `<GameMode.onlineLeaderboardKey>_<n>p`, as
+    `classic_4p`): numeric, tamper protection on; by turns smaller is better, from 1, and by squares larger is better,
+    from 0 (`LeaderboardRanking.largerIsBetter`). Ids in `playLeaderboardIds`, empty until the
     Console has them.
-- **Submitted**: the turns of seat 1's win, only under the mode's own rules (`isPrimaryPlayer` and `playedUnmodified`:
-    no teams, no house rules, so no custom mode). Each reconcile sends each board the fastest win since the newest game
+- **Submitted**: the score of seat 1's win, only under the mode's own rules (`isPrimaryPlayer` and `playedUnmodified`:
+    no teams, no house rules, so no custom mode). Each reconcile sends each board the best win since the newest game
     that account was sent from this device (`wins_posted:<account>:<key>`, moved only once Play confirms;
-    `GameRecordRepository.unpostedWin`). So a first link sends the backlog, after the cloud merge. Game Over says nothing.
+    `GameRecordRepository.unpostedWin`; a Survival win from before the squares travelled were kept is never sent). So a
+    first link sends the backlog, after the cloud merge. Game Over says nothing.
 - **Viewing**: "Global leaderboard" under the Leaderboard's player counts, while signed in, opens Play's board for the
     mode and count on show (spoken "Global leaderboard for Classic, 4 players, on Google Play Games"). The local tables stay.
 - **No reset**: Ludo has no Reset leaderboard, so no reset marker.
-- **A new mode** needs seven console boards, their icons, and an `onlineLeaderboardKey`; one not ranked by turns
-    (Survival, Colour Rush) has a null key and no boards.
+- **A new mode** needs seven console boards, their icons, and an `onlineLeaderboardKey`.
 
 ## Cloud save
 
@@ -218,9 +220,10 @@ Play's overlay: an edge tab that slides out achievements, streaks, offers and re
     - `achievements/achievements-<timestamp>.csv` and `achievements/achievement-icons/<id>.png` (512px) for review.
     - `achievements/achievement-ids.xml` isn't the script's: it's Achievements > Get resources (Android), saved there by
         hand after an import. `playAchievementIds` (`PlayGamesIds.kt`) is filled from it.
-    - `leaderboards/leaderboards-<timestamp>.csv` and `leaderboards/leaderboard-icons/<key>.png` (the mode's mark over
-        the player count; `PlayConsoleLeaderboardsExportTest`), entered by hand: Play has no leaderboard import. An icon
-        can change any time; a board's ordering can't once published. `playLeaderboardIds` is filled from Get resources.
+    - `leaderboards/leaderboards-<timestamp>.csv` and `leaderboards/leaderboard-icons/<key>.png` (the icon of the mode's
+        win achievement over the player count, so the two always match; `PlayConsoleLeaderboardsExportTest`), entered
+        by hand: Play has no leaderboard import. An icon can change any time; a board's ordering can't once published.
+        `playLeaderboardIds` is filled from Get resources.
 - Everything stays **draft** until publishing, because only drafts can be reset.
 
 ## Release

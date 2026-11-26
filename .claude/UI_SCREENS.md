@@ -76,8 +76,10 @@ Robolectric test shares one process, so a test that opens the screen calls it fi
     - every Easter Egg (Big Fan's red heart, Are You A Developer?'s cyan, Can't Wait To Get Going's red pawn, Midnight
         Run's moon). A new Easter Egg adds its case there;
     - and the few whose point is a colour: Completionist's crystal trophy, Colour Rush's squares (Paint The Town
-        Red's nine, Colour Coordinated's corner of the track), and Everything Everywhere All At Once's googly eye (from
-        DiceFive).
+        Red's nine, Colour Coordinated's corner of the track), Through The Looking Glass's portal (as Portals draws
+        its first pair), and Everything Everywhere All At Once's googly eye (from DiceFive).
+- **A mode's win achievement's icon is also its Play leaderboards' icon** (`GAME_MODES.md`), so it has to stand for the
+    mode as well as the win.
 - When adding one, grep that the glyph is unused. `AchievementIconsTest` and `PlayConsoleExportTest` fail if two
     achievements draw the same.
 - **Never a brand's mascot or logo**, even where Symbols has one: the Android robot needs a CC BY credit, and Flutter's

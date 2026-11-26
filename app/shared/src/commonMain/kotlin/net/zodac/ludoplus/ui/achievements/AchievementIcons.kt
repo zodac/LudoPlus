@@ -84,7 +84,7 @@ val Achievement.icon: ImageVector
         Achievement.PICKING_ON_YOU -> Symbols.PersonRemove
         // Every opponent on the screen.
         Achievement.NOBODY_IS_SAFE -> Symbols.Radar
-        Achievement.ON_THE_WARPATH -> Symbols.Swords
+        Achievement.ON_THE_WARPATH -> Symbols.SportsMartialArts
 
         // ---- Racing -------------------------------------------------------------------------
         Achievement.HOME_SWEET_HOME -> Symbols.House
@@ -122,13 +122,15 @@ val Achievement.icon: ImageVector
         Achievement.WHERE_WERE_GOING_WE_DONT_NEED_RULES -> TIME_MACHINE_CAR_ICON
         Achievement.PAINT_THE_TOWN_RED -> RED_SQUARES_ICON
         Achievement.COLOUR_COORDINATED -> TRACK_CORNER_ICON
-        Achievement.DOUBLE_OR_NOTHING -> Symbols.Savings
+        // Drawn for this app: two dice thrown, showing different numbers.
+        Achievement.DOUBLE_OR_NOTHING -> TWO_DICE_ICON
         // Drawn for this app: one die, and a pawn knocked over either side of it.
         Achievement.TWO_BIRDS_TWO_STONES -> DIE_AND_TWO_PAWNS_ICON
-        Achievement.THROUGH_THE_LOOKING_GLASS -> Symbols.AutoAwesome
+        // Drawn for this app: a portal as the mode draws them.
+        Achievement.THROUGH_THE_LOOKING_GLASS -> PORTAL_ICON
         Achievement.THERE_AND_BACK_AGAIN -> Symbols.SyncAlt
-        // Holding fast.
-        Achievement.LAST_PAWN_STANDING -> Symbols.Anchor
+        // The last one fighting.
+        Achievement.LAST_PAWN_STANDING -> Symbols.Swords
         Achievement.BARELY_A_SCRATCH -> Symbols.SentimentVerySatisfied
         Achievement.AGENT_OF_CHAOS -> Symbols.Cyclone
         // Drawn for this app: a caped hero, every power-up taken.
@@ -201,7 +203,7 @@ val Achievement.icon: ImageVector
  * fills), and so do Completionist's crystal, Colour Rush's squares, and Everything Everywhere All At Once's googly eye.
  */
 fun Achievement.iconTintOrUnspecified(tint: Color): Color = when (this) {
-    Achievement.COMPLETIONIST, Achievement.PAINT_THE_TOWN_RED, Achievement.COLOUR_COORDINATED,
+    Achievement.COMPLETIONIST, Achievement.PAINT_THE_TOWN_RED, Achievement.COLOUR_COORDINATED, Achievement.THROUGH_THE_LOOKING_GLASS,
     Achievement.EVERYTHING_EVERYWHERE_ALL_AT_ONCE -> Color.Unspecified
     Achievement.ALLITERATION -> AchievementInkBlue
     Achievement.ARE_YOU_A_DEVELOPER -> AchievementDeveloperCyan

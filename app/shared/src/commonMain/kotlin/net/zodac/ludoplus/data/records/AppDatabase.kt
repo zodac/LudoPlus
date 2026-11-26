@@ -18,7 +18,7 @@ import kotlinx.coroutines.IO
  * Every schema change after the first release needs a version bump and a migration in [MIGRATIONS]; the exported
  * schemas in app/shared/schemas/ are what a migration test compares against.
  */
-@Database(entities = [GameResult::class], version = 4, exportSchema = true)
+@Database(entities = [GameResult::class], version = 5, exportSchema = true)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -57,6 +57,12 @@ val MIGRATIONS: Array<Migration> = arrayOf(
         override fun migrate(connection: SQLiteConnection) {
             connection.execSQL("ALTER TABLE `results` ADD COLUMN `squares` INTEGER NOT NULL DEFAULT 0")
             connection.execSQL("DELETE FROM `results` WHERE `gameModeId` = 'quick'")
+        }
+    },
+    // Survival's Leaderboard by the squares travelled: each game's, unknown before it.
+    object : Migration(4, 5) {
+        override fun migrate(connection: SQLiteConnection) {
+            connection.execSQL("ALTER TABLE `results` ADD COLUMN `squaresMoved` INTEGER")
         }
     },
 )

@@ -58,11 +58,11 @@ class GameResultDaoTest {
         assertEquals(listOf(8L), dao.leaderboard("classic", playerCount = 6, limit = 10, offset = 0).map { it.endedAtEpochMillis })
         assertEquals(1, dao.leaderboardCount("classic", playerCount = 6))
 
-        // By pawns left: the fewest captured, then most captures, then the earliest.
-        dao.insertGame(listOf(5 to 9, 1 to 2, 1 to 4, 1 to 4).mapIndexed { i, (lost, captures) ->
-            row("Jo", won = true, turns = 50 - i, captures = captures, endedAt = 20L + i, mode = "survival").copy(timesCaptured = lost)
+        // By squares travelled: the most, then most captures, then the earliest; a win from before they were kept last.
+        dao.insertGame(listOf(null to 9, 300 to 9, 520 to 2, 520 to 4, 520 to 4).mapIndexed { i, (travelled, captures) ->
+            row("Jo", won = true, turns = 50 - i, captures = captures, endedAt = 20L + i, mode = "survival").copy(squaresMoved = travelled)
         })
-        assertEquals(listOf(22L, 23L, 21L, 20L), dao.leaderboardByPawnsLeft("survival", playerCount = 4, limit = 10, offset = 0).map { it.endedAtEpochMillis })
+        assertEquals(listOf(23L, 24L, 22L, 21L, 20L), dao.leaderboardBySquaresMoved("survival", playerCount = 4, limit = 10, offset = 0).map { it.endedAtEpochMillis })
 
         // By squares: the most, then most captures, then the earliest.
         dao.insertGame(listOf(20 to 1, 31 to 2, 31 to 4, 31 to 4).mapIndexed { i, (squares, captures) ->
@@ -77,5 +77,25 @@ class GameResultDaoTest {
         assertEquals(8, dao.count())
         dao.clearAll()
         assertEquals(0, dao.count())
+    }
+
+    @Test
+    fun `a board's unsent best is player 1's by its mode's ranking - from their own-rules wins after the time - the squares moved from wins that kept them`() = runBlocking {
+        val win = { mode: String, turns: Int, endedAt: Long -> row("Sam", won = true, turns = turns, captures = 0, endedAt = endedAt, mode = mode).copy(isPrimaryPlayer = true) }
+        dao.insertGame(
+            listOf(
+                win("classic", 44, 10), win("classic", 38, 20), win("classic", 30, 5),
+                // Not player 1's, a loss, and not under the mode's own rules: none of them sent.
+                win("classic", 20, 30).copy(isPrimaryPlayer = false), win("classic", 20, 31).copy(won = false), win("classic", 20, 32).copy(playedUnmodified = false),
+                win("colour_rush", 40, 10).copy(squares = 18), win("colour_rush", 40, 20).copy(squares = 25), win("colour_rush", 40, 30).copy(squares = 20),
+                win("survival", 90, 10).copy(squaresMoved = 410), win("survival", 90, 20).copy(squaresMoved = 380), win("survival", 90, 40).copy(squaresMoved = null),
+            ),
+        )
+        assertEquals(UnpostedWinRow(38, 20), dao.unpostedFewestTurns("classic", 4, afterEpochMillis = 5))
+        assertEquals(UnpostedWinRow(25, 30), dao.unpostedMostSquares("colour_rush", 4, afterEpochMillis = 0))
+        assertEquals(UnpostedWinRow(20, 30), dao.unpostedMostSquares("colour_rush", 4, afterEpochMillis = 20))
+        assertEquals(UnpostedWinRow(410, 20), dao.unpostedMostSquaresMoved("survival", 4, afterEpochMillis = 0))
+        assertEquals(UnpostedWinRow(null, null), dao.unpostedMostSquaresMoved("survival", 4, afterEpochMillis = 20))
+        assertEquals(UnpostedWinRow(null, null), dao.unpostedFewestTurns("classic", 6, afterEpochMillis = 0))
     }
 }

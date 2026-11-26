@@ -41,6 +41,7 @@ class GameRecordRepositoryTest {
                         turns = turns[index],
                         captures = order.indexOf(index) + 1,
                         timesCaptured = index,
+                        squaresMoved = 200 + index,
                     )
                 },
                 phase = TurnPhase.Finished,
@@ -68,12 +69,12 @@ class GameRecordRepositoryTest {
                 GameResult(
                     id = 1, playerName = "Alex", playerKey = "alex", isPrimaryPlayer = true, gameModeId = "classic", playerCount = 4,
                     endedAtEpochMillis = 5_000, playMillis = 600_000, place = 3, won = false, finishMillis = 300_000, turns = 40, captures = 3,
-                    timesCaptured = 0, pawnsHome = 4, uuid = "",
+                    timesCaptured = 0, pawnsHome = 4, uuid = "", squaresMoved = 200,
                 ),
                 GameResult(
                     id = 2, playerName = "Sam", playerKey = "sam", isPrimaryPlayer = false, gameModeId = "classic", playerCount = 4,
                     endedAtEpochMillis = 5_000, playMillis = 600_000, place = 1, won = true, finishMillis = 100_000, turns = 43, captures = 1,
-                    timesCaptured = 3, pawnsHome = 4, uuid = "",
+                    timesCaptured = 3, pawnsHome = 4, uuid = "", squaresMoved = 203,
                 ),
             ),
             // Each row's uuid is its own, random: compared apart.

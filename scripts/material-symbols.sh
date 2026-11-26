@@ -24,7 +24,6 @@ Abc abc
 AcUnit ac_unit
 Add add
 Air air
-Anchor anchor
 ArrowBack arrow_back mirror
 ArrowDownward arrow_downward
 ArrowDropDown arrow_drop_down
@@ -130,7 +129,6 @@ Repeat repeat
 Replay replay
 Restaurant restaurant
 RocketLaunch rocket_launch
-Savings savings
 Schedule schedule
 ScreenRotation screen_rotation
 SentimentNeutral sentiment_neutral
@@ -142,6 +140,7 @@ SocialLeaderboard social_leaderboard
 Sort sort mirror
 Speed speed
 SportsEsports sports_esports
+SportsMartialArts sports_martial_arts
 SportsMma sports_mma
 Sprint sprint
 Stairs2 stairs_2

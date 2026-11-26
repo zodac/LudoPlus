@@ -23,6 +23,7 @@ class CloudSaveCodecTest {
             cloudRecord("aa", at = 1_790_000_000_000L, name = "Sam, the ; quick"),
             cloudRecord("bb", at = 1_790_000_000_000L, name = "Alex", won = false).copy(houseRules = true, playedUnmodified = false, isPrimaryPlayer = false),
             cloudRecord("cc", at = 1_790_000_100_000L, name = "Sam, the ; quick", turns = 61).copy(gameModeId = "two_dice", playerCount = 8),
+            cloudRecord("dd", at = 1_790_000_200_000L, name = "Alex").copy(gameModeId = "survival", squaresMoved = 0),
         ),
         settings = mapOf(
             "dice_style_id" to Stamped(SettingValue.Text("ocean"), 7L),
@@ -52,12 +53,13 @@ class CloudSaveCodecTest {
     }
 
     @Test
-    fun `a record written before a field was added reads it as 0`() {
+    fun `a record written before a field was added reads it as 0 - the squares moved as unknown`() {
         val json = """{"version":1,"records":{"names":["Sam"],"modes":["classic"],"table":"${"a".repeat(32)},0,0,5,11"}}"""
         val row = CloudSaveCodec.decode(gzip(json))!!.records.single()
         assertEquals(listOf("Sam", "sam", "classic", 5L, true, true, false, true, 0, 0), listOf(
             row.playerName, row.playerKey, row.gameModeId, row.endedAtEpochMillis, row.isPrimaryPlayer, row.playedUnmodified, row.houseRules,
             row.won, row.playerCount, row.turns,
         ))
+        assertEquals(null, row.squaresMoved)
     }
 }

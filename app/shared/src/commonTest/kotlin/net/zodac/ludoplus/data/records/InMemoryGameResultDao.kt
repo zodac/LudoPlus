@@ -29,9 +29,11 @@ class InMemoryGameResultDao(finishedGame: Boolean = false) : GameResultDao {
     override suspend fun leaderboard(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult> =
         leaderboardRows(gameModeId, playerCount).drop(offset).take(limit)
 
-    override suspend fun leaderboardByPawnsLeft(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult> =
+    override suspend fun leaderboardBySquaresMoved(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult> =
         leaderboardRows(gameModeId, playerCount)
-            .sortedWith(compareBy<GameResult> { it.timesCaptured }.thenByDescending { it.captures }.thenBy { it.endedAtEpochMillis })
+            .sortedWith(
+                compareBy<GameResult> { it.squaresMoved == null }.thenByDescending { it.squaresMoved }.thenByDescending { it.captures }.thenBy { it.endedAtEpochMillis },
+            )
             .drop(offset).take(limit)
 
     override suspend fun leaderboardBySquares(gameModeId: String, playerCount: Int, limit: Int, offset: Int): List<GameResult> =
@@ -52,12 +54,19 @@ class InMemoryGameResultDao(finishedGame: Boolean = false) : GameResultDao {
         results.filter { row -> rows.none { it.uuid == row.uuid } }.distinctBy { it.uuid }.forEach { rows += it.copy(id = nextId++) }
     }
 
-    override suspend fun unpostedWin(gameModeId: String, playerCount: Int, afterEpochMillis: Long): UnpostedWinRow {
-        val wins = rows.filter {
-            it.gameModeId == gameModeId && it.playerCount == playerCount && it.playedUnmodified && it.won && it.isPrimaryPlayer && it.endedAtEpochMillis > afterEpochMillis
-        }
-        return UnpostedWinRow(wins.minOfOrNull { it.turns }, wins.maxOfOrNull { it.endedAtEpochMillis })
+    private fun unpostedWins(gameModeId: String, playerCount: Int, afterEpochMillis: Long) = rows.filter {
+        it.gameModeId == gameModeId && it.playerCount == playerCount && it.playedUnmodified && it.won && it.isPrimaryPlayer && it.endedAtEpochMillis > afterEpochMillis
     }
+
+    override suspend fun unpostedFewestTurns(gameModeId: String, playerCount: Int, afterEpochMillis: Long): UnpostedWinRow =
+        unpostedWins(gameModeId, playerCount, afterEpochMillis).let { wins -> UnpostedWinRow(wins.minOfOrNull { it.turns }, wins.maxOfOrNull { it.endedAtEpochMillis }) }
+
+    override suspend fun unpostedMostSquaresMoved(gameModeId: String, playerCount: Int, afterEpochMillis: Long): UnpostedWinRow =
+        unpostedWins(gameModeId, playerCount, afterEpochMillis).filter { it.squaresMoved != null }
+            .let { wins -> UnpostedWinRow(wins.maxOfOrNull { checkNotNull(it.squaresMoved) }, wins.maxOfOrNull { it.endedAtEpochMillis }) }
+
+    override suspend fun unpostedMostSquares(gameModeId: String, playerCount: Int, afterEpochMillis: Long): UnpostedWinRow =
+        unpostedWins(gameModeId, playerCount, afterEpochMillis).let { wins -> UnpostedWinRow(wins.maxOfOrNull { it.squares }, wins.maxOfOrNull { it.endedAtEpochMillis }) }
 
     override suspend fun count(): Int = rows.size
 

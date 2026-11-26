@@ -490,8 +490,9 @@
     <string name="leaderboard_title">Leaderboard</string>
     <!-- Above the table. %1$s is the game mode's name. -->
     <string name="leaderboard_heading">%1$s: fastest wins</string>
-    <!-- The same, for Survival. -->
-    <string name="leaderboard_heading_pawns">%1$s: most pawns left</string>
+    <!-- The same, for Survival: the most squares the winner's pawns travelled. -->
+    <string name="leaderboard_heading_travelled">%1$s: furthest travelled</string>
+    <!-- The same, for Colour Rush: the most squares the winner held. -->
     <string name="leaderboard_heading_squares">%1$s: most squares</string>
     <!-- A Leaderboard with no wins for the player count picked. %1$s is the game mode's name, %2$d the count (2 to 8). -->
     <plurals name="leaderboard_empty_players">
@@ -507,9 +508,18 @@
     </plurals>
     <string name="leaderboard_player">Player</string>
     <string name="leaderboard_turns">Turns</string>
-    <string name="leaderboard_pawns">Pawns left</string>
+    <!-- Survival's column: the squares the winner's pawns travelled. -->
+    <string name="leaderboard_travelled">Distance</string>
     <string name="leaderboard_squares">Squares</string>
     <string name="leaderboard_captures">Captures</string>
+    <!-- A Survival row's distance read aloud, and under the name where the columns don't fit. -->
+    <plurals name="leaderboard_squares_travelled">
+        <item quantity="one">%1$d square travelled</item>
+        <item quantity="other">%1$d squares travelled</item>
+    </plurals>
+    <!-- A Survival win recorded before the distance was kept: shown as a dash in the column, and this read aloud. -->
+    <string name="leaderboard_travelled_unknown">distance not recorded</string>
+    <string name="leaderboard_travelled_unknown_short">–</string>
 
     <!-- Statistics (ui/records/StatisticsScreen.kt): each person's games added up. -->
     <string name="stats_title">Statistics</string>
@@ -1223,7 +1233,7 @@
     <string name="rules_survival_3">Start squares and star squares are safe at first. In Overtime the start squares stop being safe, and in Sudden Death the star squares do too. The line above the board counts the rounds, and with more players it takes longer.</string>
     <string name="rules_survival_4">On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when Overtime comes.</string>
     <string name="rules_survival_5">Ten turns after that comes the Cataclysm: after every five turns, up to three squares with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven squares left, so nobody can keep away for ever.</string>
-    <string name="rules_survival_records">The Leaderboard ranks Survival wins by the most pawns left.</string>
+    <string name="rules_survival_records">The Leaderboard ranks Survival wins by the furthest travelled: the most squares the winner's pawns moved.</string>
     <string name="rules_chaos_1">In Chaos there are power-ups on the track, at least one of each kind at any time. End a move on one to use it at once:</string>
     <string name="rules_chaos_2">Only one power-up works in a move: a pawn moved onto another leaves it there. When the last of a kind is taken, another appears somewhere random at once. A random power-up also appears every one to five turns, up to two for each player, or seven with two or three players.</string>
     <string name="rules_chaos_3">Bouncing off a shield earns no roll unless your pawn captures where it settles. A pawn brought out of the yard can't bounce, so a shield doesn't stop it.</string>

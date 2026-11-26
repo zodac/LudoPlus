@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathNode
 import androidx.compose.ui.graphics.vector.VectorGroup
@@ -13,6 +14,7 @@ import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.unit.dp
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.ui.icons.Symbols
+import net.zodac.ludoplus.ui.theme.BoardInk
 import net.zodac.ludoplus.ui.theme.CrystalTrophyCyan
 import net.zodac.ludoplus.ui.theme.CrystalTrophyIce
 import net.zodac.ludoplus.ui.theme.CrystalTrophyViolet
@@ -20,6 +22,7 @@ import net.zodac.ludoplus.ui.theme.CrystalTrophyWhite
 import net.zodac.ludoplus.ui.theme.GooglyEyePupil
 import net.zodac.ludoplus.ui.theme.GooglyEyeRim
 import net.zodac.ludoplus.ui.theme.GooglyEyeWhite
+import net.zodac.ludoplus.ui.theme.PortalColours
 import net.zodac.ludoplus.ui.theme.color
 import kotlin.math.PI
 import kotlin.math.cos
@@ -177,10 +180,10 @@ internal val CAPED_HERO_ICON: ImageVector by lazy {
         val angle = (-90.0 + i * 36) * PI / 180
         "${12 + r * cos(angle).toFloat()},${11 + r * sin(angle).toFloat()}" + if (i < 9) "L" else ""
     }
-    val body = "M8.6,7.6L15.4,7.6C16.2,7.6 16.7,8.1 17,8.8L18.4,12L14.7,14.2L15,22.4L12.9,22.4L12,16.6L11.1,22.4L9,22.4L9.3,14.2" +
+    val figure = "M8.6,7.6L15.4,7.6C16.2,7.6 16.7,8.1 17,8.8L18.4,12L14.7,14.2L15,22.4L12.9,22.4L12,16.6L11.1,22.4L9,22.4L9.3,14.2" +
         "L5.6,12L7,8.8C7.3,8.1 7.8,7.6 8.6,7.6Z" + "M14.6,10.2L16.2,11.7L14.6,12.6Z" + "M9.4,10.2L7.8,11.7L9.4,12.6Z" + circle(12f, 4.2f, 2.6f) + star
     val cape = "M6.4,13.4L8.5,15L8.1,21.2L3.4,21.8Z" + "M17.6,13.4L15.5,15L15.9,21.2L20.6,21.8Z"
-    cutOutIcon("CapedHero", body + cape)
+    cutOutIcon("CapedHero", figure + cape)
 }
 
 /** A wooden spoon on the diagonal, its bowl at the top right. For Wooden Spoon, last place. */
@@ -207,6 +210,28 @@ internal val DUCKS_ICON: ImageVector by lazy {
             "C${x + 3.5f},${y + 11.6f} ${x + 3.9f},${y + 10.8f} ${x + 3.4f},${y + 9.7f}L${x + 2.8f},${y + 9.4f}Z" + circle(x + 5.3f, y + 7.4f, 0.6f)
     cutOutIcon("Ducks", duck(0f, 1.5f) + duck(11.8f, 1.5f))
 }
+
+/**
+ * Two dice thrown side by side, tilted apart, showing 5 and 3, the pips cut out. For Double Or Nothing, the win in Two
+ * Dice, and Two Dice's leaderboards.
+ */
+internal val TWO_DICE_ICON: ImageVector by lazy {
+    val five = listOf(0.27f to 0.27f, 0.73f to 0.27f, 0.5f to 0.5f, 0.27f to 0.73f, 0.73f to 0.73f)
+    val three = listOf(0.27f to 0.73f, 0.5f to 0.5f, 0.73f to 0.27f)
+    ImageVector.Builder(name = "TwoDice", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f).apply {
+        for ((centre, turn, pips) in listOf(Triple(Offset(6.1f, 15.3f), -15f, five), Triple(Offset(17.9f, 8.7f), 12f, three))) {
+            val x = centre.x - THROWN_DIE_SIDE / 2
+            val y = centre.y - THROWN_DIE_SIDE / 2
+            val face = roundSquare(x, y, THROWN_DIE_SIDE, corner = THROWN_DIE_SIDE * 0.2f) +
+                pips.joinToString("") { (across, down) -> circle(x + THROWN_DIE_SIDE * across, y + THROWN_DIE_SIDE * down, THROWN_DIE_SIDE * 0.1f) }
+            addGroup(rotate = turn, pivotX = centre.x, pivotY = centre.y)
+            addPath(addPathNodes(face), fill = INK, pathFillType = PathFillType.EvenOdd)
+            clearGroup()
+        }
+    }.build()
+}
+
+private const val THROWN_DIE_SIDE = 9.8f
 
 private fun circle(cx: Float, cy: Float, r: Float): String = "M${cx - r},${cy}a$r,$r 0 1,0 ${2 * r},0a$r,$r 0 1,0 ${-2 * r},0Z"
 
@@ -266,4 +291,40 @@ internal val GOOGLY_EYE_ICON: ImageVector by lazy {
         addPath(addPathNodes(circle(15.2f, 15.4f, 4.2f)), fill = SolidColor(GooglyEyePupil))
         addPath(addPathNodes(circle(16.6f, 13.6f, 1.1f)), fill = SolidColor(GooglyEyeWhite))
     }.build()
+}
+
+/**
+ * A portal as Portals mode draws its first pair's: a violet disc darkening to its middle, ringed in ink and white, three
+ * white arms swirling out from an ink middle with a white triangle in it. For Through The Looking Glass, the win in
+ * Portals, and Portals' leaderboards.
+ */
+internal val PORTAL_ICON: ImageVector by lazy {
+    val tone = PortalColours[0]
+    val centre = Offset(12f, 12f)
+    val triangle = (0..<3).joinToString("L", "M", "Z") { corner ->
+        val angle = -PI / 2 + 2 * PI * corner / 3
+        "${12f + cos(angle).toFloat() * 2.5f},${12.3f + sin(angle).toFloat() * 2.5f}"
+    }
+    ImageVector.Builder(name = "Portal", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f).apply {
+        addPath(addPathNodes(circle(12f, 12f, 11.6f)), fill = SolidColor(Color.White))
+        addPath(addPathNodes(circle(12f, 12f, 10.8f)), fill = SolidColor(BoardInk))
+        addPath(addPathNodes(circle(12f, 12f, 10f)), fill = Brush.radialGradient(listOf(lerp(tone, Color.Black, 0.75f), tone), centre, 10f))
+        addPath(addPathNodes((0..<PORTAL_ARMS).joinToString("") { arm -> swirlArm(arm * 2 * PI / PORTAL_ARMS) }), fill = SolidColor(Color.White))
+        addPath(addPathNodes(circle(12f, 12f, 5f)), fill = SolidColor(BoardInk))
+        addPath(addPathNodes(triangle), fill = SolidColor(Color.White))
+    }.build()
+}
+
+private const val PORTAL_ARMS = 3
+private const val PORTAL_ARM_STEPS = 16
+
+/** One arm of [PORTAL_ICON]'s swirl from angle [start], out from the middle as it turns, thinning to its tip. */
+private fun swirlArm(start: Double): String {
+    fun point(along: Float, side: Float): String {
+        val angle = start + along * 2.2
+        val radius = 4.6f + 4.4f * along + side * (1.5f - 0.9f * along) / 2
+        return "${12f + cos(angle).toFloat() * radius},${12f + sin(angle).toFloat() * radius}"
+    }
+    val steps = (0..PORTAL_ARM_STEPS).map { it / PORTAL_ARM_STEPS.toFloat() }
+    return "M" + (steps.map { point(it, 1f) } + steps.reversed().map { point(it, -1f) }).joinToString("L") + "Z"
 }

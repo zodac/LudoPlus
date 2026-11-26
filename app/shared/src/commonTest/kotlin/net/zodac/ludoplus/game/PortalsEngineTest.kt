@@ -50,6 +50,8 @@ class PortalsEngineTest {
         assertEquals(GameEvent.Moved(RED, 2, Move(0, 1, 10, via = 3), finished = false), out.lastEvent)
         assertEquals(GREEN, out.current)
         assertEquals(listOf(Move(0, 10, 11)), out.copy(current = RED).movesFor(1))
+        // The squares it walked are to the portal, not through it.
+        assertEquals(2, out.players[RED].squaresMoved)
     }
 
     @Test

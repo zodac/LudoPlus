@@ -53,13 +53,15 @@ import net.zodac.ludoplus.resources.gameover_turns
 import net.zodac.ludoplus.resources.leaderboard_captures
 import net.zodac.ludoplus.resources.leaderboard_empty_players
 import net.zodac.ludoplus.resources.leaderboard_heading
-import net.zodac.ludoplus.resources.game_player_pawns_left_spoken
-import net.zodac.ludoplus.resources.leaderboard_heading_pawns
 import net.zodac.ludoplus.resources.leaderboard_heading_squares
-import net.zodac.ludoplus.resources.leaderboard_pawns
+import net.zodac.ludoplus.resources.leaderboard_heading_travelled
 import net.zodac.ludoplus.resources.leaderboard_player
 import net.zodac.ludoplus.resources.leaderboard_title
 import net.zodac.ludoplus.resources.leaderboard_squares
+import net.zodac.ludoplus.resources.leaderboard_squares_travelled
+import net.zodac.ludoplus.resources.leaderboard_travelled
+import net.zodac.ludoplus.resources.leaderboard_travelled_unknown
+import net.zodac.ludoplus.resources.leaderboard_travelled_unknown_short
 import net.zodac.ludoplus.resources.leaderboard_turns
 import net.zodac.ludoplus.ui.common.EmptyStateCard
 import net.zodac.ludoplus.ui.common.HoldPageCover
@@ -110,7 +112,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit, drift
         LeaderboardModePicker(selected = mode, onSelect = viewModel::selectMode)
         val services = LocalGameServices.current
         // The same board on the online service, while signed in to one: shown with or without rows here.
-        val online = services.state.collectAsStateWithLifecycle().value is GameServicesState.SignedIn && services.canShowLeaderboardUi && mode.onlineLeaderboardKey != null
+        val online = services.state.collectAsStateWithLifecycle().value is GameServicesState.SignedIn && services.canShowLeaderboardUi
         // The least width that holds a name beside the numbers; at a large font, each row is two lines instead.
         val columnsWidth = with(LocalDensity.current) { RANK_WIDTH.toDp() + NUMBER_WIDTH.toDp() * 2 + MIN_NAME_WIDTH.toDp() } + ROW_CHROME
         // Each mode's board its own list, so it starts at its top. A count is only picked from the top, where its row is, and
@@ -153,7 +155,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit, drift
 private fun BoardHeading(mode: GameMode, modifier: Modifier) {
     val heading = when (mode.ranking) {
         LeaderboardRanking.FEWEST_TURNS -> Res.string.leaderboard_heading
-        LeaderboardRanking.MOST_PAWNS_LEFT -> Res.string.leaderboard_heading_pawns
+        LeaderboardRanking.MOST_SQUARES_MOVED -> Res.string.leaderboard_heading_travelled
         LeaderboardRanking.MOST_SQUARES -> Res.string.leaderboard_heading_squares
     }
     Text(
@@ -214,7 +216,7 @@ private fun HeaderRow(mode: GameMode) {
     val colour = MaterialTheme.colorScheme.onSurfaceVariant
     val column = when (mode.ranking) {
         LeaderboardRanking.FEWEST_TURNS -> Res.string.leaderboard_turns
-        LeaderboardRanking.MOST_PAWNS_LEFT -> Res.string.leaderboard_pawns
+        LeaderboardRanking.MOST_SQUARES_MOVED -> Res.string.leaderboard_travelled
         LeaderboardRanking.MOST_SQUARES -> Res.string.leaderboard_squares
     }
     // The rows say what each number is; the headings are for the eye.
@@ -229,13 +231,14 @@ private fun HeaderRow(mode: GameMode) {
 
 @Composable
 private fun LeaderboardRow(rank: Int, row: GameResult, mode: GameMode, compact: Boolean) {
-    // What the mode ranks by: the turns, the pawns the winner had left (every capture of theirs took one for good), or the squares.
+    // What the mode ranks by: the turns, the squares the winner's pawns travelled (unknown for a win from before they were
+    // kept: a dash), or the squares they held.
     val (number, words) = when (mode.ranking) {
         LeaderboardRanking.FEWEST_TURNS -> row.turns to Res.plurals.gameover_turns
-        LeaderboardRanking.MOST_PAWNS_LEFT -> mode.rules.pawnsPerPlayer - row.timesCaptured to Res.plurals.game_player_pawns_left_spoken
+        LeaderboardRanking.MOST_SQUARES_MOVED -> row.squaresMoved to Res.plurals.leaderboard_squares_travelled
         LeaderboardRanking.MOST_SQUARES -> row.squares to Res.plurals.gameover_squares
     }
-    val ranked = pluralStringResource(words, number, number)
+    val ranked = if (number == null) stringResource(Res.string.leaderboard_travelled_unknown) else pluralStringResource(words, number, number)
     val spoken = joinClauses(
         listOf(
             ordinal(rank),
@@ -272,7 +275,7 @@ private fun LeaderboardRow(rank: Int, row: GameResult, mode: GameMode, compact: 
         modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
         rank = { RankText(rank) },
         name = { Text(row.playerName, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-        turns = { Text(number.toString(), style = numberStyle, fontWeight = FontWeight.Bold, textAlign = TextAlign.End) },
+        turns = { Text(number?.toString() ?: stringResource(Res.string.leaderboard_travelled_unknown_short), style = numberStyle, fontWeight = FontWeight.Bold, textAlign = TextAlign.End) },
         captures = { Text(row.captures.toString(), style = numberStyle, textAlign = TextAlign.End) },
     )
 }

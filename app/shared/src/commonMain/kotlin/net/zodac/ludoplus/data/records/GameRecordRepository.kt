@@ -79,6 +79,7 @@ class GameRecordRepository(
                 timesCaptured = side.timesCaptured,
                 pawnsHome = side.pawnsHome(state.board),
                 squares = state.squaresOf(index),
+                squaresMoved = side.squaresMoved,
             )
         }
         if (rows.isEmpty()) return
@@ -88,12 +89,12 @@ class GameRecordRepository(
 
     /**
      * Page [pageIndex] of [gameMode]'s Leaderboard for games of [playerCount]: its best wins, by its [GameMode.ranking]
-     * (fewest turns, most pawns left, or most squares), then most captures. Each player count has its own, as a bigger board's lap is longer.
+     * (fewest turns, most squares walked, or most squares held), then most captures. Each player count has its own, as a bigger board's lap is longer.
      */
     override suspend fun leaderboard(gameMode: GameMode, playerCount: Int, pageIndex: Int, pageSize: Int): List<GameResult> =
         when (gameMode.ranking) {
             LeaderboardRanking.FEWEST_TURNS -> dao.leaderboard(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
-            LeaderboardRanking.MOST_PAWNS_LEFT -> dao.leaderboardByPawnsLeft(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
+            LeaderboardRanking.MOST_SQUARES_MOVED -> dao.leaderboardBySquaresMoved(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
             LeaderboardRanking.MOST_SQUARES -> dao.leaderboardBySquares(gameMode.id, playerCount, limit = pageSize, offset = pageIndex * pageSize)
         }
 
@@ -114,11 +115,17 @@ class GameRecordRepository(
     suspend fun hasFinishedGame(): Boolean = dao.count() > 0
 
     /**
-     * Player 1's fastest win in [mode] with [playerCount] players under the mode's own rules, from the games that ended
-     * after [afterEpochMillis], for its online leaderboard; null with none.
+     * Player 1's best win in [mode] with [playerCount] players under the mode's own rules, by its [GameMode.ranking], from
+     * the games that ended after [afterEpochMillis], for its online leaderboard; null with none.
      */
-    suspend fun unpostedWin(mode: GameMode, playerCount: Int, afterEpochMillis: Long): UnpostedWin? =
-        dao.unpostedWin(mode.id, playerCount, afterEpochMillis).let { row -> row.turns?.let { UnpostedWin(it, checkNotNull(row.newestEpochMillis)) } }
+    suspend fun unpostedWin(mode: GameMode, playerCount: Int, afterEpochMillis: Long): UnpostedWin? {
+        val row = when (mode.ranking) {
+            LeaderboardRanking.FEWEST_TURNS -> dao.unpostedFewestTurns(mode.id, playerCount, afterEpochMillis)
+            LeaderboardRanking.MOST_SQUARES_MOVED -> dao.unpostedMostSquaresMoved(mode.id, playerCount, afterEpochMillis)
+            LeaderboardRanking.MOST_SQUARES -> dao.unpostedMostSquares(mode.id, playerCount, afterEpochMillis)
+        }
+        return row.score?.let { UnpostedWin(it, checkNotNull(row.newestEpochMillis)) }
+    }
 
     /** Every record, oldest first: what the cloud save and a progress file hold. */
     suspend fun cloudRecords(): List<GameResult> = dao.all()
@@ -183,11 +190,14 @@ private fun statisticsFrom(rows: List<GameResult>): Statistics {
     return Statistics(pages)
 }
 
-/** The fewest [turns] of the wins not yet sent to an online leaderboard, and when the [newestEpochMillis] of those games ended. */
-data class UnpostedWin(val turns: Int, val newestEpochMillis: Long)
+/**
+ * The best [score] of the wins not yet sent to an online leaderboard (by the mode's [GameMode.ranking]), and when the
+ * [newestEpochMillis] of those games ended.
+ */
+data class UnpostedWin(val score: Int, val newestEpochMillis: Long)
 
-/** [GameResultDao.unpostedWin]'s one row: both null with no such win. */
-data class UnpostedWinRow(val turns: Int?, val newestEpochMillis: Long?)
+/** [GameResultDao.unpostedFewestTurns]'s and the like's one row: both null with no such win. */
+data class UnpostedWinRow(val score: Int?, val newestEpochMillis: Long?)
 
 /** One player's Statistics: their games added up across every mode, and each mode's on its own ([modes]). */
 data class PlayerStatistics(

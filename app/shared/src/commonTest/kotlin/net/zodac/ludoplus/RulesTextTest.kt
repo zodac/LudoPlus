@@ -177,7 +177,7 @@ class RulesTextTest : UiTest() {
                 "Start squares and star squares are safe at first. In Overtime the start squares stop being safe, and in Sudden Death the star squares do too. The line above the board counts the rounds, and with more players it takes longer.",
                 "On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when Overtime comes.",
                 "Ten turns after that comes the Cataclysm: after every five turns, up to three squares with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven squares left, so nobody can keep away for ever.",
-                "The Leaderboard ranks Survival wins by the most pawns left.",
+                "The Leaderboard ranks Survival wins by the furthest travelled: the most squares the winner's pawns moved.",
             ),
             diagram = null,
         ),

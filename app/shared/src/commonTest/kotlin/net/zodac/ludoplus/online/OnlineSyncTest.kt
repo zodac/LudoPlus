@@ -103,15 +103,15 @@ private class SyncCloudSave(var local: CloudSave = CloudSave()) : CloudSaveStore
 
 private fun found(save: CloudSave) = CloudSaveRead.Found(CloudSaveCodec.encode(save))
 
-/** One of player 1's postable wins: its mode, player count, turns, and when it ended. */
-private data class Win(val mode: GameMode, val players: Int, val turns: Int, val at: Long)
+/** One of player 1's postable wins: its mode, player count, score by the mode's ranking (turns or squares), and when it ended. */
+private data class Win(val mode: GameMode, val players: Int, val score: Int, val at: Long)
 
 /** Player 1's postable wins; the filtering by rules is `GameResultDao`'s, tested against Room. */
 private class SyncWins(vararg wins: Win) {
     val wins = wins.toMutableList()
     fun best(mode: GameMode, players: Int, after: Long): UnpostedWin? =
         wins.filter { it.mode == mode && it.players == players && it.at > after }.takeIf { it.isNotEmpty() }?.let { played ->
-            UnpostedWin(played.minOf { it.turns }, played.maxOf { it.at })
+            UnpostedWin(if (mode.ranking.largerIsBetter) played.maxOf { it.score } else played.minOf { it.score }, played.maxOf { it.at })
         }
 }
 
@@ -259,7 +259,7 @@ class OnlineSyncTest {
     }
 
     @Test
-    fun `an account's first sync gets this device's fastest win on each board played - and only those boards`() = runTest {
+    fun `an account's first sync gets this device's best win on each board played - and only those boards`() = runTest {
         val services = SyncServices("ann")
         val wins = SyncWins(
             Win(GameMode.CLASSIC, 4, 44, 10L),
@@ -267,11 +267,14 @@ class OnlineSyncTest {
             Win(GameMode.CLASSIC, 4, 41, 30L),
             Win(GameMode.CLASSIC, 2, 30, 25L),
             Win(GameMode.TWO_DICE, 6, 52, 15L),
-            // Ranked by pawns left, so it has no board.
-            Win(GameMode.SURVIVAL, 4, 60, 15L),
+            // Ranked by the squares travelled and held: the most is the best.
+            Win(GameMode.SURVIVAL, 4, 600, 15L),
+            Win(GameMode.SURVIVAL, 4, 640, 16L),
+            Win(GameMode.COLOUR_RUSH, 3, 20, 17L),
+            Win(GameMode.COLOUR_RUSH, 3, 18, 18L),
         )
         sync(services, InMemoryAchievementStore(state()), OnlineSettingsRepository(InMemoryPreferences()), wins = wins).reconcile()
-        assertEquals(listOf("classic_2p" to 30L, "classic_4p" to 38L, "two_dice_6p" to 52L), services.posted)
+        assertEquals(listOf("classic_2p" to 30L, "classic_4p" to 38L, "colour_rush_3p" to 20L, "two_dice_6p" to 52L, "survival_4p" to 640L), services.posted)
     }
 
     @Test

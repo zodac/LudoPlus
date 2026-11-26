@@ -98,7 +98,7 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 | Colour Rush | The track's squares are claimed: the first to land on one has it, and a capture there takes it; the most at the end wins | Yes, its own, by most squares | Its own, and all but a few |
 | Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | Its own, and all but a few |
 | Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | Its own, and all but a few |
-| Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; Overtime, Sudden Death, and the Cataclysm late on | Yes, its own, by most pawns left | Its own, and all but a few |
+| Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; Overtime, Sudden Death, and the Cataclysm late on | Yes, its own, by the furthest travelled | Its own, and all but a few |
 | Chaos | Power-ups on the track, taken by the pawn that ends its move on one | Yes, its own | Its own, and all but a few |
 | Haunted House | Ghosts on the track, which send the pawns they land on back to their yards | Yes, its own | Its own, and all but a few |
 
@@ -117,7 +117,7 @@ plays sooner. Four Medium CPUs claim them all in 96% of games, two in 23%; games
 and the player who's home wins over half of two-player games. A claimed square is drawn as its player's home column is, in
 every style (`BoardParts.claims`, `ClaimedSquareTest`), a star's mark smaller on it (`drawClaimedMark`), part of the board's
 painted image, once the pawn has landed. Cards have a count on a square of the player's colour; the Leaderboard ranks the most
-squares (`GameResult.squares`), then captures, with no online board. TalkBack: "Square 24, Yellow's square, empty", "Move Red
+squares (`GameResult.squares`), then captures, as do its online boards (the squares alone). TalkBack: "Square 24, Yellow's square, empty", "Move Red
 pawn 1 3 squares, claiming the square", "0 pawns home, 2 squares".
 
 **Two Dice** (`GameRules.dice`, `rollAgainOnDoubles`). A roll is both dice (`LudoEngine.applyDice`); the move phase
@@ -156,10 +156,12 @@ there as sudden death comes can be captured whole. No Home Roll, Out on a 1, Fre
 here, so are locked, saying so (`HouseRule.appliesTo`), and not played. The board is drawn with no home, and as sudden death comes without its
 start colours, then its stars (`BoardParts`), under `SurvivalArt.kt`'s arena: crossed swords, then flames, then a skull,
 with a red cross on the squares no longer safe. Yards tally the fallen; cards' dots are the pawns left. The Leaderboard ranks
-the most pawns left (`LeaderboardRanking`, from `timesCaptured`), then captures; its wins set no fewest turns, and it has
-no online board. TalkBack: "Red yard, 3 of 6 pawns lost", "3 pawns left, playing now"; the line over the board
-("Overtime in 3 rounds: start squares unsafe.", "Overtime! Only stars are safe.") is live in the last three rounds before a
-stage and as it comes.
+the furthest travelled (the maintainer, 2026-11-26): the most squares the winner's pawns walked in the game
+(`PlayerState.squaresMoved`, `Move.walked`: to a portal, not through it, 1 out of the yard; `GameResult.squaresMoved`),
+then captures; a win recorded before 1.2.0 kept them is last, a dash in the column, spoken "distance not recorded". Its
+online boards rank the squares alone, and its wins set no fewest turns. TalkBack: "Red yard, 3 of 6 pawns lost", "3
+pawns left, playing now"; the line over the board ("Overtime in 3 rounds: start squares unsafe.", "Overtime! Only stars
+are safe.") is live in the last three rounds before a stage and as it comes.
 
 **The Cataclysm** (`game/Cataclysm.kt`, `CataclysmTest`; the maintainer, 2026-11-24): two last pawns can chase each other
 round a big board without ever meeting, so the track shrinks. After every fifth turn (anyone's; a run of rolls is one) one to
@@ -452,10 +454,11 @@ the monotonic clock, and saves at each pause and every five minutes while resume
 `AchievementsState`, so it never moves achievement flows or a game's counter write, and out of `changeStamp`, so it
 goes with the next save that has something else to send. It started at zero in the version that added it.
 
-**The Leaderboard** (`LeaderboardScreen`) ranks a mode's wins at a player count: the fewest turns, or in Survival the most
-pawns left (`GameMode.ranking`), then the most captures. 1st to 3rd are in gold, silver, and bronze. Columns become two
-lines a row where a name hasn't room beside them (a large font). TalkBack reads a row as one: "1st, Alex, 38 turns, 4
-captures". While signed in to Play Games, a mode with an online board has a button to it.
+**The Leaderboard** (`LeaderboardScreen`) ranks a mode's wins at a player count: the fewest turns, in Colour Rush the most
+squares, or in Survival the furthest travelled (`GameMode.ranking`), then the most captures. 1st to 3rd are in gold,
+silver, and bronze. Columns become two lines a row where a name hasn't room beside them (a large font). TalkBack reads a
+row as one: "1st, Alex, 38 turns, 4 captures"; in Survival "1st, Alex, 412 squares travelled, 4 captures". While signed
+in to Play Games, a button opens the mode's online board.
 
 **Statistics** (`StatisticsScreen`) is a card for each person, by name (`playerKey`), in name order: games, wins, win rate,
 streaks, fewest turns to win, captures, times captured, and pawns home, less the race's figures in Survival. Added up

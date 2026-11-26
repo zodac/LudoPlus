@@ -258,6 +258,11 @@ data class PlayerState(
     val timesHaunted: Int = 0,
     /** Their pawns with a shield ([PowerUp.SHIELD]), by index. */
     val shielded: Set<Int> = emptySet(),
+    /**
+     * How many squares the pawns they moved have walked ([Move.walked]), a partner's they rolled for included. A game saved
+     * before it was kept has only those since.
+     */
+    val squaresMoved: Int = 0,
 ) {
     /** How many of their pawns are home on [board]. */
     fun pawnsHome(board: BoardGeometry): Int = pawns.count { it == board.homeProgress }
@@ -326,6 +331,12 @@ data class Move(
 
     /** How many squares the roll moves the pawn, the lost ones it steps over not counted. */
     val squares: Int get() = rolledTo - from - skipped.size
+
+    /**
+     * How many squares the pawn walks: to a portal, not through it, and back off a shield, the lost ones it steps over not
+     * counted; 1 out of the yard.
+     */
+    val walked: Int get() = (via ?: to) - from - skipped.size
 
     /** Whose pawn moves in [state]: [owner], or the player whose turn it is. */
     fun ownerIn(state: GameState): Int = owner ?: state.current

@@ -89,6 +89,14 @@ class LudoEngineTest {
     }
 
     @Test
+    fun `each player counts the squares their moves walk - 1 out of the yard - and a roll with no move none`() {
+        val moved = game(listOf(Y, 10, Y, Y)).roll(6).move(0).roll(4).move(1)
+        assertEquals(1 + 4, moved.players[RED].squaresMoved)
+        assertEquals(5, moved.roll(3).roll(2).players[RED].squaresMoved)
+        assertEquals(0, moved.players[GREEN].squaresMoved)
+    }
+
+    @Test
     fun `a run broken by another roll starts counting again - and a mode without the limit never ends the run`() {
         // 6, 6, then a 2 passes; red's next turn begins a fresh run.
         val broken = game(listOf(0, Y, Y, Y)).roll(6).move(0).roll(6).move(0).roll(2).move(0)

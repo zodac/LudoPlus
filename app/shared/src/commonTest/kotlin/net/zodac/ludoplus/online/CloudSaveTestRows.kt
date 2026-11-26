@@ -22,6 +22,7 @@ internal fun cloudRecord(label: String, at: Long, name: String = "Sam", turns: I
     timesCaptured = 1,
     pawnsHome = if (won) 4 else 2,
     squares = if (won) 21 else 0,
+    squaresMoved = if (won) 310 else null,
 )
 
 /** The label [cloudRecord] made this record's uuid from. */

@@ -126,8 +126,9 @@ object CloudSaveCodec {
      * The records, in far less than an object per row: `names` and `modes` hold each player name and mode id once, and
      * `table` is one string of rows, split by [ROW_SEPARATOR], each row's fields by [FIELD_SEPARATOR]: its uuid, its
      * name's and mode's places in those lists, the time since the row before, flags ([FLAG_PRIMARY_PLAYER] and the rest),
-     * player count, place, play time, finish time, turns, captures, times captured, pawns home, and squares. Fields are only added
-     * at a row's end, and a row without one (written before it was added) reads it as 0. A row's
+     * player count, place, play time, finish time, turns, captures, times captured, pawns home, squares, and squares moved
+     * (empty when unknown). Fields are only added at a row's end, and a row without one (written before it was added) reads
+     * it as 0, but squares moved as unknown. A row's
      * [GameResult.playerKey] is worked out again on reading.
      */
     private fun encodeRecords(rows: List<GameResult>): JsonObject {
@@ -144,6 +145,7 @@ object CloudSaveCodec {
             listOf(
                 row.uuid, names.getValue(row.playerName), modes.getValue(row.gameModeId), row.endedAtEpochMillis - previousTime, flags,
                 row.playerCount, row.place, row.playMillis, row.finishMillis, row.turns, row.captures, row.timesCaptured, row.pawnsHome, row.squares,
+                row.squaresMoved?.toString().orEmpty(),
             ).joinTo(table, FIELD_SEPARATOR.toString())
             previousTime = row.endedAtEpochMillis
         }
@@ -188,6 +190,7 @@ object CloudSaveCodec {
                 timesCaptured = int(11),
                 pawnsHome = int(12),
                 squares = int(13),
+                squaresMoved = fields.getOrNull(14)?.takeIf { it.isNotEmpty() }?.toInt(),
             )
         }
     }

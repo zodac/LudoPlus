@@ -298,8 +298,7 @@ class AchievementTracker(
         val me = before.players[mySeat]
         val turn = after.players[mySeat].turns
         nearMisses = 0
-        // The squares it walked: to a portal, not through it, and back off a shield.
-        pending.add(AchievementCounter.SQUARES_MOVED, (move.via ?: move.to) - move.from - move.skipped.size)
+        pending.add(AchievementCounter.SQUARES_MOVED, move.walked)
         val captures = event.allCaptures
         if (captures.isNotEmpty()) {
             counts.add(AchievementCounter.CAPTURES, captures.size)

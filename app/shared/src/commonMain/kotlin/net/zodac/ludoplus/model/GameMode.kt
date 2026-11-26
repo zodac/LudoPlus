@@ -35,10 +35,10 @@ enum class GameMode(
     /**
      * Its online leaderboards' key (Play Games), one board for each player count ([onlineLeaderboardKey]). Permanent once
      * released, as the boards are: a rule change that makes old wins unfair needs a new key (`.claude/PLAY_GAMES.md`).
-     * Null for a mode with none: they rank the fewest turns, which isn't how it ranks ([ranking]).
+     * They rank its wins by its [ranking].
      */
-    val onlineLeaderboardKey: String?,
-    /** What its Leaderboard ranks wins by. */
+    val onlineLeaderboardKey: String,
+    /** What its Leaderboard, and its online boards, rank wins by. */
     val ranking: LeaderboardRanking = LeaderboardRanking.FEWEST_TURNS,
 ) : StoredId {
     /** The classic rules, for four players (`.claude/IMPLEMENTATION.md`, "The classic rules"). */
@@ -56,7 +56,7 @@ enum class GameMode(
         displayName = Res.string.mode_colour_rush,
         description = Res.string.mode_colour_rush_description,
         rules = GameRules(claims = true),
-        onlineLeaderboardKey = null,
+        onlineLeaderboardKey = "colour_rush",
         ranking = LeaderboardRanking.MOST_SQUARES,
     ),
 
@@ -90,8 +90,8 @@ enum class GameMode(
         displayName = Res.string.mode_survival,
         description = Res.string.mode_survival_description,
         rules = GameRules(board = BoardGeometry.CLASSIC.copy(endless = true), pawnsPerPlayer = 6, startsOut = true, lastStanding = true, suddenDeath = true),
-        onlineLeaderboardKey = null,
-        ranking = LeaderboardRanking.MOST_PAWNS_LEFT,
+        onlineLeaderboardKey = "survival",
+        ranking = LeaderboardRanking.MOST_SQUARES_MOVED,
     ),
 
     /** The classic rules, with power-ups on the track ([PowerUp]). */
@@ -113,8 +113,8 @@ enum class GameMode(
     ),
     ;
 
-    /** Its online leaderboard for games of [playerCount], if it has any: a bigger board's lap is longer, so each count has its own. */
-    fun onlineLeaderboardKey(playerCount: Int): String? = onlineLeaderboardKey?.let { "${it}_${playerCount}p" }
+    /** Its online leaderboard for games of [playerCount]: a bigger board's lap is longer, so each count has its own. */
+    fun onlineLeaderboardKey(playerCount: Int): String = "${onlineLeaderboardKey}_${playerCount}p"
 
     companion object {
         /** The mode a new player's first game is set to. */
@@ -122,8 +122,20 @@ enum class GameMode(
     }
 }
 
-/** What a mode's Leaderboard ranks its wins by, most captures settling a tie. */
-enum class LeaderboardRanking { FEWEST_TURNS, MOST_PAWNS_LEFT, MOST_SQUARES }
+/** What a mode's Leaderboard ranks its wins by, most captures settling a tie; its online boards rank by the number alone. */
+enum class LeaderboardRanking(
+    /** Whether a bigger number ranks higher. */
+    val largerIsBetter: Boolean,
+) {
+    /** The fewest turns to win. */
+    FEWEST_TURNS(largerIsBetter = false),
+
+    /** The most squares the winner's pawns walked in the game: the longest survival. */
+    MOST_SQUARES_MOVED(largerIsBetter = true),
+
+    /** The most squares the winner held at the end. */
+    MOST_SQUARES(largerIsBetter = true),
+}
 
 /**
  * The rules of play a game follows: its [GameMode]'s, which house-rule modifiers (Phase 9 of

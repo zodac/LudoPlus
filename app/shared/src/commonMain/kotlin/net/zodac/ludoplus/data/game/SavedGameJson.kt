@@ -174,6 +174,7 @@ object SavedGameJson {
                         if (player.callUps > 0) put("callUps", player.callUps)
                         if (player.timesHaunted > 0) put("timesHaunted", player.timesHaunted)
                         if (player.shielded.isNotEmpty()) put("shielded", jsonInts(player.shielded.sorted()))
+                        if (player.squaresMoved > 0) put("squaresMoved", player.squaresMoved)
                     }
                 },
             ),
@@ -242,6 +243,7 @@ object SavedGameJson {
                 callUps = player.intOrNull("callUps") ?: 0,
                 timesHaunted = player.intOrNull("timesHaunted") ?: 0,
                 shielded = if ("shielded" in player) player.array("shielded").ints().toSet() else emptySet(),
+                squaresMoved = player.intOrNull("squaresMoved") ?: 0,
             )
         }
         require(players.size == playerCount) { "${players.size} players' states for $playerCount players" }
@@ -255,7 +257,7 @@ object SavedGameJson {
             }
             require(rules.powerUps || (player.doubledRolls == 0 && player.callUps == 0 && player.shielded.isEmpty())) { "A power-up's effect without power-ups" }
             require(player.doubledRolls in 0..PowerUp.DOUBLED_ROLLS && player.callUps >= 0 && player.shielded.all { it in player.pawns.indices }) { "A power-up's effect doesn't fit" }
-            require(player.turns >= 0 && player.captures >= 0 && player.timesCaptured >= 0) { "A negative count" }
+            require(player.turns >= 0 && player.captures >= 0 && player.timesCaptured >= 0 && player.squaresMoved >= 0) { "A negative count" }
             require(player.capturesOf.all { (whose, count) -> whose in 0..<playerCount && count > 0 } && player.capturesOf.values.sum() <= player.captures) {
                 "The captures by player don't fit"
             }

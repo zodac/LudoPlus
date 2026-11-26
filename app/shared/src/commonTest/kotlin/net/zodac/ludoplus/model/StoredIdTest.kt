@@ -27,7 +27,7 @@ class StoredIdTest {
         )
         assertEquals(listOf("classic", "colour_rush", "two_dice", "portals", "survival", "chaos", "haunted_house"), ids(GameMode.entries))
         // Each mode's online boards. Survival has none.
-        assertEquals(listOf("classic", null, "two_dice", "portals", null, "chaos", "haunted_house"), GameMode.entries.map { it.onlineLeaderboardKey })
+        assertEquals(listOf("classic", "colour_rush", "two_dice", "portals", "survival", "chaos", "haunted_house"), GameMode.entries.map { it.onlineLeaderboardKey })
         assertEquals(
             listOf("no_capture_roll", "no_home_roll", "endless_sixes", "exit_on_one", "free_start", "three_tries", "blockades", "must_capture", "guarded_starts"),
             ids(HouseRule.entries),

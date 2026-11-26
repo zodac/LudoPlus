@@ -46,6 +46,8 @@ class AppDatabaseMigrationTest {
             assertEquals(listOf("Alex" to false, "Sam" to false), rows.map { it.playerName to it.houseRules })
             // Version 4's squares: none before Colour Rush.
             assertEquals(listOf(0, 0), rows.map { it.squares })
+            // Version 5's squares travelled: unknown before it.
+            assertEquals(listOf(null, null), rows.map { it.squaresMoved })
             // Version 3's uuids: one each, random, for the cloud save and progress files to tell rows apart by.
             assertEquals(2, rows.map { it.uuid }.toSet().size)
             rows.forEach { assertTrue(it.uuid, Regex("[0-9a-f]{32}").matches(it.uuid)) }

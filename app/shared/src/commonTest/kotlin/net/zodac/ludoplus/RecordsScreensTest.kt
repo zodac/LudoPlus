@@ -178,15 +178,19 @@ class RecordsScreensTest : UiTest() {
     }
 
     @Test
-    fun `Survival's Leaderboard ranks the most pawns left - then most captures - and its Statistics have no race`() = uiTest(TestScreen(411, 891)) {
-        val survival = { name: String, captures: Int, lost: Int, endedAt: Long -> row(name, 1, 80, captures, endedAt, mode = GameMode.SURVIVAL).copy(timesCaptured = lost) }
-        val repository = records(survival("Alex", 9, 5, 1), survival("Sam", 2, 1, 2), survival("Jo", 4, 1, 3))
+    fun `Survival's Leaderboard ranks the furthest travelled - then most captures - and its Statistics have no race`() = uiTest(TestScreen(411, 891)) {
+        val survival = { name: String, captures: Int, travelled: Int?, endedAt: Long -> row(name, 1, 80, captures, endedAt, mode = GameMode.SURVIVAL).copy(squaresMoved = travelled) }
+        val repository = records(survival("Alex", 9, 1, 1), survival("Sam", 2, 412, 2), survival("Jo", 4, 412, 3), survival("Kim", 12, null, 4))
         val viewModel = LeaderboardViewModel(repository, MutableStateFlow(GameMode.SURVIVAL))
         showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
-        compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Jo, 5 pawns left, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNode(hasContentDescription("2nd, Sam, 5 pawns left, 2 captures")).assertExists()
-        compose.onNode(hasContentDescription("3rd, Alex, 1 pawn left, 9 captures")).assertExists()
-        compose.onNodeWithText("Survival: most pawns left").assertExists()
+        compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Jo, 412 squares travelled, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("2nd, Sam, 412 squares travelled, 2 captures")).assertExists()
+        compose.onNode(hasContentDescription("3rd, Alex, 1 square travelled, 9 captures")).assertExists()
+        // A win from before the distance was kept: last, a dash for the eye.
+        compose.onNode(hasContentDescription("4th, Kim, distance not recorded, 12 captures")).assertExists()
+        compose.onNode(hasText("–", substring = false), useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Survival: furthest travelled").assertExists()
+        compose.onNodeWithText("Distance", useUnmergedTree = true).assertExists()
 
         val statistics = StatisticsViewModel(repository, MutableStateFlow(ModePage.AllModes))
         showcase.show { LudoPlusTheme { StatisticsScreen(statistics, onBack = {}) } }

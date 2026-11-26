@@ -60,7 +60,7 @@ class OnlineSync(
     private val services: GameServices,
     private val store: AchievementStore,
     private val settings: OnlineSettingsRepository,
-    /** Player 1's fastest win in a mode and player count from the games after a time, as `GameRecordRepository.unpostedWin`. */
+    /** Player 1's best win in a mode and player count from the games after a time, as `GameRecordRepository.unpostedWin`. */
     private val unpostedWin: suspend (GameMode, playerCount: Int, afterEpochMillis: Long) -> UnpostedWin?,
     /** This device's side of the cloud save; null syncs achievements and leaderboards alone. */
     private val cloudSave: CloudSaveStore? = null,
@@ -303,14 +303,14 @@ class OnlineSync(
         return CloudSaveCodec.encode(CloudSaveMerge.merge(ours, theirs))
     }
 
-    /** Each board's fastest unsent win, its turns as the score. False if the service didn't take one of them. */
+    /** Each board's best unsent win, by its mode's ranking, as the score. False if the service didn't take one of them. */
     private suspend fun postWins(accountKey: String): Boolean {
         var allPosted = true
         for (mode in GameMode.entries) {
             for (playerCount in BoardGeometry.MIN_PLAYERS..BoardGeometry.MAX_PLAYERS) {
-                val key = mode.onlineLeaderboardKey(playerCount) ?: continue
+                val key = mode.onlineLeaderboardKey(playerCount)
                 val best = unpostedWin(mode, playerCount, settings.winsPostedThrough(accountKey, key) ?: Long.MIN_VALUE) ?: continue
-                if (services.submitScore(key, best.turns.toLong())) {
+                if (services.submitScore(key, best.score.toLong())) {
                     settings.setWinsPostedThrough(accountKey, key, best.newestEpochMillis)
                 } else {
                     allPosted = false

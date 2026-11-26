@@ -61,4 +61,9 @@ data class GameResult(
     val pawnsHome: Int,
     /** How many squares they had at the end of a game they're claimed in ([net.zodac.ludoplus.model.GameRules.claims]), or 0. */
     @ColumnInfo(defaultValue = "0") val squares: Int = 0,
+    /**
+     * How many squares the pawns they moved walked in the game ([net.zodac.ludoplus.game.PlayerState.squaresMoved]), or
+     * null for a game recorded before it was kept.
+     */
+    val squaresMoved: Int? = null,
 )

@@ -436,13 +436,15 @@ count but 4 has a board of its own; one player on two colours was dropped.
         graphic's GIF heads the README from 2026-11-19 (`readme-assets.yml`).
     - [x] The promo video, approved 2026-11-18: no tutorial (the maintainer). New scenes and music 2026-11-24
         (`STORE_ASSETS.md`).
-- [ ] Play Games Services: achievements, the fastest-win leaderboards, cloud save, and sign-in (`PLAY_GAMES.md`).
+- [ ] Play Games Services: achievements, the leaderboards, cloud save, and sign-in (`PLAY_GAMES.md`).
     The Console's achievements and leaderboards wait for the maintainer's review of them (2026-11-23).
-    Decided with the maintainer (2026-11-18): a leaderboard for each built-in mode and player count, 2-8 (42 of Play's
-    70: Survival has none), each the turns in a win, fewer better. Play ranks one number, so the local captures tie-break doesn't carry.
+    Decided with the maintainer (2026-11-18, every mode from 2026-11-26): a leaderboard for each built-in mode and
+    player count, 2-8 (49 of Play's 70), each ranked as the mode's Leaderboard is: the turns in a win, fewer better; in
+    Colour Rush the squares held and in Survival the squares travelled, more better. Play ranks one number, so the local
+    captures tie-break doesn't carry. Each mode's boards carry its win achievement's icon.
     - [x] The code, restored from `5423b6c` (2026-11-18): `OnlineSync`, the Settings card, the Achievements page's way
         to Play's screen, the Leaderboard's "Global leaderboard", About's sign-in line, `PlayGamesServices`, Sidekick,
-        backup rules, and the Play Console export (achievements with proposed points, and the 42 boards' sheet and
+        backup rules, and the Play Console export (achievements with proposed points, and the boards' sheet and
         icons). Ids are empty until the Console project exists.
     - [ ] The maintainer's Console steps (`PLAY_GAMES.md`, "Play Console"), the ids filled in, the points reviewed, and
         sign-in checked on a Play install. The privacy policy and data-safety form must cover sign-in and cloud save

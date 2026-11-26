@@ -32,12 +32,12 @@ class PlayGamesIdsTest {
     }
 
     @Test
-    fun `there is a board for each mode ranked by turns and player count - of Play's 70 - each key its own`() {
-        // Survival and Colour Rush have none: their wins aren't ranked by turns.
-        assertEquals((GameMode.entries.size - 2) * 7, playLeaderboardKeys.size)
+    fun `there is a board for each mode and player count - of Play's 70 - each key its own`() {
+        assertEquals(GameMode.entries.size * 7, playLeaderboardKeys.size)
         assertTrue(playLeaderboardKeys.size <= 70)
         assertEquals(playLeaderboardKeys.size, playLeaderboardKeys.toSet().size)
         assertEquals("classic_4p", GameMode.CLASSIC.onlineLeaderboardKey(4))
+        assertEquals("survival_8p", GameMode.SURVIVAL.onlineLeaderboardKey(8))
     }
 
     @Test
