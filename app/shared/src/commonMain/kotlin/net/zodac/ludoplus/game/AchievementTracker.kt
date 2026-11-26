@@ -9,6 +9,7 @@ import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PlayerType
 import net.zodac.ludoplus.model.PowerUp
+import net.zodac.ludoplus.model.portalAt
 
 /**
  * Watches one game being played, a step at a time ([observe]), and says what each step earned player 1 ([GameFeats]):
@@ -105,8 +106,11 @@ class AchievementTracker(
     /** Player 1's moves by the dice of one roll that captured: for [Achievement.TWO_BIRDS_TWO_STONES]. */
     private val rollCaptures = mutableListOf<Move>()
 
-    /** The portal squares each of player 1's pawns has gone in by since it left its yard. */
-    private val portalsTaken = mutableMapOf<Int, MutableSet<Int>>()
+    /**
+     * The pairs of portals each of player 1's pawns has gone through since it left its yard, each by its name (its seat, and
+     * whether it's long) and the way it went: true for onwards.
+     */
+    private val portalsTaken = mutableMapOf<Int, MutableSet<Triple<Int, Boolean, Boolean>>>()
 
     /** The power-ups player 1 has taken this game. */
     private val powerUpsTaken = mutableSetOf<PowerUp>()
@@ -348,10 +352,13 @@ class AchievementTracker(
             }
         }
         move.via?.let { via ->
-            // In by one end having been in by the other: there, and back.
-            val taken = portalsTaken.getOrPut(move.pawn) { mutableSetOf() }
-            if (board.trackSquare(me.seat, move.to) in taken) feats += Achievement.THERE_AND_BACK_AGAIN
-            taken += board.trackSquare(me.seat, via)
+            // Through a pair having been through it the other way, wherever it has opened since: there, and back.
+            before.portals.portalAt(board.trackSquare(me.seat, via))?.let { pair ->
+                val taken = portalsTaken.getOrPut(move.pawn) { mutableSetOf() }
+                val onwards = move.to > via
+                if (Triple(pair.seat, pair.long, !onwards) in taken) feats += Achievement.THERE_AND_BACK_AGAIN
+                taken += Triple(pair.seat, pair.long, onwards)
+            }
         }
         when {
             move.from == PawnPosition.YARD_PROGRESS -> lapPawn = move.pawn

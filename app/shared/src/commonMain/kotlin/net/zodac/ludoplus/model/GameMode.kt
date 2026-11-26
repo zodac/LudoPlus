@@ -208,7 +208,10 @@ data class GameRules(
      * pawn, its own seat's leaving the yard included. Otherwise it's safe for every pawn.
      */
     val guardedStarts: Boolean = false,
-    /** Whether the board's portals ([BoardGeometry.portals]) are open: a move that ends on one comes out at its pair. */
+    /**
+     * Whether there are portals on the track, the board's own as a game starts ([BoardGeometry.portals]): a move that ends on
+     * one comes out at its pair, which closes and opens again somewhere else.
+     */
     val portals: Boolean = false,
     /** Whether there are power-ups on the track ([PowerUp]): at least one of each kind at any time, and a new one of any kind every few turns. */
     val powerUps: Boolean = false,
@@ -234,8 +237,8 @@ data class GameRules(
     /** The house rules these rules were made with ([withHouseRules]): empty for a mode's own rules. */
     val houseRules: Set<HouseRule> = emptySet(),
 ) {
-    /** Whether a game of these rules draws chances of its own, besides the dice: power-ups', ghosts', or sudden death's. */
-    val hasChances: Boolean get() = powerUps || ghosts || suddenDeath
+    /** Whether a game of these rules draws chances of its own, besides the dice: portals', power-ups', ghosts', or sudden death's. */
+    val hasChances: Boolean get() = portals || powerUps || ghosts || suddenDeath
 
     /** Whether any house rule is on, a number of pawns among them: such a game stays off the Leaderboard and out of Statistics, and earns only the house rules' own achievements. */
     val hasHouseRules: Boolean get() = houseRules.isNotEmpty() || pawnsChanged

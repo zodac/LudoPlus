@@ -50,7 +50,8 @@ Every mode has its own Leaderboard, its own page in Statistics, and achievements
 - **Haunted House**: ghosts drift round the track, a die's roll at a time and in either direction, and send any pawn
     they land on back to its yard, unless it's safe.
 - **Portals**: pairs of portals on the track, open to every colour. End a move on one and come out at its pair: a
-    short hop, or a long jump most of the way round the board, or most of the way back.
+    short hop, or a long jump most of the way round the board, or most of the way back. Then that pair closes and opens
+    again somewhere else.
 - **Two Dice**: roll two dice and move by each one in turn, with the same pawn or two different ones. A 6 on either
     brings a pawn out, and doubles roll again.
 

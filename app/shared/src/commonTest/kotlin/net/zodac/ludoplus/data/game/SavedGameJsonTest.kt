@@ -13,6 +13,7 @@ import net.zodac.ludoplus.game.LogEntry
 import net.zodac.ludoplus.game.LudoEngine
 import net.zodac.ludoplus.game.MoveLog
 import net.zodac.ludoplus.game.TurnPhase
+import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.GameRules
@@ -23,6 +24,7 @@ import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
 import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.model.TeamMode
+import net.zodac.ludoplus.model.portals
 import net.zodac.ludoplus.model.withHouseRules
 import net.zodac.ludoplus.ui.game.StartedGame
 
@@ -182,22 +184,56 @@ class SavedGameJsonTest {
     }
 
     @Test
-    fun `every state of random Portals games comes back as it was saved - moves through portals too`() {
+    fun `every state of random Portals games comes back as it was saved - moves through portals and where they open again too - and plays on the same`() {
         val random = Random(19)
         var portals = 0
-        repeat(10) {
-            var state = GameState.new(GameMode.PORTALS, 4)
+        repeat(10) { index ->
+            var state = GameState.new(GameMode.PORTALS, 4, seed = index.toLong())
             while (!state.isFinished) {
                 val saved = game(state).copy(mode = GameMode.PORTALS)
-                assertEquals(saved, SavedGameJson.decode(SavedGameJson.encode(saved)))
+                val back = SavedGameJson.decode(SavedGameJson.encode(saved))
+                assertEquals(saved, back)
                 if ((state.lastEvent as? GameEvent.Moved)?.move?.via != null) portals++
                 state = when (val phase = state.phase) {
-                    is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random))
+                    is TurnPhase.AwaitingMove -> phase.moves.random(random).let { move ->
+                        LudoEngine.move(state, move).also { assertEquals(it, LudoEngine.move(back.state, move)) }
+                    }
                     else -> LudoEngine.roll(state, random)
                 }
             }
         }
         assert(portals > 0) { "No move through a portal was saved" }
+    }
+
+    @Test
+    fun `a Portals game saved before its portals moved comes back with the board's own - and its first pair opens again from seed 0`() {
+        val state = GameState.new(GameMode.PORTALS, 4, seed = 99).copy(players = GameState.new(GameMode.PORTALS, 4).players.mapIndexed { i, side ->
+            if (i == 0) side.copy(pawns = listOf(1, PawnPosition.YARD_PROGRESS, PawnPosition.YARD_PROGRESS, PawnPosition.YARD_PROGRESS)) else side
+        })
+        val json = SavedGameJson.encode(game(state).copy(mode = GameMode.PORTALS))
+        val old = json.replace(Regex(""","portals":\[[^\]]*\]"""), "").replace(Regex(""","seed":"[^"]*""""), "")
+        assertTrue(""""portals":""" !in old && """"seed":""" !in old, old)
+        val back = SavedGameJson.decode(old).state
+        assertEquals(BoardGeometry.CLASSIC.portals, back.portals)
+        assertEquals(0L, back.seed)
+        assertEquals(state.copy(seed = 0), back)
+    }
+
+    @Test
+    fun `a Portals game whose portals don't fit isn't read`() {
+        val json = SavedGameJson.encode(game(GameState.new(GameMode.PORTALS, 4)).copy(mode = GameMode.PORTALS))
+        val pairs = checkNotNull(Regex(""""portals":\[[^\]]*\]""").find(json)).value
+        for (bad in listOf(
+            // A safe square, the square before a start, two pairs on one square, a pair missing, and a pair twice.
+            pairs.replace("""{"seat":0,"long":false,"first":3}""", """{"seat":0,"long":false,"first":8}"""),
+            pairs.replace("""{"seat":0,"long":false,"first":3}""", """{"seat":0,"long":false,"first":12}"""),
+            pairs.replace("""{"seat":0,"long":false,"first":3}""", """{"seat":0,"long":false,"first":16}"""),
+            pairs.replace("""{"seat":0,"long":false,"first":3},""", ""),
+            pairs.replace("""{"seat":0,"long":false,"first":3}""", """{"seat":1,"long":false,"first":3}"""),
+        )) {
+            assertTrue(bad != pairs)
+            assertFailsWith<IllegalArgumentException>(bad) { SavedGameJson.decode(json.replace(pairs, bad)) }
+        }
     }
 
     @Test

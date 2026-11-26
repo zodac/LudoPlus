@@ -106,7 +106,7 @@ an `if (mode == X)`.** `GAME_MODES.md` covers adding or changing a mode.
 | Survival | Six pawns each, starting out, no home: a captured pawn is out of the game, and the last player with one wins; Overtime, Sudden Death, and the Cataclysm late on | Yes, its own, by the furthest travelled | Its own, and all but a few |
 | Chaos | Power-ups on the track, taken by the pawn that ends its move on one | Yes, its own | Its own, and all but a few |
 | Haunted House | Ghosts on the track, which send the pawns they land on back to their yards | Yes, its own | Its own, and all but a few |
-| Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round | Yes, its own | Its own, and all but a few |
+| Portals | Pairs of portals on the track: a move ending on one comes out at its pair, either way round, and the pair opens again elsewhere | Yes, its own | Its own, and all but a few |
 | Two Dice | Two dice, each moved on its own by any pawn; a 6 on either brings a pawn out; doubles roll again, not 6s | Yes, its own | Its own, and all but a few |
 
 Every mode has its own Leaderboard (one a player count) and its own Statistics page, and earns achievements (the
@@ -138,12 +138,18 @@ move." (or "Alex has 5 left." when that move makes itself; `IMPLEMENTATION.md`, 
 at a time, die by die. House rules apply die by die (Out on a 1, Free Start), and to the roll (Three Tries, Must
 Capture across both dice; Endless 6s makes doubles endless).
 
-**Portals** (`GameRules.portals`, `model/Portal.kt`; the maintainer, 2026-11-24, in place of snakes and ladders). Every
-seat has a short pair on its own stretch of the track (7 apart) and a long one into the next seat's (16 apart, or 19
-with three players), the same for each so none is favoured, and **every one is open to every colour** (the maintainer,
-2026-11-24: long pairs were shut to the colour whose start lies between their ends). None is on a safe square. A move that
-ends on a portal comes out at its pair (`Move.via` is where it went in) and captures only there, so a pawn on a portal is
-only captured by one coming out. A pawn's progress is counted from its own start wherever it comes out
+**Portals** (`GameRules.portals`, `model/Portal.kt`, `game/Portals.kt`; the maintainer, 2026-11-24, in place of snakes
+and ladders). A game starts with every seat's short pair on its own stretch of the track (7 apart) and a long one into
+the next seat's (16 apart, or 19 with three players), the same for each so none is favoured (`BoardGeometry.portals`),
+and **every one is open to every colour** (the maintainer, 2026-11-24: long pairs were shut to the colour whose start lies
+between their ends). A move that ends on a portal comes out at its pair (`Move.via` is where it went in) and captures only
+there, so a pawn on a portal is only captured by one coming out. **The pair is then used up** (the maintainer,
+2026-11-26): it closes and opens again at once, keeping its symbol, colour and length, anywhere on the track but a safe
+square, the square before a start (which that seat's pawns never stand on), a pawn's, another pair's, or its own old
+ends (`Portals.reopen`, drawn from `GameState.seed`; `GameState.portals`, saved as each pair's seat, length and first
+square). The board shows the new pair once the pawn has landed. The CPU weighs a move with the pair closed, not knowing
+where it will open (`LudoEngine.moveWithoutChances`). A game saved before (no `portals`, no seed) comes back with the
+board's own pairs and seed 0. A pawn's progress is counted from its own start wherever it comes out
 (`BoardGeometry.progressAt`), so the long pair either side of its own start takes it most of the way round (9 to 45 on the
 classic board), or most of the way back. With Blockades, one at either end stops the move. A pair is told by its symbol and
 colour, and a long pair by a split ring (past four seats, a long pair shares a short one's symbol). Four Medium CPUs' winner

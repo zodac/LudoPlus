@@ -134,18 +134,23 @@ class ModeAchievementsTest {
     }
 
     @Test
-    fun `There And Back Again takes one pawn through a portal then back through its pair - not twice the same way, or captured between`() {
-        // Red's short pair is 3 and 10.
+    fun `There And Back Again takes one pawn through a pair of portals then back through it wherever it opens - not twice the same way, or captured between`() {
+        // Red's short pair is 3 and 10: through it onwards, it opens somewhere else.
         fun there() = Steps(game(GameMode.PORTALS, listOf(1, Y, Y, Y))).play(2)
         assertEquals(10, there().state.players[RED].pawns[0])
-        fun GameState.at(progress: Int) = red { it.copy(pawns = it.pawns.mapIndexed { i, p -> if (i == 0) progress else p }) }.copy(current = RED)
-        assertTrue(THERE_AND_BACK_AGAIN in there().skip { at(8) }.play(2).earned)
-        assertFalse(THERE_AND_BACK_AGAIN in there().skip { at(1) }.play(2).earned)
-        // Green comes out of the portal onto it (42 is square 3, where it goes in), so it starts again.
+        // Wherever it opens: here, 20 and 27.
+        val pair = there().state.portals[0]
+        assertTrue(pair.first != 3)
+        fun GameState.at(progress: Int) = red { it.copy(pawns = it.pawns.mapIndexed { i, p -> if (i == 0) progress else p }) }
+            .copy(current = RED, portals = portals.map { if (it.isPair(pair)) it.openAt(board, 20) else it })
+        // Back through it, from its far end.
+        assertTrue(THERE_AND_BACK_AGAIN in there().skip { at(25) }.play(2).earned)
+        assertFalse(THERE_AND_BACK_AGAIN in there().skip { at(18) }.play(2).earned)
+        // Green lands on it (49 is square 10), so it starts again.
         val captured = there()
-        captured.skip { copy(players = players.mapIndexed { i, side -> if (i == GREEN) side.copy(pawns = listOf(41, Y, Y, Y)) else side }, current = GREEN) }.play(1)
+        captured.skip { copy(players = players.mapIndexed { i, side -> if (i == GREEN) side.copy(pawns = listOf(48, Y, Y, Y)) else side }, current = GREEN) }.play(1)
         assertEquals(Y, captured.state.players[RED].pawns[0])
-        assertFalse(THERE_AND_BACK_AGAIN in captured.skip { at(8) }.play(2).earned)
+        assertFalse(THERE_AND_BACK_AGAIN in captured.skip { at(25) }.play(2).earned)
     }
 
     @Test

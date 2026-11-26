@@ -36,6 +36,7 @@ import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.game.PlayerState
 import net.zodac.ludoplus.game.PowerUpEffect
 import net.zodac.ludoplus.game.TurnPhase
+import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.GameRules
@@ -44,8 +45,11 @@ import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PlayerConfig
 import net.zodac.ludoplus.model.PlayerType
+import net.zodac.ludoplus.model.Portal
 import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.model.StoredId
+import net.zodac.ludoplus.model.canHavePortal
+import net.zodac.ludoplus.model.portals
 import net.zodac.ludoplus.model.storedIdOf
 import net.zodac.ludoplus.model.withHouseRules
 import net.zodac.ludoplus.ui.game.StartedGame
@@ -206,6 +210,10 @@ object SavedGameJson {
         if (state.knockedOut.isNotEmpty()) put("knockedOut", jsonInts(state.knockedOut))
         // Over: never saved, but a Nearby host sends its guests the game's end (`.claude/NETPLAY.md`).
         if (state.isFinished) put("finished", true)
+        // The portals open, each pair by its name and its first square; absent where the rules have none.
+        if (state.rules.portals) {
+            put("portals", JsonArray(state.portals.map { buildJsonObject { put("seat", it.seat); put("long", it.long); put("first", it.first) } }))
+        }
         // The power-ups on the board, the turns until the next, and what their chances are drawn from; absent where the rules have none.
         if (state.rules.powerUps) {
             put("powerUps", JsonArray(state.powerUps.map { (square, powerUp) -> buildJsonObject { put("square", square); put("kind", powerUp.id) } }))
@@ -230,6 +238,24 @@ object SavedGameJson {
         state.pityFrom?.let { put("pityFrom", jsonInts(it)) }
         if (state.rules.hasChances) put("seed", state.seed.toString())
         state.lastEvent?.let { put("lastEvent", encodeEvent(it)) }
+    }
+
+    /**
+     * The portals open in [obj], each of [board]'s pairs ([portals]) once, where it opens: anywhere a portal may be, no two
+     * sharing a square. The board's own where [obj] has none.
+     */
+    private fun decodePortals(obj: JsonObject, board: BoardGeometry): List<Portal> {
+        if ("portals" !in obj) return board.portals
+        val open = obj.objectList("portals").map { item ->
+            val first = item.int("first")
+            val pair = requireNotNull(board.portals.firstOrNull { it.seat == item.int("seat") && it.long == item.flag("long") }) { "No such pair of portals" }
+            require(first in 0..<board.trackLength) { "A portal is off the track" }
+            pair.openAt(board, first)
+        }
+        require(open.size == board.portals.size && board.portals.all { pair -> open.count(pair::isPair) == 1 }) { "The portals aren't the board's pairs" }
+        val ends = open.flatMap { listOf(it.first, it.second) }
+        require(ends.distinct().size == ends.size && ends.all(board::canHavePortal)) { "A portal is where one can't be" }
+        return open
     }
 
     private fun decodeState(obj: JsonObject, mode: GameMode, rules: GameRules, playerCount: Int): GameState {
@@ -318,7 +344,13 @@ object SavedGameJson {
         // Absent before the first pawn came out, and in a game saved before it was kept: counted from the next to come out.
         val pityFrom = if ("pityFrom" in obj) obj.array("pityFrom").ints() else null
         require(pityFrom == null || (pityFrom.size == playerCount && pityFrom.indices.all { pityFrom[it] in 0..players[it].turns })) { "The turns a free pawn counts from don't fit" }
-        val seed = if (rules.hasChances) obj.string("seed").toLongOrNull() ?: throw JsonParseException("The seed isn't a number") else 0
+        // A Portals game saved before its portals moved has the board's own, and no seed: the first drawn from 0.
+        val portals = if (rules.portals) decodePortals(obj, board) else emptyList()
+        val seed = when {
+            !rules.hasChances -> 0
+            rules.portals && "portals" !in obj -> 0
+            else -> obj.string("seed").toLongOrNull() ?: throw JsonParseException("The seed isn't a number")
+        }
         // An ended game: every player placed (the last ones as they stood, where it stopped at its first winner).
         if (obj.flag("finished")) {
             require(finishingOrder.sorted() == players.indices.toList()) { "An ended game hasn't placed every player" }
@@ -331,6 +363,7 @@ object SavedGameJson {
                 finishingOrder = finishingOrder,
                 roundsPlayed = roundsPlayed,
                 knockedOut = knockedOut,
+                portals = portals,
                 powerUps = powerUps,
                 turnsToPowerUp = turnsToPowerUp,
                 claimed = claimed,
@@ -369,6 +402,7 @@ object SavedGameJson {
             finishingOrder = finishingOrder,
             roundsPlayed = roundsPlayed,
             knockedOut = knockedOut,
+            portals = portals,
             powerUps = powerUps,
             turnsToPowerUp = turnsToPowerUp,
                 claimed = claimed,

@@ -241,11 +241,15 @@ class StoreScreensGeneratorTest {
         compose.mainClock.autoAdvance = true
         back()
 
+        // Each page's figures come from a query off the main thread, and the page shows only its header until they're in:
+        // a Leaderboard row, or Statistics' player counts, says they are.
         openFromMenu("Leaderboard")
+        compose.waitUntil(10_000) { compose.onAllNodes(hasText("Sam", substring = true), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         shoot(LEADERBOARD)
         back()
 
         openFromMenu("Statistics")
+        compose.waitUntil(10_000) { compose.onAllNodes(hasContentDescription("2 players"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         shoot(STATISTICS)
         back()
 

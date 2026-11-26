@@ -4,6 +4,7 @@ import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.GameRules
 import net.zodac.ludoplus.model.PawnPosition
+import net.zodac.ludoplus.model.Portal
 import net.zodac.ludoplus.model.PowerUp
 
 /**
@@ -29,6 +30,8 @@ data class GameState(
     val roundsPlayed: Int = 0,
     /** Where the last standing wins ([GameRules.lastStanding]), the players who have lost every pawn, by index, the first to first. */
     val knockedOut: List<Int> = emptyList(),
+    /** Where the rules have portals, each pair open on the track ([Portals]): empty otherwise. */
+    val portals: List<Portal> = emptyList(),
     /** Where the rules have power-ups, each one on the board, by its absolute track square. */
     val powerUps: Map<Int, PowerUp> = emptyMap(),
     /** Where the rules have power-ups, how many turns until a new one comes, as the last of them starts. */
@@ -52,7 +55,7 @@ data class GameState(
      * out free count from ([GameRules.pityRelease]). Null before then.
      */
     val pityFrom: List<Int>? = null,
-    /** What the power-ups', ghosts', and lost squares' chances are drawn from next, so that a game plays on the same wherever it's kept. */
+    /** What the portals', power-ups', ghosts', and lost squares' chances are drawn from next, so that a game plays on the same wherever it's kept. */
     val seed: Long = 0,
     /** What the last action did, for the screen to show and say. Null before the first roll. */
     val lastEvent: GameEvent? = null,
@@ -202,7 +205,7 @@ data class GameState(
         /**
          * A new game of [mode] for [playerCount] players under [rules] (the mode's own by default), every pawn in its
          * yard (or where the rules start them out, on its start square), [first] to roll. The players sit at [seats], in clockwise order: spread round the board by default
-         * ([BoardGeometry.seatsFor]). Where the rules have power-ups, ghosts, or sudden death, [seed] is what their chances are
+         * ([BoardGeometry.seatsFor]). Where the rules have portals, power-ups, ghosts, or sudden death, [seed] is what their chances are
          * drawn from.
          */
         fun new(
@@ -228,7 +231,7 @@ data class GameState(
                 current = first,
                 phase = TurnPhase.AwaitingRoll,
                 seed = seed,
-            ).let { if (rules.powerUps) PowerUps.start(it) else it }.let { if (rules.ghosts) Ghosts.start(it) else it }
+            ).let { if (rules.portals) Portals.start(it) else it }.let { if (rules.powerUps) PowerUps.start(it) else it }.let { if (rules.ghosts) Ghosts.start(it) else it }
         }
     }
 }

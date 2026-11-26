@@ -162,9 +162,9 @@ class RulesTextTest : UiTest() {
             "Portals",
             "Portals",
             listOf(
-                "Portals come in pairs, told by their colour and symbol. If your move ends on one, your pawn comes out at the other, whether that's further on or further back. Passing over a portal does nothing.",
+                "Portals come in pairs, told by their colour and symbol. If your move ends on one, your pawn comes out at the other, whether that's further on or further back. Passing over a portal does nothing. Once a pawn goes through a pair, it closes and opens again somewhere else.",
                 "Your pawn only captures where it comes out. While it waits on a portal, rivals who land there go through without capturing it, but one coming out there captures it.",
-                "Long portals, with a split ring, reach into the next player's stretch of the track. One reaches past your own start square: going through it takes your pawn most of the way home, or most of the way back.",
+                "Long portals, with a split ring, are further apart than short ones, and keep their length wherever they open. One that reaches past your own start square takes your pawn most of the way home, or most of the way back.",
                 "Each mode has its own Leaderboard, its own page in Statistics, and achievements of its own.",
             ),
             diagram = "Board: a game of Portals, with every pair of portals on the track. A red pawn waits on one.",

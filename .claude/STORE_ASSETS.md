@@ -78,6 +78,10 @@ The generators are unit tests in `app/android/src/test/.../store/`, skipped with
 - They check nothing, so CI's checks never run them. Only the README-assets workflow does (below).
 - They drive the whole app (`MainActivity`) on the test's own clock (`useCappedFrameClock = false`). The game's own waits
     run on the main looper, so a wait for something the game does next steps both clocks (`stepUntil`).
+- **A records page is shot only once its figures are in.** Leaderboard and Statistics read Room off the main thread, and
+    an idle Compose doesn't wait for that: a phone shot of Statistics once came out as the header alone. Each waits for a
+    node that comes with the figures (a Leaderboard row's name, Statistics' player counts) in the unmerged tree, and one
+    on screen: a name lower in the list isn't composed.
 - A Rules tab half under its row's chevron is selected through its click action, not a tap: a tap there lands on the
     chevron.
 - `magick` is ImageMagick's own AppImage, the same build in the sandbox (`ai-sandbox-configuration/Dockerfile`) and in CI

@@ -14,7 +14,6 @@ import kotlin.math.cos
 import kotlin.math.sin
 import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.Portal
-import net.zodac.ludoplus.model.portals
 import net.zodac.ludoplus.ui.theme.BoardInk
 import net.zodac.ludoplus.ui.theme.BoardIvory
 import net.zodac.ludoplus.ui.theme.BoardSparkGold
@@ -34,11 +33,11 @@ internal fun portalSymbol(board: BoardGeometry, portal: Portal): Int =
     (portal.seat + if (portal.long && board.seats <= SYMBOLS / 2) SYMBOLS / 2 else 0) % SYMBOLS
 
 /**
- * Every portal of [layout]'s board at [unit] a square: a swirl in its pair's colour round its symbol, a long pair's with a
- * split ring.
+ * Every one of [portals] on [layout]'s board at [unit] a square: a swirl in its pair's colour round its symbol, a long pair's
+ * with a split ring.
  */
-internal fun DrawScope.drawPortals(layout: BoardLayout, unit: Float) {
-    for (portal in layout.geometry.portals) drawPair(layout, unit, portal, PORTAL_RADIUS)
+internal fun DrawScope.drawPortals(layout: BoardLayout, unit: Float, portals: List<Portal>) {
+    for (portal in portals) drawPair(layout, unit, portal, PORTAL_RADIUS)
 }
 
 /** [portal]'s two ends, bigger and ringed in gold: picked out while it's pressed. */

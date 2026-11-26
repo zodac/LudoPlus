@@ -421,7 +421,8 @@ count but 4 has a board of its own; one player on two colours was dropped.
         either die brings a pawn out with that die; doubles roll again, three in a row end the turn; a capture or a pawn
         home still earns a roll (the maintainer, 2026-11-18).
 - [x] Portals, a mode (the maintainer, 2026-11-24): short and long pairs of two-way portals, from a design that began as
-    snakes and ladders (`DESIGN.md`, "Game modes").
+    snakes and ladders (`DESIGN.md`, "Game modes"). A pair is used up as a pawn goes through it, and opens again at
+    random, as long as before (the maintainer, 2026-11-26).
 - [x] Survival, a mode (the maintainer, 2026-11-24): six pawns each starting out, no home, captured pawns out of the game,
     and stages of sudden death, later the more players there are (Overtime and Sudden Death, then the Cataclysm) (`DESIGN.md`, "Game modes").
 - [x] Chaos, a mode (the maintainer, 2026-11-24): five power-ups on the track, Double, Shield, Roll Again, Call

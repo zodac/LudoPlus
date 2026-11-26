@@ -4,6 +4,7 @@ import kotlin.random.Random
 import net.zodac.ludoplus.model.GameRules
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.PowerUp
+import net.zodac.ludoplus.model.portalAt
 import net.zodac.ludoplus.model.throughPortal
 
 /**
@@ -235,9 +236,15 @@ object LudoEngine {
         }
     }
 
+    /** [state] with the pair of portals that [owner]'s pawn went in at, at progress [via], opened again somewhere else ([Portals.reopen]). */
+    private fun reopenPortal(state: GameState, owner: Int, via: Int, chances: Boolean): GameState {
+        val used = state.portals.portalAt(state.board.trackSquare(state.players[owner].seat, via)) ?: return state
+        return Portals.reopen(state, used, chances)
+    }
+
     /** Where a pawn of [owner] ends up after a move that brings it to [progress]: through a portal, where they're open. */
     private fun throughPortals(state: GameState, owner: Int, progress: Int): Int =
-        if (state.rules.portals) state.board.throughPortal(state.players[owner].seat, progress) else progress
+        if (state.rules.portals) state.board.throughPortal(state.portals, state.players[owner].seat, progress) else progress
 
     /** Where a pawn of [owner] at progress [from] ends up with [roll], blockades aside: [destination], through any portal. */
     fun reach(state: GameState, owner: Int, from: Int, roll: Int): Int? =
@@ -306,14 +313,15 @@ object LudoEngine {
      *
      * A player with every pawn home is placed then, or in a team game with their team once every partner's are too. Where
      * the last standing wins, the game ends with one team left; where squares are claimed, the pawn may claim the one it
-     * ends on, and the game ends with the last of them, or the first team home. A power-up the pawn ends on is taken ([PowerUps.take]). Landed on a Swap
+     * ends on, and the game ends with the last of them, or the first team home. A pair of portals the pawn goes through opens again
+     * somewhere else ([Portals.reopen]). A power-up the pawn ends on is taken ([PowerUps.take]). Landed on a Swap
      * with a pawn to swap with, it waits there for the player to pick one, or none ([swap], [Move.swap]): the rest of the turn follows that pick.
      */
     fun move(state: GameState, pawn: Int, owner: Int? = null, die: Int? = null, swap: PawnRef? = null): GameState = move(state, pawn, owner, die, swap, chances = true)
 
     /**
-     * [move], with a power-up it ends on left alone, and no ghost moving after it: for weighing a move by, whose chances nobody
-     * knows. A swap is no chance: one it could be followed by ([swapsAfter]) is made where [move] has it ([Move.swap]).
+     * [move], with a power-up it ends on left alone, a portal it goes through opening nowhere again, and no ghost moving after it:
+     * for weighing a move by, whose chances nobody knows. A swap is no chance: one it could be followed by ([swapsAfter]) is made where [move] has it ([Move.swap]).
      */
     internal fun moveWithoutChances(state: GameState, move: Move): GameState = move(state, move.pawn, move.owner, move.roll, move.swap, chances = false)
 
@@ -338,6 +346,8 @@ object LudoEngine {
                 .let { placed -> placed.copy(players = placed.players.replace(player) { it.copy(squaresMoved = it.squaresMoved + if (move.free) 0 else move.walked) }) }
                 // The game's first pawn out of a yard starts every player's count of turns towards a free one.
                 .let { placed -> if (move.from == PawnPosition.YARD_PROGRESS && placed.pityFrom == null) placed.copy(pityFrom = placed.players.map { it.turns }) else placed }
+                // The pair it went through closes, and opens somewhere else.
+                .let { placed -> move.via?.let { via -> reopenPortal(placed, whose, via, chances) } ?: placed }
         }
         if (move.free) {
             // Out free as the turn starts: the player rolls next, their turn not yet begun.

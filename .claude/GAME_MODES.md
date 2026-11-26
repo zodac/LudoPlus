@@ -11,7 +11,7 @@ achievement audit (what each mode or house rule blocks or guards) is in `GAME_MO
 | `SURVIVAL` | `survival` | Six pawns, starting out (`startsOut`), on an endless board: a captured pawn is out, and the last player with one wins (`lastStanding`), with sudden death (`suddenDeath`: Overtime, Sudden Death, and the Cataclysm, `game/Cataclysm.kt`) | Its own, and all but a few |
 | `CHAOS` | `chaos` | Power-ups on the track (`powerUps = true`, `model/PowerUp.kt`) | Its own, and all but a few |
 | `HAUNTED_HOUSE` | `haunted_house` | Ghosts on the track (`ghosts = true`, `game/Ghosts.kt`) | Its own, and all but a few |
-| `PORTALS` | `portals` | Portals on the track (`portals = true`): a move ending on one comes out at its pair | Its own, and all but a few |
+| `PORTALS` | `portals` | Portals on the track (`portals = true`): a move ending on one comes out at its pair, which opens again elsewhere | Its own, and all but a few |
 | `TWO_DICE` | `two_dice` | Two dice, each moved on its own (`dice = 2`); doubles roll again, not 6s (`rollAgainOnDoubles`, `rollAgainRolls` empty) | Its own, and all but a few |
 
 **Custom modes** (`model/CustomMode.kt`) are the player's own: a built-in base and house rules, saved under a name

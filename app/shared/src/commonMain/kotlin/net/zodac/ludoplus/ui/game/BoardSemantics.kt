@@ -181,7 +181,7 @@ private fun boardSpots(state: GameState, seatColours: List<PlayerColour?>, moves
 /** What's said of the portal on track [square], where there's one: the square it leads to. */
 @Composable
 private fun portalClauses(state: GameState, square: Int): List<String> {
-    val portal = state.board.portalAt(square)?.takeIf { state.rules.portals } ?: return emptyList()
+    val portal = state.portals.portalAt(square) ?: return emptyList()
     return listOf(stringResource(Res.string.game_square_portal_spoken, portal.otherEnd(square) + 1))
 }
 

@@ -81,7 +81,7 @@ and reported to the maintainer. Counters (games, wins, streaks, captures, rolls)
 | --- | --- |
 | Colour Rush | Paint The Town Red (the win), Colour Coordinated 8% with four (26% with two, 12% with three, 8% with six, 7% with eight; measured again 2026-11-25 over 1,000 games, with stars claimed and counted, and a start square ending a run) |
 | Two Dice | Double Or Nothing, Two Birds, Two Stones 12% |
-| Portals | Through The Looking Glass, There And Back Again 45% |
+| Portals | Through The Looking Glass, There And Back Again 62% (45% before pairs moved; measured 2026-11-26 over 1,000 four-player Medium games) |
 | Survival | Last Pawn Standing, Barely A Scratch 3.3% (a sixth of wins) |
 | Chaos | Agent Of Chaos, One Of Everything 67% (46% with two, 99% with eight; left easy at the maintainer's word, 2026-11-24, as power-ups came more often; measured again 2026-11-25, with one of each kind always on the track) |
 | Haunted House | Living To Tell The Tale, Not A Ghost Of A Chance 3.7% (harder with more players: never, in eight-player simulations) |
@@ -142,7 +142,9 @@ roll and 6 counters.
 
 **Kept out:** Express Delivery (40%, against 9.3%). **Easier:** Double Delivery (11%, against 4.0%), and with every
 portal open (2026-11-24), Untouchable (5.3%, against 1.3%). Squares moved are those
-walked, not those a portal skips.
+walked, not those a portal skips. With pairs used up and opened again elsewhere (2026-11-26), There And Back Again is a
+pair (by its symbol) gone through one way and later the other, wherever it has opened since, not its same squares: 62%
+of games, from 45%; Double Delivery 12% and Untouchable 3.2% (from 10% and 4.5%, the same 1,000 games).
 
 ## Survival (a mode)
 

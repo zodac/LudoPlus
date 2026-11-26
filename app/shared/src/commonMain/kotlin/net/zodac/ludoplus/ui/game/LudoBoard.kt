@@ -50,7 +50,6 @@ import net.zodac.ludoplus.game.PawnRef
 import net.zodac.ludoplus.model.PawnPosition
 import net.zodac.ludoplus.model.Portal
 import net.zodac.ludoplus.model.portalAt
-import net.zodac.ludoplus.model.portals
 import net.zodac.ludoplus.model.PlayerColour
 import net.zodac.ludoplus.model.PowerUp
 import net.zodac.ludoplus.ui.common.BoundedArt
@@ -144,6 +143,8 @@ fun LudoBoard(
     val currentSwapping by rememberUpdatedState(swapping)
     // The squares claimed as they're shown: as they were, while a move plays out.
     val shownClaims = remember { arrayOf(state.claimed) }
+    // The portals open, as they're shown: likewise, so a pawn goes through the pair it was moved to, which opens somewhere else once it has landed.
+    val shownPortals = remember { arrayOf(state.portals) }
     // The power-ups on the track, as they're shown: likewise, but for one taken, which goes with its move.
     val shownPowerUps = remember { arrayOf(state.powerUps) }
     // What's in force for each player, as it's shown: likewise.
@@ -206,8 +207,12 @@ fun LudoBoard(
                 Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawArena(layout, size.minDimension / layout.size, stage, lost) }
                 if (vanish.squares.isNotEmpty()) BoundedArt(modifier = Modifier.fillMaxSize()) { with(vanish) { drawVanishing(layout, size.minDimension / layout.size, stage) } }
             }
-            // The portals, under the pawns: drawn once.
-            if (state.rules.portals) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPortals(layout, size.minDimension / layout.size) }
+            // The portals, under the pawns: drawn again as a pair opens somewhere else.
+            if (state.rules.portals) {
+                if (motion.moving == null) shownPortals[0] = state.portals
+                val portals = shownPortals[0]
+                Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { }) { drawPortals(layout, size.minDimension / layout.size, portals) }
+            }
             // The power-ups, under the pawns: drawn again as one comes or goes.
             if (state.rules.powerUps) {
                 // One that comes in place of one taken shows once the pawn that took it has landed.
@@ -251,7 +256,7 @@ fun LudoBoard(
                         }
                         detectTapGestures(
                             onPress = { at ->
-                                if (currentState.rules.portals) pressedPortal = tileAt(point(at), layout, specialSquares(currentState))?.let(layout.geometry::portalAt)
+                                if (currentState.rules.portals) pressedPortal = tileAt(point(at), layout, specialSquares(currentState))?.let(currentState.portals::portalAt)
                                 try {
                                     awaitRelease()
                                 } finally {
@@ -418,7 +423,7 @@ private class SentPawn(
 
 /** The squares of [state]'s board with something of the mode's own on them to tap: portals, or power-ups. */
 private fun specialSquares(state: GameState): Collection<Int> =
-    if (state.rules.portals) state.board.portals.flatMap { listOf(it.first, it.second) } else state.powerUps.keys
+    if (state.rules.portals) state.portals.flatMap { listOf(it.first, it.second) } else state.powerUps.keys
 
 /**
  * The pawn move under way on the board, if any, and its [clock] (milliseconds from its start), read only while drawing,

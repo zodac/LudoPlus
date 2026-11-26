@@ -1187,7 +1187,7 @@
     <string name="mode_two_dice">Two Dice</string>
     <string name="mode_two_dice_description">Classic mode, but each turn rolls two dice</string>
     <string name="mode_portals">Portals</string>
-    <string name="mode_portals_description">The board has portals that warp you to a new location</string>
+    <string name="mode_portals_description">Portals warp you round the board, then move elsewhere</string>
     <string name="mode_survival">Survival</string>
     <string name="mode_survival_description">Start with 6 pawns on the board, and try to survive!</string>
     <string name="mode_chaos">Chaos</string>
@@ -1239,9 +1239,9 @@
     <string name="rules_two_dice_1">Two Dice rolls two dice at once. Move a pawn by each die, one after the other, in either order: the same pawn twice, or two pawns. Tap a die to pick the one your next move uses.</string>
     <string name="rules_two_dice_2">A 6 on either die brings a pawn out of the yard, and the other die can move it on. If a die has no move, it's lost.</string>
     <string name="rules_two_dice_3">Roll a double and you roll again once both dice are moved, but three doubles in a row end your turn. A capture, or a pawn brought home, still earns another roll.</string>
-    <string name="rules_portals_1">Portals come in pairs, told by their colour and symbol. If your move ends on one, your pawn comes out at the other, whether that's further on or further back. Passing over a portal does nothing.</string>
+    <string name="rules_portals_1">Portals come in pairs, told by their colour and symbol. If your move ends on one, your pawn comes out at the other, whether that's further on or further back. Passing over a portal does nothing. Once a pawn goes through a pair, it closes and opens again somewhere else.</string>
     <string name="rules_portals_2">Your pawn only captures where it comes out. While it waits on a portal, rivals who land there go through without capturing it, but one coming out there captures it.</string>
-    <string name="rules_portals_3">Long portals, with a split ring, reach into the next player's stretch of the track. One reaches past your own start square: going through it takes your pawn most of the way home, or most of the way back.</string>
+    <string name="rules_portals_3">Long portals, with a split ring, are further apart than short ones, and keep their length wherever they open. One that reaches past your own start square takes your pawn most of the way home, or most of the way back.</string>
     <string name="rules_survival_1">In Survival there's no home to reach. Each player's six pawns start out on their start square and go round the track until one player is left.</string>
     <string name="rules_survival_2">A captured pawn is out of the game. Lose all six and you're out: the last player with a pawn left wins, and everyone else is placed by how long they lasted.</string>
     <string name="rules_survival_3">Start squares and star squares are safe at first. In Overtime the start squares stop being safe, and in Sudden Death the star squares do too. The line above the board counts the rounds, and with more players it takes longer.</string>

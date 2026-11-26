@@ -4,10 +4,14 @@ import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import net.zodac.ludoplus.model.BoardGeometry
 import net.zodac.ludoplus.model.Difficulty
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.HouseRule
 import net.zodac.ludoplus.model.PawnPosition.Companion.YARD_PROGRESS
+import net.zodac.ludoplus.model.canHavePortal
+import net.zodac.ludoplus.model.portalAt
+import net.zodac.ludoplus.model.portals
 import net.zodac.ludoplus.model.withHouseRules
 
 private const val RED = 0
@@ -16,9 +20,9 @@ private const val GREEN = 1
 private const val Y = YARD_PROGRESS
 
 /** A Portals game of four with each player's pawns at the progress given, red to roll. */
-private fun game(vararg pawns: List<Int>, houseRules: Set<HouseRule> = emptySet()): GameState {
+private fun game(vararg pawns: List<Int>, houseRules: Set<HouseRule> = emptySet(), seed: Long = 0): GameState {
     val all = List(4) { pawns.getOrElse(it) { listOf(Y, Y, Y, Y) } }
-    val new = GameState.new(GameMode.PORTALS, playerCount = 4, rules = GameMode.PORTALS.rules.withHouseRules(houseRules))
+    val new = GameState.new(GameMode.PORTALS, playerCount = 4, rules = GameMode.PORTALS.rules.withHouseRules(houseRules), seed = seed)
     return new.copy(players = new.players.mapIndexed { i, player -> player.copy(pawns = all[i]) })
 }
 
@@ -34,6 +38,56 @@ class PortalsEngineTest {
         assertEquals(listOf(Move(0, 8, 3, via = 10)), game(listOf(8, Y, Y, Y)).movesFor(2))
         assertEquals(listOf(Move(0, 2, 22, via = 6)), game(listOf(2, Y, Y, Y)).movesFor(4))
         assertEquals(listOf(Move(0, 1, 4)), game(listOf(1, Y, Y, Y)).movesFor(3))
+    }
+
+    @Test
+    fun `a game starts with the board's own portals - and Classic has none`() {
+        assertEquals(BoardGeometry.CLASSIC.portals, game().portals)
+        assertEquals(emptyList(), GameState.new(GameMode.CLASSIC, 4).portals)
+    }
+
+    @Test
+    fun `the pair a pawn goes through closes - and opens again at once somewhere else - as long - the others where they were`() {
+        for (seed in 0L..200L) {
+            val before = game(listOf(1, 30, Y, Y), listOf(5, Y, Y, Y), seed = seed)
+            val after = LudoEngine.move(LudoEngine.applyRoll(before, 2), 0)
+            val used = BoardGeometry.CLASSIC.portals[0]
+            val opened = after.portals[0]
+            assertEquals(before.portals.drop(1), after.portals.drop(1), "seed $seed")
+            assertTrue(opened.isPair(used) && opened.steps == used.steps, "seed $seed")
+            assertEquals((opened.first + opened.steps) % 52, opened.second, "seed $seed")
+            // Never on a square a portal can't be, a pawn's (red's at 10 and 30, green's at 18), another pair's, or where it was.
+            val ends = listOf(opened.first, opened.second)
+            val others = after.portals.drop(1).flatMap { listOf(it.first, it.second) }
+            assertTrue(ends.all(BoardGeometry.CLASSIC::canHavePortal), "seed $seed: $opened")
+            assertTrue(ends.none { it in listOf(10, 30, 18, 3) + others }, "seed $seed: $opened")
+            assertTrue(after.seed != before.seed, "seed $seed")
+        }
+    }
+
+    @Test
+    fun `where a pair opens again is drawn from the game's seed - the same from the same seed - and not always the same`() {
+        fun opened(seed: Long) = LudoEngine.move(LudoEngine.applyRoll(game(listOf(1, Y, Y, Y), seed = seed), 2), 0).portals[0]
+        assertEquals(opened(7), opened(7))
+        assertTrue((0L..50L).map(::opened).distinct().size > 10)
+    }
+
+    @Test
+    fun `once its pair has gone a portal's square is an ordinary one`() {
+        val out = LudoEngine.move(LudoEngine.applyRoll(game(listOf(1, Y, Y, Y)), 2), 0)
+        assertEquals(null, out.portals.portalAt(3))
+        assertEquals(null, out.portals.portalAt(10))
+        // Red's other pawn, out on its start square, lands on 3 and stays.
+        val next = out.copy(current = RED, players = out.players.mapIndexed { i, side -> if (i == RED) side.copy(pawns = listOf(10, 0, Y, Y)) else side })
+        assertTrue(Move(1, 0, 3) in next.movesFor(3))
+    }
+
+    @Test
+    fun `weighed - nobody knows where a pair will open - so it's closed`() {
+        val rolled = LudoEngine.applyRoll(game(listOf(1, Y, Y, Y)), 2)
+        val weighed = LudoEngine.moveWithoutChances(rolled, (rolled.phase as TurnPhase.AwaitingMove).moves.single())
+        assertEquals(BoardGeometry.CLASSIC.portals.drop(1), weighed.portals)
+        assertEquals(rolled.seed, weighed.seed)
     }
 
     @Test
@@ -105,6 +159,7 @@ class PortalsEngineTest {
             val random = Random(players)
             var state = GameState.new(GameMode.PORTALS, players, rules = GameMode.PORTALS.rules.forPlayers(players))
             var portals = 0
+            val pairs = state.board.portals
             while (!state.isFinished) {
                 state = when (val phase = state.phase) {
                     is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random))
@@ -112,6 +167,10 @@ class PortalsEngineTest {
                 }
                 if ((state.lastEvent as? GameEvent.Moved)?.move?.via != null) portals++
                 assertTrue(state.players.all { side -> side.pawns.all { it in Y..state.board.homeProgress } })
+                // Every pair open, once, as long as it ever was, where a portal can be, no two sharing a square.
+                val ends = state.portals.flatMap { listOf(it.first, it.second) }
+                assertTrue(pairs.all { pair -> state.portals.single(pair::isPair).steps == pair.steps } && state.portals.size == pairs.size)
+                assertTrue(ends.distinct().size == ends.size && ends.all(state.board::canHavePortal))
             }
             assertTrue(portals > 0, "No portal was gone through with $players players")
         }
