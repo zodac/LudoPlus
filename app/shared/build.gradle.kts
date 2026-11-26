@@ -99,3 +99,10 @@ tasks.register("testDebugUnitTest") {
     description = "Runs the shared module's tests as Android runs them."
     dependsOn("testAndroidHostTest")
 }
+
+// The test classes run in up to four JVMs, one per two cores (two on CI's 4-core runners). Each builds its own
+// Robolectric sandbox, which takes 5-7s, so more JVMs help less each time: on a 16-core machine 1, 2 and 4 took 89s,
+// 72s and 63s.
+tasks.withType<Test>().configureEach {
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceIn(1, 4)
+}

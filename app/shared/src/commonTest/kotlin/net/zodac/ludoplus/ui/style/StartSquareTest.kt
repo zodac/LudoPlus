@@ -56,11 +56,12 @@ class StartSquareTest : UiTest() {
         for (board in BoardStyles.all) for (colour in PlayerColour.entries) {
             style = board
             seats = List(4) { colour.color }
+            // One capture for all four sides.
+            val bordered = square(BoardParts(), sides.flatten()).chunked(side.size)
+            // The same square of the same colour, but not as a start.
+            val bare = square(BoardParts(starts = false, claims = mapOf(start to colour.color)), sides.flatten()).chunked(side.size)
             sides.forEachIndexed { i, points ->
-                val bordered = square(BoardParts(), points)
-                // The same square of the same colour, but not as a start.
-                val bare = square(BoardParts(starts = false, claims = mapOf(start to colour.color)), points)
-                val changed = points.indices.filter { difference(bordered[it], bare[it]) > 0.2f }.map { points[it] }
+                val changed = points.indices.filter { difference(bordered[i][it], bare[i][it]) > 0.2f }.map { points[it] }
                 val along = changed.map { if (i < 2) it.x else it.y }.distinct().size
                 assertTrue(along >= 5, "${board.id}, $colour, side $i: the border shows at $along of 7 places")
             }

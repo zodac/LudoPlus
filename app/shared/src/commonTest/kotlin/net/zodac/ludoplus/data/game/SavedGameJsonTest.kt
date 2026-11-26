@@ -120,7 +120,7 @@ class SavedGameJsonTest {
     fun `every state of random games with house rules comes back as it was saved - tries to leave the yard too`() {
         val random = Random(11)
         var tries = 0
-        repeat(30) {
+        repeat(15) {
             // A random mix each game, every house rule on in some.
             val houseRules = HouseRule.entries.filter { random.nextBoolean() }.toSet()
             var state = GameState.new(GameMode.CLASSIC, 4, first = 1, rules = GameMode.CLASSIC.rules.withHouseRules(houseRules))

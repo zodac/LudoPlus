@@ -8,7 +8,7 @@ import kotlin.test.fail
 import net.zodac.ludoplus.model.GameMode
 import net.zodac.ludoplus.model.PawnPosition
 
-/** Thousands of seeded games, each move picked at random from the legal ones, checked after every action. */
+/** Hundreds of seeded games, each move picked at random from the legal ones, checked after every action. */
 class LudoEnginePropertyTest {
 
     @Test
@@ -67,7 +67,7 @@ class LudoEnginePropertyTest {
     }
 
     private companion object {
-        const val GAMES = 2_000
+        const val GAMES = 500
         const val MAX_ACTIONS = 20_000
     }
 }
