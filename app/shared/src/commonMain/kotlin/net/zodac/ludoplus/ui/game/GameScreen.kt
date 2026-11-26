@@ -260,6 +260,7 @@ fun GameScreen(viewModel: GameViewModel, onBackToMenu: () -> Unit, onNewGame: ()
             onMove = { viewModel.move(it) },
             onBack = leave,
             onResults = { finishedView = FinishedView.RESULTS },
+            reviewing = finishedView == FinishedView.REVIEW,
             playMillis = viewModel::playMillis,
             settled = settled,
             actionShown = actionShown,
@@ -403,7 +404,8 @@ private fun GameFeedback(state: GameState) {
 
 /**
  * The game screen's content for [started]: rolling calls [onRoll], a tap on a movable pawn [onMove], the back arrow
- * [onBack], and the finished game's button [onResults]. The die can't be rolled until the last action has played out
+ * [onBack], and the finished game's button [onResults], shown only while [reviewing] it from the results: until then, its last
+ * move is still playing out, and the line says so. The die can't be rolled until the last action has played out
  * ([settled]). Until the last action has been shown ([actionShown]), a turn it passed on stays the player's who acted, and
  * the log doesn't tell of a roll with no move. The move log is on screen with [showLog]; without it, TalkBack still hears its newest line. Under the title is how
  * long it has been played, [playMillis] ([GameTime]): not in the tutorial, which isn't timed.
@@ -420,13 +422,16 @@ fun GameContent(
     notice: String? = null,
     tutorial: TutorialView? = null,
     showLog: Boolean = true,
+    reviewing: Boolean = false,
     playMillis: () -> Long = { started.playMillis },
 ) {
     val seatColours = List(started.state.board.seats) { seat ->
         started.state.players.indexOfFirst { it.seat == seat }.takeIf { it >= 0 }?.let { started.players[it].colour }
     }
     val phase = started.state.phase
-    val unshown = started.state.lastEvent.takeIf { !actionShown && !started.state.isFinished && it.holdsTurn(started.state.current) }
+    val finished = started.state.isFinished
+    // A finished game's last move is on its way until the results come up.
+    val unshown = started.state.lastEvent.takeIf { if (finished) !reviewing else !actionShown && it.holdsTurn(started.state.current) }
     // Whose turn the screen says it is.
     val turn = unshown?.player ?: started.state.current
     // A move is told as it's made, and a roll once it's seen.
@@ -484,7 +489,7 @@ fun GameContent(
                     board(Modifier.size(minOf(height, width - SIDE_PANEL_WIDTH)))
                     Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         players(false)
-                        TurnPanel(started, offered, seatColours, onRoll, onMove, onResults, settled = settled, unshown = unshown, onDeclineSwap = declineSwap, dieSize = LANDSCAPE_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice)
+                        TurnPanel(started, offered, seatColours, onRoll, onMove, onResults, reviewing = reviewing, settled = settled, unshown = unshown, onDeclineSwap = declineSwap, dieSize = LANDSCAPE_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice)
                         MoveLogPanel(logged, seatColours, tutorial = tutorial != null, shown = showLog, modifier = Modifier.weight(1f))
                     }
                 }
@@ -499,7 +504,7 @@ fun GameContent(
                     board = { board(Modifier) },
                     turn = {
                         TurnPanel(
-                            started, offered, seatColours, onRoll, onMove, onResults, settled = settled, unshown = unshown, onDeclineSwap = declineSwap, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
+                            started, offered, seatColours, onRoll, onMove, onResults, reviewing = reviewing, settled = settled, unshown = unshown, onDeclineSwap = declineSwap, dieSize = PORTRAIT_DIE_SIZE, tutorial = tutorial, rollStep = rollStep, dice = dice,
                         )
                     },
                     log = { MoveLogPanel(logged, seatColours, tutorial = tutorial != null, shown = showLog) },
@@ -944,7 +949,7 @@ private fun GameEvent?.holdsTurn(current: Int): Boolean = when (this) {
     is GameEvent.Moved -> player != current
 }
 
-/** The die, and the line saying what to do now, with a button not to swap while a swap is picked ([onDeclineSwap]); once the game is over, the winner and the way back to the results. While the last action is [unshown], it's still the turn of the player who acted. */
+/** The die, and the line saying what to do now, with a button not to swap while a swap is picked ([onDeclineSwap]); once the game is over and [reviewing] it, the winner and the way back to the results. While the last action is [unshown], it's still the turn of the player who acted. */
 @Composable
 private fun TurnPanel(
     game: StartedGame,
@@ -953,6 +958,7 @@ private fun TurnPanel(
     onRoll: () -> Unit,
     onMove: (Move) -> Unit,
     onResults: () -> Unit,
+    reviewing: Boolean,
     dieSize: Dp,
     settled: Boolean,
     unshown: GameEvent? = null,
@@ -963,7 +969,7 @@ private fun TurnPanel(
 ) {
     val state = game.state
     val name = { index: Int -> game.players[index].name }
-    if (state.isFinished) {
+    if (state.isFinished && reviewing) {
         Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 text = winnerLine(game),

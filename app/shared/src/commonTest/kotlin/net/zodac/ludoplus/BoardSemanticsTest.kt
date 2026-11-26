@@ -69,11 +69,11 @@ class BoardSemanticsTest : UiTest() {
     private var rolls = 0
     private var backs = 0
 
-    private fun show(state: GameState, log: List<LogEntry> = emptyList(), actionShown: Boolean = true) {
+    private fun show(state: GameState, log: List<LogEntry> = emptyList(), actionShown: Boolean = true, reviewing: Boolean = false) {
         val game = StartedGame(state.mode, players, state, first = 0, log = log)
         showcase.show {
             CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) {
-                LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it.pawn }, onBack = { backs++ }, onResults = {}, actionShown = actionShown) }
+                LudoPlusTheme { GameContent(game, onRoll = { rolls++ }, onMove = { moved += it.pawn }, onBack = { backs++ }, onResults = {}, actionShown = actionShown, reviewing = reviewing) }
             }
         }
     }
@@ -503,8 +503,14 @@ class BoardSemanticsTest : UiTest() {
     }
 
     @Test
-    fun `the winner is said once the game is over`() = uiTest(TestScreen(411, 891)) {
-        show(state().copy(phase = TurnPhase.Finished, finishingOrder = listOf(1, 0, 3, 2)))
+    fun `the winner is said once the game is over and reviewed from the results - not while its last move plays out`() = uiTest(TestScreen(411, 891)) {
+        val last = GameEvent.Moved(1, 3, Move(0, 53, 56), finished = true)
+        val over = state().copy(phase = TurnPhase.Finished, finishingOrder = listOf(1, 0, 3, 2), lastEvent = last)
+        show(over)
+        compose.onNodeWithText("Gambit wins!").assertDoesNotExist()
+        compose.onNodeWithText("Results").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Gambit is moving.").assertExists()
+        show(over, reviewing = true)
         compose.onNodeWithText("Gambit wins!").assertExists()
         compose.onNodeWithText("Results").assertExists()
     }

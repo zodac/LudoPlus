@@ -185,8 +185,10 @@ class GameOverTest : UiTest() {
         val move = (viewModel.game.value!!.state.phase as TurnPhase.AwaitingMove).moves.single()
         viewModel.move(move.pawn)
         compose.mainClock.advanceTimeByFrame()
-        // The board while the last move plays out.
+        // The board while the last move plays out, with no winner or Results on it yet.
         compose.onNodeWithText("Game Over").assertDoesNotExist()
+        compose.onNodeWithText("Gambit wins!").assertDoesNotExist()
+        compose.onNodeWithText("Results").assertDoesNotExist()
         compose.mainClock.autoAdvance = true
         compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodes(hasText("Game Over")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Review Board").performClick()
