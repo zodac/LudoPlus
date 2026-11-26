@@ -53,6 +53,11 @@ app/android/src/play/.../ads/AdMobAds   the only com.google.android.gms.ads and 
     asks for the test banner** (`AdMobAds.bannerId`): real ads must never be shown to or tapped by a developer. The release
     workflow refuses to build the Play bundle without real ids (`android-release.yml`, "Check the AdMob ids"), and
     builds none while they and `PLAY_LICENCE_KEY` are all unset.
+- **The API alone** (2026-11-26): the app depends on `play-services-ads-api`, not `play-services-ads`, which adds AdMob's
+    own copy of the ad code (~6,300 classes). Without it, the SDK loads Google Play services' copy
+    (`com.google.android.gms.ads.dynamite`), which every device the play app reaches has. Play release APK 9,923,804 →
+    6,656,596 bytes (-33%); a test banner checked on the sandbox emulator's Google APIs image. The app uses no mediation;
+    before adding any, check whether its adapters need `play-services-ads` back.
 - **Licences**: AdMob, UMP, and what they pull in are Google's ASDKL, allowed in `LicencePolicy`; `checker-qual` (MIT)
     is credited in `app/licensing/libraries/`.
 - **The slot's height** is AdMob's own sum over the screen's width (`AdSize`), which needs no started SDK; the `AdView` is

@@ -32,7 +32,6 @@ object LicencePolicy {
         "ASDKL" to listOf(
             "com.android.billingclient:billing",
             "com.android.billingclient:billing-ktx",
-            "com.google.android.gms:play-services-ads",
             "com.google.android.gms:play-services-ads-api",
             "com.google.android.gms:play-services-ads-identifier",
             "com.google.android.gms:play-services-appset",

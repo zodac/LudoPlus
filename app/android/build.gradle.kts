@@ -429,7 +429,10 @@ dependencies {
     "playImplementation"(libs.play.billing.ktx)
     // Google Mobile Ads (AdMob) and its consent form (the User Messaging Platform): the ad banner (ads/AdMobAds). The play
     // flavour's alone: the github APK has no ads and no network.
-    "playImplementation"(libs.play.services.ads)
+    // The API alone, not play-services-ads: that adds AdMob's own copy of the ad code (~6,300 classes, a third of the play
+    // app's), which play-services-ads-api instead loads from Google Play services on the device. The banner, consent and
+    // test ads need nothing more. See .claude/ADS.md, "Code".
+    "playImplementation"(libs.play.services.ads.api)
     "playImplementation"(libs.user.messaging.platform)
     // Nearby Connections: netplay between phones in the same room (netplay/NearbyConnections). The play flavour's alone.
     "playImplementation"(libs.play.services.nearby)
