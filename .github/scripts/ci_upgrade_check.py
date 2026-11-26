@@ -52,8 +52,9 @@ BANNER_DESCRIPTION = re.compile(r"(Achievement earned|Styles? unlocked): ")
 SENTENCE = re.compile(r"[.!?]$")
 # The move log (MoveLogPanel): its title, and the time that starts each line, a text of its own before the line's.
 LOG_TITLE_LABELS = ("Moves",)
-# The headings over its turns, and over who went first.
-LOG_HEADING = re.compile(r"(Turn \d+|Start)$")
+# The headings over its rounds, and over who went first. TEMPORARY: releases up to 1.2.1 head a round "Turn 3", and later ones
+# "Round 3". Once a release that says "Round" is the last one, no upgrade check starts from one that doesn't: drop "Turn".
+LOG_HEADING = re.compile(r"((Turn|Round) \d+|Start)$")
 LOG_TIME = re.compile(r"\[\d{2}:\d{2}:\d{2}\]\s*$")
 # How long the game has been played, under its title (GameTime): it counts on, and releases up to 1.1.2 don't show it.
 PLAY_TIME = re.compile(r"Time played: ")

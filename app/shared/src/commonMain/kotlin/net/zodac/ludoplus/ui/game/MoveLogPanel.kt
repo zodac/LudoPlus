@@ -73,7 +73,7 @@ import net.zodac.ludoplus.resources.game_event_three_sixes
 import net.zodac.ludoplus.resources.game_log_line
 import net.zodac.ludoplus.resources.game_log_start
 import net.zodac.ludoplus.resources.game_log_time_pattern
-import net.zodac.ludoplus.resources.game_log_turn
+import net.zodac.ludoplus.resources.game_log_round
 import net.zodac.ludoplus.ui.common.LazyListScrollbar
 import net.zodac.ludoplus.ui.common.formatTimestamp
 import net.zodac.ludoplus.ui.common.groupReduceMotion
@@ -89,7 +89,7 @@ private val LOG_HEADING_PADDING = 4.dp
 /** Over the first row of the log, and under its last. */
 private val LOG_PADDING = 4.dp
 
-/** How tall the move log's card is at its shortest: the newest turn's heading, and a line under it. */
+/** How tall the move log's card is at its shortest: the newest round's heading, and a line under it. */
 @Composable
 internal fun shortestLogHeight(): Dp = LOG_PADDING * 2 + logHeadingHeight() + logLineHeight()
 
@@ -103,35 +103,35 @@ private fun logHeadingHeight(): Dp = with(LocalDensity.current) { MaterialTheme.
 
 /** One row of the log's list. */
 private sealed interface LogRow {
-    /** The heading over [turn]'s lines, or with none, over who went first. */
-    data class Heading(val turn: Int?) : LogRow
+    /** The heading over [round]'s lines, or with none, over who went first. */
+    data class Heading(val round: Int?) : LogRow
 
     /** The line [index]th from the newest: [entry]'s, or with none, who went first. */
     data class Line(val index: Int, val entry: LogEntry?) : LogRow
 }
 
 /**
- * [log]'s rows, newest first, each turn's lines under its heading, and where the log goes back to who went [first], that under
- * one of its own. Lines whose turn isn't known have none.
+ * [log]'s rows, newest first, each round's lines under its heading, and where the log goes back to who went [first], that under
+ * one of its own. A line's round is which of its player's turns it was in ([LogEntry.turn]); lines whose turn isn't known have none.
  */
 private fun logRows(log: List<LogEntry>, first: Boolean): List<LogRow> = buildList {
     log.asReversed().forEachIndexed { index, entry ->
-        if (entry.turn != null && (index == 0 || log[log.size - index].turn != entry.turn)) add(LogRow.Heading(entry.turn))
+        if (entry.turn != null && (index == 0 || log[log.size - index].turn != entry.turn)) add(LogRow.Heading(round = entry.turn))
         add(LogRow.Line(index, entry))
     }
     if (first) {
-        add(LogRow.Heading(turn = null))
+        add(LogRow.Heading(round = null))
         add(LogRow.Line(log.size, entry = null))
     }
 }
 
 /**
  * The game's move log, under the die and the prompt: every move ([StartedGame.log]), newest first, back to who went
- * first (outside the tutorial), in a card that scrolls, brought back to its top as each move comes. Each turn's moves, one
- * or more for every player, are under a heading ("Turn 3").
- * Each line starts with when it happened, "[14:05:09]", and names its players in their colours. TalkBack hears each turn's
+ * first (outside the tutorial), in a card that scrolls, brought back to its top as each move comes. Each round's moves, one
+ * or more for every player, are under a heading ("Round 3").
+ * Each line starts with when it happened, "[14:05:09]", and names its players in their colours. TalkBack hears each round's
  * heading as one, the lines as a list ("1 of 12") without their times, and the newest line as it comes (a polite live
- * region). Where there isn't room for a line under the newest turn's heading (a short screen, a large font), that heading
+ * region). Where there isn't room for a line under the newest round's heading (a short screen, a large font), that heading
  * isn't shown; where there isn't room for a line, or the log isn't [shown] (Settings' "Move log"), it isn't drawn, and
  * TalkBack still hears the newest.
  */
@@ -165,14 +165,14 @@ internal fun MoveLogPanel(game: StartedGame, seatColours: List<PlayerColour?>, t
                         rows,
                         key = { position, row ->
                             when (row) {
-                                is LogRow.Heading -> if (position == 0) "newest turn" else "turn ${row.turn}"
+                                is LogRow.Heading -> if (position == 0) "newest round" else "round ${row.round}"
                                 is LogRow.Line -> if (row.index == 0) "newest" else game.log.size - 1 - row.index
                             }
                         },
                         contentType = { _, row -> row is LogRow.Heading },
                     ) { _, row ->
                         when (row) {
-                            is LogRow.Heading -> LogHeading(row.turn)
+                            is LogRow.Heading -> LogHeading(row.round)
                             is LogRow.Line -> LogLine(
                                 game,
                                 seatColours,
@@ -191,11 +191,11 @@ internal fun MoveLogPanel(game: StartedGame, seatColours: List<PlayerColour?>, t
     }
 }
 
-/** The heading over [turn]'s lines ("Turn 3"), or with none, over who went first ("Start"). TalkBack hears it as a heading. */
+/** The heading over [round]'s lines ("Round 3"), or with none, over who went first ("Start"). TalkBack hears it as a heading. */
 @Composable
-private fun LogHeading(turn: Int?) {
+private fun LogHeading(round: Int?) {
     Text(
-        text = if (turn == null) stringResource(Res.string.game_log_start) else stringResource(Res.string.game_log_turn, turn),
+        text = if (round == null) stringResource(Res.string.game_log_start) else stringResource(Res.string.game_log_round, round),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(vertical = LOG_HEADING_PADDING).semantics { heading() },

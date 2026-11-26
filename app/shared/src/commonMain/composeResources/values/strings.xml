@@ -387,8 +387,8 @@
     <string name="game_event_swap">%1$s swapped %2$s with %3$s.</string>
     <!-- Haunted House: as the turn ended, a ghost landed on %1$s, a pawn or a list of them, so they went back to their yards. -->
     <string name="game_event_haunted">A ghost caught %1$s!</string>
-    <!-- A heading in the move log, over the moves of one round of turns: %1$d counts the rounds from 1. -->
-    <string name="game_log_turn">Turn %1$d</string>
+    <!-- A heading in the move log, over the moves of one round (a turn for every player still in): %1$d counts the rounds from 1. -->
+    <string name="game_log_round">Round %1$d</string>
     <!-- The move log's last heading, over who went first. -->
     <string name="game_log_start">Start</string>
     <!-- A line of the move log: %1$s is when it happened (in game_log_time_pattern), %2$s what happened. -->

@@ -87,13 +87,13 @@ class UpgradeCheckTest(unittest.TestCase):
         self.assertEqual([], check.differences(check.snapshot(timed[0]), check.snapshot(timed[1])))
 
     def test_the_move_logs_headings_are_not_names(self):
-        logged = board(*LEFT, ("Turn 12", "", "false"), ("Start", "", "false"))
+        logged = board(*LEFT, ("Round 12", "", "false"), ("Turn 12", "", "false"), ("Start", "", "false"))
         self.assertEqual(["Joker", "Player 1"], check.snapshot(logged)["names"])
 
     def test_the_move_logs_headings_are_not_lines(self):
         screen = log_screen(*LOG)
         log = check.find_log(screen)
-        for position, heading in ((2, "Start"), (1, "Turn 1"), (0, "Turn 2")):
+        for position, heading in ((2, "Start"), (1, "Round 1"), (0, "Turn 2")):
             log.insert(position, check.parse_screen(f'<hierarchy><node text="{heading}" /></hierarchy>')[0])
         self.assertEqual(LOG, check.log_lines(log))
 

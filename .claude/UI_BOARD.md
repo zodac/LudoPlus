@@ -154,7 +154,7 @@ whose turn it is has an outline in their colour.
 ## The move log
 
 `MoveLogPanel`: every move, newest first, back to who went first, in a card that scrolls back to its top as each comes.
-Each round is under a heading ("Turn 3", `LogEntry.turn`: which of its player's turns each move was in), and who went first
+Each round is under a heading ("Round 3", `LogEntry.turn`: which of its player's turns each move was in), and who went first
 under "Start". A roll again's moves are lines of the same turn. The card has no title (the maintainer, 2026-11-25: it only
 took room). Where there isn't room for a line under the heading, it has no heading; where there isn't room for a line, or
 with Settings' **Move log** off (`show_move_log`, on by default), nothing is drawn, and TalkBack still hears the newest; with
