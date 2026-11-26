@@ -13,8 +13,16 @@ import kotlin.uuid.Uuid
 @Entity(
     tableName = "results",
     indices = [
-        // The Leaderboard: each mode's wins, fastest first.
-        Index(name = "index_results_leaderboard", value = ["gameModeId", "playedUnmodified", "won", "turns", "captures", "endedAtEpochMillis"]),
+        // The Leaderboard: each mode's wins for each player count, in GameResultDao.leaderboard's order (fewest turns, then
+        // most captures, then the earliest), so a page is read from the index with no sort. The squares' Leaderboards and
+        // the counts find their rows by it too.
+        Index(
+            name = "index_results_leaderboard",
+            value = ["gameModeId", "playedUnmodified", "won", "playerCount", "turns", "captures", "endedAtEpochMillis"],
+            orders = [
+                Index.Order.ASC, Index.Order.ASC, Index.Order.ASC, Index.Order.ASC, Index.Order.ASC, Index.Order.DESC, Index.Order.ASC,
+            ],
+        ),
         // Statistics: each player's games, in the order they were played.
         Index(name = "index_results_player", value = ["playerKey", "endedAtEpochMillis"]),
         // A merge's rows: one row a uuid, on every device.

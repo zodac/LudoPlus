@@ -18,7 +18,7 @@ import kotlinx.coroutines.IO
  * Every schema change after the first release needs a version bump and a migration in [MIGRATIONS]; the exported
  * schemas in app/shared/schemas/ are what a migration test compares against.
  */
-@Database(entities = [GameResult::class], version = 5, exportSchema = true)
+@Database(entities = [GameResult::class], version = 6, exportSchema = true)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -63,6 +63,16 @@ val MIGRATIONS: Array<Migration> = arrayOf(
     object : Migration(4, 5) {
         override fun migrate(connection: SQLiteConnection) {
             connection.execSQL("ALTER TABLE `results` ADD COLUMN `squaresMoved` INTEGER")
+        }
+    },
+    // Each player count's Leaderboard read from the index: the player count in it, and captures most first.
+    object : Migration(5, 6) {
+        override fun migrate(connection: SQLiteConnection) {
+            connection.execSQL("DROP INDEX IF EXISTS `index_results_leaderboard`")
+            connection.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_results_leaderboard` ON `results` " +
+                    "(`gameModeId` ASC, `playedUnmodified` ASC, `won` ASC, `playerCount` ASC, `turns` ASC, `captures` DESC, `endedAtEpochMillis` ASC)",
+            )
         }
     },
 )

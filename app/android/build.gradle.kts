@@ -259,6 +259,10 @@ tasks.withType<Test>().configureEach {
     systemProperty("ludo.exportPlayConsole", providers.gradleProperty("exportPlayConsole").isPresent)
     systemProperty("ludo.playConsoleDir", rootProject.file("assets/play-console").absolutePath)
     if (providers.gradleProperty("exportPlayConsole").isPresent) outputs.upToDateWhen { false }
+    // Room's exported schemas, which AppDatabaseMigrationTest builds each earlier version's database from.
+    val roomSchemas = rootProject.layout.projectDirectory.dir("app/shared/schemas")
+    inputs.dir(roomSchemas).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("roomSchemas")
+    systemProperty("ludo.roomSchemas", roomSchemas.asFile.absolutePath)
     // The test classes run in two JVMs. More gain nothing: each builds its own Robolectric sandbox, and on a 16-core
     // machine 1, 2 and 3 took 29s, 27s and 28s, 4 took 30s and 8 took 38s. The generators and the export keep to one.
     val generating = providers.gradleProperty("generateStoreAssets").isPresent || providers.gradleProperty("exportPlayConsole").isPresent
