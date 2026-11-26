@@ -1,4 +1,0 @@
-- Survival's leaderboard now ranks wins by the furthest travelled
-- Shorter thresholds for some milestone achievements
-- `One By One` updates to require pawns on the home column, not all the way home
-- New icons for 35 achievements
