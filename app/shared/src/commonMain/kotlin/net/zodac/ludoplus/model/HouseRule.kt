@@ -17,6 +17,8 @@ import net.zodac.ludoplus.resources.house_rule_no_capture_roll
 import net.zodac.ludoplus.resources.house_rule_no_capture_roll_description
 import net.zodac.ludoplus.resources.house_rule_no_home_roll
 import net.zodac.ludoplus.resources.house_rule_no_home_roll_description
+import net.zodac.ludoplus.resources.house_rule_no_pity_release
+import net.zodac.ludoplus.resources.house_rule_no_pity_release_description
 import net.zodac.ludoplus.resources.house_rule_three_tries
 import net.zodac.ludoplus.resources.house_rule_three_tries_description
 import org.jetbrains.compose.resources.StringResource
@@ -62,10 +64,13 @@ enum class HouseRule(
 
     /** A start square is safe only for its own seat's pawns ([GameRules.guardedStarts]). */
     GUARDED_STARTS("guarded_starts", Res.string.house_rule_guarded_starts, Res.string.house_rule_guarded_starts_description, { it.copy(guardedStarts = true) }),
+
+    /** No pawn comes out of the yard free, however long a player waits ([GameRules.pityRelease]). */
+    NO_PITY_RELEASE("no_pity_release", Res.string.house_rule_no_pity_release, Res.string.house_rule_no_pity_release_description, { it.copy(pityRelease = null) }),
     ;
 
     /** Whether it changes anything in a game of [rules]: with nothing to bring out of a yard or home, some change nothing. */
-    fun appliesTo(rules: GameRules): Boolean = !rules.lastStanding || this !in setOf(NO_HOME_ROLL, EXIT_ON_ONE, FREE_START, THREE_TRIES)
+    fun appliesTo(rules: GameRules): Boolean = !rules.lastStanding || this !in setOf(NO_HOME_ROLL, EXIT_ON_ONE, FREE_START, THREE_TRIES, NO_PITY_RELEASE)
 
     /** [rules] with this house rule on. */
     fun applyTo(rules: GameRules): GameRules = change(rules).copy(houseRules = rules.houseRules + this)

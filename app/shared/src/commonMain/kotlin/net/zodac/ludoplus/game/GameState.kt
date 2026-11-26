@@ -47,6 +47,11 @@ data class GameState(
     val suddenDeathTurns: Int = 0,
     /** Where the rules claim squares ([GameRules.claims]), the player each claimed one is, by its absolute track square. */
     val claimed: Map<Int, Int> = emptyMap(),
+    /**
+     * Each player's [PlayerState.turns] as the game's first pawn came out of a yard, by index: what their turns towards a pawn
+     * out free count from ([GameRules.pityRelease]). Null before then.
+     */
+    val pityFrom: List<Int>? = null,
     /** What the power-ups', ghosts', and lost squares' chances are drawn from next, so that a game plays on the same wherever it's kept. */
     val seed: Long = 0,
     /** What the last action did, for the screen to show and say. Null before the first roll. */
@@ -264,6 +269,12 @@ data class PlayerState(
      */
     val squaresMoved: Int = 0,
 ) {
+    /**
+     * Whether a pawn of theirs has ever been out of their yard: one is out of it now, or has been sent back to it. Such a
+     * player gets no pawn out free ([GameRules.pityRelease]).
+     */
+    val haveLeftYard: Boolean get() = timesCaptured > 0 || timesHaunted > 0 || pawns.any { it != PawnPosition.YARD_PROGRESS }
+
     /** How many of their pawns are home on [board]. */
     fun pawnsHome(board: BoardGeometry): Int = pawns.count { it == board.homeProgress }
 
@@ -285,6 +296,7 @@ sealed interface TurnPhase {
      * [earned] is whether the roll has earned another already: a roll-again roll, or a capture or a pawn home with a die
      * already moved. [rolled] is the whole roll, every die, for the screen to show. While [swapping], a pawn has landed on a Swap,
      * and each of [moves] is it swapping with a pawn, or keeping its place ([Move.swap]): its die is still one of [dice].
+     * While [free], the turn hasn't started: [moves] are a pawn coming out free ([Move.free]), with no roll (0) and no dice.
      */
     data class AwaitingMove(
         val roll: Int,
@@ -293,7 +305,10 @@ sealed interface TurnPhase {
         val earned: Boolean = false,
         val rolled: List<Int> = dice,
         val swapping: Boolean = false,
-    ) : TurnPhase
+    ) : TurnPhase {
+        /** Whether it's a pawn coming out free, before the player rolls ([LudoEngine.pityMoves]). */
+        val free: Boolean get() = moves.all { it.free }
+    }
 
     /** Every placing is decided. */
     data object Finished : TurnPhase
@@ -325,6 +340,8 @@ data class Move(
     val skipped: List<Int> = emptyList(),
     /** The pawns whose shields it breaks, bouncing off each. */
     val brokenShields: List<PawnRef> = emptyList(),
+    /** Whether it's a pawn coming out of the yard free as its player's turn starts, no roll moving it ([GameRules.pityRelease]). */
+    val free: Boolean = false,
 ) {
     /** The progress the roll brings the pawn to, before any portal or shield. */
     val rolledTo: Int get() = bouncedFrom ?: via ?: to

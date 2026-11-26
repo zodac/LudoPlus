@@ -191,6 +191,12 @@ data class GameRules(
      */
     val yardTries: Int = 1,
     /**
+     * Once the game's first pawn has come out of a yard, how many turns each other player starts before, if they have never
+     * had a pawn out of theirs, one comes out free onto its start square as their next turn starts, before they roll
+     * ([net.zodac.ludoplus.game.LudoEngine.pityMoves]). Null for never.
+     */
+    val pityRelease: Int? = PITY_RELEASE_ROLLS,
+    /**
      * Whether two or more pawns of one player on a track square make a blockade: no other player's pawn may pass it, or
      * land on it (so none is captured). Its own player's pawns pass and join it.
      */
@@ -272,12 +278,16 @@ data class GameRules(
         require((yardExitRolls + rollAgainRolls).all { it in 1..dieFaces }) { "Every special roll must be on the die" }
         require(rollAgainLimit == null || rollAgainLimit > 0) { "A run of rolls again ends after one roll or more" }
         require(yardTries > 0) { "A player has a roll or more to leave the yard" }
+        require(pityRelease == null || pityRelease > 0) { "A pawn comes out free after a turn or more" }
         require(lastStanding == board.endless && (!lastStanding || startsOut)) { "Only an endless board has a last player standing, and no yard to leave" }
         require(!claims || !lastStanding) { "A game is won by squares or by lasting, not both" }
         require(teams == null || teams.all { it >= 0 } && teams.toSet().size >= 2) { "A team game needs two teams or more" }
     }
 
     companion object {
+        /** How many turns after the game's first pawn out a player with none out yet gets one out free ([pityRelease]). */
+        const val PITY_RELEASE_ROLLS = 5
+
         /** How many pawns each a game may be played with, by a house rule ([withPawns]). */
         val PAWN_CHOICES = 1..6
 

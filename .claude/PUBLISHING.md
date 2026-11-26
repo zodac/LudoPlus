@@ -116,7 +116,7 @@ until the player signs in.
     lists true, and in step with `README.md`'s "What's in it":
     - the player counts and team set-ups under "The classic rules";
     - the built-in modes under "Seven ways to play" (and that heading's count);
-    - the house rules under "House rules", all ten;
+    - the house rules under "House rules", all eleven;
     - "Play together nearby" (the play app's Nearby games, `NETPLAY.md`);
     - "Over 100 achievements" (110 today: 100 count towards completion, plus 10 Easter Eggs);
     - the style counts (17 boards, 18 sets of pawns, 35 dice, and 20 backgrounds), as `README.md` gives them;

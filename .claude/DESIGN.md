@@ -82,6 +82,13 @@ game's `GameRules`.
     for, with the legal moves, and `lastEvent` is what just happened, for the screen to show and say.
 - **One choice makes itself**: a person's only move is made for them once the screen has caught up
     (`LudoEngine.automaticMove`), never in the tutorial.
+- **A free pawn** (`IMPLEMENTATION.md`, "Turns") is a move of its own (`Move.free`), awaited as the player's turn
+    starts (`TurnPhase.AwaitingMove.free`: no roll, no dice; the die keeps showing the last), so it animates, is logged
+    (in the turn it starts), and goes over Nearby as any move does; it always makes itself, and the player then rolls.
+    The prompt says "Sam still has no pawn out after 5 turns, so one comes out free.", and the log "Sam brought Pawn 1
+    out free, with none out after 5 turns." Saved as `"free": true` with no roll, and `pityFrom`; a game saved before it
+    counts from the next pawn out. Whether a player has had a pawn out is worked out (`PlayerState.haveLeftYard`), not
+    stored. In Survival there's no yard, so No Free Pawn is locked there.
 - **The computer** rolls and moves with a pause before each (`GamePacing`), waiting out the die and the pawns. The pauses
     stop while the game is in the background or under a dialog.
 - **The end.** The last player home (or left) ends the game, or the first with "Stop at first winner" on. Every placing,
@@ -152,7 +159,7 @@ maintainer, 2026-11-24): **Overtime**, the start squares unsafe after 30 + 5 rou
 too after half as many again; and the **Cataclysm**,
 ten turns after that, however many play (`suddenDeathTurns`; below). So safety is asked of the state (`GameState.isSafe`,
 `isSafeFor`), never the board alone. A 6 needn't move a pawn off the start stack (the maintainer's choice): a stack left
-there as sudden death comes can be captured whole. No Home Roll, Out on a 1, Free Start, and Three Tries change nothing
+there as sudden death comes can be captured whole. No Home Roll, Out on a 1, Free Start, Three Tries, and No Free Pawn change nothing
 here, so are locked, saying so (`HouseRule.appliesTo`), and not played. The board is drawn with no home, and as sudden death comes without its
 start colours, then its stars (`BoardParts`), under `SurvivalArt.kt`'s arena: crossed swords, then flames, then a skull,
 with a red cross on the squares no longer safe. Yards tally the fallen; cards' dots are the pawns left. The Leaderboard ranks
@@ -259,6 +266,7 @@ the records.
 | Blockades | `blockades` | `blockades` | Two of one player's pawns on a track square can't be passed or landed on by another's |
 | Must Capture | `must_capture` | `mustCapture` | A roll with a capture allows only captures |
 | Guarded Starts | `guarded_starts` | `guardedStarts` | A start square is safe only for its own seat's pawns |
+| No Free Pawn | `no_pity_release` | `pityRelease` | No pawn comes out free for a player with none out 5 turns after the first came out |
 | Pawns | setting `pawns` | `pawnsPerPlayer` | One to six pawns each, instead of the mode's own number |
 
 - **Pawns** (the maintainer, 2026-11-24, as Quick went). A number, not a `HouseRule`: `GameRules.withPawns`, which marks the

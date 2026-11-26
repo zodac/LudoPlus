@@ -102,7 +102,7 @@ class GameAchievementsTest {
         val counters = store.mutableState.value.counters
         assertEquals(1, counters[AchievementCounter.GAMES_PLAYED])
         assertEquals(rolls, counters[AchievementCounter.DIE_ROLLS])
-        assertEquals(4, counters[AchievementCounter.PAWNS_HOME])
+        assertEquals(me.pawnsHome(state().board), counters[AchievementCounter.PAWNS_HOME])
         assertEquals(me.captures, counters[AchievementCounter.CAPTURES] ?: 0)
         assertEquals(if (state().winner == 0) 1 else 0, counters[AchievementCounter.GAMES_WON] ?: 0)
         assertEquals(state().winner == 0, Achievement.FIRST_VICTORY in store.unlocked)

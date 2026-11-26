@@ -30,6 +30,7 @@ import net.zodac.ludoplus.resources.game_move_capture_clause
 import net.zodac.ludoplus.resources.game_move_claim_clause
 import net.zodac.ludoplus.resources.game_move_home_clause
 import net.zodac.ludoplus.resources.game_move_out_action
+import net.zodac.ludoplus.resources.game_move_out_free_action
 import net.zodac.ludoplus.resources.game_move_portal_clause
 import net.zodac.ludoplus.resources.game_move_power_up_clause
 import net.zodac.ludoplus.resources.game_pawn_shielded_spoken
@@ -218,7 +219,9 @@ fun moveLabel(state: GameState, move: Move, colourOf: (Int) -> PlayerColour): St
     val colour = stringResource(colourOf(move.ownerIn(state)).label)
     val number = move.pawn + 1
     val roll = move.squares
-    val main = if (move.from == PawnPosition.YARD_PROGRESS) {
+    val main = if (move.free) {
+        stringResource(Res.string.game_move_out_free_action, colour, number)
+    } else if (move.from == PawnPosition.YARD_PROGRESS) {
         stringResource(Res.string.game_move_out_action, colour, number)
     } else {
         pluralStringResource(Res.plurals.game_move_action, roll, colour, number, roll)

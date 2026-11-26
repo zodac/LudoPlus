@@ -59,7 +59,7 @@ class RulesTextTest : UiTest() {
             "Your Turn",
             listOf(
                 "Roll the die, then move one of your pawns that many squares.",
-                "You must roll a 6 to bring a pawn out of the yard onto the board.",
+                "You must roll a 6 to bring a pawn out of the yard onto the board. If another player brings out the first pawn and you still have none out after 5 of your turns, one comes out free.",
                 "Every time you roll a 6, you may roll again (so does capturing a pawn, or bringing one home). However, roll three 6s in a row and your turn ends!",
                 "If you have no valid moves, your turn passes.",
             ),
@@ -118,6 +118,7 @@ class RulesTextTest : UiTest() {
                 "Out on a 1: A 1 brings a pawn out of the yard, as well as a 6.",
                 "Free Start: While none of your pawns is on the board, any roll brings one out of the yard.",
                 "Three Tries: While none of your pawns is on the board, roll up to three times to bring one out.",
+                "No Free Pawn: A player with no pawn out 5 turns after the first one came out doesn't get one out free.",
             ),
             diagram = null,
         ),

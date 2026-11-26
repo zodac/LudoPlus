@@ -424,6 +424,28 @@ class BoardSemanticsTest : UiTest() {
     }
 
     @Test
+    fun `a pawn out free - the prompt says why - it offers no pick - and the log says it came out free`() = uiTest(TestScreen(411, 891)) {
+        // Gambit (green) has started 5 turns since Alex's pawn, the first, came out, and has none out.
+        val start = state(listOf(10, Y, Y, Y))
+        val due = start.copy(current = 1, pityFrom = listOf(0, 0, 0, 0), players = start.players.mapIndexed { i, p -> if (i == 1) p.copy(turns = 5) else p })
+        val waiting = due.copy(phase = TurnPhase.AwaitingMove(roll = 0, moves = LudoEngine.pityMoves(due), dice = emptyList(), rolled = emptyList()))
+        show(waiting)
+        val prompt = compose.onNodeWithContentDescription("Gambit still has no pawn out after 5 turns, so one comes out free.")
+        assertEquals(null, prompt.fetchSemanticsNode().config.getOrNull(SemanticsActions.CustomActions))
+
+        val free = Move(0, Y, 0, free = true)
+        show(
+            waiting,
+            log = listOf(
+                LogEntry(GameEvent.Moved(1, 0, free, finished = false)),
+                LogEntry(GameEvent.Moved(1, 0, free.copy(pawn = 1, captures = listOf(PawnRef(0, 0))), finished = false)),
+            ),
+        )
+        compose.onNodeWithContentDescription("Gambit brought Pawn 1 out free, with none out after 5 turns.").assertExists()
+        compose.onNodeWithContentDescription("Gambit brought Pawn 2 out free, with none out after 5 turns. Gambit captured Alex's Pawn 1 with Pawn 2.").assertExists()
+    }
+
+    @Test
     fun `a movable pawn's square is a button naming the move - and the prompt offers every move too`() = uiTest(TestScreen(411, 891)) {
         // Red rolls a 6: pawn 1 can leave the yard; pawn 3 on its 21st step can capture Gambit's pawn on its 14th, both
         // landing on track square 27 (the 28th from red's start).

@@ -21,7 +21,9 @@ object MoveLog {
         val event = after.lastEvent ?: return emptyList()
         if (event is GameEvent.Rolled || event == before?.lastEvent || (event is GameEvent.Moved && event.keptPlace)) return log
         val place = (event as? GameEvent.Moved)?.takeIf { it.finished }?.let { after.placeOf(it.move.owner ?: it.player) }
-        return log + LogEntry(event, at, place, after.ghostMove?.caught.orEmpty(), after.justLost.size, after.players[event.player].turns)
+        // A pawn out free comes as its player's turn starts, before the roll that counts it.
+        val turn = after.players[event.player].turns + if (event is GameEvent.Moved && event.move.free) 1 else 0
+        return log + LogEntry(event, at, place, after.ghostMove?.caught.orEmpty(), after.justLost.size, turn)
     }
 
     /**
@@ -32,7 +34,7 @@ object MoveLog {
         if (log.all { it.turn != null }) return log
         val turns = state.players.map { it.turns }.toIntArray()
         // A turn begun by a roll that is still waiting for its move has no entry yet.
-        if (state.phase is TurnPhase.AwaitingMove && log.last().event.player != state.current) turns[state.current]--
+        if (state.phase is TurnPhase.AwaitingMove && !state.phase.free && log.last().event.player != state.current) turns[state.current]--
         return log.indices.reversed().map { index ->
             val entry = log[index]
             val player = entry.event.player

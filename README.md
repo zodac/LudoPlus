@@ -16,7 +16,7 @@ and be the first to get all four home. Land on a rival to send them back to the 
 - **The classic rules** for 2 to 8 players, on a board made for each size, alone or in teams (with 4, 6, or 8
     players), against friends passing the phone around or computer opponents at three levels: Easy, Medium, and Hard
 - **Seven game modes**: Classic, Colour Rush, Survival, Chaos, Haunted House, Portals, and Two Dice (see
-    [below](#game-modes)), and **ten house rules** to mix in
+    [below](#game-modes)), and **eleven house rules** to mix in
 - **Play together on phones in the same room** (the Google Play version): one game across several phones, linked
     directly with no server, and a player whose phone drops out can rejoin
 - **A guided tutorial** that teaches the game in four short parts, and the rules with a diagram for each idea and a
@@ -34,7 +34,8 @@ Every mode has its own Leaderboard, its own page in Statistics, and achievements
 
 - **Classic**: roll a 6 to bring a pawn out of the yard, race all four a lap of the board and up your home column, and
     land on a rival to send them back. A 6, a capture, and a pawn reaching home each earn another roll; three 6s in a
-    row end your turn. Star squares and start squares are safe.
+    row end your turn. Star squares and start squares are safe. So nobody is left behind, a player with no pawn out 5
+    turns after the first one came out gets one out free, in every mode.
 - **Colour Rush**: the first pawn to land on a square claims it for its colour, and a capture there takes it over.
     Claimed stars are yours for good. The game ends once every square is claimed or someone gets all their pawns home,
     and the most squares wins.
@@ -68,6 +69,7 @@ go on the Leaderboard or in Statistics, and earns only the house rules' own achi
 - **Blockades**: two of your pawns on one square make a blockade that no other player's pawn can pass or land on
 - **Must Capture**: if a move can capture, you have to make a capture
 - **Guarded Starts**: a start square is safe only for its own colour
+- **No Free Pawn**: a player with no pawn out 5 turns after the first one came out doesn't get one free
 
 ## At the table
 

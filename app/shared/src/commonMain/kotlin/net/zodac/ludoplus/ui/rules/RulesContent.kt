@@ -152,7 +152,7 @@ private val HOUSE_RULES = RulesGroup(
         RulesPage(
             Res.string.rules_house_yard_title,
             Res.string.rules_house_yard_tab,
-            listOf(HouseRule.EXIT_ON_ONE, HouseRule.FREE_START, HouseRule.THREE_TRIES).map(::RulesHouseRule),
+            listOf(HouseRule.EXIT_ON_ONE, HouseRule.FREE_START, HouseRule.THREE_TRIES, HouseRule.NO_PITY_RELEASE).map(::RulesHouseRule),
         ),
         RulesPage(
             Res.string.rules_house_captures_title,

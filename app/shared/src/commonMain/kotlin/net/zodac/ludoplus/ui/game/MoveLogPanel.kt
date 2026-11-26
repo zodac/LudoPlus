@@ -59,6 +59,7 @@ import net.zodac.ludoplus.resources.game_event_no_move_dice
 import net.zodac.ludoplus.resources.game_event_no_move_dice_tries
 import net.zodac.ludoplus.resources.game_event_no_move_tries
 import net.zodac.ludoplus.resources.game_event_out
+import net.zodac.ludoplus.resources.game_event_out_free
 import net.zodac.ludoplus.resources.game_event_pawn
 import net.zodac.ludoplus.resources.game_event_pawn_of
 import net.zodac.ludoplus.resources.game_event_portal
@@ -316,6 +317,11 @@ private fun movedLine(game: StartedGame, entry: LogEntry, event: GameEvent.Moved
     return when {
         event.finished -> finishedLine(game, move.owner ?: event.player, entry.place)
         event.knockedOut.isNotEmpty() -> stringResource(Res.string.game_event_knocked_out, name(event.player), spokenList(event.knockedOut.map(name)), pawn)
+        move.free -> {
+            val rolls = game.state.rules.pityRelease ?: 0
+            val out = pluralStringResource(Res.plurals.game_event_out_free, rolls, name(event.player), pawn, rolls)
+            if (move.captures.isEmpty()) out else stringResource(Res.string.game_event_and, out, captureLine(game, event.player, move.captures, by = mover))
+        }
         move.captures.isNotEmpty() -> captureLine(game, event.player, move.captures, by = mover)
         move.to == game.state.board.homeProgress -> stringResource(Res.string.game_event_home, name(event.player), pawn)
         move.from == PawnPosition.YARD_PROGRESS -> stringResource(Res.string.game_event_out, name(event.player), pawn)

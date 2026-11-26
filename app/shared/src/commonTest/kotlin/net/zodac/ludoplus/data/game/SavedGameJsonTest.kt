@@ -281,6 +281,25 @@ class SavedGameJsonTest {
     }
 
     @Test
+    fun `a pawn waiting to come out free comes back so - with no roll - and the turns its count started from`() {
+        val new = GameState.new(GameMode.CLASSIC, 4)
+        val pawns = listOf(listOf(10, -1, -1, -1))
+        val due = new.copy(
+            current = 1,
+            pityFrom = listOf(1, 0, 0, 0),
+            players = new.players.mapIndexed { i, it -> it.copy(pawns = pawns.getOrNull(i) ?: it.pawns, turns = if (i == 0) 6 else 5) },
+        )
+        assertEquals(game(due), SavedGameJson.decode(SavedGameJson.encode(game(due))))
+        val waiting = due.copy(phase = TurnPhase.AwaitingMove(roll = 0, moves = LudoEngine.pityMoves(due), dice = emptyList(), rolled = emptyList()))
+        assertTrue(waiting.phase.let { it is TurnPhase.AwaitingMove && it.free && it.moves.size == 4 })
+        val json = SavedGameJson.encode(game(waiting))
+        assertTrue("\"free\":true" in json && "\"pityFrom\":[1,0,0,0]" in json)
+        assertEquals(game(waiting), SavedGameJson.decode(json))
+        // Not yet due: green has started only 4 turns since.
+        assertFailsWith<IllegalArgumentException> { SavedGameJson.decode(json.replace("\"pityFrom\":[1,0,0,0]", "\"pityFrom\":[1,1,0,0]")) }
+    }
+
+    @Test
     fun `every state of random Haunted House games comes back as it was saved - ghosts and the moves they make - and plays on the same`() {
         val random = Random(31)
         var caught = 0

@@ -183,7 +183,9 @@ object SavedGameJson {
         // The roll waiting for a move, or null while waiting for a roll; a finished game is never saved. With two dice, the
         // dice still to move, and whether the roll has earned another once they are.
         val waiting = state.phase as? TurnPhase.AwaitingMove
-        put("roll", waiting?.roll)
+        // A pawn waiting to come out free, as the turn starts, has no roll.
+        put("roll", waiting?.takeUnless { it.free }?.roll)
+        if (waiting?.free == true) put("free", true)
         if (waiting != null && state.rules.dice > 1) {
             put("dice", jsonInts(waiting.dice))
             put("rolled", jsonInts(waiting.rolled))
@@ -224,6 +226,8 @@ object SavedGameJson {
                 })
             }
         }
+        // Each player's turns as the first pawn came out, which their turns towards a pawn out free count from.
+        state.pityFrom?.let { put("pityFrom", jsonInts(it)) }
         if (state.rules.hasChances) put("seed", state.seed.toString())
         state.lastEvent?.let { put("lastEvent", encodeEvent(it)) }
     }
@@ -311,6 +315,9 @@ object SavedGameJson {
                 require(it.ghost in ghosts.indices && it.steps != 0) { "A ghost's move doesn't fit" }
             }
         }
+        // Absent before the first pawn came out, and in a game saved before it was kept: counted from the next to come out.
+        val pityFrom = if ("pityFrom" in obj) obj.array("pityFrom").ints() else null
+        require(pityFrom == null || (pityFrom.size == playerCount && pityFrom.indices.all { pityFrom[it] in 0..players[it].turns })) { "The turns a free pawn counts from don't fit" }
         val seed = if (rules.hasChances) obj.string("seed").toLongOrNull() ?: throw JsonParseException("The seed isn't a number") else 0
         // An ended game: every player placed (the last ones as they stood, where it stopped at its first winner).
         if (obj.flag("finished")) {
@@ -330,6 +337,7 @@ object SavedGameJson {
                 ghosts = ghosts,
                 turnsSinceGhost = turnsSinceGhost,
                 ghostMove = ghostMove,
+                pityFrom = pityFrom,
                 lostSquares = lostSquares,
                 justLost = justLost,
                 suddenDeathTurns = suddenDeathTurns,
@@ -367,6 +375,7 @@ object SavedGameJson {
             ghosts = ghosts,
             turnsSinceGhost = turnsSinceGhost,
             ghostMove = ghostMove,
+            pityFrom = pityFrom,
             lostSquares = lostSquares,
             justLost = justLost,
             suddenDeathTurns = suddenDeathTurns,
@@ -375,6 +384,11 @@ object SavedGameJson {
         )
         require(waiting.rollAgainRun >= 0 && rules.rollAgainLimit?.let { waiting.rollAgainRun < it } != false) { "Rolled again too often" }
         require(waiting.yardTriesUsed in 0..<rules.yardTries) { "Tried to leave the yard too often" }
+        if (obj.flag("free")) {
+            val free = LudoEngine.pityMoves(waiting)
+            require(free.isNotEmpty() && obj.intOrNull("roll") == null) { "A pawn waiting to come out free that isn't due one" }
+            return waiting.copy(phase = TurnPhase.AwaitingMove(roll = 0, moves = free, dice = emptyList(), rolled = emptyList()))
+        }
         val roll = obj.intOrNull("roll") ?: return waiting
         val dice = if (rules.dice > 1) obj.array("dice").ints() else listOf(roll)
         require(dice.isNotEmpty() && dice.size <= rules.dice && dice.first() == roll && dice.all { it in 1..rules.dieFaces }) { "A roll of $dice" }
@@ -447,6 +461,7 @@ object SavedGameJson {
             if (event.move.skipped.isNotEmpty()) put("skipped", jsonInts(event.move.skipped))
             event.move.bouncedFrom?.let { put("bouncedFrom", it) }
             if (event.move.brokenShields.isNotEmpty()) put("brokenShields", encodePawns(event.move.brokenShields))
+            if (event.move.free) put("free", true)
             event.effect?.let { effect ->
                 put("effect", buildJsonObject {
                     put("kind", effect.powerUp.id)
@@ -488,6 +503,7 @@ object SavedGameJson {
                     skipped = if ("skipped" in obj) obj.array("skipped").ints() else emptyList(),
                     bouncedFrom = obj.intOrNull("bouncedFrom"),
                     brokenShields = decodePawnsIn(obj, "brokenShields"),
+                    free = obj.flag("free"),
                 ),
                 finished = obj.boolean("finished"),
                 rollsAgain = obj.flag("rollsAgain"),

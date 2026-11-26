@@ -72,6 +72,14 @@ Sources: [Wikipedia, "Ludo"](https://en.wikipedia.org/wiki/Ludo),
     player chooses which pawn.
 - **Leaving the yard.** Only a **6** brings a pawn out of the yard, onto its start square. That move uses the whole
     6.
+- **A free pawn** (the maintainer, 2026-11-26, in every mode; the No Free Pawn house rule turns it off), so one
+    player's early 6 isn't a head start on everyone left in their yards. The game's first pawn out of a yard starts a
+    count of each player's own turns (`GameState.pityFrom`, `GameRules.pityRelease`). As a player's 6th turn since then
+    starts, if they have never had a pawn out (none out now, and none ever sent back: `PlayerState.haveLeftYard`), one
+    comes out free onto their start square before they roll, making itself (`LudoEngine.pityMoves`, `Move.free`). So never
+    for the player who brought the first out, nor one who has had one out and lost it, and once at most. It captures as
+    any pawn brought out does and earns no roll; while another player's blockade stands on the start square, it waits
+    for a turn that starts without it.
 - **Rolling a 6** gives another roll after the move. A 6 with no legal move passes the turn like any other roll
     (the maintainer, 2026-11-17), and a 6 that brings the player's last pawn home gives no roll.
 - **A capture, or a pawn brought home,** also gives another roll (one, however many pawns are captured), but not the
@@ -403,7 +411,7 @@ count but 4 has a board of its own; one player on two colours was dropped.
     "Modifiers"). Decided with the maintainer (2026-11-18): every one of them but two dice (a mode); a game with any on
     stays off the Leaderboard and out of Statistics, and earns no achievements. Must Capture, Guarded Starts (a start
     square safe only for its own colour), Free Start, Three Tries, Out on a 1, Blockades, No Capture Roll, No Home Roll,
-    and Endless 6s.
+    and Endless 6s. No Free Pawn joined them (the maintainer, 2026-11-26), turning off Classic's free pawn.
 - [x] Modes: rule sets that are data on `GameMode`, never `if (mode == X)` (`GAME_MODES.md`). Decided with the
     maintainer (2026-11-18): each mode has its own Leaderboard and Statistics page, and earned no achievements until the
     review of the list (2026-11-24, below); a short track and power-up squares weren't picked.

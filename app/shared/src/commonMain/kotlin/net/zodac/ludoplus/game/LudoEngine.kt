@@ -86,6 +86,36 @@ object LudoEngine {
     }
 
     /**
+     * The current player's pawns that may come out of their yard free as their turn starts, before they roll
+     * ([GameRules.pityRelease]), onto their start square (through any portal there), capturing as a pawn brought out by a roll
+     * does: each waiting there, where they have never had a pawn out of it ([PlayerState.haveLeftYard]) and have started
+     * that many turns since the game's first pawn came out ([GameState.pityFrom]). None otherwise, or while another
+     * player's blockade is on that square.
+     */
+    fun pityMoves(state: GameState): List<Move> {
+        val turns = state.rules.pityRelease ?: return emptyList()
+        val from = state.pityFrom ?: return emptyList()
+        val me = state.current
+        val side = state.players[me]
+        if (side.haveLeftYard || side.turns - from[me] < turns || state.rollingAgain) return emptyList()
+        val blockades = blockades(state)
+        val yard = PawnPosition.YARD_PROGRESS
+        if (isBlocked(state, blockades, me, yard, 0)) return emptyList()
+        val to = throughPortals(state, me, 0)
+        if (to != 0 && isBlocked(state, blockades, me, to - 1, to)) return emptyList()
+        val landing = land(state, me, to, floor = yard)
+        return side.pawns.indices.filter { side.pawns[it] == yard }.map { pawn ->
+            Move(pawn, yard, landing.at, landing.captures, via = 0.takeIf { to != 0 }, brokenShields = landing.brokenShields, free = true)
+        }
+    }
+
+    /** [state], a turn about to start, awaiting the current player's pawn coming out free first, where one is due ([pityMoves]). */
+    private fun withFreeRelease(state: GameState): GameState {
+        val moves = pityMoves(state).takeIf { it.isNotEmpty() } ?: return state
+        return state.copy(phase = TurnPhase.AwaitingMove(roll = 0, moves = moves, dice = emptyList(), rolled = emptyList()))
+    }
+
+    /**
      * Every legal move for the current player's [roll], in pawn order: their own pawns, or once every one is home in a
      * team game that rolls for partners, each partner's still racing, partner by partner. Where the rules make captures
      * compulsory and one of them captures, only those that do.
@@ -100,11 +130,12 @@ object LudoEngine {
      * The move made for the current player while they await a move with only one choice: the first of its moves. Moves of
      * one owner's pawns from one square by one die are one choice; whose to swap with never is. Null with more than one choice, and when the one
      * brings a pawn out of the yard with none of its owner's on the board, or brings its owner's last pawn home: the
-     * player makes those.
+     * player makes those. A pawn coming out free ([pityMoves]) always comes by itself.
      */
     fun automaticMove(state: GameState): Move? {
         val phase = state.phase as? TurnPhase.AwaitingMove ?: return null
         val move = phase.moves.distinctBy { listOf(it.ownerIn(state), it.from, it.roll, it.swap) }.singleOrNull() ?: return null
+        if (move.free) return move
         val pawns = state.players[move.ownerIn(state)].pawns
         if (move.from == PawnPosition.YARD_PROGRESS && pawns.none { it.isOnBoard(state) }) return null
         if (move.to == state.board.homeProgress && pawns.count { it != state.board.homeProgress } == 1) return null
@@ -303,8 +334,19 @@ object LudoEngine {
         val moved = if (phase.swapping) {
             fresh
         } else {
-            place(PowerUps.spendDouble(fresh), whose, pawn, Landing(move.to, move.captures, move.brokenShields))
-                .let { placed -> placed.copy(players = placed.players.replace(player) { it.copy(squaresMoved = it.squaresMoved + move.walked) }) }
+            place(if (move.free) fresh else PowerUps.spendDouble(fresh), whose, pawn, Landing(move.to, move.captures, move.brokenShields))
+                .let { placed -> placed.copy(players = placed.players.replace(player) { it.copy(squaresMoved = it.squaresMoved + if (move.free) 0 else move.walked) }) }
+                // The game's first pawn out of a yard starts every player's count of turns towards a free one.
+                .let { placed -> if (move.from == PawnPosition.YARD_PROGRESS && placed.pityFrom == null) placed.copy(pityFrom = placed.players.map { it.turns }) else placed }
+        }
+        if (move.free) {
+            // Out free as the turn starts: the player rolls next, their turn not yet begun.
+            val out = move.captures.map { it.player }.distinct().filter { moved.players[it].pawnsLeft == 0 }
+            return claim(moved, whose, pawn, captured = move.captures.isNotEmpty()).copy(
+                phase = TurnPhase.AwaitingRoll,
+                knockedOut = state.knockedOut + out,
+                lastEvent = GameEvent.Moved(player, used, move, finished = false, knockedOut = out),
+            )
         }
         val swaps = if (chances && !phase.swapping && isOnSwap(state, whose, move.to)) swapMoves(moved, whose, pawn, move.roll) else emptyList()
         if (swaps.isNotEmpty()) {
@@ -385,8 +427,9 @@ object LudoEngine {
             }
         }
         val rollsAgain = playsOn && earned
+        val event = GameEvent.Moved(player, used, move, finished, rollsAgain, knockedOut, effect, recalled)
         next = if (rollsAgain) next.copy(rollingAgain = true) else nextPlayer(next, chances)
-        return next.copy(lastEvent = GameEvent.Moved(player, used, move, finished, rollsAgain, knockedOut, effect, recalled))
+        return next.copy(lastEvent = event)
     }
 
     /** Which of the pawns just [captured] a banked Call Up has brought back out in [state]: those on their start squares. */
@@ -470,7 +513,7 @@ object LudoEngine {
     }
 
     /**
-     * Play passes to the next player still racing, who awaits a roll: not one placed or knocked out, nor one home in a
+     * Play passes to the next player still racing, who awaits a roll (or first, their pawn coming out free: [pityMoves]): not one placed or knocked out, nor one home in a
      * team game that doesn't roll for partners. Coming back round to a player no later than this one, a round is played. With [chances], a ghost
      * moves as the turn ends, or the Cataclysm takes squares, if it's time.
      */
@@ -489,7 +532,7 @@ object LudoEngine {
             roundsPlayed = if (state.rules.suddenDeath && next <= state.current) state.roundsPlayed + 1 else state.roundsPlayed,
             // The turn that brings sudden death's second stage isn't one of those in it.
             suddenDeathTurns = if (state.suddenDeathStage >= GameRules.NOWHERE_SAFE_STAGE) state.suddenDeathTurns + 1 else state.suddenDeathTurns,
-        ).let { if (chances) Ghosts.afterTurn(it) else it }.let { if (chances && it.cataclysm) Cataclysm.afterTurn(it) else it }
+        ).let { if (chances) Ghosts.afterTurn(it) else it }.let { if (chances && it.cataclysm) Cataclysm.afterTurn(it) else it }.let(::withFreeRelease)
     }
 
     internal inline fun <T> List<T>.replace(index: Int, change: (T) -> T): List<T> =

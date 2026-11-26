@@ -166,7 +166,7 @@ class HouseRuleEngineTest {
 
     @Test
     fun `a house rule about the yard or home changes nothing in Survival - every other applies everywhere`() {
-        val idle = setOf(HouseRule.NO_HOME_ROLL, HouseRule.EXIT_ON_ONE, HouseRule.FREE_START, HouseRule.THREE_TRIES)
+        val idle = setOf(HouseRule.NO_HOME_ROLL, HouseRule.EXIT_ON_ONE, HouseRule.FREE_START, HouseRule.THREE_TRIES, HouseRule.NO_PITY_RELEASE)
         for (mode in GameMode.entries) {
             assertEquals(if (mode == GameMode.SURVIVAL) idle else emptySet(), HouseRule.entries.filterNot { it.appliesTo(mode.rules) }.toSet())
         }

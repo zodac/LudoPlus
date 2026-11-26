@@ -115,6 +115,7 @@ import net.zodac.ludoplus.resources.game_player_rank_tied_spoken
 import net.zodac.ludoplus.resources.game_player_team_spoken
 import net.zodac.ludoplus.resources.game_player_turn_spoken
 import net.zodac.ludoplus.resources.game_prompt_cpu_move
+import net.zodac.ludoplus.resources.game_prompt_free
 import net.zodac.ludoplus.resources.game_prompt_cpu_move_dice
 import net.zodac.ludoplus.resources.game_prompt_cpu_move_die_left
 import net.zodac.ludoplus.resources.game_prompt_cpu_roll
@@ -975,7 +976,11 @@ private fun TurnPanel(
         return
     }
     val phase = state.phase
-    val roll = (phase as? TurnPhase.AwaitingMove)?.roll ?: lastRoll(state.lastEvent)
+    // A pawn coming out free has no roll: the die keeps showing the last.
+    val latest = (phase as? TurnPhase.AwaitingMove)?.takeUnless { it.free }?.roll ?: lastRoll(state.lastEvent)
+    var kept by remember { mutableStateOf(latest) }
+    LaunchedEffect(latest) { if (latest != null) kept = latest }
+    val roll = latest ?: kept
     val canRoll = phase == TurnPhase.AwaitingRoll && settled && unshown == null && !game.currentIsCpu && (tutorial == null || rollStep)
     val seat = state.players[unshown?.player ?: state.current].seat
     val turnColour = (seatColours.getOrNull(seat) ?: PlayerColour.defaultFor(seat)).color
@@ -1031,7 +1036,7 @@ private fun ColumnScope.StatusLines(
     val phase = state.phase
     val turn = unshown?.player ?: state.current
     val current = name(turn)
-    val twoDice = phase is TurnPhase.AwaitingMove && state.rules.dice > 1
+    val twoDice = phase is TurnPhase.AwaitingMove && !phase.free && state.rules.dice > 1
     // A move that makes itself is told as the computer's is, no pick asked for, and so is one onto a Swap until it has landed.
     val movesItself = game.currentIsCpu || (!tutorial && game.automaticMove != null) || (phase is TurnPhase.AwaitingMove && phase.swapping)
     val prompt = when {
@@ -1039,6 +1044,8 @@ private fun ColumnScope.StatusLines(
         unshown is GameEvent.Moved -> stringResource(Res.string.game_prompt_moving, current)
         // A roll with no move, the die still tumbling: the next is asked for once it's seen.
         unshown != null -> stringResource(Res.string.game_prompt_cpu_roll, current)
+        // A pawn coming out free, however many dice.
+        phase is TurnPhase.AwaitingMove && phase.free -> (state.rules.pityRelease ?: 0).let { pluralStringResource(Res.plurals.game_prompt_free, it, current, it) }
         swapping -> stringResource(Res.string.game_prompt_swap, current)
         // Two dice: the roll, or the die left, and the die a pawn moves by.
         twoDice && phase.dice.size > 1 && movesItself -> stringResource(Res.string.game_prompt_cpu_move_dice, current, phase.rolled[0], phase.rolled[1])
@@ -1101,7 +1108,7 @@ class DiceChoice(val selected: Int? = null, val onSelect: ((Int) -> Unit)? = nul
  */
 @Composable
 private fun TwoDice(state: GameState, canRoll: Boolean, onRoll: () -> Unit, choice: DiceChoice, dieSize: Dp, turnColour: Color) {
-    val phase = state.phase as? TurnPhase.AwaitingMove
+    val phase = (state.phase as? TurnPhase.AwaitingMove)?.takeUnless { it.free }
     val current = phase?.rolled ?: lastDice(state.lastEvent)
     var kept by remember { mutableStateOf(current) }
     LaunchedEffect(current) { if (current != null) kept = current }
@@ -1150,11 +1157,11 @@ private fun lastDice(event: GameEvent?): List<Int>? = when (event) {
     else -> null
 }
 
-/** The roll the last action showed, for the die to keep showing until the next. */
+/** The roll the last action showed, for the die to keep showing until the next: null for none, and for a pawn out free, which has none. */
 private fun lastRoll(event: GameEvent?): Int? = when (event) {
     null -> null
     is GameEvent.Rolled -> event.roll
     is GameEvent.NoMove -> event.roll
     is GameEvent.RollAgainLimit -> event.roll
-    is GameEvent.Moved -> event.roll
+    is GameEvent.Moved -> event.roll.takeUnless { event.move.free }
 }
