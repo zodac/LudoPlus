@@ -1,6 +1,6 @@
 # LudoPlus: purchases
 
-**Built for LudoPlus (Phase 11, 2026-11-18); no Play Console project yet.** Three one-time Google Play purchases in the
+**Built for LudoPlus (Phase 11, 2026-11-18); the three products made in Play Console 2026-11-27, untested.** Three one-time Google Play purchases in the
 play app, decided with the maintainer (2026-11-18): **Unlock all styles** (every style without earning it), **Remove
 ads** (no ad banner, `ADS.md`), and both together for one price. Restored from DiceFive's one purchase (`5423b6c`) and
 made three. Commits go under `[Purchases]`.
@@ -242,7 +242,7 @@ to a track (internal testing is the quickest) before Phase 3.
 - Ship it to the **internal testing** track (by hand, as today). Play wants a bundle containing the BILLING permission
     uploaded to a track before it lets you create products.
 
-### Phase 3: the products (maintainer; to do for LudoPlus)
+### Phase 3: the products (maintainer; done 2026-11-27)
 
 Once Phase 1's merchant account is active and Phase 2's bundle is on a track (Play enables product setup only after
 a build containing the Billing Library is published to one; DiceFive's opened a day after).
@@ -261,7 +261,8 @@ a build containing the Billing Library is published to one; DiceFive's opened a 
      (`PlayConsoleProductExportTest`): `UnlockAllStylesIcon` (a palette with an open padlock at its lower left) on the
      achievements' gold tile, 512px. **Tags**: none; they're the app's own labels for telling offers apart, and it
      reads none.
-   - Add a purchase option (**Buy**), set the price, and let Play convert it for every country. Tick it as digital
+   - Add a purchase option (**Buy**; its id is Play Console's own, as the app reads only the backwards-compatible
+     option, `oneTimePurchaseOfferDetails`), set the price, and let Play convert it for every country. Tick it as digital
      content. Leave "multi-quantity" off.
    - **Activate** the product and its purchase option (a draft can't be bought).
 2. Add your license-tester accounts to the **internal testing** track's tester list, and install from its opt-in link

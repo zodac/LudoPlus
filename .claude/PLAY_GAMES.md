@@ -1,9 +1,10 @@
 # LudoPlus: Google Play Games Services
 
-**Built for LudoPlus (Phase 10, 2026-11-18); no Play Console project yet.** Sign-in, achievements mirrored both ways,
-a leaderboard per mode and player count, cloud save across devices, and Play Games Sidekick, restored from DiceFive
-(`5423b6c`), where each was checked by the maintainer on real phones. In LudoPlus none has run against Play yet: the
-ids are empty until the Play Console project exists ("Play Console"). This file is the one source on the subject: where
+**Built for LudoPlus (Phase 10, 2026-11-18); its Play Console project, achievements, and boards made 2026-11-26/27, in
+draft.** Sign-in, achievements mirrored both ways, a leaderboard per mode and player count, cloud save across devices,
+and Play Games Sidekick, restored from DiceFive (`5423b6c`), where each was checked by the maintainer on real phones. In
+LudoPlus none has run against Play yet: every id is mapped (2026-11-27), and the first release carrying them is the
+first that can sign in ("Release"). This file is the one source on the subject: where
 another doc disagrees, follow this one.
 
 ## What Google provides
@@ -93,8 +94,8 @@ app/android/src/play/.../online/  PlayGamesServices, PlayGamesIds, PlayGamesAchi
     screens (`GameServices.serviceIcon`; the `play` flavour's `ic_play_games_controller`, from Google's branding zip,
     developer.android.com/games/pgs/downloads).
     There is no achievements reset: the option was removed from Settings.
-- **Mapping**: `PlayGamesIds.kt`, empty until the Console has ids; an achievement with no id is never sent. From the
-    first id, `PlayGamesIdsTest` fails until every achievement is mapped. `PlayGamesAchievements.kt` sets each one's Play
+- **Mapping**: `PlayGamesIds.kt`, every achievement mapped (2026-11-27); one with no id is never sent, and
+    `PlayGamesIdsTest` fails until every achievement is mapped. `PlayGamesAchievements.kt` sets each one's Play
     type and visibility (`playType`, `playHidden`): a climbing total is incremental (steps ≤10,000, so Ultramarathon's
     50,000 squares are 5 a step), a streak or one-off standard.
 - **Published types and steps never change.** Once published, a rule change here keeps the type and steps as
@@ -120,8 +121,8 @@ so the local Leaderboard's captures tie-break doesn't carry.
 
 - **49 boards**, one per mode and player count (`playLeaderboardKeys`: `<GameMode.onlineLeaderboardKey>_<n>p`, as
     `classic_4p`): numeric, tamper protection on; by turns smaller is better, from 1, and by squares larger is better,
-    from 0 (`LeaderboardRanking.largerIsBetter`). Ids in `playLeaderboardIds`, empty until the
-    Console has them.
+    from 0 (`LeaderboardRanking.largerIsBetter`). Ids in `playLeaderboardIds`, every board
+    mapped (2026-11-27).
 - **Submitted**: the score of seat 1's win, only under the mode's own rules (`isPrimaryPlayer` and `playedUnmodified`:
     no teams, no house rules, so no custom mode). Each reconcile sends each board the best win since the newest game
     that account was sent from this device (`wins_posted:<account>:<key>`, moved only once Play confirms;
@@ -205,8 +206,8 @@ Play's overlay: an edge tab that slides out achievements, streaks, offers and re
 
 ## Play Console
 
-- **Project**: created 2026-11-26, id 246505904027 (`games-ids.xml`'s `game_services_project_id`). The id maps stay
-    empty until the Console has achievements and boards. Play Console won't enable the project's APIs ("Add the Play
+- **Project**: created 2026-11-26, id 246505904027 (`games-ids.xml`'s `game_services_project_id`). The id maps are
+    filled from Get resources (2026-11-27, below). Play Console won't enable the project's APIs ("Add the Play
     Games Services SDK to your APK") until it has a bundle carrying the SDK and the project id: a release with the id,
     uploaded to the internal track. Setting it up:
     1. Create the Play Games Services project, turn on Saved Games, and put its project id in `games-ids.xml`.
