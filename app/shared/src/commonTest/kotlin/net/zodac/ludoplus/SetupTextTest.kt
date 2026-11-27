@@ -164,7 +164,7 @@ class SetupTextTest : UiTest() {
         compose.onNodeWithText("Common changes to the classic rules, in any mix").assertExists().performClick()
         compose.waitForIdle()
         compose.onNodeWithText("Blockades").assertExists()
-        compose.onNodeWithText("Two of your pawns on one square make a blockade: no other player's pawn can pass it or land on it.").assertExists()
+        compose.onNodeWithText("Two of your pawns on one tile make a blockade: no other player's pawn can pass it or land on it.").assertExists()
         compose.onNode(hasText("Must Capture") and isToggleable()).assertIsOff().performClick()
         compose.waitForIdle()
         assertEquals(setOf(HouseRule.MUST_CAPTURE), viewModel.setupForm.setup.value.houseRules)

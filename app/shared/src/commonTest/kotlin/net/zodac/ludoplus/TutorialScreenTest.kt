@@ -81,7 +81,7 @@ class TutorialScreenTest : UiTest() {
         // There's no part before the first; the next one is a tap away.
         compose.onNodeWithContentDescription("Next part").performClick()
         compose.onNodeWithText("Part 2 of 4").assertExists()
-        compose.onNodeWithText("Next, captures. Green's pawn is 4 squares ahead of yours. Tap the die.").assertExists()
+        compose.onNodeWithText("Next, captures. Green's pawn is 4 tiles ahead of yours. Tap the die.").assertExists()
         compose.onNodeWithContentDescription("Previous part").performClick()
         compose.onNodeWithText("Part 1 of 4").assertExists()
     }
@@ -98,7 +98,7 @@ class TutorialScreenTest : UiTest() {
         compose.onNodeWithText("A 4! Tap your pawn to land on Green's and send it back to its yard.").assertExists()
         // A move step: only the step's pawn, and the die no longer rolls.
         val moves = compose.onAllNodes(movable).fetchSemanticsNodes().map { it.config[SemanticsActions.OnClick].label }
-        assertEquals(listOf("Move Red pawn 1 4 squares, capturing Green pawn 1"), moves)
+        assertEquals(listOf("Move Red pawn 1 4 tiles, capturing Green pawn 1"), moves)
         compose.onNodeWithContentDescription("Die showing 4").assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
         compose.onAllNodes(movable)[0].performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()

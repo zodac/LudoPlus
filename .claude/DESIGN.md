@@ -124,8 +124,8 @@ plays sooner. Four Medium CPUs claim them all in 96% of games, two in 23%; games
 and the player who's home wins over half of two-player games. A claimed square is drawn as its player's home column is, in
 every style (`BoardParts.claims`, `ClaimedSquareTest`), a star's mark smaller on it (`drawClaimedMark`), part of the board's
 painted image, once the pawn has landed. Cards have a count on a square of the player's colour; the Leaderboard ranks the most
-squares (`GameResult.squares`), then captures, as do its online boards (the squares alone). TalkBack: "Square 24, Yellow's square, empty", "Move Red
-pawn 1 3 squares, claiming the square", "0 pawns home, 2 squares".
+squares (`GameResult.squares`), then captures, as do its online boards (the squares alone). TalkBack: "Tile 24, Yellow's tile, empty", "Move Red
+pawn 1 3 tiles, claiming the tile", "0 pawns home, 2 tiles".
 
 **Two Dice** (`GameRules.dice`, `rollAgainOnDoubles`). A roll is both dice (`LudoEngine.applyDice`); the move phase
 holds the dice still to move, the whole roll, and whether it has earned another roll (`TurnPhase.AwaitingMove.dice`,
@@ -153,7 +153,7 @@ board's own pairs and seed 0. A pawn's progress is counted from its own start wh
 (`BoardGeometry.progressAt`), so the long pair either side of its own start takes it most of the way round (9 to 45 on the
 classic board), or most of the way back. With Blockades, one at either end stops the move. A pair is told by its symbol and
 colour, and a long pair by a split ring (past four seats, a long pair shares a short one's symbol). Four Medium CPUs' winner
-takes 52 turns, against Classic's 84. TalkBack: "Square 7, portal to square 23, empty", "Move Red pawn 1 2 squares, through a
+takes 52 turns, against Classic's 84. TalkBack: "Tile 7, portal to tile 23, empty", "Move Red pawn 1 2 tiles, through a
 portal to square 11".
 
 **Survival** (`GameRules.startsOut`, `lastStanding`, `suddenDeath`; the maintainer, 2026-11-24). Every pawn starts on
@@ -173,7 +173,7 @@ the furthest travelled (the maintainer, 2026-11-26): the most squares the winner
 (`PlayerState.squaresMoved`, `Move.walked`: to a portal, not through it, 1 out of the yard; `GameResult.squaresMoved`),
 then captures; a win recorded before 1.2.0 kept them is last, a dash in the column, spoken "distance not recorded". Its
 online boards rank the squares alone, and its wins set no fewest turns. TalkBack: "Red yard, 3 of 6 pawns lost", "3
-pawns left, playing now"; the line over the board ("Overtime in 3 rounds: start squares unsafe.", "Overtime! Only stars
+pawns left, playing now"; the line over the board ("Overtime in 3 rounds: start tiles unsafe.", "Overtime! Only stars
 are safe.") is live in the last three rounds before a stage and as it comes.
 
 **The Cataclysm** (`game/Cataclysm.kt`, `CataclysmTest`; the maintainer, 2026-11-24): two last pawns can chase each other
@@ -182,7 +182,7 @@ three random squares with no pawn on them vanish (`GameState.lostSquares`, drawn
 than the die's faces, so a 6 never comes round to its own square, and a lone rival is always within a roll. Pawns step over
 the gaps (`GameState.stepOn`); progress still counts every square, and a move says which it stepped over (`Move.skipped`,
 `squares`). Eight Medium CPUs' longest of 60 games went from 772 rounds to 220. A lost square is a dark pit, opening once the
-turn has played out (`VanishMotion`, `VANISH_MILLIS`), with a buzz; the log's line ends "2 squares vanished.", the line over
+turn has played out (`VanishMotion`, `VANISH_MILLIS`), with a buzz; the log's line ends "2 tiles vanished.", the line over
 the board counts the turns, and TalkBack's board leaves the square out.
 
 **Chaos** (`GameRules.powerUps`, `model/PowerUp.kt`, `game/PowerUps.kt`; the maintainer, 2026-11-24, reversing Phase 9's
@@ -223,13 +223,13 @@ earned is kept until the pick (`earned`); with two dice, so is the other die. Th
 weighs a landing by its best swap (`LudoEngine.swapsAfter`), then picks in its turn, as does one for a Nearby guest whose
 time is up. A person picks once the landing has played out: the pawns to swap with ringed, with the rest of the board faded
 (`UI_BOARD.md`), or Don't swap. The prompt is "Alex, pick a pawn to swap with."; TalkBack's actions, there and on each pawn's
-square, are "Swap places with Green pawn 2". The log has a line for each: "Alex's Pawn 1 moved 2 squares. Alex took Swap.",
+square, are "Swap places with Green pawn 2". The log has a line for each: "Alex's Pawn 1 moved 2 tiles. Alex took Swap.",
 then "Alex swapped Pawn 1 with Sam's Pawn 2."; a log of 1.1.0's has them in one.
 
 Every chance is drawn from `GameState.seed`, which each draw moves on, so a saved game and a Nearby one play on the same;
 the CPU weighs a move with its power-up left alone (`LudoEngine.moveWithoutChances`), so it never sees what a chance will
-be. What a power-up did is the move's `GameEvent.Moved.effect`. TalkBack: "Square 4, Shield power-up, empty", "Green pawn
-1, 47 squares from home, shielded", "Move Red pawn 1 2 squares, taking Shield", "Yellow yard, 4 pawns waiting, 1 doubled roll left"; the log adds a
+be. What a power-up did is the move's `GameEvent.Moved.effect`. TalkBack: "Tile 4, Shield power-up, empty", "Green pawn
+1, 47 tiles from home, shielded", "Move Red pawn 1 2 tiles, taking Shield", "Yellow yard, 4 pawns waiting, 1 doubled roll left"; the log adds a
 sentence ("Alex swapped places with Sam.").
 
 **Haunted House** (`GameRules.ghosts`, `game/Ghosts.kt`; the maintainer, 2026-11-24). A ghost for every two players,
@@ -239,7 +239,7 @@ blockade; it passes over the rest, and a pawn landing on it comes to no harm. A 
 `PlayerState.timesHaunted`, not `timesCaptured`. Its chances are drawn from the seed, as Chaos's are. The move is
 `GameState.ghostMove`, shown after the turn it came after, at half a pawn's speed (`GHOST_STEP_MILLIS`, `GhostArt.kt`). Games
 run about 10% longer than Classic with two players, 25% with four, 50% with six, and 70% with eight (a simulation).
-TalkBack: "Square 2, ghost, empty"; the log adds "A ghost caught Sam!" to the turn's line.
+TalkBack: "Tile 2, ghost, empty"; the log adds "A ghost caught Sam!" to the turn's line.
 
 **Custom modes** (`model/CustomMode.kt`, the maintainer, 2026-11-18). A name (unique among the player's and the
 built-in modes', whatever its case; at most 24 characters), a base mode, and at least one house rule (without one it
@@ -471,7 +471,7 @@ goes with the next save that has something else to send. It started at zero in t
 **The Leaderboard** (`LeaderboardScreen`) ranks a mode's wins at a player count: the fewest turns, in Colour Rush the most
 squares, or in Survival the furthest travelled (`GameMode.ranking`), then the most captures. 1st to 3rd are in gold,
 silver, and bronze. Columns become two lines a row where a name hasn't room beside them (a large font). TalkBack reads a
-row as one: "1st, Alex, 38 turns, 4 captures"; in Survival "1st, Alex, 412 squares travelled, 4 captures". While signed
+row as one: "1st, Alex, 38 turns, 4 captures"; in Survival "1st, Alex, 412 tiles travelled, 4 captures". While signed
 in to Play Games, a button opens the mode's online board.
 
 **Statistics** (`StatisticsScreen`) is a card for each person, by name (`playerKey`), in name order: games, wins, win rate,

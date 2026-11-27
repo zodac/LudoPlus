@@ -48,33 +48,33 @@ class RulesTextTest : UiTest() {
             "The Board",
             "The Board",
             listOf(
-                "Each player has four pawns, waiting in their own coloured yard. Each colour has their own start square.",
+                "Each player has four pawns, waiting in their own coloured yard. Each colour has their own start tile.",
                 "The track runs around the board, and you share it with other players.",
                 "After a full lap, a pawn enters its own home column and heads home in the middle of the board.",
             ),
-            "Diagram: Red's route. From its start square, a pawn goes a lap of the track clockwise, then up Red's home column to home in the middle.",
+            "Diagram: Red's route. From its start tile, a pawn goes a lap of the track clockwise, then up Red's home column to home in the middle.",
         ),
         Page(
             "Your Turn",
             "Your Turn",
             listOf(
-                "Roll the die, then move one of your pawns that many squares.",
+                "Roll the die, then move one of your pawns that many tiles.",
                 "You must roll a 6 to bring a pawn out of the yard onto the board. If another player brings out the first pawn and you still have none out after 5 of your turns, one comes out free.",
                 "Every time you roll a 6, you may roll again (so does capturing a pawn, or bringing one home). However, roll three 6s in a row and your turn ends!",
                 "If you have no valid moves, your turn passes.",
             ),
-            "Diagram: the die shows 6, so a red pawn comes out of its yard onto its start square.",
+            "Diagram: the die shows 6, so a red pawn comes out of its yard onto its start tile.",
         ),
         Page(
             "Captures",
             "Captures",
             listOf(
                 "If you land on a rival's pawns, they are sent back to their yard and must roll another 6 to escape.",
-                "Start squares and star squares are safe spots: nobody can be captured there.",
-                "Your own pawns can share a square, and any pawn can pass any other.",
+                "Start tiles and star tiles are safe spots: nobody can be captured there.",
+                "Your own pawns can share a tile, and any pawn can pass any other.",
                 "If you're lucky, you can chain your captures together!",
             ),
-            "Diagram: Red rolls 4 and lands on Green's pawn, sending it back to Green's yard. Blue's pawn is safe on a star square.",
+            "Diagram: Red rolls 4 and lands on Green's pawn, sending it back to Green's yard. Blue's pawn is safe on a star tile.",
         ),
         Page(
             "Winning",
@@ -85,7 +85,7 @@ class RulesTextTest : UiTest() {
                 "The first player to bring all four pawns home wins, and everyone else plays on for the places.",
                 "With Stop at first winner on in Settings, the game ends as soon as one player has every pawn home. Everyone else is placed by how far their pawns have come.",
             ),
-            "Diagram: a red pawn 3 squares from home needs exactly 3 to get there. Another red pawn is already home.",
+            "Diagram: a red pawn 3 tiles from home needs exactly 3 to get there. Another red pawn is already home.",
         ),
     )
 
@@ -127,8 +127,8 @@ class RulesTextTest : UiTest() {
             "Captures and Blockades",
             listOf(
                 "Must Capture: If a move can capture, you have to make a capture.",
-                "Guarded Starts: A start square is safe only for its own colour. Other pawns there can be captured.",
-                "Blockades: Two of your pawns on one square make a blockade: no other player's pawn can pass it or land on it.",
+                "Guarded Starts: A start tile is safe only for its own colour. Other pawns there can be captured.",
+                "Blockades: Two of your pawns on one tile make a blockade: no other player's pawn can pass it or land on it.",
             ),
             diagram = null,
         ),
@@ -140,12 +140,12 @@ class RulesTextTest : UiTest() {
             "Colour Rush",
             "Colour Rush",
             listOf(
-                "In Colour Rush the first pawn to land on a square of the track claims it, and it takes that player's colour. Claiming a square doesn't make it safe. Stars can be claimed too, but start squares can't.",
-                "A claimed square only changes hands when another player captures a pawn on it, whoever's pawn that was. Pawns on stars can't be captured, so a claimed star never changes hands.",
-                "The game ends when every square that can be claimed is, or when a player (or a team) has every pawn home. The most squares wins. If that's a tie, it goes to whoever's pawns have come furthest.",
-                "The Leaderboard ranks Colour Rush wins by the most squares. Your pawns home and your captures count in Statistics.",
+                "In Colour Rush the first pawn to land on a tile of the track claims it, and it takes that player's colour. Claiming a tile doesn't make it safe. Stars can be claimed too, but start tiles can't.",
+                "A claimed tile only changes hands when another player captures a pawn on it, whoever's pawn that was. Pawns on stars can't be captured, so a claimed star never changes hands.",
+                "The game ends when every tile that can be claimed is, or when a player (or a team) has every pawn home. The most tiles wins. If that's a tie, it goes to whoever's pawns have come furthest.",
+                "The Leaderboard ranks Colour Rush wins by the most tiles. Your pawns home and your captures count in Statistics.",
             ),
-            diagram = "Board: a game of Colour Rush. The squares each player has claimed are in their colour, behind their pawns. Red has claimed the most.",
+            diagram = "Board: a game of Colour Rush. The tiles each player has claimed are in their colour, behind their pawns. Red has claimed the most.",
         ),
         Page(
             "Two Dice",
@@ -164,7 +164,7 @@ class RulesTextTest : UiTest() {
             listOf(
                 "Portals come in pairs, told by their colour and symbol. If your move ends on one, your pawn comes out at the other, whether that's further on or further back. Passing over a portal does nothing. Once a pawn goes through a pair, it closes and opens again somewhere else.",
                 "Your pawn only captures where it comes out. While it waits on a portal, rivals who land there go through without capturing it, but one coming out there captures it.",
-                "Long portals, with a split ring, are further apart than short ones, and keep their length wherever they open. One that reaches past your own start square takes your pawn most of the way home, or most of the way back.",
+                "Long portals, with a split ring, are further apart than short ones, and keep their length wherever they open. One that reaches past your own start tile takes your pawn most of the way home, or most of the way back.",
                 "Each mode has its own Leaderboard, its own page in Statistics, and achievements of its own.",
             ),
             diagram = "Board: a game of Portals, with every pair of portals on the track. A red pawn waits on one.",
@@ -173,14 +173,14 @@ class RulesTextTest : UiTest() {
             "Survival",
             "Survival",
             listOf(
-                "In Survival there's no home to reach. Each player's six pawns start out on their start square and go round the track until one player is left.",
+                "In Survival there's no home to reach. Each player's six pawns start out on their start tile and go round the track until one player is left.",
                 "A captured pawn is out of the game. Lose all six and you're out: the last player with a pawn left wins, and everyone else is placed by how long they lasted.",
-                "Start squares and star squares are safe at first. In Overtime the start squares stop being safe, and in Sudden Death the star squares do too. The line above the board counts the rounds, and with more players it takes longer.",
-                "On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when Overtime comes.",
-                "Ten turns after that comes the Cataclysm: after every five turns, up to three squares with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven squares left, so nobody can keep away for ever.",
-                "The Leaderboard ranks Survival wins by the furthest travelled: the most squares the winner's pawns moved.",
+                "Start tiles and star tiles are safe at first. In Overtime the start tiles stop being safe, and in Sudden Death the star tiles do too. The line above the board counts the rounds, and with more players it takes longer.",
+                "On a tile that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start tile when Overtime comes.",
+                "Ten turns after that comes the Cataclysm: after every five turns, up to three tiles with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven tiles left, so nobody can keep away for ever.",
+                "The Leaderboard ranks Survival wins by the furthest travelled: the most tiles the winner's pawns moved.",
             ),
-            diagram = "Board: a game of Survival in the Cataclysm. Six squares of the track have vanished, the start and star squares are crossed out as no longer safe, and each yard crosses out the pawns its player has lost.",
+            diagram = "Board: a game of Survival in the Cataclysm. Six tiles of the track have vanished, the start and star tiles are crossed out as no longer safe, and each yard crosses out the pawns its player has lost.",
         ),
         Page(
             "Chaos",
@@ -188,7 +188,7 @@ class RulesTextTest : UiTest() {
             listOf(
                 "In Chaos there are power-ups on the track, at least one of each kind at any time. End a move on one to use it at once:",
                 "Double: Your next three rolls move a pawn twice as far. A roll that would take it past home counts once.",
-                "Shield: The next pawn to land on yours bounces off to the square before it, and the shield breaks.",
+                "Shield: The next pawn to land on yours bounces off to the tile before it, and the shield breaks.",
                 "Roll Again: You get another roll.",
                 "Call Up: One of your pawns comes out of the yard. With none there, it's banked: the next of your pawns to be captured comes straight back out.",
                 "Swap: Your pawn swaps places with any other player's pawn on the track, if you like. You pick which.",
@@ -202,11 +202,11 @@ class RulesTextTest : UiTest() {
             "Haunted House",
             "Haunted House",
             listOf(
-                "In Haunted House, ghosts haunt the track, one for every two players. After every second turn one of them drifts up to 6 squares, forwards or back, and you won't know which one or how far until it does.",
-                "A ghost sends every pawn on the square it lands on back to its yard, whoever's they are, unless the square is safe. Landing on a ghost yourself does no harm: it only catches pawns when it moves.",
+                "In Haunted House, ghosts haunt the track, one for every two players. After every second turn one of them drifts up to 6 tiles, forwards or back, and you won't know which one or how far until it does.",
+                "A ghost sends every pawn on the tile it lands on back to its yard, whoever's they are, unless the tile is safe. Landing on a ghost yourself does no harm: it only catches pawns when it moves.",
                 "Each mode has its own Leaderboard, its own page in Statistics, and achievements of its own.",
             ),
-            diagram = "Board: a game of Haunted House, with its two ghosts on the track, one 2 squares ahead of a red pawn.",
+            diagram = "Board: a game of Haunted House, with its two ghosts on the track, one 2 tiles ahead of a red pawn.",
         ),
     )
 

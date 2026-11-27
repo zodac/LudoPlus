@@ -78,10 +78,10 @@ class GameOverTest : UiTest() {
             ),
         )
         showcase.show { CompositionLocalProvider(LocalPlatformServices provides SilentPlatformServices) { LudoPlusTheme { GameOverScreen(over, onBackToMenu = {}, onPlayAgain = {}, onReviewBoard = {}, celebrate = false) } } }
-        compose.onNode(hasText("Winner") and hasText("Pip") and hasText("20 squares, 1 capture, 6 captured")).assertExists()
-        compose.onNode(hasText("2nd") and hasText("Gambit") and hasText("10 squares, 3 captures, 0 captured")).assertExists()
-        compose.onNode(hasText("3rd") and hasText("Alex") and hasText("1 square, 1 capture, 1 captured")).assertExists()
-        compose.onNode(hasText("4th") and hasText("Sam") and hasText("0 squares, 1 capture, 1 captured")).assertExists()
+        compose.onNode(hasText("Winner") and hasText("Pip") and hasText("20 tiles, 1 capture, 6 captured")).assertExists()
+        compose.onNode(hasText("2nd") and hasText("Gambit") and hasText("10 tiles, 3 captures, 0 captured")).assertExists()
+        compose.onNode(hasText("3rd") and hasText("Alex") and hasText("1 tile, 1 capture, 1 captured")).assertExists()
+        compose.onNode(hasText("4th") and hasText("Sam") and hasText("0 tiles, 1 capture, 1 captured")).assertExists()
     }
 
     @Test

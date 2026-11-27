@@ -188,7 +188,7 @@ private val DIE = By.desc(Pattern.compile("Die( showing \\d)?"))
  * can be moved (the board's squares are buttons only then, BoardSemantics) - a yard, a track square, or a home column
  * square, in any colour. One selector, as each lookup reads the whole screen.
  */
-private val PLAYERS_ACTION = By.clickable(true).desc(Pattern.compile("Die( showing \\d)?|(.* yard|Square \\d+|.* home column).*", Pattern.DOTALL))
+private val PLAYERS_ACTION = By.clickable(true).desc(Pattern.compile("Die( showing \\d)?|(.* yard|Tile \\d+|.* home column).*", Pattern.DOTALL))
 
 private val GAME_OVER = By.text("Game Over")
 

@@ -115,9 +115,9 @@ whose turn it is has an outline in their colour.
     captures, captured by 0" for each. The card itself doesn't say the counts.
     - The counts are `PlayerState.capturesOf`, kept in the saved game (`capturesOf`, absent with none). A game saved before it
         was kept has its totals, and rows for the captures since.
-    - **Squares travelled** are under them (the maintainer, 2026-11-28): headed "Squares travelled", with the total,
+    - **Tiles travelled** are under them (the maintainer, 2026-11-28): headed "Tiles travelled", with the total,
         `PlayerState.squaresMoved` (the Leaderboard's distance: the squares the pawns they moved walked, a partner's they
-        rolled for included, not a free move's). TalkBack: "142 squares travelled".
+        rolled for included, not a free move's). TalkBack: "142 tiles travelled".
     - **Rolls** are under those (the maintainer, 2026-11-26): the total, headed "Rolls", then each face of the die in two columns, 1-3
         and 4-6, with a bar in the player's colour, all on one scale. Each of two dice counts, as do rolls with no move, and a doubled
         roll counts as its face. The faces are in the player's die style, drawn at the size its art is made for (44dp) and scaled
@@ -164,7 +164,7 @@ under "Start". A roll again's moves are lines of the same turn. The card has no 
 took room). Where there isn't room for a line under the heading, it has no heading; where there isn't room for a line, or
 with Settings' **Move log** off (`show_move_log`, on by default), nothing is drawn, and TalkBack still hears the newest; with
 it off, the board has the log's room. Pawns are named by their numbers, a held yard's (the maintainer, 2026-11-25):
-the one that moved ("Alex's Pawn 2 moved 4 squares.", which fits a line at a large font), a partner's with their own
+the one that moved ("Alex's Pawn 2 moved 4 tiles.", which fits a line at a large font), a partner's with their own
 name, and any captured, caught, swapped, or brought back out ("Alex captured Sam's Pawn 1 and Pawn 3 with Pawn 2."). A
 player's last pawn home has no number. Every move is logged either way. A game saved before entries kept their turns
 (1.1.0) has them counted back as it's loaded (`MoveLog.withTurns`). To TalkBack the headings are headings, and the
@@ -173,5 +173,5 @@ lines a list ("1 of 12"), read without their times.
 ## What TalkBack hears
 
 `BoardSemantics.kt` and `PawnSpeech.kt` hold the board's spoken names: every square says what's on it, and a movable pawn's
-square offers its move ("Move Red pawn 1 2 squares, capturing Green pawn 3"). `BoardSemanticsTest` and `PawnSpeechTest` pin
+square offers its move ("Move Red pawn 1 2 tiles, capturing Green pawn 3"). `BoardSemanticsTest` and `PawnSpeechTest` pin
 the words. A game's steps are spoken by the log's newest line and the status line, both polite.

@@ -87,18 +87,18 @@ class BoardSemanticsTest : UiTest() {
             "Red yard, 2 pawns waiting",
             "Green yard, 3 pawns waiting",
             "Blue yard, 4 pawns waiting",
-            "Square 1, Red start, safe, Red pawn 3, 56 squares from home",
-            "Square 2, empty",
-            "Square 35, safe, Yellow pawn 1, 48 squares from home",
-            "Square 14, Green start, safe, empty",
-            "Red home column, square 2, Red pawn 4, in the home column, 4 squares from home",
-            "Green home column, square 5, empty",
+            "Tile 1, Red start, safe, Red pawn 3, 56 tiles from home",
+            "Tile 2, empty",
+            "Tile 35, safe, Yellow pawn 1, 48 tiles from home",
+            "Tile 14, Green start, safe, empty",
+            "Red home column, tile 2, Red pawn 4, in the home column, 4 tiles from home",
+            "Green home column, tile 5, empty",
             "Home, Green pawn 1, home",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
         // 4 yards, 52 track squares, 20 home-column squares, and home.
-        compose.onAllNodes(SemanticsMatcher("a board square") { node ->
+        compose.onAllNodes(SemanticsMatcher("a board tile") { node ->
             node.config.getOrNull(SemanticsProperties.ContentDescription)?.firstOrNull()?.let {
-                it.startsWith("Square ") || it.contains(" yard,") || it.contains(" home column, square ") || it.startsWith("Home,")
+                it.startsWith("Tile ") || it.contains(" yard,") || it.contains(" home column, tile ") || it.startsWith("Home,")
             } ?: false
         }).assertCountEquals(4 + 52 + 20 + 1)
     }
@@ -111,11 +111,11 @@ class BoardSemanticsTest : UiTest() {
         val pawns = listOf(listOf(4, 4, Y, Y), listOf(1, Y, Y, Y))
         show(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }) }))
         listOf(
-            "Square 1, Red start, safe for Red, empty",
-            "Square 14, Green start, safe for Green, empty",
-            "Square 9, safe, empty",
-            "Square 5, Red blockade, Red pawn 1, 52 squares from home, Red pawn 2, 52 squares from home",
-            "Square 15, Green pawn 1, 55 squares from home",
+            "Tile 1, Red start, safe for Red, empty",
+            "Tile 14, Green start, safe for Green, empty",
+            "Tile 9, safe, empty",
+            "Tile 5, Red blockade, Red pawn 1, 52 tiles from home, Red pawn 2, 52 tiles from home",
+            "Tile 15, Green pawn 1, 55 tiles from home",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
     }
 
@@ -125,20 +125,20 @@ class BoardSemanticsTest : UiTest() {
         val pawns = listOf(listOf(1, 12, Y, Y), listOf(49, Y, Y, Y))
         show(LudoEngine.applyRoll(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns.getOrElse(i) { listOf(Y, Y, Y, Y) }) }), 2))
         listOf(
-            "Square 4, portal to square 11, empty",
-            "Square 11, portal to square 4, Green pawn 1, 7 squares from home",
-            "Square 7, portal to square 23, empty",
-            "Square 23, portal to square 7, empty",
+            "Tile 4, portal to tile 11, empty",
+            "Tile 11, portal to tile 4, Green pawn 1, 7 tiles from home",
+            "Tile 7, portal to tile 23, empty",
+            "Tile 23, portal to tile 7, empty",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
-        compose.onNodeWithContentDescription("Square 2, Red pawn 1, 55 squares from home")
-            .assert(onClickLabel("Move Red pawn 1 2 squares, through a portal to square 11, capturing Green pawn 1"))
+        compose.onNodeWithContentDescription("Tile 2, Red pawn 1, 55 tiles from home")
+            .assert(onClickLabel("Move Red pawn 1 2 tiles, through a portal to tile 11, capturing Green pawn 1"))
     }
 
     @Test
     fun `the log says a move went through a portal`() = uiTest(TestScreen(411, 891)) {
         val state = GameState.new(GameMode.PORTALS, 4)
         show(state, log = listOf(LogEntry(GameEvent.Moved(0, 2, Move(0, 8, 3, via = 10), finished = false))))
-        compose.onNodeWithContentDescription("Alex's Pawn 1 moved 2 squares, then through a portal.").assertExists()
+        compose.onNodeWithContentDescription("Alex's Pawn 1 moved 2 tiles, then through a portal.").assertExists()
     }
 
     @Test
@@ -152,31 +152,31 @@ class BoardSemanticsTest : UiTest() {
             "Red yard, 3 of 6 pawns lost",
             "Green yard, 6 of 6 pawns lost",
             "Yellow yard, 0 of 6 pawns lost",
-            "Square 1, Red start, safe, Red pawn 1, Red pawn 2",
-            "Square 10, Red pawn 3",
-            "Square 9, safe, empty",
+            "Tile 1, Red start, safe, Red pawn 1, Red pawn 2",
+            "Tile 10, Red pawn 3",
+            "Tile 9, safe, empty",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
         compose.onNode(hasContentDescription("home", substring = true, ignoreCase = true)).assertDoesNotExist()
         compose.onNode(hasText("Alex") and stateSays("3 pawns left, playing now, currently 3rd")).assertExists()
         compose.onNode(hasText("Gambit") and stateSays("0 pawns left, 4th place")).assertExists()
-        compose.onNodeWithText("Overtime in 50 rounds: start squares unsafe.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+        compose.onNodeWithText("Overtime in 50 rounds: start tiles unsafe.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
 
         // The last three rounds are counted down aloud, and the stage said as it comes.
         show(state.copy(roundsPlayed = 49))
-        compose.onNodeWithText("Overtime in 1 round: start squares unsafe.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+        compose.onNodeWithText("Overtime in 1 round: start tiles unsafe.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
         show(state.copy(roundsPlayed = 50))
         compose.onNodeWithText("Overtime! Only stars are safe.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
-        compose.onNodeWithContentDescription("Square 1, Red start, Red pawn 1, Red pawn 2").assertExists()
-        compose.onNodeWithContentDescription("Square 9, safe, empty").assertExists()
+        compose.onNodeWithContentDescription("Tile 1, Red start, Red pawn 1, Red pawn 2").assertExists()
+        compose.onNodeWithContentDescription("Tile 9, safe, empty").assertExists()
         show(state.copy(roundsPlayed = 60))
         compose.onNodeWithText("Sudden Death in 15 rounds: stars unsafe.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
         show(state.copy(roundsPlayed = 75))
         compose.onNodeWithText("Sudden Death! Nowhere is safe.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
-        compose.onNodeWithContentDescription("Square 9, empty").assertExists()
+        compose.onNodeWithContentDescription("Tile 9, empty").assertExists()
         show(state.copy(roundsPlayed = 76, suddenDeathTurns = 6))
-        compose.onNodeWithText("Cataclysm in 4 turns: squares vanish.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+        compose.onNodeWithText("Cataclysm in 4 turns: tiles vanish.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
         show(state.copy(roundsPlayed = 76, suddenDeathTurns = 9))
-        compose.onNodeWithText("Cataclysm in 1 turn: squares vanish.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+        compose.onNodeWithText("Cataclysm in 1 turn: tiles vanish.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
     }
 
     @Test
@@ -186,21 +186,21 @@ class BoardSemanticsTest : UiTest() {
         val pawns = listOf(listOf(8, 20, x, x, x, x), listOf(0, x, x, x, x, x))
         val state = new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns.getOrElse(i) { listOf(5 + i, x, x, x, x, x) }) }, roundsPlayed = 100, suddenDeathTurns = 10)
         show(state)
-        compose.onNodeWithText("Cataclysm! Squares vanish in 5 turns.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
-        compose.onNodeWithContentDescription("Square 11, empty").assertExists()
+        compose.onNodeWithText("Cataclysm! Tiles vanish in 5 turns.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+        compose.onNodeWithContentDescription("Tile 11, empty").assertExists()
         show(state.copy(suddenDeathTurns = 14))
-        compose.onNodeWithText("Cataclysm! Squares vanish in 1 turn.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+        compose.onNodeWithText("Cataclysm! Tiles vanish in 1 turn.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
 
         // Over squares 10 and 11, a roll of 4 reaches square 15.
         show(LudoEngine.applyRoll(state.copy(lostSquares = setOf(9, 10)), 4))
-        compose.onNodeWithContentDescription("Square 11, empty").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Square 9, Red pawn 1").assert(onClickLabel("Move Red pawn 1 4 squares"))
+        compose.onNodeWithContentDescription("Tile 11, empty").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Tile 9, Red pawn 1").assert(onClickLabel("Move Red pawn 1 4 tiles"))
         val log = listOf(LogEntry(GameEvent.Moved(0, 4, Move(0, 8, 14, skipped = listOf(9, 10)), finished = false), vanished = 2))
         show(state, log)
-        compose.onNodeWithContentDescription("Alex's Pawn 1 moved 4 squares. 2 squares vanished.", useUnmergedTree = true).assertExists()
+        compose.onNodeWithContentDescription("Alex's Pawn 1 moved 4 tiles. 2 tiles vanished.", useUnmergedTree = true).assertExists()
 
         show(state.copy(lostSquares = (0..<52).filter { it !in setOf(8, 20, 13, 33, 47, 1, 2) }.toSet()))
-        compose.onNodeWithText("Cataclysm! No more squares will vanish.").assertExists()
+        compose.onNodeWithText("Cataclysm! No more tiles will vanish.").assertExists()
     }
 
     private fun stateSays(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)
@@ -217,15 +217,15 @@ class BoardSemanticsTest : UiTest() {
         )
         show(LudoEngine.applyRoll(state, 2))
         listOf(
-            "Square 4, Roll Again power-up, empty",
-            "Square 41, Shield power-up, empty",
-            "Square 23, Green pawn 1, 47 squares from home, shielded",
+            "Tile 4, Roll Again power-up, empty",
+            "Tile 41, Shield power-up, empty",
+            "Tile 23, Green pawn 1, 47 tiles from home, shielded",
             "Yellow yard, 4 pawns waiting, 1 doubled roll left, 1 Call Up banked",
             "Blue yard, 4 pawns waiting, 2 Call Ups banked",
             "Green yard, 3 pawns waiting",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
-        compose.onNodeWithContentDescription("Square 2, Red pawn 1, 55 squares from home").assert(onClickLabel("Move Red pawn 1 2 squares, taking Roll Again"))
-        compose.onNodeWithContentDescription("Square 21, Red pawn 2, 36 squares from home").assert(onClickLabel("Move Red pawn 2 2 squares, bouncing off Green pawn 1's shield"))
+        compose.onNodeWithContentDescription("Tile 2, Red pawn 1, 55 tiles from home").assert(onClickLabel("Move Red pawn 1 2 tiles, taking Roll Again"))
+        compose.onNodeWithContentDescription("Tile 21, Red pawn 2, 36 tiles from home").assert(onClickLabel("Move Red pawn 2 2 tiles, bouncing off Green pawn 1's shield"))
         compose.onNode(hasText("Sam") and stateSays("0 pawns home, currently joint 3rd")).assertExists()
     }
 
@@ -239,19 +239,19 @@ class BoardSemanticsTest : UiTest() {
         )
         show(LudoEngine.applyRoll(state, 3))
         listOf(
-            "Square 1, Red start, safe, empty",
-            "Square 8, Red's square, empty",
-            "Square 9, safe, Blue's square, empty",
-            "Square 24, Yellow's square, empty",
+            "Tile 1, Red start, safe, empty",
+            "Tile 8, Red's tile, empty",
+            "Tile 9, safe, Blue's tile, empty",
+            "Tile 24, Yellow's tile, empty",
         ).forEach { compose.onNodeWithContentDescription(it).assertExists() }
         // A capture takes green's; yellow's, with nobody on it, stays; and nobody's is claimed.
-        compose.onNode(onClickLabel("Move Red pawn 1 3 squares, capturing Green pawn 1, claiming the square")).assertExists()
-        compose.onNode(onClickLabel("Move Red pawn 2 3 squares")).assertExists()
-        compose.onNode(onClickLabel("Move Red pawn 3 3 squares, claiming the square")).assertExists()
+        compose.onNode(onClickLabel("Move Red pawn 1 3 tiles, capturing Green pawn 1, claiming the tile")).assertExists()
+        compose.onNode(onClickLabel("Move Red pawn 2 3 tiles")).assertExists()
+        compose.onNode(onClickLabel("Move Red pawn 3 3 tiles, claiming the tile")).assertExists()
         // A star nobody has (34).
-        compose.onNode(onClickLabel("Move Red pawn 4 3 squares, claiming the square")).assertExists()
-        compose.onNode(hasText("Alex") and stateSays("0 pawns home, 2 squares, playing now, currently 1st")).assertExists()
-        compose.onNode(hasText("Gambit") and stateSays("0 pawns home, 1 square, currently joint 2nd")).assertExists()
+        compose.onNode(onClickLabel("Move Red pawn 4 3 tiles, claiming the tile")).assertExists()
+        compose.onNode(hasText("Alex") and stateSays("0 pawns home, 2 tiles, playing now, currently 1st")).assertExists()
+        compose.onNode(hasText("Gambit") and stateSays("0 pawns home, 1 tile, currently joint 2nd")).assertExists()
     }
 
     @Test
@@ -268,11 +268,11 @@ class BoardSemanticsTest : UiTest() {
         val rolled = LudoEngine.applyRoll(state, 2)
         show(rolled)
         // A pawn that doesn't land on it moves at once.
-        compose.onNode(onClickLabel("Move Red pawn 2 2 squares")).performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNode(onClickLabel("Move Red pawn 2 2 tiles")).performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(listOf(Move(1, 40, 42)), made)
         made.clear()
         // Nor is one that does asked about first: it lands.
-        compose.onNode(onClickLabel("Move Red pawn 1 2 squares, taking Swap")).performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNode(onClickLabel("Move Red pawn 1 2 tiles, taking Swap")).performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(listOf(Move(0, 1, 3)), made)
         made.clear()
         val landed = LudoEngine.move(rolled, 0)
@@ -282,11 +282,11 @@ class BoardSemanticsTest : UiTest() {
         compose.onNodeWithText("Don't swap").assertDoesNotExist()
         compose.onNode(onClickLabel("Swap places with Green pawn 1")).assertDoesNotExist()
         show(landed)
-        compose.onNodeWithContentDescription("Square 4, Red pawn 1, 53 squares from home").assertExists()
+        compose.onNodeWithContentDescription("Tile 4, Red pawn 1, 53 tiles from home").assertExists()
         val prompt = compose.onNodeWithContentDescription("Alex, pick a pawn to swap with.").fetchSemanticsNode()
         assertEquals(listOf("Swap places with Green pawn 1", "Swap places with Yellow pawn 2"), prompt.config[SemanticsActions.CustomActions].map { it.label })
         assertEquals(LiveRegionMode.Polite, prompt.config[SemanticsProperties.LiveRegion])
-        compose.onNodeWithContentDescription("Square 23, Green pawn 1, 47 squares from home").assert(onClickLabel("Swap places with Green pawn 1")).performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithContentDescription("Tile 23, Green pawn 1, 47 tiles from home").assert(onClickLabel("Swap places with Green pawn 1")).performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(listOf(Move(0, 3, 3, swap = PawnRef(1, 0))), made)
         made.clear()
         compose.onNodeWithText("Don't swap").performSemanticsAction(SemanticsActions.OnClick)
@@ -299,19 +299,19 @@ class BoardSemanticsTest : UiTest() {
         fun recalled(vararg pawns: PawnRef) = LogEntry(GameEvent.Moved(0, 2, Move(0, 1, 3, pawns.toList()), finished = false, recalled = pawns.toList()))
         val state = GameState.new(GameMode.CHAOS, 4)
         for ((entry, line) in listOf(
-            moved(PowerUpEffect(PowerUp.DOUBLE)) to "Alex's Pawn 1 moved 2 squares. Alex's next 3 rolls count double.",
-            moved(PowerUpEffect(PowerUp.SHIELD)) to "Alex's Pawn 1 moved 2 squares. Alex took Shield.",
-            moved(PowerUpEffect(PowerUp.CALL_UP, calledUp = 2)) to "Alex's Pawn 1 moved 2 squares. Alex called up Pawn 3.",
-            moved(PowerUpEffect(PowerUp.CALL_UP, banked = true)) to "Alex's Pawn 1 moved 2 squares. Alex banked a Call Up.",
+            moved(PowerUpEffect(PowerUp.DOUBLE)) to "Alex's Pawn 1 moved 2 tiles. Alex's next 3 rolls count double.",
+            moved(PowerUpEffect(PowerUp.SHIELD)) to "Alex's Pawn 1 moved 2 tiles. Alex took Shield.",
+            moved(PowerUpEffect(PowerUp.CALL_UP, calledUp = 2)) to "Alex's Pawn 1 moved 2 tiles. Alex called up Pawn 3.",
+            moved(PowerUpEffect(PowerUp.CALL_UP, banked = true)) to "Alex's Pawn 1 moved 2 tiles. Alex banked a Call Up.",
             recalled(PawnRef(1, 0)) to "Alex captured Gambit's Pawn 1 with Pawn 1. Gambit's Call Up brought Pawn 1 straight back out.",
             recalled(PawnRef(1, 0), PawnRef(1, 3)) to "Alex captured Gambit's Pawn 1 and Pawn 4 with Pawn 1. Gambit's Call Ups brought Pawn 1 and Pawn 4 straight back out.",
-            moved(PowerUpEffect(PowerUp.CALL_UP)) to "Alex's Pawn 1 moved 2 squares. Alex took Call Up.",
-            moved(PowerUpEffect(PowerUp.SWAP)) to "Alex's Pawn 1 moved 2 squares. Alex took Swap.",
+            moved(PowerUpEffect(PowerUp.CALL_UP)) to "Alex's Pawn 1 moved 2 tiles. Alex took Call Up.",
+            moved(PowerUpEffect(PowerUp.SWAP)) to "Alex's Pawn 1 moved 2 tiles. Alex took Swap.",
             moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)), Move(0, 3, 3, swap = PawnRef(2, 0))) to "Alex swapped Pawn 1 with Sam's Pawn 1.",
             // As 1.1.0's games logged it: the landing and its swap in one.
-            moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)), Move(0, 1, 3, swap = PawnRef(2, 0))) to "Alex's Pawn 1 moved 2 squares. Alex swapped Pawn 1 with Sam's Pawn 1.",
+            moved(PowerUpEffect(PowerUp.SWAP, movedTo = 14, swapped = PawnRef(2, 0)), Move(0, 1, 3, swap = PawnRef(2, 0))) to "Alex's Pawn 1 moved 2 tiles. Alex swapped Pawn 1 with Sam's Pawn 1.",
             moved(PowerUpEffect(PowerUp.ROLL_AGAIN), Move(0, 1, 3, listOf(PawnRef(1, 0)))) to "Alex captured Gambit's Pawn 1 with Pawn 1. Alex took Roll Again.",
-            moved(null, Move(0, 1, 2, bouncedFrom = 3, brokenShields = listOf(PawnRef(1, 0)))) to "Alex's Pawn 1 moved 2 squares and bounced off Gambit's shield.",
+            moved(null, Move(0, 1, 2, bouncedFrom = 3, brokenShields = listOf(PawnRef(1, 0)))) to "Alex's Pawn 1 moved 2 tiles and bounced off Gambit's shield.",
         )) {
             show(state, log = listOf(entry))
             compose.onNodeWithContentDescription(line).assertExists()
@@ -329,10 +329,10 @@ class BoardSemanticsTest : UiTest() {
                 LogEntry(GameEvent.Moved(0, 2, Move(0, 1, 3), finished = false), haunted = listOf(PawnRef(0, 0), PawnRef(2, 1))),
             ),
         )
-        compose.onNodeWithContentDescription("Square 2, ghost, Red pawn 1, 55 squares from home").assertExists()
-        compose.onNodeWithContentDescription("Square 41, ghost, empty").assertExists()
+        compose.onNodeWithContentDescription("Tile 2, ghost, Red pawn 1, 55 tiles from home").assertExists()
+        compose.onNodeWithContentDescription("Tile 41, ghost, empty").assertExists()
         compose.onNodeWithContentDescription("Alex rolled 3 and had no move. A ghost caught Gambit's Pawn 1 and Pawn 2!").assertExists()
-        compose.onNodeWithContentDescription("Alex's Pawn 1 moved 2 squares. A ghost caught Alex's Pawn 1 and Sam's Pawn 2!").assertExists()
+        compose.onNodeWithContentDescription("Alex's Pawn 1 moved 2 tiles. A ghost caught Alex's Pawn 1 and Sam's Pawn 2!").assertExists()
     }
 
     @Test
@@ -340,7 +340,7 @@ class BoardSemanticsTest : UiTest() {
         val rules = GameMode.CLASSIC.rules.copy(teams = listOf(0, 1, 0, 1))
         val state = GameState.new(GameMode.CLASSIC, 4, rules = rules)
         for ((move, line) in listOf(
-            Move(2, 0, 4, owner = 2) to "Sam's Pawn 3 moved 4 squares.",
+            Move(2, 0, 4, owner = 2) to "Sam's Pawn 3 moved 4 tiles.",
             Move(3, Y, 0, owner = 2) to "Alex brought Sam's Pawn 4 out.",
             Move(1, H - 4, H, owner = 2) to "Alex brought Sam's Pawn 2 home.",
             Move(2, 0, 4, listOf(PawnRef(1, 0), PawnRef(1, 3), PawnRef(3, 1)), owner = 2) to
@@ -388,10 +388,10 @@ class BoardSemanticsTest : UiTest() {
         val prompt = compose.onNodeWithContentDescription("Alex rolled 3 and 5. Pick a pawn to move 5.")
         // TalkBack is offered each die's move; the board, the picked die's.
         assertEquals(
-            listOf("Move Red pawn 1 3 squares", "Move Red pawn 1 5 squares"),
+            listOf("Move Red pawn 1 3 tiles", "Move Red pawn 1 5 tiles"),
             prompt.fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label },
         )
-        compose.onNodeWithContentDescription("Square 11, Red pawn 1, 46 squares from home").assert(onClickLabel("Move Red pawn 1 5 squares"))
+        compose.onNodeWithContentDescription("Tile 11, Red pawn 1, 46 tiles from home").assert(onClickLabel("Move Red pawn 1 5 tiles"))
             .performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(listOf(Move(0, 10, 15, roll = 5)), picks)
 
@@ -415,7 +415,7 @@ class BoardSemanticsTest : UiTest() {
         show(LudoEngine.applyRoll(state(listOf(10, Y, Y, Y)), 3))
         val prompt = compose.onNodeWithContentDescription("Alex rolled 3.")
         assertEquals(null, prompt.fetchSemanticsNode().config.getOrNull(SemanticsActions.CustomActions))
-        compose.onNodeWithContentDescription("Square 11, Red pawn 1, 46 squares from home").assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
+        compose.onNodeWithContentDescription("Tile 11, Red pawn 1, 46 tiles from home").assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
 
         // Every pawn in the yard: the 6 that brings one out is still the player's to move.
         show(LudoEngine.applyRoll(state(), 6))
@@ -452,17 +452,17 @@ class BoardSemanticsTest : UiTest() {
         val rolled = LudoEngine.applyRoll(state(listOf(Y, 50, 21, H), listOf(14, Y, Y, Y)), 6)
         show(rolled)
         compose.onNodeWithContentDescription("Red yard, 1 pawn waiting").assert(onClickLabel("Bring Red pawn 1 out of the yard"))
-        compose.onNodeWithContentDescription("Square 22, safe, Red pawn 3, 35 squares from home")
-            .assert(onClickLabel("Move Red pawn 3 6 squares, capturing Green pawn 1"))
+        compose.onNodeWithContentDescription("Tile 22, safe, Red pawn 3, 35 tiles from home")
+            .assert(onClickLabel("Move Red pawn 3 6 tiles, capturing Green pawn 1"))
             .performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(listOf(2), moved)
-        compose.onNodeWithContentDescription("Red home column, square 1, empty").assertExists()
-        compose.onNodeWithContentDescription("Square 51, Red pawn 2, 6 squares from home")
-            .assert(onClickLabel("Move Red pawn 2 6 squares, reaching home"))
+        compose.onNodeWithContentDescription("Red home column, tile 1, empty").assertExists()
+        compose.onNodeWithContentDescription("Tile 51, Red pawn 2, 6 tiles from home")
+            .assert(onClickLabel("Move Red pawn 2 6 tiles, reaching home"))
         val prompt = compose.onNodeWithContentDescription("Alex rolled 6. Pick a pawn to move.")
         val actions = prompt.fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label }
         assertEquals(
-            listOf("Bring Red pawn 1 out of the yard", "Move Red pawn 2 6 squares, reaching home", "Move Red pawn 3 6 squares, capturing Green pawn 1"),
+            listOf("Bring Red pawn 1 out of the yard", "Move Red pawn 2 6 tiles, reaching home", "Move Red pawn 3 6 tiles, capturing Green pawn 1"),
             actions,
         )
     }
@@ -475,12 +475,12 @@ class BoardSemanticsTest : UiTest() {
         val pawns = listOf(listOf(H, H, H, H), listOf(Y, Y, Y, Y), listOf(H, H, H, H - 1), listOf(Y, Y, Y, Y))
         show(LudoEngine.applyRoll(new.copy(players = new.players.mapIndexed { i, p -> p.copy(pawns = pawns[i]) }), 1))
         val prompt = compose.onNodeWithContentDescription("Alex rolled 1. Pick a partner's pawn to move.")
-        assertEquals(listOf("Move Yellow pawn 4 1 square, reaching home"), prompt.fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label })
+        assertEquals(listOf("Move Yellow pawn 4 1 tile, reaching home"), prompt.fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label })
         compose.onNode(hasText("Alex").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 1, 4 pawns home, playing now, currently 1st"))).assertExists()
         compose.onNode(hasText("Sam").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 1, 3 pawns home, currently 1st"))).assertExists()
         compose.onNode(hasText("Gambit").and(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Team 2, 0 pawns home, currently 2nd"))).assertExists()
         // The pawn's own square offers the move too.
-        compose.onNode(onClickLabel("Move Yellow pawn 4 1 square, reaching home")).performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNode(onClickLabel("Move Yellow pawn 4 1 tile, reaching home")).performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(listOf(3), moved)
     }
 
@@ -543,7 +543,7 @@ class BoardSemanticsTest : UiTest() {
             assertEquals(PlayerColour.defaultFor(0).color, waiting.config[SemanticsProperties.Text].single().spanStyles.single().item.color)
             // The log's line is what's heard of the move.
             assertNull(waiting.config.getOrNull(SemanticsProperties.LiveRegion))
-            val line = compose.onNode(hasContentDescription("Alex's Pawn 1 moved 4 squares.")).fetchSemanticsNode()
+            val line = compose.onNode(hasContentDescription("Alex's Pawn 1 moved 4 tiles.")).fetchSemanticsNode()
             assertEquals(LiveRegionMode.Polite, line.config[SemanticsProperties.LiveRegion])
             compose.onNodeWithContentDescription("Sam, tap the die to roll.").assertDoesNotExist()
             compose.onNode(onClickLabel("Roll")).assertDoesNotExist()
@@ -594,8 +594,8 @@ class BoardSemanticsTest : UiTest() {
     /** A log of every kind of line, oldest first, with what each says. */
     private val everyLine = listOf(
         LogEntry(GameEvent.Moved(0, 6, Move(0, Y, 0), finished = false)) to "Alex brought Pawn 1 out.",
-        LogEntry(GameEvent.Moved(0, 4, Move(0, 0, 4), finished = false)) to "Alex's Pawn 1 moved 4 squares.",
-        LogEntry(GameEvent.Moved(0, 1, Move(0, 4, 5), finished = false)) to "Alex's Pawn 1 moved 1 square.",
+        LogEntry(GameEvent.Moved(0, 4, Move(0, 0, 4), finished = false)) to "Alex's Pawn 1 moved 4 tiles.",
+        LogEntry(GameEvent.Moved(0, 1, Move(0, 4, 5), finished = false)) to "Alex's Pawn 1 moved 1 tile.",
         LogEntry(GameEvent.NoMove(1, 3)) to "Gambit rolled 3 and had no move.",
         LogEntry(GameEvent.RollAgainLimit(2, 6)) to "Sam rolled a third 6 in a row, so the turn passed.",
         LogEntry(GameEvent.Moved(3, 2, Move(1, H - 2, H), finished = false)) to "Payout brought Pawn 2 home.",

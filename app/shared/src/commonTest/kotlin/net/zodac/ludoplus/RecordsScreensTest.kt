@@ -166,10 +166,10 @@ class RecordsScreensTest : UiTest() {
         val repository = records(rush("Alex", 9, 1, 1), rush("Sam", 2, 24, 2), rush("Jo", 4, 24, 3))
         val viewModel = LeaderboardViewModel(repository, MutableStateFlow(GameMode.COLOUR_RUSH))
         showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
-        compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Jo, 24 squares, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNode(hasContentDescription("2nd, Sam, 24 squares, 2 captures")).assertExists()
-        compose.onNode(hasContentDescription("3rd, Alex, 1 square, 9 captures")).assertExists()
-        compose.onNodeWithText("Colour Rush: most squares").assertExists()
+        compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Jo, 24 tiles, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("2nd, Sam, 24 tiles, 2 captures")).assertExists()
+        compose.onNode(hasContentDescription("3rd, Alex, 1 tile, 9 captures")).assertExists()
+        compose.onNodeWithText("Colour Rush: most tiles").assertExists()
 
         val statistics = StatisticsViewModel(repository, MutableStateFlow(ModePage.Mode(GameMode.COLOUR_RUSH)))
         showcase.show { LudoPlusTheme { StatisticsScreen(statistics, onBack = {}) } }
@@ -183,9 +183,9 @@ class RecordsScreensTest : UiTest() {
         val repository = records(survival("Alex", 9, 1, 1), survival("Sam", 2, 412, 2), survival("Jo", 4, 412, 3), survival("Kim", 12, null, 4))
         val viewModel = LeaderboardViewModel(repository, MutableStateFlow(GameMode.SURVIVAL))
         showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
-        compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Jo, 412 squares travelled, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNode(hasContentDescription("2nd, Sam, 412 squares travelled, 2 captures")).assertExists()
-        compose.onNode(hasContentDescription("3rd, Alex, 1 square travelled, 9 captures")).assertExists()
+        compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Jo, 412 tiles travelled, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("2nd, Sam, 412 tiles travelled, 2 captures")).assertExists()
+        compose.onNode(hasContentDescription("3rd, Alex, 1 tile travelled, 9 captures")).assertExists()
         // A win from before the distance was kept: last, a dash for the eye.
         compose.onNode(hasContentDescription("4th, Kim, distance not recorded, 12 captures")).assertExists()
         compose.onNode(hasText("–", substring = false), useUnmergedTree = true).assertExists()

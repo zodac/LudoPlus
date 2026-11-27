@@ -199,12 +199,12 @@ class PlayerCardTest : UiTest() {
     fun `a card's popup shows the squares its player's moves have travelled`() = uiTest(TestScreen(411, 891)) {
         show(game(listOf(6, 6, 6, 6), names) { state -> state.copy(players = state.players.mapIndexed { i, it -> if (i == 1) it.copy(squaresMoved = 142) else it }) })
         tap("Lucky")
-        assertEquals(1, says("142 squares travelled"))
-        assertEquals(1, drawn("Squares travelled"))
+        assertEquals(1, says("142 tiles travelled"))
+        assertEquals(1, drawn("Tiles travelled"))
         assertEquals(1, drawn("142"))
         show(game(listOf(6, 6, 6, 6), names))
         tap("Ace")
-        assertEquals(1, says("0 squares travelled"))
+        assertEquals(1, says("0 tiles travelled"))
     }
 
     @Test

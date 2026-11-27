@@ -160,7 +160,7 @@ class MoveLogRoomTest : UiTest() {
 
     /** How tall the board is: from the top of its highest place to the foot of its lowest. */
     private fun boardHeight(): Float {
-        val places = compose.onAllNodes(hasContentDescription("Square ", substring = true)).fetchSemanticsNodes().map { it.boundsInRoot }
+        val places = compose.onAllNodes(hasContentDescription("Tile ", substring = true)).fetchSemanticsNodes().map { it.boundsInRoot }
         return places.maxOf { it.bottom } - places.minOf { it.top }
     }
 

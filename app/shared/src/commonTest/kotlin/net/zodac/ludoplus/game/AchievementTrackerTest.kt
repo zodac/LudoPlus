@@ -138,7 +138,7 @@ class AchievementTrackerTest {
     }
 
     @Test
-    fun `Not So Fast captures a pawn on the last square before its home column - Back To Square One is losing one there`() {
+    fun `Not So Fast captures a pawn on the last square before its home column - Back To Tile One is losing one there`() {
         // Green's pawn 0 at progress 50, square 11; red's pawn on 10.
         val fast = Play(game(listOf(10, Y, Y, Y), listOf(LAST_TRACK, Y, Y, Y))).play(1, pawn = 0)
         assertTrue(Achievement.NOT_SO_FAST in fast.earned)

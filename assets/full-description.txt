@@ -5,12 +5,12 @@ THE CLASSIC RULES
 • Friends passing the phone around, computer opponents, or any mix of the two
 • Play in teams with 4, 6, or 8 players: two teams, or pairs with partners opposite
 • Roll a 6 to leave the yard, and roll again after a 6, a capture, or bringing a pawn home
-• Star squares and start squares are safe, and a pawn needs the exact roll to reach home
+• Star tiles and start tiles are safe, and a pawn needs the exact roll to reach home
 • Play on for every place, or end the game at the first winner
 
 SEVEN WAYS TO PLAY
 • Classic: four pawns each, by the classic rules
-• Colour Rush: claim the squares you land on first, take others with a capture, and finish with the most
+• Colour Rush: claim the tiles you land on first, take others with a capture, and finish with the most
 • Survival: six pawns each and no home; a captured pawn is out, sudden death comes, and the last player with a pawn wins
 • Chaos: power-ups on the track, from shields and doubled rolls to swapping places with any pawn
 • Haunted House: ghosts drift round the track and send pawns back to the yard
@@ -44,6 +44,6 @@ GOOGLE PLAY GAMES
 • Sign in, if you like, for achievements on your Play Games profile, global leaderboards for every mode but Survival and Colour Rush, and your progress saved across your devices
 
 MADE FOR EVERYONE
-• Built for TalkBack and large fonts, with every square and move described
+• Built for TalkBack and large fonts, with every tile and move described
 • Animation levels, and every animation can be switched off
 • No account needed: your games stay on your phone

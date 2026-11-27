@@ -191,7 +191,7 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
 - [x] Tests: each rule above (`LudoEngineTest`, `BoardGeometryTest`), plus property tests over 2,000
     seeded random games of 2-4 players (`LudoEnginePropertyTest`: pawn count, positions in range, no two colours off a
     safe square, capture tallies agree, every game ends with every place decided).
-- [x] Spoken positions: `pawnSpoken` (`ui/game/PawnSpeech.kt`, "Red pawn 2, 14 squares from home"), with the pure
+- [x] Spoken positions: `pawnSpoken` (`ui/game/PawnSpeech.kt`, "Red pawn 2, 14 tiles from home"), with the pure
     `stepsToHome` in `model/`, for TalkBack in Phase 2.
 
 ## Phase 2: The board and game screen
@@ -225,7 +225,7 @@ it independent of board size from the start (Phase 8), and keep every rule a `Ga
     restored from `5423b6c`).
 - [x] Accessibility (`BoardSemantics.kt`, `BoardSemanticsTest`): every yard, track square (numbered 1-52 from red's
     start), home-column square, and home is a node saying what is on it; a square with a movable pawn is a button
-    whose action names the move ("Move Red pawn 3 6 squares, capturing Green pawn 1"); the prompt line offers every
+    whose action names the move ("Move Red pawn 3 6 tiles, capturing Green pawn 1"); the prompt line offers every
     move as a custom action; the die is a "Roll" button.
 - [x] Leave-game confirmation (restored from `5423b6c`, `LeaveGameTest`): back asks first while Settings' "Confirm
     leaving game" is on. A CPU's turn waits while the game is off screen or under the dialog.

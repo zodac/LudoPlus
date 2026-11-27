@@ -83,6 +83,9 @@ them all home first. Releasing from 1.0.0 (2026-11-18).
     - Match the surrounding code's comment density and idiom.
     - Doc comments state rules, not guessed rationale.
     - British spelling in player text.
+    - **Tiles, not squares**: the board's spaces are "tiles" in everything a player sees (the app, spoken text, the
+        store listing, `README.md`; the maintainer, 2026-11-28). Code identifiers and stored ids keep "square"
+        (`game_square_*`, `squaresMoved`, `back_to_square_one`).
     - **Oxford comma** in every English list of three or more: player text, the store listing, `README.md`, docs,
         comments, and reports ("scores, styles, and settings"). Lists the app joins go through `spokenList`, whose
         `common_list_locale` is en-US for it.

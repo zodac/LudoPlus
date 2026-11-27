@@ -67,7 +67,7 @@ private fun List<Offset>.bounds(): Rect = Rect(minOf { it.x }, minOf { it.y }, m
 
 /**
  * The board for a screen reader, laid over the drawn one: a node for each yard, each track square (numbered from red's
- * start), each home-column square, and home (none on an endless board), saying what's on it ("Square 14, Red pawn 2, 43 squares from home"). A
+ * start), each home-column square, and home (none on an endless board), saying what's on it ("Tile 14, Red pawn 2, 43 tiles from home"). A
  * square holding a pawn the current player can move (theirs, or a partner's they roll for) is a button whose action
  * moves it ([moves], [onMove]), or while [swapping], one holding a pawn the move can swap with, whose action swaps them. One with a power-up
  * has an action that shows what it does ([onDescribe]).
@@ -211,7 +211,7 @@ internal fun swapLabel(move: Move, colourOf: (Int) -> PlayerColour): String {
 }
 
 /**
- * What TalkBack offers for [move]: "Move Red pawn 2 4 squares, capturing Green pawn 1", or "Bring Red pawn 1 out of the
+ * What TalkBack offers for [move]: "Move Red pawn 2 4 tiles, capturing Green pawn 1", or "Bring Red pawn 1 out of the
  * yard". A partner's pawn is named by its own colour.
  */
 @Composable

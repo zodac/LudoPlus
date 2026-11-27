@@ -186,7 +186,7 @@ private fun RollBars(rolls: Map<Int, Int>, faces: Int, colour: Color) {
     }
 }
 
-/** How many squares the pawns a player moved have walked, [squares], under a heading: "142 squares travelled" to a screen reader. */
+/** How many squares the pawns a player moved have walked, [squares], under a heading: "142 tiles travelled" to a screen reader. */
 @Composable
 private fun SquaresTravelled(squares: Int) {
     HeadedTotal(stringResource(Res.string.game_squares_travelled), squares, pluralStringResource(Res.plurals.leaderboard_squares_travelled, squares, squares))

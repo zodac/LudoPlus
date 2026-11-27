@@ -242,7 +242,7 @@ class BoardTilesTest : UiTest() {
         board().performTouchInput { longClick(square(3)) }
         compose.waitForIdle()
         compose.onAllNodesWithText("Shield").assertCountEquals(1)
-        compose.onAllNodesWithText("The next pawn to land on yours bounces off to the square before it, and the shield breaks.").assertCountEquals(1)
+        compose.onAllNodesWithText("The next pawn to land on yours bounces off to the tile before it, and the shield breaks.").assertCountEquals(1)
         state = state.copy(powerUps = emptyMap())
         compose.waitForIdle()
         compose.onAllNodesWithText("Shield").assertCountEquals(0)
@@ -266,7 +266,7 @@ class BoardTilesTest : UiTest() {
     @Test
     fun `TalkBack's action on a power-up's square shows what it does`() = uiTest(TestScreen(700, 900)) {
         show(game(GameMode.CHAOS, powerUps = mapOf(3 to PowerUp.SHIELD)))
-        val action = compose.onNodeWithContentDescription("Square 4, Shield power-up, empty").fetchSemanticsNode().config[SemanticsActions.CustomActions].single()
+        val action = compose.onNodeWithContentDescription("Tile 4, Shield power-up, empty").fetchSemanticsNode().config[SemanticsActions.CustomActions].single()
         assertEquals("What Shield does", action.label)
         compose.runOnIdle { action.action() }
         compose.waitForIdle()

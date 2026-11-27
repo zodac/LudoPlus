@@ -244,7 +244,7 @@ private fun colourOf(game: StartedGame, seatColours: List<PlayerColour?>, player
     return seatColours.getOrNull(seat) ?: PlayerColour.defaultFor(seat)
 }
 
-/** What [entry] says in the log: "Alex rolled 3 and had no move.", "Alex's Pawn 2 moved 4 squares.", "Alex captured Sam's Pawn 1 with Pawn 2." */
+/** What [entry] says in the log: "Alex rolled 3 and had no move.", "Alex's Pawn 2 moved 4 tiles.", "Alex captured Sam's Pawn 1 with Pawn 2." */
 @Composable
 internal fun logLine(game: StartedGame, entry: LogEntry): String {
     val line = eventLine(game, entry)

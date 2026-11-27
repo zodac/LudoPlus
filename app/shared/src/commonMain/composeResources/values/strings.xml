@@ -148,36 +148,36 @@
     <string name="game_pawn_spoken">%1$s pawn %2$d</string>
     <string name="game_pawn_out_spoken">%1$s pawn %2$d, out of the game</string>
     <plurals name="game_pawn_track_spoken">
-        <item quantity="one">%1$s pawn %2$d, %3$d square from home</item>
-        <item quantity="other">%1$s pawn %2$d, %3$d squares from home</item>
+        <item quantity="one">%1$s pawn %2$d, %3$d tile from home</item>
+        <item quantity="other">%1$s pawn %2$d, %3$d tiles from home</item>
     </plurals>
     <!-- The home column: the pawn's own coloured lane from the track to home, where nobody can capture it. -->
     <plurals name="game_pawn_home_column_spoken">
-        <item quantity="one">%1$s pawn %2$d, in the home column, %3$d square from home</item>
-        <item quantity="other">%1$s pawn %2$d, in the home column, %3$d squares from home</item>
+        <item quantity="one">%1$s pawn %2$d, in the home column, %3$d tile from home</item>
+        <item quantity="other">%1$s pawn %2$d, in the home column, %3$d tiles from home</item>
     </plurals>
     <string name="game_pawn_home_spoken">%1$s pawn %2$d, home</string>
-    <!-- The board's squares as TalkBack says them, each followed by the pawns on it (game_pawn_*_spoken) or "empty". %1$s is a colour (player_colour_*). Squares of the track are numbered 1 to 52 round the board from red's start. -->
-    <string name="game_square_track_spoken">Square %1$d</string>
+    <!-- The board's tiles as TalkBack says them, each followed by the pawns on it (game_pawn_*_spoken) or "empty". %1$s is a colour (player_colour_*). Tiles of the track are numbered 1 to 52 round the board from red's start. -->
+    <string name="game_square_track_spoken">Tile %1$d</string>
     <string name="game_square_start_spoken">%1$s start</string>
     <string name="game_square_safe_spoken">safe</string>
-    <!-- With the Guarded Starts house rule, a start square instead of "safe". %1$s is its colour (player_colour_*). -->
+    <!-- With the Guarded Starts house rule, a start tile instead of "safe". %1$s is its colour (player_colour_*). -->
     <string name="game_square_safe_for_spoken">safe for %1$s</string>
-    <!-- With the Blockades house rule, two or more of one player's pawns on a square. %1$s is their colour. -->
+    <!-- With the Blockades house rule, two or more of one player's pawns on a tile. %1$s is their colour. -->
     <string name="game_square_blockade_spoken">%1$s blockade</string>
-    <!-- The Portals mode: a square with a portal, and the square it leads to. -->
-    <string name="game_square_portal_spoken">portal to square %1$d</string>
-    <!-- Colour Rush: whose a claimed square is, %1$s a colour; and, after a move's action, that it claims the square it ends on. -->
-    <string name="game_square_claimed_spoken">%1$s's square</string>
-    <string name="game_move_claim_clause">claiming the square</string>
-    <!-- Chaos: a power-up on a square. %1$s is its name (power_up_*). Then, after a pawn with a shield round it. -->
+    <!-- The Portals mode: a tile with a portal, and the tile it leads to. -->
+    <string name="game_square_portal_spoken">portal to tile %1$d</string>
+    <!-- Colour Rush: whose a claimed tile is, %1$s a colour; and, after a move's action, that it claims the tile it ends on. -->
+    <string name="game_square_claimed_spoken">%1$s's tile</string>
+    <string name="game_move_claim_clause">claiming the tile</string>
+    <!-- Chaos: a power-up on a tile. %1$s is its name (power_up_*). Then, after a pawn with a shield round it. -->
     <string name="game_square_power_up_spoken">%1$s power-up</string>
-    <!-- A screen reader's action on such a square: it shows what the power-up does. %1$s is its name. -->
+    <!-- A screen reader's action on such a tile: it shows what the power-up does. %1$s is its name. -->
     <string name="game_square_power_up_action">What %1$s does</string>
     <string name="game_pawn_shielded_spoken">shielded</string>
-    <!-- Haunted House: a ghost on a square. -->
+    <!-- Haunted House: a ghost on a tile. -->
     <string name="game_square_ghost_spoken">ghost</string>
-    <string name="game_square_column_spoken">%1$s home column, square %2$d</string>
+    <string name="game_square_column_spoken">%1$s home column, tile %2$d</string>
     <string name="game_square_yard_spoken">%1$s yard</string>
     <string name="game_square_home_spoken">Home</string>
     <string name="game_square_empty_spoken">empty</string>
@@ -190,18 +190,18 @@
         <item quantity="one">%1$d of %2$d pawn lost</item>
         <item quantity="other">%1$d of %2$d pawns lost</item>
     </plurals>
-    <!-- A move as TalkBack offers it, on the square of the pawn and on the line saying to pick one. %1$s is the pawn's colour, %2$d its number, %3$d the roll. The clauses after it are added when they apply: "Move Red pawn 2 4 squares, capturing Green pawn 1". -->
+    <!-- A move as TalkBack offers it, on the tile of the pawn and on the line saying to pick one. %1$s is the pawn's colour, %2$d its number, %3$d the roll. The clauses after it are added when they apply: "Move Red pawn 2 4 tiles, capturing Green pawn 1". -->
     <plurals name="game_move_action">
-        <item quantity="one">Move %1$s pawn %2$d %3$d square</item>
-        <item quantity="other">Move %1$s pawn %2$d %3$d squares</item>
+        <item quantity="one">Move %1$s pawn %2$d %3$d tile</item>
+        <item quantity="other">Move %1$s pawn %2$d %3$d tiles</item>
     </plurals>
     <string name="game_move_out_action">Bring %1$s pawn %2$d out of the yard</string>
     <!-- A pawn coming out of the yard free, as the player's turn starts (game_prompt_free). -->
     <string name="game_move_out_free_action">Bring %1$s pawn %2$d out of the yard, free</string>
     <string name="game_move_capture_clause">capturing %1$s pawn %2$d</string>
-    <!-- The Portals mode: the move ends on a portal, so the pawn comes out on another square, %1$d. -->
-    <string name="game_move_portal_clause">through a portal to square %1$d</string>
-    <!-- Chaos: the move ends on a power-up, %1$s (power_up_*); or lands on a shielded pawn (its colour and number) and settles on the square before it. -->
+    <!-- The Portals mode: the move ends on a portal, so the pawn comes out on another tile, %1$d. -->
+    <string name="game_move_portal_clause">through a portal to tile %1$d</string>
+    <!-- Chaos: the move ends on a power-up, %1$s (power_up_*); or lands on a shielded pawn (its colour and number) and settles on the tile before it. -->
     <string name="game_move_power_up_clause">taking %1$s</string>
     <string name="game_move_bounce_clause">bouncing off %1$s pawn %2$d's shield</string>
     <string name="game_move_home_clause">reaching home</string>
@@ -227,10 +227,10 @@
         <item quantity="one">%1$d pawn left</item>
         <item quantity="other">%1$d pawns left</item>
     </plurals>
-    <!-- Survival's line under the players: how its last stages stand. They are Overtime (start squares stop being safe), Sudden Death (star squares do too), and the Cataclysm (squares vanish from the track). "coming" counts down to a stage, %1$d the rounds left (for the Cataclysm, the turns); "came" is shown in the round it comes. -->
+    <!-- Survival's line under the players: how its last stages stand. They are Overtime (start tiles stop being safe), Sudden Death (star tiles do too), and the Cataclysm (tiles vanish from the track). "coming" counts down to a stage, %1$d the rounds left (for the Cataclysm, the turns); "came" is shown in the round it comes. -->
     <plurals name="game_overtime_coming">
-        <item quantity="one">Overtime in %1$d round: start squares unsafe.</item>
-        <item quantity="other">Overtime in %1$d rounds: start squares unsafe.</item>
+        <item quantity="one">Overtime in %1$d round: start tiles unsafe.</item>
+        <item quantity="other">Overtime in %1$d rounds: start tiles unsafe.</item>
     </plurals>
     <string name="game_overtime_came">Overtime! Only stars are safe.</string>
     <plurals name="game_sudden_death_coming">
@@ -239,19 +239,19 @@
     </plurals>
     <string name="game_sudden_death_came">Sudden Death! Nowhere is safe.</string>
     <plurals name="game_cataclysm_coming">
-        <item quantity="one">Cataclysm in %1$d turn: squares vanish.</item>
-        <item quantity="other">Cataclysm in %1$d turns: squares vanish.</item>
+        <item quantity="one">Cataclysm in %1$d turn: tiles vanish.</item>
+        <item quantity="other">Cataclysm in %1$d turns: tiles vanish.</item>
     </plurals>
-    <!-- In the Cataclysm: %1$d is how many turns are left before squares next vanish. -->
+    <!-- In the Cataclysm: %1$d is how many turns are left before tiles next vanish. -->
     <plurals name="game_cataclysm">
-        <item quantity="one">Cataclysm! Squares vanish in %1$d turn.</item>
-        <item quantity="other">Cataclysm! Squares vanish in %1$d turns.</item>
+        <item quantity="one">Cataclysm! Tiles vanish in %1$d turn.</item>
+        <item quantity="other">Cataclysm! Tiles vanish in %1$d turns.</item>
     </plurals>
-    <string name="game_cataclysm_over">Cataclysm! No more squares will vanish.</string>
-    <!-- Added to a move's line in the log when squares vanished after it. -->
+    <string name="game_cataclysm_over">Cataclysm! No more tiles will vanish.</string>
+    <!-- Added to a move's line in the log when tiles vanished after it. -->
     <plurals name="game_event_vanished">
-        <item quantity="one">%1$d square vanished.</item>
-        <item quantity="other">%1$d squares vanished.</item>
+        <item quantity="one">%1$d tile vanished.</item>
+        <item quantity="other">%1$d tiles vanished.</item>
     </plurals>
     <!-- Chaos: how many more of a player's rolls count double (Double, a power-up), shown on their yard, as TalkBack says it of the yard. -->
     <plurals name="game_square_yard_doubled_spoken">
@@ -267,8 +267,8 @@
     <string name="game_captures_captured">Captured by</string>
     <string name="game_captures_captured_spoken">captured by %1$d</string>
     <string name="game_captures_action">Show stats</string>
-    <!-- Under those: the heading over how many squares the pawns the player moved have walked, read aloud as leaderboard_squares_travelled. -->
-    <string name="game_squares_travelled">Squares travelled</string>
+    <!-- Under those: the heading over how many tiles the pawns the player moved have walked, read aloud as leaderboard_squares_travelled. -->
+    <string name="game_squares_travelled">Tiles travelled</string>
     <!-- Under those: the heading over how many times the player has rolled each face of the die, as a screen reader says its total, and each face (%1$d is the face, %2$d the times, which the plural goes by). -->
     <string name="game_rolls">Rolls</string>
     <plurals name="game_rolls_spoken">
@@ -355,20 +355,20 @@
         <item quantity="one">%1$s brought %2$s out free, with none out after %3$d turn.</item>
         <item quantity="other">%1$s brought %2$s out free, with none out after %3$d turns.</item>
     </plurals>
-    <!-- A pawn (%1$s, game_event_pawn_of) moved along the board: %2$d is how many squares. Kept short, to fit one line of the log at a large font. -->
+    <!-- A pawn (%1$s, game_event_pawn_of) moved along the board: %2$d is how many tiles. Kept short, to fit one line of the log at a large font. -->
     <plurals name="game_event_move">
-        <item quantity="one">%1$s moved %2$d square.</item>
-        <item quantity="other">%1$s moved %2$d squares.</item>
+        <item quantity="one">%1$s moved %2$d tile.</item>
+        <item quantity="other">%1$s moved %2$d tiles.</item>
     </plurals>
-    <!-- The Portals mode: the pawn's (%1$s) move ended on a portal, so it came out at that portal's pair. %2$d is how many squares it moved first. -->
+    <!-- The Portals mode: the pawn's (%1$s) move ended on a portal, so it came out at that portal's pair. %2$d is how many tiles it moved first. -->
     <plurals name="game_event_portal">
-        <item quantity="one">%1$s moved %2$d square, then through a portal.</item>
-        <item quantity="other">%1$s moved %2$d squares, then through a portal.</item>
+        <item quantity="one">%1$s moved %2$d tile, then through a portal.</item>
+        <item quantity="other">%1$s moved %2$d tiles, then through a portal.</item>
     </plurals>
-    <!-- Chaos: the pawn (%1$s) landed on a shielded one, so it settled on the square before it. %3$s is the shielded pawn's player. -->
+    <!-- Chaos: the pawn (%1$s) landed on a shielded one, so it settled on the tile before it. %3$s is the shielded pawn's player. -->
     <plurals name="game_event_bounce">
-        <item quantity="one">%1$s moved %2$d square and bounced off %3$s's shield.</item>
-        <item quantity="other">%1$s moved %2$d squares and bounced off %3$s's shield.</item>
+        <item quantity="one">%1$s moved %2$d tile and bounced off %3$s's shield.</item>
+        <item quantity="other">%1$s moved %2$d tiles and bounced off %3$s's shield.</item>
     </plurals>
     <!-- Chaos: a line of the log, then what the power-up the move ended on did (the lines after this one), each a sentence. -->
     <string name="game_event_and">%1$s %2$s</string>
@@ -418,10 +418,10 @@
         <item quantity="one">%1$d turn</item>
         <item quantity="other">%1$d turns</item>
     </plurals>
-    <!-- Colour Rush: how many squares a player has claimed, on their card, the results, and the Leaderboard. -->
+    <!-- Colour Rush: how many tiles a player has claimed, on their card, the results, and the Leaderboard. -->
     <plurals name="gameover_squares">
-        <item quantity="one">%1$d square</item>
-        <item quantity="other">%1$d squares</item>
+        <item quantity="one">%1$d tile</item>
+        <item quantity="other">%1$d tiles</item>
     </plurals>
     <plurals name="gameover_captures">
         <item quantity="one">%1$d capture</item>
@@ -458,14 +458,14 @@
     <string name="game_tutorial_green_rolls_again">Green's pawn is out. A **6** also earns another roll. Tap Next.</string>
     <string name="game_tutorial_green_moves_on">Green moves a pawn by the number it rolled. Tap Next.</string>
     <string name="game_tutorial_your_turn_out">Your turn. Tap the die.</string>
-    <string name="game_tutorial_bring_out">A **6**! Tap a pawn in your yard to bring it out onto your start square.</string>
+    <string name="game_tutorial_bring_out">A **6**! Tap a pawn in your yard to bring it out onto your start tile.</string>
     <string name="game_tutorial_six_rolls_again">Your **6** earns another roll. Tap the die.</string>
-    <string name="game_tutorial_move_out_pawn">Tap your pawn to move it **4** squares.</string>
-    <string name="game_tutorial_capture_intro">Next, captures. Green's pawn is **4** squares ahead of yours. Tap the die.</string>
+    <string name="game_tutorial_move_out_pawn">Tap your pawn to move it **4** tiles.</string>
+    <string name="game_tutorial_capture_intro">Next, captures. Green's pawn is **4** tiles ahead of yours. Tap the die.</string>
     <string name="game_tutorial_capture">A **4**! Tap your pawn to land on Green's and send it back to its yard.</string>
     <string name="game_tutorial_capture_rolls_again">Captured! A capture earns another roll. Tap the die.</string>
-    <string name="game_tutorial_capture_move_on">Green can capture you too, but nobody can on a star or a start square. Tap your pawn to move on.</string>
-    <string name="game_tutorial_home_intro">Next, home. Your pawn in the home column is **2** squares from home. Tap the die.</string>
+    <string name="game_tutorial_capture_move_on">Green can capture you too, but nobody can on a star or a start tile. Tap your pawn to move on.</string>
+    <string name="game_tutorial_home_intro">Next, home. Your pawn in the home column is **2** tiles from home. Tap the die.</string>
     <string name="game_tutorial_home">Exactly **2**! Tap that pawn to bring it home.</string>
     <string name="game_tutorial_home_rolls_again">Home! That earns another roll too. Tap the die.</string>
     <string name="game_tutorial_home_move_on">Tap your other pawn to move it on.</string>
@@ -504,10 +504,10 @@
     <string name="leaderboard_title">Leaderboard</string>
     <!-- Above the table. %1$s is the game mode's name. -->
     <string name="leaderboard_heading">%1$s: fastest wins</string>
-    <!-- The same, for Survival: the most squares the winner's pawns travelled. -->
+    <!-- The same, for Survival: the most tiles the winner's pawns travelled. -->
     <string name="leaderboard_heading_travelled">%1$s: furthest travelled</string>
-    <!-- The same, for Colour Rush: the most squares the winner held. -->
-    <string name="leaderboard_heading_squares">%1$s: most squares</string>
+    <!-- The same, for Colour Rush: the most tiles the winner held. -->
+    <string name="leaderboard_heading_squares">%1$s: most tiles</string>
     <!-- A Leaderboard with no wins for the player count picked. %1$s is the game mode's name, %2$d the count (2 to 8). -->
     <plurals name="leaderboard_empty_players">
         <item quantity="one">No wins in %1$s with %2$d player yet. Win a game to set a time.</item>
@@ -522,14 +522,14 @@
     </plurals>
     <string name="leaderboard_player">Player</string>
     <string name="leaderboard_turns">Turns</string>
-    <!-- Survival's column: the squares the winner's pawns travelled. -->
+    <!-- Survival's column: the tiles the winner's pawns travelled. -->
     <string name="leaderboard_travelled">Distance</string>
-    <string name="leaderboard_squares">Squares</string>
+    <string name="leaderboard_squares">Tiles</string>
     <string name="leaderboard_captures">Captures</string>
     <!-- A Survival row's distance read aloud, and under the name where the columns don't fit. -->
     <plurals name="leaderboard_squares_travelled">
-        <item quantity="one">%1$d square travelled</item>
-        <item quantity="other">%1$d squares travelled</item>
+        <item quantity="one">%1$d tile travelled</item>
+        <item quantity="other">%1$d tiles travelled</item>
     </plurals>
     <!-- A Survival win recorded before the distance was kept: shown as a dash in the column, and this read aloud. -->
     <string name="leaderboard_travelled_unknown">distance not recorded</string>
@@ -668,11 +668,11 @@
     <string name="house_rule_no_pity_release">No Free Pawn</string>
     <string name="house_rule_no_pity_release_description">A player with no pawn out 5 turns after the first one came out doesn't get one out free.</string>
     <string name="house_rule_blockades">Blockades</string>
-    <string name="house_rule_blockades_description">Two of your pawns on one square make a blockade: no other player's pawn can pass it or land on it.</string>
+    <string name="house_rule_blockades_description">Two of your pawns on one tile make a blockade: no other player's pawn can pass it or land on it.</string>
     <string name="house_rule_must_capture">Must Capture</string>
     <string name="house_rule_must_capture_description">If a move can capture, you have to make a capture.</string>
     <string name="house_rule_guarded_starts">Guarded Starts</string>
-    <string name="house_rule_guarded_starts_description">A start square is safe only for its own colour. Other pawns there can be captured.</string>
+    <string name="house_rule_guarded_starts_description">A start tile is safe only for its own colour. Other pawns there can be captured.</string>
     <!-- The setup form's card choosing how many play, 2 to 8. -->
     <string name="setup_players">Players</string>
     <!-- What a screen reader says for each of the Players card's numbers. -->
@@ -959,7 +959,7 @@
     <string name="achievement_paint_the_town_red_title">Paint The Town Red</string>
     <string name="achievement_paint_the_town_red_description">Win a game of `Colour Rush` mode</string>
     <string name="achievement_colour_coordinated_title">Colour Coordinated</string>
-    <string name="achievement_colour_coordinated_description">Hold eight squares in a row in `Colour Rush` mode</string>
+    <string name="achievement_colour_coordinated_description">Hold eight tiles in a row in `Colour Rush` mode</string>
     <string name="achievement_double_or_nothing_title">Double Or Nothing</string>
     <string name="achievement_double_or_nothing_description">Win a game of `Two Dice` mode</string>
     <string name="achievement_two_birds_two_stones_title">Two Birds, Two Stones</string>
@@ -1001,15 +1001,15 @@
     <string name="achievement_two_for_one_title">Two For One</string>
     <string name="achievement_two_for_one_description">Capture two pawns with one move</string>
     <string name="achievement_welcome_party_title">Wrong Neighbourhood</string>
-    <string name="achievement_welcome_party_description">Capture a pawn within six squares of its start square</string>
+    <string name="achievement_welcome_party_description">Capture a pawn within six tiles of its start tile</string>
     <string name="achievement_straight_out_the_gate_title">Straight Out The Gate</string>
-    <string name="achievement_straight_out_the_gate_description">Capture with a pawn's first move from its start square</string>
+    <string name="achievement_straight_out_the_gate_description">Capture with a pawn's first move from its start tile</string>
     <string name="achievement_hat_trick_title">Hat Trick</string>
     <string name="achievement_hat_trick_description">Capture three pawns in one turn</string>
     <string name="achievement_payback_title">Revenge Is Sweet</string>
     <string name="achievement_payback_description">Capture a pawn of whoever last captured yours, on your very next turn</string>
     <string name="achievement_not_so_fast_title">Not So Fast!</string>
-    <string name="achievement_not_so_fast_description">Capture a pawn on the last square before its home column</string>
+    <string name="achievement_not_so_fast_description">Capture a pawn on the last tile before its home column</string>
     <string name="achievement_tall_poppy_title">Tall Poppy</string>
     <string name="achievement_tall_poppy_description">Capture an opponent's last pawn, with the rest of theirs home</string>
     <string name="achievement_parting_shot_title">Parting Shot</string>
@@ -1045,7 +1045,7 @@
     <string name="achievement_globetrotter_title">Globetrotter</string>
     <string name="achievement_globetrotter_description">Bring 500 pawns home</string>
     <string name="achievement_ultramarathon_title">Ultramarathon</string>
-    <string name="achievement_ultramarathon_description">Move your pawns 50,000 squares</string>
+    <string name="achievement_ultramarathon_description">Move your pawns 50,000 tiles</string>
     <string name="achievement_clean_sweep_title">Clean Sweep</string>
     <string name="achievement_clean_sweep_description">Win before any opponent brings a pawn home</string>
     <string name="achievement_comeback_kid_title">Comeback Kid</string>
@@ -1076,8 +1076,8 @@
     <string name="achievement_untouchable_description">Win without having a pawn captured</string>
     <string name="achievement_wire_to_wire_title">Wire To Wire</string>
     <string name="achievement_wire_to_wire_description">Win a game in which no opponent ever had more pawns home than you</string>
-    <string name="achievement_back_to_square_one_title">Back To Square One</string>
-    <string name="achievement_back_to_square_one_description">Have a pawn captured on the last square before your home column</string>
+    <string name="achievement_back_to_square_one_title">Back To Tile One</string>
+    <string name="achievement_back_to_square_one_description">Have a pawn captured on the last tile before your home column</string>
     <string name="achievement_bottom_of_the_barrel_title">Bottom Of The Barrel</string>
     <string name="achievement_bottom_of_the_barrel_description">Roll three 1s in a row</string>
     <string name="achievement_defeat_from_the_jaws_of_victory_title">Defeat From The Jaws Of Victory</string>
@@ -1113,13 +1113,13 @@
     <string name="achievement_leapfrog_title">Leapfrog</string>
     <string name="achievement_leapfrog_description">Move past three opponents' pawns with one move</string>
     <string name="achievement_my_favourite_spot_title">My Favourite Spot</string>
-    <string name="achievement_my_favourite_spot_description">Have all your pawns on the same square, other than your start square</string>
+    <string name="achievement_my_favourite_spot_description">Have all your pawns on the same tile, other than your start tile</string>
     <string name="achievement_so_near_yet_so_far_title">So Near, Yet So Far</string>
     <string name="achievement_so_near_yet_so_far_description">Require a single 1 to bring home your last pawn, but miss it three turns in a row</string>
     <string name="achievement_visiting_the_neighbours_title">Visiting The Neighbours</string>
-    <string name="achievement_visiting_the_neighbours_description">Have one pawn on each player's start square at once</string>
+    <string name="achievement_visiting_the_neighbours_description">Have one pawn on each player's start tile at once</string>
     <string name="achievement_were_all_friends_here_title">We're All Friends Here</string>
-    <string name="achievement_were_all_friends_here_description">Have every player with one pawn on the same square</string>
+    <string name="achievement_were_all_friends_here_description">Have every player with one pawn on the same tile</string>
     <string name="achievement_who_made_this_title">Who Made This?</string>
     <string name="achievement_who_made_this_description">Open the `About` page</string>
     <string name="achievement_alliteration_title">Alliteration</string>
@@ -1185,7 +1185,7 @@
     <string name="mode_classic">Classic</string>
     <string name="mode_classic_description">The official rules</string>
     <string name="mode_colour_rush">Colour Rush</string>
-    <string name="mode_colour_rush_description">Land on a square to claim it: most squares wins</string>
+    <string name="mode_colour_rush_description">Land on a tile to claim it: most tiles wins</string>
     <string name="mode_two_dice">Two Dice</string>
     <string name="mode_two_dice_description">Classic mode, but each turn rolls two dice</string>
     <string name="mode_portals">Portals</string>
@@ -1193,12 +1193,12 @@
     <string name="mode_survival">Survival</string>
     <string name="mode_survival_description">Start with 6 pawns on the board, and try to survive!</string>
     <string name="mode_chaos">Chaos</string>
-    <string name="mode_chaos_description">Squares contain power-ups to help you win!</string>
+    <string name="mode_chaos_description">Tiles contain power-ups to help you win!</string>
     <!-- Chaos's power-ups: each one's name, and what it does, as a sentence. -->
     <string name="power_up_double">Double</string>
     <string name="power_up_double_description">Your next three rolls move a pawn twice as far. A roll that would take it past home counts once.</string>
     <string name="power_up_shield">Shield</string>
-    <string name="power_up_shield_description">The next pawn to land on yours bounces off to the square before it, and the shield breaks.</string>
+    <string name="power_up_shield_description">The next pawn to land on yours bounces off to the tile before it, and the shield breaks.</string>
     <string name="power_up_roll_again">Roll Again</string>
     <string name="power_up_roll_again_description">You get another roll.</string>
     <string name="power_up_call_up">Call Up</string>
@@ -1212,20 +1212,20 @@
     <string name="settings_motion_pawn_move">Pawn moves</string>
     <string name="rules_board_title">The Board</string>
     <string name="rules_board_tab">The Board</string>
-    <string name="rules_board_1">Each player has four pawns, waiting in their own coloured yard. Each colour has their own start square.</string>
+    <string name="rules_board_1">Each player has four pawns, waiting in their own coloured yard. Each colour has their own start tile.</string>
     <string name="rules_board_2">The track runs around the board, and you share it with other players.</string>
     <string name="rules_board_3">After a full lap, a pawn enters its own home column and heads home in the middle of the board.</string>
     <string name="rules_turn_title">Your Turn</string>
     <string name="rules_turn_tab">Your Turn</string>
-    <string name="rules_turn_1">Roll the die, then move one of your pawns that many squares.</string>
+    <string name="rules_turn_1">Roll the die, then move one of your pawns that many tiles.</string>
     <string name="rules_turn_2">You must roll a `6` to bring a pawn out of the yard onto the board. If another player brings out the first pawn and you still have none out after 5 of your turns, one comes out free.</string>
     <string name="rules_turn_3">Every time you roll a `6`, you may roll again (so does capturing a pawn, or bringing one home). However, roll three `6`s in a row and your turn ends!</string>
     <string name="rules_turn_4">If you have no valid moves, your turn passes.</string>
     <string name="rules_capture_title">Captures</string>
     <string name="rules_capture_tab">Captures</string>
     <string name="rules_capture_1">If you land on a rival's pawns, they are sent back to their yard and must roll another `6` to escape.</string>
-    <string name="rules_capture_2">Start squares and star squares are safe spots: nobody can be captured there.</string>
-    <string name="rules_capture_3">Your own pawns can share a square, and any pawn can pass any other.</string>
+    <string name="rules_capture_2">Start tiles and star tiles are safe spots: nobody can be captured there.</string>
+    <string name="rules_capture_3">Your own pawns can share a tile, and any pawn can pass any other.</string>
     <string name="rules_capture_4">If you're lucky, you can chain your captures together!</string>
     <string name="rules_winning_title">Winning</string>
     <string name="rules_winning_tab">Winning</string>
@@ -1234,27 +1234,27 @@
     <string name="rules_winning_2">The first player to bring all four pawns home wins, and everyone else plays on for the places.</string>
     <string name="rules_winning_3">With *Stop at first winner* on in Settings, the game ends as soon as one player has every pawn home. Everyone else is placed by how far their pawns have come.</string>
     <!-- The Game Modes pages: a page a mode beyond Classic, titled by its name (mode_*). -->
-    <string name="rules_colour_rush_1">In Colour Rush the first pawn to land on a square of the track claims it, and it takes that player's colour. Claiming a square doesn't make it safe. Stars can be claimed too, but start squares can't.</string>
-    <string name="rules_colour_rush_2">A claimed square only changes hands when another player captures a pawn on it, whoever's pawn that was. Pawns on stars can't be captured, so a claimed star never changes hands.</string>
-    <string name="rules_colour_rush_3">The game ends when every square that can be claimed is, or when a player (or a team) has every pawn home. The most squares wins. If that's a tie, it goes to whoever's pawns have come furthest.</string>
-    <string name="rules_colour_rush_records">The Leaderboard ranks Colour Rush wins by the most squares. Your pawns home and your captures count in Statistics.</string>
+    <string name="rules_colour_rush_1">In Colour Rush the first pawn to land on a tile of the track claims it, and it takes that player's colour. Claiming a tile doesn't make it safe. Stars can be claimed too, but start tiles can't.</string>
+    <string name="rules_colour_rush_2">A claimed tile only changes hands when another player captures a pawn on it, whoever's pawn that was. Pawns on stars can't be captured, so a claimed star never changes hands.</string>
+    <string name="rules_colour_rush_3">The game ends when every tile that can be claimed is, or when a player (or a team) has every pawn home. The most tiles wins. If that's a tie, it goes to whoever's pawns have come furthest.</string>
+    <string name="rules_colour_rush_records">The Leaderboard ranks Colour Rush wins by the most tiles. Your pawns home and your captures count in Statistics.</string>
     <string name="rules_two_dice_1">Two Dice rolls two dice at once. Move a pawn by each die, one after the other, in either order: the same pawn twice, or two pawns. Tap a die to pick the one your next move uses.</string>
     <string name="rules_two_dice_2">A 6 on either die brings a pawn out of the yard, and the other die can move it on. If a die has no move, it's lost.</string>
     <string name="rules_two_dice_3">Roll a double and you roll again once both dice are moved, but three doubles in a row end your turn. A capture, or a pawn brought home, still earns another roll.</string>
     <string name="rules_portals_1">Portals come in pairs, told by their colour and symbol. If your move ends on one, your pawn comes out at the other, whether that's further on or further back. Passing over a portal does nothing. Once a pawn goes through a pair, it closes and opens again somewhere else.</string>
     <string name="rules_portals_2">Your pawn only captures where it comes out. While it waits on a portal, rivals who land there go through without capturing it, but one coming out there captures it.</string>
-    <string name="rules_portals_3">Long portals, with a split ring, are further apart than short ones, and keep their length wherever they open. One that reaches past your own start square takes your pawn most of the way home, or most of the way back.</string>
-    <string name="rules_survival_1">In Survival there's no home to reach. Each player's six pawns start out on their start square and go round the track until one player is left.</string>
+    <string name="rules_portals_3">Long portals, with a split ring, are further apart than short ones, and keep their length wherever they open. One that reaches past your own start tile takes your pawn most of the way home, or most of the way back.</string>
+    <string name="rules_survival_1">In Survival there's no home to reach. Each player's six pawns start out on their start tile and go round the track until one player is left.</string>
     <string name="rules_survival_2">A captured pawn is out of the game. Lose all six and you're out: the last player with a pawn left wins, and everyone else is placed by how long they lasted.</string>
-    <string name="rules_survival_3">Start squares and star squares are safe at first. In Overtime the start squares stop being safe, and in Sudden Death the star squares do too. The line above the board counts the rounds, and with more players it takes longer.</string>
-    <string name="rules_survival_4">On a square that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start square when Overtime comes.</string>
-    <string name="rules_survival_5">Ten turns after that comes the Cataclysm: after every five turns, up to three squares with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven squares left, so nobody can keep away for ever.</string>
-    <string name="rules_survival_records">The Leaderboard ranks Survival wins by the furthest travelled: the most squares the winner's pawns moved.</string>
+    <string name="rules_survival_3">Start tiles and star tiles are safe at first. In Overtime the start tiles stop being safe, and in Sudden Death the star tiles do too. The line above the board counts the rounds, and with more players it takes longer.</string>
+    <string name="rules_survival_4">On a tile that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start tile when Overtime comes.</string>
+    <string name="rules_survival_5">Ten turns after that comes the Cataclysm: after every five turns, up to three tiles with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven tiles left, so nobody can keep away for ever.</string>
+    <string name="rules_survival_records">The Leaderboard ranks Survival wins by the furthest travelled: the most tiles the winner's pawns moved.</string>
     <string name="rules_chaos_1">In Chaos there are power-ups on the track, at least one of each kind at any time. End a move on one to use it at once:</string>
     <string name="rules_chaos_2">Only one power-up works in a move: a pawn moved onto another leaves it there. When the last of a kind is taken, another appears somewhere random at once. A random power-up also appears every one to five turns, up to two for each player, or seven with two or three players.</string>
     <string name="rules_chaos_3">Bouncing off a shield earns no roll unless your pawn captures where it settles. A pawn brought out of the yard can't bounce, so a shield doesn't stop it.</string>
-    <string name="rules_haunted_house_1">In Haunted House, ghosts haunt the track, one for every two players. After every second turn one of them drifts up to 6 squares, forwards or back, and you won't know which one or how far until it does.</string>
-    <string name="rules_haunted_house_2">A ghost sends every pawn on the square it lands on back to its yard, whoever's they are, unless the square is safe. Landing on a ghost yourself does no harm: it only catches pawns when it moves.</string>
+    <string name="rules_haunted_house_1">In Haunted House, ghosts haunt the track, one for every two players. After every second turn one of them drifts up to 6 tiles, forwards or back, and you won't know which one or how far until it does.</string>
+    <string name="rules_haunted_house_2">A ghost sends every pawn on the tile it lands on back to its yard, whoever's they are, unless the tile is safe. Landing on a ghost yourself does no harm: it only catches pawns when it moves.</string>
     <string name="rules_modes_records">Each mode has its own Leaderboard, its own page in Statistics, and achievements of its own.</string>
     <!-- The House Rules pages: an introduction, then each house rule (house_rule_*) as a line of its own (rules_house_rule_line), grouped by what they change. -->
     <string name="rules_house_rules_title">House Rules</string>
@@ -1271,17 +1271,17 @@
     <!-- %1$s is a house rule's name (house_rule_*), already in *italics*, %2$s what it changes (house_rule_*_description). -->
     <string name="rules_house_rule_line">%1$s: %2$s</string>
     <!-- Each Rules card's diagram (ui/rules/RulesDiagram.kt), spoken by TalkBack as one image. The diagrams show the default colours: Red, Green, Yellow, and Blue. -->
-    <string name="rules_board_diagram_cd">Diagram: Red's route. From its start square, a pawn goes a lap of the track clockwise, then up Red's home column to home in the middle.</string>
-    <string name="rules_turn_diagram_cd">Diagram: the die shows 6, so a red pawn comes out of its yard onto its start square.</string>
-    <string name="rules_capture_diagram_cd">Diagram: Red rolls 4 and lands on Green's pawn, sending it back to Green's yard. Blue's pawn is safe on a star square.</string>
-    <string name="rules_winning_diagram_cd">Diagram: a red pawn 3 squares from home needs exactly 3 to get there. Another red pawn is already home.</string>
+    <string name="rules_board_diagram_cd">Diagram: Red's route. From its start tile, a pawn goes a lap of the track clockwise, then up Red's home column to home in the middle.</string>
+    <string name="rules_turn_diagram_cd">Diagram: the die shows 6, so a red pawn comes out of its yard onto its start tile.</string>
+    <string name="rules_capture_diagram_cd">Diagram: Red rolls 4 and lands on Green's pawn, sending it back to Green's yard. Blue's pawn is safe on a star tile.</string>
+    <string name="rules_winning_diagram_cd">Diagram: a red pawn 3 tiles from home needs exactly 3 to get there. Another red pawn is already home.</string>
     <!-- What TalkBack says for the board on each Game Modes page of the Rules (ui/rules/RulesBoard.kt). -->
-    <string name="rules_colour_rush_board_cd">Board: a game of Colour Rush. The squares each player has claimed are in their colour, behind their pawns. Red has claimed the most.</string>
+    <string name="rules_colour_rush_board_cd">Board: a game of Colour Rush. The tiles each player has claimed are in their colour, behind their pawns. Red has claimed the most.</string>
     <string name="rules_two_dice_board_cd">Board: a game of Two Dice, with pawns of every colour out on the track. Under it, the dice show 6 and 3.</string>
     <string name="rules_portals_board_cd">Board: a game of Portals, with every pair of portals on the track. A red pawn waits on one.</string>
-    <string name="rules_survival_board_cd">Board: a game of Survival in the Cataclysm. Six squares of the track have vanished, the start and star squares are crossed out as no longer safe, and each yard crosses out the pawns its player has lost.</string>
+    <string name="rules_survival_board_cd">Board: a game of Survival in the Cataclysm. Six tiles of the track have vanished, the start and star tiles are crossed out as no longer safe, and each yard crosses out the pawns its player has lost.</string>
     <string name="rules_chaos_board_cd">Board: a game of Chaos, with one of each power-up on the track. A green pawn has a shield, and Red's yard shows 2 doubled rolls left and 1 Call Up banked.</string>
-    <string name="rules_haunted_house_board_cd">Board: a game of Haunted House, with its two ghosts on the track, one 2 squares ahead of a red pawn.</string>
+    <string name="rules_haunted_house_board_cd">Board: a game of Haunted House, with its two ghosts on the track, one 2 tiles ahead of a red pawn.</string>
 
 
     <!-- Styles -->
