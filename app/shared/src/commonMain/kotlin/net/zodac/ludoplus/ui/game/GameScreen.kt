@@ -3,6 +3,9 @@ package net.zodac.ludoplus.ui.game
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import net.zodac.ludoplus.ui.style.visualTheme
 import net.zodac.ludoplus.ui.style.TableBackground
 import net.zodac.ludoplus.ui.style.LocalGameVisualTheme
@@ -51,6 +54,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -741,8 +745,8 @@ internal fun playerCardInfo(game: StartedGame, index: Int, turn: Int, ranks: Lis
 }
 
 /**
- * A player's card ([info], player [index]'s): a tap on it shows how many captures they have made and had made of them, in
- * all and against each opponent, and their rolls of each face ([PlayerStats], from [currentGame]), under their whole
+ * A player's card ([info], player [index]'s): a tap or a long press on it shows how many captures they have made and had made of them, in
+ * all and against each opponent, the squares they have travelled, and their rolls of each face ([PlayerStats], from [currentGame]), under their whole
  * name where the card cuts it. It's outlined in dashes while that's up.
  */
 @Composable
@@ -766,6 +770,8 @@ private fun PlayerCard(info: PlayerCardInfo, index: Int, compact: Boolean, curre
     val tooltip = rememberAppTooltipState(persistent = true)
     val scope = rememberCoroutineScope()
     val tapAction = stringResource(Res.string.game_captures_action)
+    // A long press's release is a tap too: the popup is already up for it.
+    val open: () -> Unit = remember(tooltip, scope) { { if (!tooltip.isVisible) scope.launch { tooltip.show() } } }
     val spoken = joinClauses(
         listOfNotNull(
             team?.let { stringResource(Res.string.game_player_team_spoken, it) },
@@ -793,7 +799,8 @@ private fun PlayerCard(info: PlayerCardInfo, index: Int, compact: Boolean, curre
                         traversalIndex = index.toFloat()
                     }
                     .clip(RoundedCornerShape(CARD_CORNER))
-                    .clickable(onClickLabel = tapAction, role = Role.Button) { scope.launch { tooltip.show() } },
+                    .clickable(onClickLabel = tapAction, role = Role.Button, onClick = open)
+                    .onLongPress(open),
                 shape = RoundedCornerShape(CARD_CORNER),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 border = if (current && !tooltip.isVisible) BorderStroke(2.dp, colour) else null,
@@ -841,6 +848,18 @@ private fun Modifier.openedOutline(opened: Boolean, colour: Color): Modifier = i
         cornerRadius = CornerRadius(CARD_CORNER.toPx() - inset),
         style = Stroke(stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))),
     )
+}
+
+/**
+ * [action] once a press has been held for a long press's time, without the press itself: what it does on release (a click)
+ * still happens. No action for a screen reader, whose activation is the click's.
+ */
+private fun Modifier.onLongPress(action: () -> Unit): Modifier = pointerInput(action) {
+    awaitEachGesture {
+        awaitFirstDown(requireUnconsumed = false)
+        val ended = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) { waitForUpOrCancellation() ?: Unit }
+        if (ended == null) action()
+    }
 }
 
 private val CARD_CORNER = 12.dp

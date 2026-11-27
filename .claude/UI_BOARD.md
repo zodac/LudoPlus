@@ -104,16 +104,21 @@ whose turn it is has an outline in their colour.
     shares one, drawn with an equals sign as DiceFive's is ("=2", `game_player_rank_tied`, on a pill as wide as it needs;
     the maintainer, 2026-11-25), and nobody has one while everyone is level. TalkBack: "currently 2nd", "currently joint 2nd", or "4th place"
     once placed (`PlayerCardTest`).
-- **A tap anywhere on the card** shows their captures and times captured, in all and against each opponent (`PlayerStats`,
+- **A tap or a long press anywhere on the card** shows their captures and times captured, in all and against each opponent (`PlayerStats`,
     `PlayerCardTest`; the maintainer, 2026-11-26, in place of a tap's summary and a long press): the totals, headed "Captures" and
     "Captured by", then a bar either side of each opponent's name, in their colour, all on one scale. Partners are left out
     unless they capture each other, and a ghost's aren't captures. A name too long for its card is cut with an ellipsis, and the
     popup has all of it above the totals; one that fits isn't repeated. A tap anywhere only closes it, as a power-up's.
-    TalkBack: the card is a button, "Show captures and rolls", and the popup reads "Lucky, 3 captures, captured by 1", then "Alex, 2
+    A long press opens it once it's held for a long press's time (the maintainer, 2026-11-28), and its release, a tap too,
+    leaves it up; TalkBack has no long-press action, as activation does the same.
+    TalkBack: the card is a button, "Show stats", and the popup reads "Lucky, 3 captures, captured by 1", then "Alex, 2
     captures, captured by 0" for each. The card itself doesn't say the counts.
     - The counts are `PlayerState.capturesOf`, kept in the saved game (`capturesOf`, absent with none). A game saved before it
         was kept has its totals, and rows for the captures since.
-    - **Rolls** are under them (the maintainer, 2026-11-26): the total, headed "Rolls", then each face of the die in two columns, 1-3
+    - **Squares travelled** are under them (the maintainer, 2026-11-28): headed "Squares travelled", with the total,
+        `PlayerState.squaresMoved` (the Leaderboard's distance: the squares the pawns they moved walked, a partner's they
+        rolled for included, not a free move's). TalkBack: "142 squares travelled".
+    - **Rolls** are under those (the maintainer, 2026-11-26): the total, headed "Rolls", then each face of the die in two columns, 1-3
         and 4-6, with a bar in the player's colour, all on one scale. Each of two dice counts, as do rolls with no move, and a doubled
         roll counts as its face. The faces are in the player's die style, drawn at the size its art is made for (44dp) and scaled
         down, since a style's pip margins are fixed. TalkBack: "36 rolls", then down each column, "Rolled a 1, 7 times".

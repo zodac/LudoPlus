@@ -164,11 +164,47 @@ class PlayerCardTest : UiTest() {
         show(game(listOf(6, 6, 6, 6), names, ::withOpponents))
         val config = card("Ace").fetchSemanticsNode().config
         assertEquals(Role.Button, config[SemanticsProperties.Role])
-        assertEquals("Show captures and rolls", config[SemanticsActions.OnClick].label)
+        assertEquals("Show stats", config[SemanticsActions.OnClick].label)
         assertTrue(SemanticsActions.OnLongClick !in config && SemanticsActions.CustomActions !in config)
         card("Ace").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         assertEquals(listOf(1, 1, 1), listOf("Ace, 1 capture, captured by 1", "Alex, 0 captures, captured by 0", "Lucky, 1 capture, captured by 1").map(::says))
+    }
+
+    @Test
+    fun `a long press on a card shows its popup while it's held - and its release doesn't close it`() = uiTest(TestScreen(411, 891)) {
+        show(game(listOf(6, 6, 6, 6), names, ::withOpponents))
+        card("Lucky").performTouchInput { down(center) }
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.waitForIdle()
+        assertEquals(1, says("Lucky, 3 captures, captured by 1"))
+        card("Lucky").performTouchInput { up() }
+        compose.waitForIdle()
+        assertEquals(1, says("Lucky, 3 captures, captured by 1"))
+    }
+
+    @Test
+    fun `a press shorter than a long press's time doesn't show the popup until it's released`() = uiTest(TestScreen(411, 891)) {
+        show(game(listOf(6, 6, 6, 6), names, ::withOpponents))
+        card("Lucky").performTouchInput { down(center) }
+        compose.mainClock.advanceTimeBy(100)
+        compose.waitForIdle()
+        assertEquals(0, says("Lucky, 3 captures, captured by 1"))
+        card("Lucky").performTouchInput { up() }
+        compose.waitForIdle()
+        assertEquals(1, says("Lucky, 3 captures, captured by 1"))
+    }
+
+    @Test
+    fun `a card's popup shows the squares its player's moves have travelled`() = uiTest(TestScreen(411, 891)) {
+        show(game(listOf(6, 6, 6, 6), names) { state -> state.copy(players = state.players.mapIndexed { i, it -> if (i == 1) it.copy(squaresMoved = 142) else it }) })
+        tap("Lucky")
+        assertEquals(1, says("142 squares travelled"))
+        assertEquals(1, drawn("Squares travelled"))
+        assertEquals(1, drawn("142"))
+        show(game(listOf(6, 6, 6, 6), names))
+        tap("Ace")
+        assertEquals(1, says("0 squares travelled"))
     }
 
     @Test

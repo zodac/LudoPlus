@@ -266,7 +266,9 @@
     <!-- A player's captures against each opponent, on a tap of their card: the heading over the pawns of theirs each has captured (over those they have captured, leaderboard_captures), as a screen reader says its count after those ("2 captures, captured by 1"), and what the tap does, for a screen reader. -->
     <string name="game_captures_captured">Captured by</string>
     <string name="game_captures_captured_spoken">captured by %1$d</string>
-    <string name="game_captures_action">Show captures and rolls</string>
+    <string name="game_captures_action">Show stats</string>
+    <!-- Under those: the heading over how many squares the pawns the player moved have walked, read aloud as leaderboard_squares_travelled. -->
+    <string name="game_squares_travelled">Squares travelled</string>
     <!-- Under those: the heading over how many times the player has rolled each face of the die, as a screen reader says its total, and each face (%1$d is the face, %2$d the times, which the plural goes by). -->
     <string name="game_rolls">Rolls</string>
     <plurals name="game_rolls_spoken">

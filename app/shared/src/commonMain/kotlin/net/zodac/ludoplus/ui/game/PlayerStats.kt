@@ -49,8 +49,10 @@ import net.zodac.ludoplus.resources.game_captures_captured_spoken
 import net.zodac.ludoplus.resources.game_rolls
 import net.zodac.ludoplus.resources.game_rolls_face_spoken
 import net.zodac.ludoplus.resources.game_rolls_spoken
+import net.zodac.ludoplus.resources.game_squares_travelled
 import net.zodac.ludoplus.resources.gameover_captures
 import net.zodac.ludoplus.resources.leaderboard_captures
+import net.zodac.ludoplus.resources.leaderboard_squares_travelled
 import net.zodac.ludoplus.ui.common.SoraFontFamily
 import net.zodac.ludoplus.ui.common.joinClauses
 import net.zodac.ludoplus.ui.common.pluralStringResource
@@ -67,7 +69,7 @@ internal fun captureOpponents(state: GameState, player: Int): List<Int> =
 /**
  * [player]'s captures and times captured, in all and against each opponent ([captureOpponents]): a bar either side of the
  * opponent's name, in their colour, as long as its count is to the biggest. Under [player]'s own name where it's [named], and
- * over how many times they have rolled each face ([RollBars]).
+ * over how many squares their moves have walked ([SquaresTravelled]) and how many times they have rolled each face ([RollBars]).
  * It scrolls where a large font makes it taller than the screen. A screen reader reads whose it is and the totals as one, then each row as
  * one, with its place in the list: "Alex, 2 captures, captured by 1".
  */
@@ -136,6 +138,8 @@ internal fun PlayerStats(game: StartedGame, player: Int, named: Boolean, modifie
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        SquaresTravelled(side.squaresMoved)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         RollBars(side.rolls, state.rules.dieFaces, game.players[player].colour.color)
     }
 }
@@ -153,10 +157,7 @@ private fun RollBars(rolls: Map<Int, Int>, faces: Int, colour: Color) {
     val (countWidth, dieSize) = with(LocalDensity.current) {
         (DIGIT_WIDTH * most.toString().length.coerceAtLeast(2)).toDp() to ROLL_DIE_SIZE.toDp().coerceAtMost(ROLL_DIE_MAX_SIZE)
     }
-    Row(modifier = Modifier.clearAndSetSemantics { contentDescription = totalSpoken }) {
-        Heading(stringResource(Res.string.game_rolls), TextAlign.Start, Modifier.weight(1f).alignByBaseline())
-        Text(total.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.alignByBaseline())
-    }
+    HeadedTotal(stringResource(Res.string.game_rolls), total, totalSpoken)
     Row(
         modifier = Modifier.semantics { collectionInfo = CollectionInfo(rowCount = faces, columnCount = 1) },
         horizontalArrangement = Arrangement.spacedBy(ROLL_COLUMN_GAP),
@@ -182,6 +183,21 @@ private fun RollBars(rolls: Map<Int, Int>, faces: Int, colour: Color) {
                 }
             }
         }
+    }
+}
+
+/** How many squares the pawns a player moved have walked, [squares], under a heading: "142 squares travelled" to a screen reader. */
+@Composable
+private fun SquaresTravelled(squares: Int) {
+    HeadedTotal(stringResource(Res.string.game_squares_travelled), squares, pluralStringResource(Res.plurals.leaderboard_squares_travelled, squares, squares))
+}
+
+/** A [heading] with its [total] at the far end, read as one, [spoken]. */
+@Composable
+private fun HeadedTotal(heading: String, total: Int, spoken: String) {
+    Row(modifier = Modifier.clearAndSetSemantics { contentDescription = spoken }) {
+        Heading(heading, TextAlign.Start, Modifier.weight(1f).alignByBaseline())
+        Text(total.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.alignByBaseline())
     }
 }
 
