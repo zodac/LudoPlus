@@ -106,7 +106,7 @@ class AdBannerTest : UiTest() {
     }
 
     @Test
-    fun `before a first game is finished there is none - it comes with the first`() = uiTest {
+    fun `before a first game is finished there is none - it comes with the next page after the first`() = uiTest {
         val records = GameRecordRepository(InMemoryGameResultDao())
         val container = inMemoryAppContainer(records = records)
         show(FakeAds(), container)
@@ -114,8 +114,48 @@ class AdBannerTest : UiTest() {
         compose.waitForIdle()
         assertEquals(false, adShown())
 
+        // A cloud save restored on sign-in, say: the open page keeps its size.
         runBlocking { records.mergeCloud(played().cloudRecords()) }
-        compose.waitUntil(timeoutMillis = 10_000) { adShown() }
+        compose.waitUntil(timeoutMillis = 10_000) { container.gameFinished.value == true }
+        compose.waitForIdle()
+        assertEquals(false, adShown())
+
+        openRules()
+        assertEquals(true, adShown())
+    }
+
+    @Test
+    fun `ads removed while a page is open take the slot away at once`() = uiTest {
+        val container = inMemoryAppContainer(records = played())
+        show(FakeAds(), container)
+        assertEquals(true, adShown())
+
+        runBlocking { container.purchasesRepository.set(Entitlement.NO_ADS, true) }
+        compose.waitUntil(timeoutMillis = 10_000) { !adShown() }
+    }
+
+    @Test
+    fun `a purchase the store takes back brings the slot with the next page - not under the open one`() = uiTest {
+        val container = inMemoryAppContainer(records = played())
+        runBlocking { container.purchasesRepository.set(Entitlement.NO_ADS, true) }
+        show(FakeAds(), container)
+        compose.waitUntil(timeoutMillis = 10_000) { container.adsRemoved.value == true }
+        compose.waitForIdle()
+        assertEquals(false, adShown())
+
+        runBlocking { container.purchasesRepository.set(Entitlement.NO_ADS, false) }
+        compose.waitUntil(timeoutMillis = 10_000) { container.adsRemoved.value == false }
+        compose.waitForIdle()
+        assertEquals(false, adShown())
+
+        openRules()
+        assertEquals(true, adShown())
+    }
+
+    private fun openRules() {
+        compose.onNodeWithText("Rules").performClick()
+        compose.waitUntil(timeoutMillis = 10_000) { compose.onAllNodes(hasText("Play the Tutorial")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForIdle()
     }
 
     @Test

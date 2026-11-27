@@ -17,6 +17,9 @@
 - **Its slot is there from the first frame**, empty (the page's surface colour) until the ad comes, so no page moves for
     it: wherever there's an ad network (`Ads.available`, known at launch) ads aren't removed, and a game has been finished. The slot stays, empty,
     while no ad can be shown (offline, or no consent yet).
+- **Decided as each page opens**, and kept while it's up (the maintainer, 2026-11-28): records that come later (a cloud
+    save restored on sign-in) or a purchase the store takes back bring the slot with the next page, never under the open
+    one, so no page changes size. Only Remove ads takes it away at once.
 - **Under the achievement banners**: they're windows of their own at the foot of the screen, so they cover it. While
     any is up (`AchievementBannersShowing`, set by `AchievementBannerHost`), a layer over the ad takes every touch, so a
     tap meant for the achievement can't open an ad (the maintainer's ask).
@@ -69,8 +72,8 @@ app/android/src/play/.../ads/AdMobAds   the only com.google.android.gms.ads and 
     is credited in `app/licensing/libraries/`.
 - **The slot's height** is AdMob's own sum over the screen's width (`AdSize`), which needs no started SDK; the `AdView` is
     made only once the SDK has started.
-- **Tests**: `AdBannerTest` (where the slot is, none before a first game, there from the first frame, gone for a buyer, untouchable under an
-    achievement banner), `AdMobAdsTest` (the slot's height before AdMob starts), `PlayFlavourTest`, `GithubFlavourTest`.
+- **Tests**: `AdBannerTest` (where the slot is, none before a first game, there from the first frame, kept while a page
+    is up, gone for a buyer, untouchable under an achievement banner), `AdMobAdsTest` (the slot's height before AdMob starts), `PlayFlavourTest`, `GithubFlavourTest`.
 
 ## The maintainer's steps
 

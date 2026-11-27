@@ -249,18 +249,25 @@ fun LudoPlusApp(
                     //
                     // The route is null until the NavHost has composed: until then it's the page the last frame was on, saved
                     // across a recreation, or the menu at a launch.
-                    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+                    val currentEntry = navController.currentBackStackEntryAsState().value
+                    val currentRoute = currentEntry?.destination?.route
                     var lastRoute by rememberSaveable { mutableStateOf(Screen.MENU) }
                     SideEffect { currentRoute?.let { lastRoute = it } }
                     val route = currentRoute ?: lastRoute
                     val adsRemoved by container.adsRemoved.collectAsStateWithLifecycle()
                     // The first game is finished on the game's page, which has no banner, so no page moves as the slot comes.
                     val gameFinished by container.gameFinished.collectAsStateWithLifecycle()
-                    val showAd = ads.available && adsRemoved == false && gameFinished == true &&
-                        route != Screen.PLAY_GAME && route != Screen.TUTORIAL
                     // Nothing is drawn until the purchases and the records have been read (with the container, so before the
                     // first frame but for a slow read; a read that fails counts as none), so no one sees the page move.
                     val adKnown = !ads.available || (adsRemoved != null && gameFinished != null)
+                    // Whether the slot is there is decided as each page opens, and kept while it's up: records that come
+                    // later (a cloud save restored on sign-in) or a purchase the store takes back show it from the next
+                    // page, never under the open one. Only Remove ads takes it away at once.
+                    val pageShowsAd = remember(currentEntry?.id, adKnown) {
+                        ads.available && adsRemoved == false && gameFinished == true &&
+                            route != Screen.PLAY_GAME && route != Screen.TUTORIAL
+                    }
+                    val showAd = pageShowsAd && adsRemoved == false
                     Column(modifier = Modifier.fillMaxSize().drawWithContent { if (adKnown) drawContent() }) {
                         // Above the NavHost, not inside it: the burst of banners at the end of a game has to survive the move
                         // from the board to Game Over and on to the menu, which a per-page overlay wouldn't.
