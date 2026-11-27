@@ -120,7 +120,7 @@ and never change hands, as no pawn there can be captured. Start squares can't be
 (`GameState.claimableSquare`), nor can squares passed over, home columns, and home: 48 of the classic board's 52 can
 (`BoardGeometry.claimableSquares`). The game ends with every one of them claimed, or a player (in teams, a team) with every
 pawn home; everyone is placed at once, by squares (a team's together), a tie by how far their pawns have come, then by who
-plays sooner. Four Medium CPUs claim them all in 96% of games, two in 23%; games are about half of Classic's turns with four,
+plays sooner. Four Medium CPUs claim them all in 98% of games, two in 34%; games are about half of Classic's turns with four,
 and the player who's home wins over half of two-player games. A claimed square is drawn as its player's home column is, in
 every style (`BoardParts.claims`, `ClaimedSquareTest`), a star's mark its full size on it (`drawClaimedMark`), part of the board's
 painted image, once the pawn has landed. Cards have a count on a square of the player's colour; the Leaderboard ranks the most
@@ -310,11 +310,13 @@ the records.
 
 - **Easy** plays any legal move at random.
 - **Medium** scores each move by what it does now: a capture, reaching home, leaving the yard, reaching safety, getting
-    out of reach, a portal's gain or loss, a power-up, and a little for the furthest pawn; ending in an opponent's reach
-    costs.
+    out of reach, a portal's gain or loss, a power-up, a square claimed (tuned in Colour Rush, 2026-11-28), and a little
+    for the furthest pawn; ending in an opponent's reach costs.
 - **Hard** looks a roll ahead (`ExpectimaxStrategy`): how far every pawn has come, for and against, less what each
     opponent's next roll can be expected to take, plus what its own can. A power-up is worth the same whatever it is, as
-    its chances aren't known. The weights were tuned against Medium, and `CpuTournamentTest` checks them.
+    its chances aren't known. A move that ends the game is worth only where it leaves Hard: first is best, and any
+    other place costs, so it won't end a game it doesn't win (in Colour Rush, by claiming the last square). The weights
+    were tuned against Medium (a square claimed in Colour Rush, 2026-11-28), and `CpuTournamentTest` checks them.
 - A partner's pawns count as its own.
 
 ## Persistence

@@ -16,7 +16,7 @@ fun interface CpuStrategy {
         /** The strategy a CPU of [difficulty] plays. */
         fun of(difficulty: Difficulty): CpuStrategy = when (difficulty) {
             Difficulty.EASY -> RandomStrategy
-            Difficulty.MEDIUM -> HeuristicStrategy
+            Difficulty.MEDIUM -> HeuristicStrategy()
             Difficulty.HARD -> ExpectimaxStrategy()
         }
     }
@@ -30,19 +30,23 @@ object RandomStrategy : CpuStrategy {
 /**
  * Medium: each move scored on its own, by what it does now. A capture first, then leaving the yard, reaching home or
  * safety, getting out of an opponent's reach, and advancing the furthest pawn; ending where an opponent can reach costs.
+ * Where squares are claimed, each one a move puts it ahead by is worth [claim], tuned (2026-11-28) over 16,000 two- and
+ * four-player Colour Rush games against the last.
  */
-object HeuristicStrategy : CpuStrategy {
-    private const val CAPTURE = 100.0
-    private const val LEAVE_YARD = 60.0
-    private const val REACH_HOME = 80.0
-    private const val REACH_SAFETY = 40.0
-    private const val ESCAPE = 25.0
-    private const val IN_REACH = 30.0
-    private const val ADVANCE = 0.3
-    private const val PORTAL = 1.0
-    private const val POWER_UP = 25.0
-    private const val SWAP = 1.0
-    private const val CLAIM = 45.0
+class HeuristicStrategy(private val claim: Double = CLAIM) : CpuStrategy {
+    private companion object {
+        const val CAPTURE = 100.0
+        const val LEAVE_YARD = 60.0
+        const val REACH_HOME = 80.0
+        const val REACH_SAFETY = 40.0
+        const val ESCAPE = 25.0
+        const val IN_REACH = 30.0
+        const val ADVANCE = 0.3
+        const val PORTAL = 1.0
+        const val POWER_UP = 25.0
+        const val SWAP = 1.0
+        const val CLAIM = 60.0
+    }
 
     override fun choose(state: GameState, moves: List<Move>, random: Random): Move =
         moves.shuffled(random).maxBy { move -> withSwaps(state, move).maxOf { score(state, it) } }
@@ -65,7 +69,7 @@ object HeuristicStrategy : CpuStrategy {
         if (move.via != null) score += PORTAL * (move.to - move.via)
         if (takesPowerUp(state, owner, move)) score += POWER_UP
         score += SWAP * swapGain(state, owner, move)
-        score += CLAIM * claimGain(state, owner, move)
+        score += claim * claimGain(state, owner, move)
         return score
     }
 
@@ -100,8 +104,10 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
      * The tuned weights: a pawn's worth is its progress, plus [outOfYard] once out, [homeBonus] once home, and
      * [safeBonus] on a safe square; an opponent's worth counts [opponent] times against this player's own, an expected
      * loss [risk] times, and an expected capture on the next roll [chance] times. Where the last standing wins, a pawn
-     * still in is worth [lastStanding], wherever it is, in place of its progress and [outOfYard]. Taking a power-up is worth [powerUp], and a square claimed [square]. Tuned (2026-11-17) over 1,000
-     * two-player games a setting against Medium; `CpuTournamentTest` checks them on other seeds.
+     * still in is worth [lastStanding], wherever it is, in place of its progress and [outOfYard]. Taking a power-up is worth [powerUp], and a square claimed [square]. A move that ends the game is
+     * worth [finish] placed first, and any other place costs, up to as much placed last, in place of all of that. Tuned (2026-11-17) over 1,000
+     * two-player games a setting against Medium, [square] (2026-11-28) over 16,000 two- and four-player Colour Rush games;
+     * `CpuTournamentTest` and `ColourRushEngineTest` check them on other seeds.
      */
     data class Weights(
         val outOfYard: Double = 25.0,
@@ -112,7 +118,8 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
         val chance: Double = 0.8,
         val lastStanding: Double = 40.0,
         val powerUp: Double = 12.0,
-        val square: Double = 20.0,
+        val square: Double = 10.0,
+        val finish: Double = 10_000.0,
     )
 
     override fun choose(state: GameState, moves: List<Move>, random: Random): Move =
@@ -122,6 +129,7 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
         // Nobody knows what a power-up's chances will be, so it's worth the same whatever it is.
         val after = LudoEngine.moveWithoutChances(state, move)
         val me = state.current
+        if (after.isFinished) return finished(after, me)
         var value = if (takesPowerUp(state, move.ownerIn(state), move)) weights.powerUp else 0.0
         after.players.forEachIndexed { index, player ->
             val worth = player.pawns.sumOf { pawnWorth(after, player.seat, it) } + weights.square * after.squaresOf(index)
@@ -129,6 +137,13 @@ class ExpectimaxStrategy(private val weights: Weights = Weights()) : CpuStrategy
             value += if (index == me || state.rules.arePartners(me, index)) worth else -weights.opponent * worth
         }
         return value - weights.risk * expectedLoss(after, me) + weights.chance * expectedGain(after, me)
+    }
+
+    /** What the finished game [state] is worth to [me]: [Weights.finish] for first place, and against it, a share of it for each place lower. */
+    private fun finished(state: GameState, me: Int): Double {
+        val teams = state.players.indices.map(state.rules::teamOf).distinct().size
+        val place = state.placeOf(me) ?: teams
+        return if (place == 1) weights.finish else -weights.finish * (place - 1) / (teams - 1)
     }
 
     private fun pawnWorth(state: GameState, seat: Int, progress: Int): Double = when {

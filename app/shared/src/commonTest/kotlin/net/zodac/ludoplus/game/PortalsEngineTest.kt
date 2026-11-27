@@ -150,7 +150,7 @@ class PortalsEngineTest {
     fun `Medium leaves a portal's way out that a rival can reach through it`() {
         // Red's pawn on 10 is where green's, on square 1 (progress 40), comes out with a 2; nothing else of green's reaches it.
         val state = LudoEngine.applyRoll(game(listOf(10, 30, Y, Y), listOf(40, Y, Y, Y)), 1)
-        assertEquals(0, HeuristicStrategy.choose(state, (state.phase as TurnPhase.AwaitingMove).moves, Random(1)).pawn)
+        assertEquals(0, HeuristicStrategy().choose(state, (state.phase as TurnPhase.AwaitingMove).moves, Random(1)).pawn)
     }
 
     @Test

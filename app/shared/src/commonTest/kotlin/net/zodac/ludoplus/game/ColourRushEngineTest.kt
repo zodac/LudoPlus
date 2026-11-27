@@ -146,6 +146,16 @@ class ColourRushEngineTest {
     }
 
     @Test
+    fun `Hard claims the last square to end a game it leads - and leaves it alone in one it trails`() {
+        // Every square claimed but 23: red's 20 can take it with a 3, ending the game, or its 30 move on to 33.
+        fun claimed(redsShare: Int) = (1..51).filter { it % 13 != 0 && it != 23 }.withIndex().associate { (i, square) -> square to if (i < redsShare) RED else GREEN }
+        for ((redsShare, pawn) in listOf(40 to 0, 10 to 1)) {
+            val state = LudoEngine.applyRoll(game(listOf(20, 30, Y, Y), claimed = claimed(redsShare)), 3)
+            assertEquals(pawn, CpuStrategy.of(Difficulty.HARD).choose(state, (state.phase as TurnPhase.AwaitingMove).moves, Random(1)).pawn, "$redsShare of 47 red's")
+        }
+    }
+
+    @Test
     fun `Hard beats Medium - and Medium beats Easy`() {
         fun winRate(strong: CpuStrategy, weak: CpuStrategy, games: Int): Double = (0..<games).count { game ->
             val random = Random(game)
