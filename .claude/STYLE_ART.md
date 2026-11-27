@@ -35,7 +35,7 @@ The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and
 - **A star square is shaded as well as marked** (the maintainer, 2026-11-24), so it shows with a pawn over its mark:
     `drawSquare` is given `safeFill` there, darker than `plain`, or lighter on a darker board, and a family whose plain
     squares ignore their `fill` (Disco, Groovy's rings, Paper) must still show it. `StarSquareTest` holds every board to it.
-- **A claimed star square** (Colour Rush) is its player's colour with the mark at `CLAIMED_MARK_SCALE` (`drawClaimedMark`):
+- **A claimed star square** (Colour Rush) is its player's colour with the mark at full size (`drawClaimedMark`; the maintainer, 2026-11-28):
     both must show, whichever of the player colours it is. A mark that would be lost on one is edged there (Starry's).
     `ClaimedSquareTest` holds every board to it.
 - **A start square has a border** (`drawStartBorder`; the maintainer, 2026-11-25), as it's safe: `StartBorder`, just inside

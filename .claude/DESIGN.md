@@ -122,7 +122,7 @@ and never change hands, as no pawn there can be captured. Start squares can't be
 pawn home; everyone is placed at once, by squares (a team's together), a tie by how far their pawns have come, then by who
 plays sooner. Four Medium CPUs claim them all in 96% of games, two in 23%; games are about half of Classic's turns with four,
 and the player who's home wins over half of two-player games. A claimed square is drawn as its player's home column is, in
-every style (`BoardParts.claims`, `ClaimedSquareTest`), a star's mark smaller on it (`drawClaimedMark`), part of the board's
+every style (`BoardParts.claims`, `ClaimedSquareTest`), a star's mark its full size on it (`drawClaimedMark`), part of the board's
 painted image, once the pawn has landed. Cards have a count on a square of the player's colour; the Leaderboard ranks the most
 squares (`GameResult.squares`), then captures, as do its online boards (the squares alone). TalkBack: "Tile 24, Yellow's tile, empty", "Move Red
 pawn 1 3 tiles, claiming the tile", "0 pawns home, 2 tiles".

@@ -70,7 +70,8 @@ class ClaimedSquareTest : UiTest() {
                 with(style) { drawBoard(ClassicBoardLayout, size.width / ClassicBoardLayout.size, seats, parts = BoardParts(stars = stars, claims = mapOf(star to claimedBy.color))) }
             }
         }
-        val grid = (-15..15).flatMap { x -> (-15..15).map { y -> Offset(x * 0.03f, y * 0.03f) } }
+        // The whole square, but for a hair at its edge.
+        val grid = (-15..15).flatMap { x -> (-15..15).map { y -> Offset(x * 0.032f, y * 0.032f) } }
         fun square(): List<Color> {
             compose.waitForIdle()
             val pixels = compose.onNodeWithTag(BOARD).captureToImage().toPixelMap()
@@ -85,7 +86,43 @@ class ClaimedSquareTest : UiTest() {
             stars = false
             val share = marked.zip(square()).count { (a, b) -> difference(a, b) > 0.2f }.toFloat() / grid.size
             assertTrue(share > 0.04f, "${board.id}, $colour: the star's mark doesn't show ($share)")
-            assertTrue(share < 0.5f, "${board.id}, $colour: the star's mark covers its player's colour ($share)")
+            assertTrue(share < 0.85f, "${board.id}, $colour: the star's mark covers its player's colour ($share)")
+        }
+    }
+
+    @Test
+    fun `on every board a star square's mark is no smaller once claimed`() = uiTest {
+        var style by mutableStateOf<BoardStyle>(ClassicBoardStyle)
+        var claimedBy by mutableStateOf<PlayerColour?>(null)
+        val seats = List(4) { PlayerColour.defaultFor(it).color }
+        val star = ClassicBoardLayout.geometry.starOffset
+        compose.setContent {
+            Canvas(Modifier.size(600.dp).testTag(BOARD)) {
+                val claims = claimedBy?.let { mapOf(star to it.color) }.orEmpty()
+                with(style) { drawBoard(ClassicBoardLayout, size.width / ClassicBoardLayout.size, seats, parts = BoardParts(stars = true, claims = claims)) }
+            }
+        }
+        val grid = (-15..15).flatMap { x -> (-15..15).map { y -> Offset(x * 0.032f, y * 0.032f) } }
+        fun square(): List<Color> {
+            compose.waitForIdle()
+            val pixels = compose.onNodeWithTag(BOARD).captureToImage().toPixelMap()
+            val unit = pixels.width / ClassicBoardLayout.size
+            return grid.map { (ClassicBoardLayout.trackSquare(star).centre + it) * unit }.map { pixels[it.x.toInt(), it.y.toInt()] }
+        }
+        // How much of the square the mark covers, claimed by [colour] or nobody: what isn't the square's commonest colour.
+        fun markShare(colour: PlayerColour?): Float {
+            claimedBy = colour
+            val pixels = square()
+            val ground = pixels.groupingBy { listOf(it.red, it.green, it.blue).map { channel -> (channel * 8).toInt() } }.eachCount().maxBy { it.value }.key
+            val groundColour = pixels.first { listOf(it.red, it.green, it.blue).map { channel -> (channel * 8).toInt() } == ground }
+            return pixels.count { difference(it, groundColour) > 0.3f }.toFloat() / grid.size
+        }
+        for (board in BoardStyles.all) {
+            style = board
+            val unclaimed = markShare(null)
+            // A mark close to the player's colour blends into it in places, so the colour it shows best on counts.
+            val claimed = PlayerColour.entries.maxOf(::markShare)
+            assertTrue(claimed > unclaimed * 0.85f, "${board.id}: the star's mark covers $claimed claimed, against $unclaimed unclaimed")
         }
     }
 

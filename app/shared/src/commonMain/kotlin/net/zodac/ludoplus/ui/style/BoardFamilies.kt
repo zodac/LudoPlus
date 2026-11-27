@@ -58,8 +58,8 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
     /** A safe square's mark, on the square centred on [centre]. */
     protected abstract fun DrawScope.drawSafeMark(centre: Offset, unit: Float)
 
-    /** [drawSafeMark] on a square claimed: smaller, so its player's colour shows round it. */
-    protected open fun DrawScope.drawClaimedMark(centre: Offset, unit: Float) = scale(CLAIMED_MARK_SCALE, centre) { drawSafeMark(centre, unit) }
+    /** A safe square's mark on a square claimed, the same size as [drawSafeMark]'s: by default, that mark. */
+    protected open fun DrawScope.drawClaimedMark(centre: Offset, unit: Float) = drawSafeMark(centre, unit)
 
     /** A start square's border, inside the square [unit] across from [topLeft], which [drawSquare] has drawn: it's safe. */
     protected open fun DrawScope.drawStartBorder(topLeft: Offset, unit: Float) {
@@ -157,9 +157,6 @@ abstract class LayeredBoardStyle(override val id: String, override val swatch: C
 /** What a start square's border is drawn in, on every board but the dark ones, and how wide it is, in squares. */
 internal val StartBorder = Color.Black.copy(alpha = 0.7f)
 internal const val START_BORDER_WIDTH = 0.09f
-
-/** How big a claimed star square's mark is, against one nobody has claimed. */
-internal const val CLAIMED_MARK_SCALE = 0.7f
 
 /** How light a board's plain squares are, at least, for its star squares to be darker than them rather than lighter. */
 private const val SAFE_FILL_LIGHT = 0.5f
@@ -607,7 +604,7 @@ class StarryBoardStyle(
 
     /** Edged in night, so that gold shows on yellow. */
     override fun DrawScope.drawClaimedMark(centre: Offset, unit: Float) {
-        val star = starPath(centre, unit * 0.36f * CLAIMED_MARK_SCALE)
+        val star = starPath(centre, unit * 0.36f)
         drawPath(star, gold)
         drawPath(star, night, style = Stroke(maxOf(1.dp.toPx(), unit * 0.05f), join = StrokeJoin.Round))
     }
@@ -856,19 +853,6 @@ class RetroBoardStyle(id: String, private val block: Color, private val screen: 
                 if (pixel == '#') drawRect(screen, origin + Offset(column * p, row * p), Size(p, p))
             }
         }
-    }
-
-    /** One shape, so no seams show between its pixels off the pixel grid. */
-    override fun DrawScope.drawClaimedMark(centre: Offset, unit: Float) {
-        val p = unit * CLAIMED_MARK_SCALE / RETRO_PIXELS
-        val origin = centre - Offset(p * PixelStar.size / 2f, p * PixelStar.size / 2f)
-        val star = Path()
-        PixelStar.forEachIndexed { row, pixels ->
-            pixels.forEachIndexed { column, pixel ->
-                if (pixel == '#') star.addRect(Rect(origin + Offset(column * p, row * p), Size(p, p)))
-            }
-        }
-        drawPath(star, screen)
     }
 
     /** A disc [radius] pixels across at [centre], snapped to the pixel grid. */
