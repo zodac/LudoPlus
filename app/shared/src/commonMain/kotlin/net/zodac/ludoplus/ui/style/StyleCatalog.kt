@@ -163,7 +163,7 @@ object PawnStyles : StyleCatalog<PawnStyle>(
             colour(ShapePawnStyle("shapes_cube", PawnShape.CUBE)),
         ),
         listOf(colour(ConePawnStyle("cone_painted"))),
-        listOf(colour(PegPawnStyle("peg_stained"))),
+        listOf(colour(TokenPawnStyle("peg_stained"))),
         listOf(colour(GlassPawnStyle("glass_clear"))),
         listOf(colour(MonsterPawnStyle("monster_cyclops", PawnMonster.CYCLOPS)), colour(MonsterPawnStyle("monster_horned", PawnMonster.HORNED))),
         listOf(

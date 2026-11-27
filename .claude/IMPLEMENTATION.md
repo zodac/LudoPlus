@@ -345,7 +345,7 @@ Decided with the maintainer (2026-11-17):
 - **Boards.** Classic, Wood, Stone, Neon, Ocean, Starry, Paper, and Retro. Each keeps the four player colours readable;
     a family changes the track, safe squares, surround, and texture. A board shares its unlock with the die and
     background of the same name.
-- **Pawns.** Classic, Counter, Cone, Peg, Gem, Glass, and Animal (one animal per family, tinted). Pawns always take their
+- **Pawns.** Classic, Counter, Cone, Token, Gem, Glass, and Animal (one animal per family, tinted). Pawns always take their
     player's colour; a family changes shape and material.
 
 - [x] The style categories, re-cast for Ludo: **board**, **pawns**, **die** (DiceFive's styles, kept),
@@ -368,6 +368,8 @@ Decided with the maintainer (2026-11-17):
         `PlayfulBoardFamilies.kt`; eleven pawn families (Chess, Shapes, Monster, Retro, Toadstool, Cake, Space, Robot,
         Neon, Googly, and Devil) and Animal's Frog and Penguin, in `PlayfulPawnFamilies.kt`. Locks in `DESIGN.md`,
         "Table art". `BoardAndPawnArtTest` draws every board and pawn.
+    - [x] Token replaces Peg (2026-11-28, approved from renders): a glossy plastic cylinder with a collar round its
+        middle, Token (Plastic), in Peg's place and on its id (`peg_stained`), so players who picked the Peg have it.
 - [x] The Styles screen's previews show a corner of the board with pawns (`BoardCornerPreview`).
 - [x] `STYLE_ART.md` rewritten for board and pawn art (2026-11-18).
 

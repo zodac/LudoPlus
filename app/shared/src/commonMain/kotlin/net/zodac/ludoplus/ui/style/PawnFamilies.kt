@@ -149,40 +149,63 @@ class ConePawnStyle(id: String) : GridPawnStyle(id, Color(0xFF4CAF50), lift = 0.
 }
 
 // ---------------------------------------------------------------------------------------------
-// Peg
+// Token
 // ---------------------------------------------------------------------------------------------
 
-/** A turned wooden peg, stained in its player's colour with the grain showing: a rounded dome on a foot, like a Pachisi piece. */
-class PegPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFB07A3E), lift = 0.8f) {
+/**
+ * A glossy plastic token in its player's colour, seen from a little above: an upright cylinder with a slightly domed
+ * top, and a collar round its middle a little wider than it, where it would slot into a board.
+ */
+class TokenPawnStyle(id: String) : GridPawnStyle(id, Color(0xFFD93A3A), lift = 0.15f) {
     override fun DrawScope.drawBody(g: PawnGrid, colour: Color) {
         val ink = BoardInk
         val stroke = outline(g)
-        val stain = lerp(colour, Color(0xFF6B4423), 0.22f)
-        val dome = Path().apply {
-            g.at(-0.5f, 0.6f).let { moveTo(it.x, it.y) }
-            g.at(-0.62f, -0.2f).let { c -> g.at(-0.3f, -0.72f).let { quadraticTo(c.x, c.y, it.x, it.y) } }
-            g.at(0f, -1f).let { c -> g.at(0.3f, -0.72f).let { quadraticTo(c.x, c.y, it.x, it.y) } }
-            g.at(0.62f, -0.2f).let { c -> g.at(0.5f, 0.6f).let { quadraticTo(c.x, c.y, it.x, it.y) } }
+        val gloss = lit(g, colour, light = 0.5f, shade = 0.38f)
+        val dark = lerp(colour, Color.Black, 0.3f)
+        // The squash of every circle seen from above: an oval's depth over its width.
+        val squash = 0.3f
+
+        /** The side of a cylinder [width] across from [top] down to [bottom]: its front, round the bottom's oval. */
+        fun side(width: Float, top: Float, bottom: Float) = Path().apply {
+            g.at(-width / 2, top).let { moveTo(it.x, it.y) }
+            g.at(-width / 2, bottom).let { lineTo(it.x, it.y) }
+            arcTo(Rect(g.ovalTopLeft(0f, bottom, width, width * squash), g.size(width, width * squash)), 180f, -180f, false)
+            g.at(width / 2, top).let { lineTo(it.x, it.y) }
             close()
         }
-        drawPath(dome, lit(g, stain))
-        clipPath(dome) {
-            for (i in -3..3) {
-                val x = i * 0.16f
-                val path = Path().apply {
-                    g.at(x, 0.7f).let { moveTo(it.x, it.y) }
-                    g.at(x * 1.6f, -0.2f).let { c -> g.at(x * 0.4f, -1f).let { quadraticTo(c.x, c.y, it.x, it.y) } }
-                }
-                drawPath(path, Color(0xFF3E2410).copy(alpha = 0.22f), style = Stroke(g.r * 0.04f))
-            }
+
+        fun DrawScope.face(width: Float, y: Float, brush: Brush) {
+            drawOval(brush, g.ovalTopLeft(0f, y, width, width * squash), g.size(width, width * squash))
+            drawOval(ink, g.ovalTopLeft(0f, y, width, width * squash), g.size(width, width * squash), style = stroke)
         }
-        drawPath(dome, ink, style = stroke)
-        // The foot, and the turned ring at its top.
-        val footTopLeft = g.at(-0.7f, 0.5f)
-        drawRoundRect(lit(g, stain), footTopLeft, g.size(1.4f, 0.3f), CornerRadius(0.15f * g.r))
-        drawRoundRect(ink, footTopLeft, g.size(1.4f, 0.3f), CornerRadius(0.15f * g.r), style = stroke)
-        drawLine(lerp(stain, Color.Black, 0.35f), g.at(-0.56f, 0.12f), g.at(0.56f, 0.12f), g.r * 0.08f, cap = StrokeCap.Round)
-        drawOval(Color.White.copy(alpha = 0.4f), g.at(-0.36f, -0.6f), g.size(0.18f, 0.4f))
+
+        fun DrawScope.streak(x: Float, top: Float, bottom: Float) =
+            drawLine(Color.White.copy(alpha = 0.55f), g.at(x, top), g.at(x, bottom), g.r * 0.1f, cap = StrokeCap.Round)
+
+        val width = 1.1f
+        val collar = 1.34f
+        val collarTop = 0.0f
+        val collarBottom = 0.16f
+        val top = -0.72f
+        val bottom = 0.7f
+        // The lower half, under the collar.
+        val lower = side(width, collarBottom, bottom)
+        drawPath(lower, gloss)
+        drawPath(lower, ink, style = stroke)
+        streak(-0.34f, collarBottom + 0.16f, bottom - 0.02f)
+        // The collar: a short, wider band, its top showing round the upper half.
+        val band = side(collar, collarTop, collarBottom)
+        drawPath(band, lit(g, dark, light = 0.4f, shade = 0.3f))
+        drawPath(band, ink, style = stroke)
+        face(collar, collarTop, lit(g, colour, light = 0.3f, shade = 0.2f))
+        // The upper half, and its domed top.
+        val upper = side(width, top, collarTop)
+        drawPath(upper, gloss)
+        drawPath(upper, ink, style = stroke)
+        streak(-0.34f, top + 0.24f, collarTop - 0.04f)
+        face(width, top, lit(g, colour, light = 0.42f, shade = 0.12f))
+        drawOval(Color.White.copy(alpha = 0.3f), g.ovalTopLeft(-0.06f, top - 0.02f, width * 0.62f, width * squash * 0.55f), g.size(width * 0.62f, width * squash * 0.55f))
+        drawOval(Color.White.copy(alpha = 0.7f), g.ovalTopLeft(-0.24f, top - 0.05f, 0.22f, 0.07f), g.size(0.22f, 0.07f))
     }
 }
 

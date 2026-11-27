@@ -5,13 +5,13 @@ import net.zodac.ludoplus.resources.style_noun_board
 import net.zodac.ludoplus.resources.style_noun_pawns
 import net.zodac.ludoplus.resources.style_family_counter
 import net.zodac.ludoplus.resources.style_family_cone
-import net.zodac.ludoplus.resources.style_family_peg
 import net.zodac.ludoplus.resources.style_family_glass
+import net.zodac.ludoplus.resources.style_family_token
 import net.zodac.ludoplus.resources.style_family_animal
 import net.zodac.ludoplus.resources.style_colour_ridged
 import net.zodac.ludoplus.resources.style_colour_painted
-import net.zodac.ludoplus.resources.style_colour_stained
 import net.zodac.ludoplus.resources.style_colour_clear
+import net.zodac.ludoplus.resources.style_colour_plastic
 import net.zodac.ludoplus.resources.style_colour_cat
 import net.zodac.ludoplus.resources.style_colour_duck
 import net.zodac.ludoplus.resources.style_colour_cut
@@ -860,8 +860,9 @@ object PawnStyleRegistry : StyleRegistry(
             unlock = AchievementCount(20),
         ),
         StyleGroup(
-            Res.string.style_family_peg,
-            listOf(StyleVariant("peg_stained", Res.string.style_colour_stained)),
+            Res.string.style_family_token,
+            // Was the wooden Peg: the id stays, as players chose it.
+            listOf(StyleVariant("peg_stained", Res.string.style_colour_plastic)),
             unlock = AchievementCount(25),
         ),
         StyleGroup(

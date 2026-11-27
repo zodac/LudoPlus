@@ -76,7 +76,7 @@ The die and background art came from DiceFive (`5423b6c`), whose cups, mats, and
 - **A new pawn sets its `lift`**: how much of the classic pawn's rise it takes on a turned square (1 unless it's wide at its
     top), so it's as clear of the lines over it as under it. `BoardAndPawnArtTest` says if it's too low or too high.
 - **Always the player's colour.** A family changes shape and material, never whose a pawn is: shade the colour
-    (`lit`), stain it (Peg), or make it translucent (Glass), but never swap it for another.
+    (`lit`), gloss it (Token), or make it translucent (Glass), but never swap it for another.
 - **Outlines** are ink, round-joined (`outline`): a mitred join spikes at sharp corners, as the gem's girdle did.
 - **Check the small sizes.** Pawns sharing a square are drawn at `SHARED_PAWN_RADIUS`, about half size. A detail that
     vanishes there is fine; one that turns to noise isn't.

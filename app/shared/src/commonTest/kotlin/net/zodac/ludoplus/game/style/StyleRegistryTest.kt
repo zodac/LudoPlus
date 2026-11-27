@@ -20,8 +20,8 @@ class StyleRegistryTest {
     @Test
     fun `every id is its family's name then its variant's - as the Styles screen shows them`() {
         for (registry in registries) for (group in registry.groups) for (variant in group.variants) {
-            val expected = group.name.key.removePrefix("style_family_") + "_" + variant.name.key.removePrefix("style_colour_")
-            assertEquals(expected, variant.id)
+            val name = group.name.key.removePrefix("style_family_") + "_" + variant.name.key.removePrefix("style_colour_")
+            assertEquals(RENAMED[name] ?: name, variant.id)
         }
     }
 
@@ -94,7 +94,7 @@ class StyleRegistryTest {
     fun `the pawns are eighteen families - each with a die of its name locked with it`() {
         assertEquals(
             listOf(
-                "classic", "counter", "chess", "shapes", "cone", "peg", "glass", "monster", "animal", "retro", "toadstool", "cake", "gems", "space",
+                "classic", "counter", "chess", "shapes", "cone", "token", "glass", "monster", "animal", "retro", "toadstool", "cake", "gems", "space",
                 "robot", "neon", "googly", "devil",
             ),
             PawnStyleRegistry.groups.map { it.name.key.removePrefix("style_family_") },
@@ -112,7 +112,7 @@ class StyleRegistryTest {
             assertEquals(group(DiceStyleRegistry, family).unlock, group(PawnStyleRegistry, family).unlock, family)
         }
         val ownLocks = mapOf(
-            "counter" to 5, "chess" to 10, "shapes" to 20, "cone" to 20, "peg" to 25, "glass" to 30, "monster" to 35, "animal" to 40, "toadstool" to 50,
+            "counter" to 5, "chess" to 10, "shapes" to 20, "cone" to 20, "token" to 25, "glass" to 30, "monster" to 35, "animal" to 40, "toadstool" to 50,
             "space" to 70, "robot" to 80,
         )
         for ((family, count) in ownLocks) assertEquals(StyleUnlock.AchievementCount(count), group(PawnStyleRegistry, family).unlock, family)
@@ -192,5 +192,10 @@ class StyleRegistryTest {
             assertTrue(registry.groups.any { !it.unlock.isMet(notOwned) }, registry.noun.key)
         }
         assertFalse(DiceStyleRegistry.isUnlocked("d20_white", notOwned))
+    }
+
+    private companion object {
+        /** Styles renamed after release, by the id their name would give: they keep the id they shipped with. */
+        val RENAMED = mapOf("token_plastic" to "peg_stained")
     }
 }

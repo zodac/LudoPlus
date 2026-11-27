@@ -604,12 +604,12 @@ marks, the start squares' borders, and a finish over it all (grain, speckle), ea
 Canvas of its own under the pawns, which reads only the style and the seat colours, so a texture isn't redrawn on every
 frame of a move.
 
-The pawns are Classic, Counter, Chess (Rook, Knight, and Queen), Shapes (Star, Heart, and Cube), Cone, Peg, Glass,
+The pawns are Classic, Counter, Chess (Rook, Knight, and Queen), Shapes (Star, Heart, and Cube), Cone, Token, Glass,
 Monster (Cyclops and Horned), Animal (Cat, Duck, Frog, and Penguin), Retro, Toadstool, Cake, Gems, Space (Rocket and
 Saucer), Robot, Neon, Googly, and Devil. Every family but Classic is a `GridPawnStyle` (`ui/style/PawnFamilies.kt`, and
 `PlayfulPawnFamilies.kt`, 2026-11-24), which draws the shadow and the movable ring on one footprint for all of them and
 leaves the family its body. Retro, Cake, Gems, Neon, Googly, and Devil take the lock of the die of their name. The rest
-open at a count of their own: Counter 5, Chess 10, Shapes 20, Cone 20, Peg 25, Glass 30, Monster 35, Animal 40,
+open at a count of their own: Counter 5, Chess 10, Shapes 20, Cone 20, Token 25, Glass 30, Monster 35, Animal 40,
 Toadstool 50, Space 70, and Robot 80.
 
 **The die** has 35 families, D20 included (drawn showing 1-6). `GameDie` draws the style's face, turning

@@ -1332,7 +1332,6 @@
     <string name="style_family_multicolour">Multicolour</string>
     <string name="style_family_neon">Neon</string>
     <string name="style_family_ocean">Ocean</string>
-    <string name="style_family_peg">Peg</string>
     <string name="style_family_world">World</string>
     <string name="style_family_numeral">Numeral</string>
     <string name="style_family_obsidian">Obsidian</string>
@@ -1361,6 +1360,7 @@
     <string name="style_family_shapes">Shapes</string>
     <string name="style_family_space">Space</string>
     <string name="style_family_toadstool">Toadstool</string>
+    <string name="style_family_token">Token</string>
     <string name="style_colour_amber">Amber</string>
     <string name="style_colour_arabic">Arabic</string>
     <string name="style_colour_arabic_green">Arabic Green</string>
@@ -1420,6 +1420,7 @@
     <string name="style_colour_pencil">Pencil</string>
     <string name="style_colour_pink">Pink</string>
     <string name="style_colour_pink_and_blue">Pink &amp; Blue</string>
+    <string name="style_colour_plastic">Plastic</string>
     <string name="style_colour_pinzu">Pinzu</string>
     <string name="style_colour_poker">Poker</string>
     <string name="style_colour_purple">Purple</string>
@@ -1439,7 +1440,6 @@
     <string name="style_colour_snowcap">Snowcap</string>
     <string name="style_colour_soil">Soil</string>
     <string name="style_colour_sozu">Sozu</string>
-    <string name="style_colour_stained">Stained</string>
     <string name="style_colour_starlight">Starlight</string>
     <string name="style_colour_strawberry">Strawberry</string>
     <string name="style_colour_swirl">Swirl</string>
