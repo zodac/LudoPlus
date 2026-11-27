@@ -243,7 +243,7 @@ fun LudoPlusApp(
                             .collect { OnlineSyncRequests.request() }
                     }
                     // The ad banner, at the foot of every page but the game's and the tutorial's, under the page rather than
-                    // over it, where there's a network and ads aren't removed. Its slot is there from the first frame, empty
+                    // over it, where there's a network, ads aren't removed, and a person has finished a game. Its slot is there from the first frame, empty
                     // until the ad comes, so no page moves as it does. The page leaves the navigation bar's inset to the
                     // banner, which sits above it.
                     //
@@ -254,10 +254,14 @@ fun LudoPlusApp(
                     SideEffect { currentRoute?.let { lastRoute = it } }
                     val route = currentRoute ?: lastRoute
                     val adsRemoved by container.adsRemoved.collectAsStateWithLifecycle()
-                    val showAd = ads.available && adsRemoved == false && route != Screen.PLAY_GAME && route != Screen.TUTORIAL
-                    // Nothing is drawn until the purchases have been read (with the container, so before the first frame but
-                    // for a slow read; a read that fails counts as none), so neither a buyer nor anyone else sees the page move.
-                    Column(modifier = Modifier.fillMaxSize().drawWithContent { if (!ads.available || adsRemoved != null) drawContent() }) {
+                    // The first game is finished on the game's page, which has no banner, so no page moves as the slot comes.
+                    val gameFinished by container.gameFinished.collectAsStateWithLifecycle()
+                    val showAd = ads.available && adsRemoved == false && gameFinished == true &&
+                        route != Screen.PLAY_GAME && route != Screen.TUTORIAL
+                    // Nothing is drawn until the purchases and the records have been read (with the container, so before the
+                    // first frame but for a slow read; a read that fails counts as none), so no one sees the page move.
+                    val adKnown = !ads.available || (adsRemoved != null && gameFinished != null)
+                    Column(modifier = Modifier.fillMaxSize().drawWithContent { if (adKnown) drawContent() }) {
                         // Above the NavHost, not inside it: the burst of banners at the end of a game has to survive the move
                         // from the board to Game Over and on to the menu, which a per-page overlay wouldn't.
                         AchievementBannerHost(

@@ -33,6 +33,8 @@ import net.zodac.ludoplus.ads.AchievementBannersShowing
 import net.zodac.ludoplus.ads.Ads
 import net.zodac.ludoplus.ads.NoAds
 import net.zodac.ludoplus.app.AppContainer
+import net.zodac.ludoplus.data.records.GameRecordRepository
+import net.zodac.ludoplus.data.records.InMemoryGameResultDao
 import net.zodac.ludoplus.platform.SilentPlatformServices
 import net.zodac.ludoplus.purchases.Entitlement
 import net.zodac.ludoplus.purchases.PurchasesRepository
@@ -70,9 +72,12 @@ private class SlowPreferences : DataStore<Preferences> {
         transform(read.value ?: emptyPreferences())
 }
 
+/** The records of a device where a person has finished a game. */
+private fun played() = GameRecordRepository(InMemoryGameResultDao(finishedGame = true))
+
 /**
- * The ad banner: its slot at the foot of every page but the game's and the tutorial's from the first frame, gone for a
- * buyer, and untouchable under an achievement banner.
+ * The ad banner: its slot at the foot of every page but the game's and the tutorial's from the first frame, once a
+ * person has finished a game, gone for a buyer, and untouchable under an achievement banner.
  */
 @Config(qualifiers = "w411dp-h891dp")
 class AdBannerTest : UiTest() {
@@ -82,7 +87,7 @@ class AdBannerTest : UiTest() {
         AchievementBannersShowing.state.value = false
     }
 
-    private fun show(ads: Ads, container: AppContainer = inMemoryAppContainer()) {
+    private fun show(ads: Ads, container: AppContainer = inMemoryAppContainer(records = played())) {
         compose.setContent { LudoPlusApp(container = container, platform = SilentPlatformServices, ads = ads) }
         compose.waitUntil(timeoutMillis = 10_000) { compose.onAllNodes(hasText("Rules")).fetchSemanticsNodes().isNotEmpty() }
     }
@@ -101,8 +106,21 @@ class AdBannerTest : UiTest() {
     }
 
     @Test
+    fun `before a first game is finished there is none - it comes with the first`() = uiTest {
+        val records = GameRecordRepository(InMemoryGameResultDao())
+        val container = inMemoryAppContainer(records = records)
+        show(FakeAds(), container)
+        compose.waitUntil(timeoutMillis = 10_000) { container.gameFinished.value == false }
+        compose.waitForIdle()
+        assertEquals(false, adShown())
+
+        runBlocking { records.mergeCloud(played().cloudRecords()) }
+        compose.waitUntil(timeoutMillis = 10_000) { adShown() }
+    }
+
+    @Test
     fun `with ads removed there is none`() = uiTest {
-        val container = inMemoryAppContainer()
+        val container = inMemoryAppContainer(records = played())
         runBlocking { container.purchasesRepository.set(Entitlement.NO_ADS, true) }
         show(FakeAds(), container)
         compose.waitUntil(timeoutMillis = 10_000) { container.adsRemoved.value == true }
@@ -119,8 +137,8 @@ class AdBannerTest : UiTest() {
 
     @Test
     fun `the menu's first frame has its slot - the menu never moves for it`() = uiTest {
-        val container = inMemoryAppContainer()
-        compose.waitUntil(timeoutMillis = 10_000) { container.adsRemoved.value != null }
+        val container = inMemoryAppContainer(records = played())
+        compose.waitUntil(timeoutMillis = 10_000) { container.adsRemoved.value != null && container.gameFinished.value != null }
         compose.mainClock.autoAdvance = false
         compose.setContent { LudoPlusApp(container = container, platform = SilentPlatformServices, ads = FakeAds()) }
         assertEquals(true, adShown())
@@ -133,7 +151,7 @@ class AdBannerTest : UiTest() {
     @Test
     fun `nothing is drawn until the purchases have been read - then the slot comes with the page`() = uiTest {
         val purchases = SlowPreferences()
-        show(FakeAds(), inMemoryAppContainer(purchases = PurchasesRepository(purchases)))
+        show(FakeAds(), inMemoryAppContainer(records = played(), purchases = PurchasesRepository(purchases)))
         assertEquals(1, coloursDrawn())
         assertEquals(false, adShown())
 
@@ -145,7 +163,7 @@ class AdBannerTest : UiTest() {
     @Test
     fun `a buyer's page is drawn once the purchases have been read - and no slot ever comes`() = uiTest {
         val purchases = SlowPreferences()
-        show(FakeAds(), inMemoryAppContainer(purchases = PurchasesRepository(purchases)))
+        show(FakeAds(), inMemoryAppContainer(records = played(), purchases = PurchasesRepository(purchases)))
         assertEquals(1, coloursDrawn())
 
         purchases.answer(preferencesOf(booleanPreferencesKey(Entitlement.NO_ADS.id) to true))

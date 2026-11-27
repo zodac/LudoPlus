@@ -37,6 +37,7 @@ import net.zodac.ludoplus.purchases.Entitlement
 import net.zodac.ludoplus.purchases.PurchasesRepository
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 /**
  * The app's long-lived objects, built once per process by the platform's entry point and handed to
@@ -80,6 +81,15 @@ class AppContainer(
 
     /** Whether the player has had the ads removed, loaded with the container so the first page is laid out for it: null until then. */
     val adsRemoved: StateFlow<Boolean?> = purchasesRepository.has(Entitlement.NO_ADS).stateIn(scope, SharingStarted.Eagerly, null)
+
+    /**
+     * Whether a person has finished a game on this device ([GameRecordRepository.hasFinishedGame]), which the ad banner
+     * waits for: read again with each write to the records, and loaded with the container as [adsRemoved] is. Null until
+     * then; a read that fails counts as none.
+     */
+    val gameFinished: StateFlow<Boolean?> =
+        gameRecordRepository.writes.map { orNullOnFailure { gameRecordRepository.hasFinishedGame() } ?: false }
+            .distinctUntilChanged().stateIn(scope, SharingStarted.Eagerly, null)
 
     /** The one way an achievement is earned, shared by every screen - see [AchievementUnlocker]. */
     val achievementUnlocker: AchievementUnlocker = AchievementUnlocker(achievementsRepository, ownsAllStyles)

@@ -8,15 +8,22 @@
 - **Where**: at the foot of every page but the game's (Game Over included) and the tutorial's, under the page rather
     than over it, as wide as the screen and as tall as AdMob's anchored adaptive banner for that width. The page above it
     leaves the navigation bar's inset to the banner, which sits above the bar.
+- **Not before a first game**: no banner, nor its slot, until a person has finished a game on the device (the
+    maintainer, 2026-11-28): a game record exists (`GameRecordRepository.hasFinishedGame`, the House Rules card's
+    test too; `AppContainer.gameFinished`, read with the container and again with each write to the records). A game of
+    the computer's players alone records nothing, and the tutorial isn't a game. That first game ends on the game's page,
+    which has no banner, so the slot is there when the next page comes. Emptying the records (a reset) takes it away
+    again until the next game.
 - **Its slot is there from the first frame**, empty (the page's surface colour) until the ad comes, so no page moves for
-    it: wherever there's an ad network (`Ads.available`, known at launch) and ads aren't removed. The slot stays, empty,
+    it: wherever there's an ad network (`Ads.available`, known at launch) ads aren't removed, and a game has been finished. The slot stays, empty,
     while no ad can be shown (offline, or no consent yet).
 - **Under the achievement banners**: they're windows of their own at the foot of the screen, so they cover it. While
     any is up (`AchievementBannersShowing`, set by `AchievementBannerHost`), a layer over the ad takes every touch, so a
     tap meant for the achievement can't open an ad (the maintainer's ask).
 - **Gone** with "Remove ads" or the combined purchase (`Entitlement.NO_ADS`, `PURCHASES.md`). The cached
-    entitlement is read with the container (`AppContainer.adsRemoved`), and no page is drawn until it has been, so a buyer
-    never sees the slot come and go, nor anyone else the page move. A read that fails counts as not removed.
+    entitlement is read with the container (`AppContainer.adsRemoved`), and no page is drawn until it and
+    `gameFinished` have been, so a buyer never sees the slot come and go, nor anyone else the page move. A read of the
+    purchases that fails counts as not removed; of the records, as no game finished.
 - **The github app never has ads**: no SDK, no `INTERNET`, no `AD_ID` (`GithubFlavourTest`).
 - **TalkBack** reads the ad as AdMob's own view presents it; nothing of the app's is added.
 
@@ -62,7 +69,7 @@ app/android/src/play/.../ads/AdMobAds   the only com.google.android.gms.ads and 
     is credited in `app/licensing/libraries/`.
 - **The slot's height** is AdMob's own sum over the screen's width (`AdSize`), which needs no started SDK; the `AdView` is
     made only once the SDK has started.
-- **Tests**: `AdBannerTest` (where the slot is, there from the first frame, gone for a buyer, untouchable under an
+- **Tests**: `AdBannerTest` (where the slot is, none before a first game, there from the first frame, gone for a buyer, untouchable under an
     achievement banner), `AdMobAdsTest` (the slot's height before AdMob starts), `PlayFlavourTest`, `GithubFlavourTest`.
 
 ## The maintainer's steps
