@@ -47,7 +47,7 @@ class OnlineLinksTest : UiTest() {
         compose.setContent {
             CompositionLocalProvider(LocalGameServices provides services) { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
         }
-        compose.waitUntil { compose.onAllNodes(hasText("fastest wins", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil { compose.onAllNodes(hasContentDescription("Leaderboard, ", substring = true) and hasClickAction()).fetchSemanticsNodes().isNotEmpty() }
     }
 
     @Test

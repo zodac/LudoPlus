@@ -502,12 +502,6 @@
 
     <!-- The Leaderboard (ui/records/LeaderboardScreen.kt): each mode's fastest wins. -->
     <string name="leaderboard_title">Leaderboard</string>
-    <!-- Above the table. %1$s is the game mode's name. -->
-    <string name="leaderboard_heading">%1$s: fastest wins</string>
-    <!-- The same, for Survival: the most tiles the winner's pawns travelled. -->
-    <string name="leaderboard_heading_travelled">%1$s: furthest travelled</string>
-    <!-- The same, for Colour Rush: the most tiles the winner held. -->
-    <string name="leaderboard_heading_squares">%1$s: most tiles</string>
     <!-- A Leaderboard with no wins for the player count picked. %1$s is the game mode's name, %2$d the count (2 to 8). -->
     <plurals name="leaderboard_empty_players">
         <item quantity="one">No wins in %1$s with %2$d player yet. Win a game to set a time.</item>

@@ -35,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,9 +51,6 @@ import net.zodac.ludoplus.resources.gameover_squares
 import net.zodac.ludoplus.resources.gameover_turns
 import net.zodac.ludoplus.resources.leaderboard_captures
 import net.zodac.ludoplus.resources.leaderboard_empty_players
-import net.zodac.ludoplus.resources.leaderboard_heading
-import net.zodac.ludoplus.resources.leaderboard_heading_squares
-import net.zodac.ludoplus.resources.leaderboard_heading_travelled
 import net.zodac.ludoplus.resources.leaderboard_player
 import net.zodac.ludoplus.resources.leaderboard_title
 import net.zodac.ludoplus.resources.leaderboard_squares
@@ -133,7 +129,6 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit, drift
         key(mode) {
             RecordsList { width ->
                 val compact = width < columnsWidth
-                item(key = "heading") { BoardHeading(mode, modifier = Modifier.padding(bottom = PART_GAP)) }
                 if (!landscape) {
                     item(key = "counts") { Box(modifier = Modifier.padding(bottom = PART_GAP)) { counts(Modifier) } }
                 }
@@ -159,23 +154,6 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit, drift
             }
         }
     }
-}
-
-/** What [mode]'s board ranks, a heading: "Classic: fastest wins". */
-@Composable
-private fun BoardHeading(mode: GameMode, modifier: Modifier) {
-    val heading = when (mode.ranking) {
-        LeaderboardRanking.FEWEST_TURNS -> Res.string.leaderboard_heading
-        LeaderboardRanking.MOST_SQUARES_MOVED -> Res.string.leaderboard_heading_travelled
-        LeaderboardRanking.MOST_SQUARES -> Res.string.leaderboard_heading_squares
-    }
-    Text(
-        text = stringResource(heading, stringResource(mode.displayName)),
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.primary,
-        textAlign = TextAlign.Center,
-        modifier = modifier.fillMaxWidth().semantics { heading() },
-    )
 }
 
 /** A piece of the table's card: rounded at the top when it's the [first], and at the bottom when it's the [last]. */

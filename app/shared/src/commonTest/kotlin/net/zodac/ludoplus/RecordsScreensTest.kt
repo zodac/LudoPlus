@@ -87,7 +87,7 @@ class RecordsScreensTest : UiTest() {
     fun `the Leaderboard's drop-down is one control with its value and state - its menu every mode, the one on view selected`() = uiTest(TestScreen(411, 891)) {
         val viewModel = LeaderboardViewModel(records())
         showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
-        compose.waitUntil { compose.onAllNodes(hasText("Classic: fastest wins")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil { compose.onAllNodes(hasContentDescription("Leaderboard, Classic") and hasClickAction()).fetchSemanticsNodes().isNotEmpty() }
         checkDropDown("Leaderboard", "Classic", MODE_NAMES)
     }
 
@@ -113,7 +113,7 @@ class RecordsScreensTest : UiTest() {
         compose.onNode(hasContentDescription("1st, P1", substring = true)).assertDoesNotExist()
         pickMode("Leaderboard", from = "Classic", name = "Portals")
         compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Q1, 21 turns, 1 capture")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Portals: fastest wins").assertIsDisplayed()
+        field("Leaderboard", "Portals").assertIsDisplayed()
     }
 
     @Test
@@ -121,7 +121,7 @@ class RecordsScreensTest : UiTest() {
         val repository = records(row("Alex", 1, 38, 4, 1), row("Sam", 1, 41, 1, 2), row("Sam", 2, 30, 9, 3))
         val viewModel = LeaderboardViewModel(repository)
         showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
-        compose.waitUntil { compose.onAllNodes(hasText("Classic: fastest wins")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil { compose.onAllNodes(hasContentDescription("Leaderboard, Classic") and hasClickAction()).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasContentDescription("1st, Alex, 38 turns, 4 captures")).assertExists()
         compose.onNode(hasContentDescription("2nd, Sam, 41 turns, 1 capture")).assertExists()
         // Sam's loss isn't a win: two rows.
@@ -154,7 +154,7 @@ class RecordsScreensTest : UiTest() {
         val viewModel = LeaderboardViewModel(repository, MutableStateFlow(GameMode.PORTALS))
         showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
         compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Sam, 22 turns, 1 capture")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Portals: fastest wins").assertExists()
+        field("Leaderboard", "Portals").assertExists()
         pickMode("Leaderboard", from = "Portals", name = "Classic")
         compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Alex, 38 turns, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasContentDescription("1st, Sam", substring = true)).assertDoesNotExist()
@@ -169,7 +169,7 @@ class RecordsScreensTest : UiTest() {
         compose.waitUntil { compose.onAllNodes(hasContentDescription("1st, Jo, 24 tiles, 4 captures")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasContentDescription("2nd, Sam, 24 tiles, 2 captures")).assertExists()
         compose.onNode(hasContentDescription("3rd, Alex, 1 tile, 9 captures")).assertExists()
-        compose.onNodeWithText("Colour Rush: most tiles").assertExists()
+        compose.onNodeWithText("Tiles", useUnmergedTree = true).assertExists()
 
         val statistics = StatisticsViewModel(repository, MutableStateFlow(ModePage.Mode(GameMode.COLOUR_RUSH)))
         showcase.show { LudoPlusTheme { StatisticsScreen(statistics, onBack = {}) } }
@@ -189,7 +189,6 @@ class RecordsScreensTest : UiTest() {
         // A win from before the distance was kept: last, a dash for the eye.
         compose.onNode(hasContentDescription("4th, Kim, distance not recorded, 12 captures")).assertExists()
         compose.onNode(hasText("–", substring = false), useUnmergedTree = true).assertExists()
-        compose.onNodeWithText("Survival: furthest travelled").assertExists()
         compose.onNodeWithText("Distance", useUnmergedTree = true).assertExists()
 
         val statistics = StatisticsViewModel(repository, MutableStateFlow(ModePage.AllModes))
@@ -263,7 +262,7 @@ class RecordsScreensTest : UiTest() {
     fun `in landscape the Leaderboard's counts share the drop-down's row - over a table at most 640dp wide`() = uiTest(TestScreen(891, 411)) {
         val viewModel = LeaderboardViewModel(records(row("Alex", 1, 38, 4, 1), row("Jo", 1, 42, 2, 2)))
         showcase.show { LudoPlusTheme { LeaderboardScreen(viewModel, onBack = {}) } }
-        compose.waitUntil { compose.onAllNodes(hasText("Classic: fastest wins")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil { compose.onAllNodes(hasContentDescription("Leaderboard, Classic") and hasClickAction()).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasContentDescription("1st, Alex, 38 turns, 4 captures")).assertIsDisplayed()
         val picker = field("Leaderboard", "Classic").fetchSemanticsNode().boundsInRoot
         val count = compose.onNode(hasContentDescription("4 players")).fetchSemanticsNode().boundsInRoot
