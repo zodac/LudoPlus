@@ -203,6 +203,12 @@ Play's overlay: an edge tab that slides out achievements, streaks, offers and re
     would cover the back arrow. To check on a Play install ("Release"). Positions are physical edges (the same in
     Arabic), and a player's own drag outranks them. **Snooze 300s** in a player's first session.
 - No Sidekick SDK: that's for APKs. Play adds Sidekick to an uploaded bundle.
+- **Turning it on**: Play Console > Testing > Advanced settings > Play Games Sidekick tab, "Automatically make Sidekick
+    on by default for new app bundles you upload". Only bundles uploaded afterwards get it; a closed or internal
+    release can also tick "Sidekick is on by default" as it's created.
+- **A tester sees it** only with Play Store's developer options on: Play Store > profile > Settings > About, tap Play
+    Store version 7 times, then General > Developer options > Play Games Sidekick on. Players of a production release
+    see it without that. It also needs Android 13+, 3 GB+ RAM, a gamer profile, and an install from Play.
 
 ## Play Console
 
@@ -211,12 +217,20 @@ Play's overlay: an edge tab that slides out achievements, streaks, offers and re
     Games Services SDK to your APK") until it has a bundle carrying the SDK and the project id: a release with the id,
     uploaded to the internal track. Setting it up:
     1. Create the Play Games Services project, turn on Saved Games, and put its project id in `games-ids.xml`.
-    2. Add an Android credential for each signing key's SHA-1: Play's app signing key (every install from a Play track)
-        and the upload key (the `RELEASE_KEY*` secrets).
-    3. **Never the debug key** (`app/android/debug.keystore`, committed to the public repo): with a credential, anyone
+    2. Set up the linked Google Cloud project's OAuth consent screen (External, no scopes) and publish it, or list every
+        tester under its test users.
+    3. Add an Android credential for each signing key's SHA-1. There are three (2026-11-27):
+        - `C3:F0:1D:C8:…:E9:6A`, App integrity's classic app signing key.
+        - `27:48:73:23:E9:F7:B8:E2:0E:25:3B:E0:14:BF:EE:15:07:4B:BF:CD`, the key the alpha track's installs are actually
+            signed with (`CN=Android, O=Google Inc.`, Google's own). App integrity doesn't list it, so only the
+            installed APK shows it (`apksigner verify --print-certs`).
+        - `FD:20:76:DD:…:69:40`, the upload key (the `RELEASE_KEY*` secrets), for a bundle installed without Play.
+    4. **Never the debug key** (`app/android/debug.keystore`, committed to the public repo): with a credential, anyone
         could build the app from changed source and post any score or unlock to the published boards.
   A build whose key has no credential fails sign-in with Google's `DEVELOPER_ERROR`, which only logcat shows (its
   `PlayGamesServices[SignInAuthenticator]` lines print the build's SHA-1); the app sees only "not authenticated".
+  Saved Games left off lets sign-in through, but every sync fails ("Cannot use snapshots without enabling the 'Saved
+  Game' feature", in logcat), so the card says it "couldn't reach" Play Games.
 - **Sheets**: `scripts/export-play-console.sh` writes the gitignored `assets/play-console/`:
     - `achievements/achievements-import-<timestamp>.zip` for Achievements > Import achievements (metadata, icon
         mappings, icons; no header rows, keyed by English name). English alone for now.
