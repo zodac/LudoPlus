@@ -11,7 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -43,9 +43,9 @@ class StrandedWriteTest {
         // Asked from "main", which then stops running anything.
         CoroutineScope(main).launch(start = CoroutineStart.UNDISPATCHED) { store.edit { it[key] = 1 } }
         main.dead = true
-        withTimeout(10_000) {
-            launch(Dispatchers.Default) { store.edit { it[key] = 2 } }.join()
-            assertEquals(2, store.data.first()[key])
-        }
+        // Write 1 still runs (on the store's own context), in no set order with write 2, so the file may end on either:
+        // what's checked is that write 2 is made, from what it returns rather than from the file.
+        val written = withTimeout(10_000) { async(Dispatchers.Default) { store.edit { it[key] = 2 } }.await() }
+        assertEquals(2, written[key])
     }
 }
