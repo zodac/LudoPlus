@@ -344,6 +344,9 @@ turned so red's yard is nearest and flattened into perspective (0.56), narrower 
     defaults while a pick is locked (the maintainer, 2026-11-23). The feature graphic passes the defaults.
 - It's held invisible, still taking its space, until the picks load, so it never flashes the defaults (`AppLogoTest`).
 - The art is decoration (`clearAndSetSemantics`): TalkBack hears only "LudoPlus", as a heading.
+- A debug build has a small "(d)" after the wordmark (`debugMark`, from `BuildInfo.isDebug`; the maintainer,
+    2026-11-28), hung off the name's end on its baseline so the name stays centred, for the eye only: TalkBack still
+    hears just "LudoPlus". Release builds and the store art have none.
 - **The pawn hops when tapped** (an Easter egg, 2026-11-23): three hops where it stands, each the board's hop from
     square to square (`HOP_HEIGHT`, `HOP_SWELL`, its ground shadow, `PAWN_STEP_MILLIS` each), on a layer of its own over
     the board's, at the Menus & pages pace. Under reduced motion it stays still. Either way the tap earns Can't Wait To Get

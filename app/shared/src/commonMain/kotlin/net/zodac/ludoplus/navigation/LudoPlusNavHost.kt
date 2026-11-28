@@ -129,6 +129,8 @@ private fun NavGraphBuilder.pages(navController: NavHostController, container: A
                 onSettings = { navigate(Screen.SETTINGS) },
                 // The logo's board and pawn in the player's picks; none until they've loaded.
                 logoTheme = remember(savedStyles) { savedStyles?.visualTheme },
+                // A debug build's "(d)" after the name.
+                debugBuild = container.buildInfo.isDebug,
                 // The Easter egg in the logo: its pawn, tapped, hops.
                 onLogoPawnTapped = { scope.launch { container.achievementUnlocker.unlock(setOf(Achievement.CANT_WAIT_TO_GET_GOING)) } },
             )

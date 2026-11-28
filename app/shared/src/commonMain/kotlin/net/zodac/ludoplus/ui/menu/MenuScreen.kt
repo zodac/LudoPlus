@@ -84,6 +84,7 @@ fun MenuScreen(
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
     logoTheme: GameVisualTheme? = GameVisualTheme(),
+    debugBuild: Boolean = false,
     onLogoPawnTapped: () -> Unit = {},
 ) {
     // The menu alone has its backdrop drifting; every other screen keeps it still.
@@ -116,7 +117,7 @@ fun MenuScreen(
             MenuLayout(
                 pageHeight = LocalPageContentHeight.current,
                 landscape = landscape,
-                logo = { AppLogo(logoTheme, onPawnTapped = onLogoPawnTapped) },
+                logo = { AppLogo(logoTheme, debugMark = debugBuild, onPawnTapped = onLogoPawnTapped) },
                 rows = {
                     // One filled button for the primary action and tonal buttons for the rest: M3's
                     // emphasis hierarchy, which also stops five identical slabs competing for the eye.

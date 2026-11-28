@@ -1,10 +1,12 @@
 package net.zodac.ludoplus
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toPixelMap
@@ -23,6 +25,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import net.zodac.ludoplus.ui.common.AppLogo
+import net.zodac.ludoplus.ui.common.DEBUG_MARK_TAG
 import net.zodac.ludoplus.ui.common.LOGO_PAWN_HOP_MILLIS
 import net.zodac.ludoplus.ui.common.LocalReduceMotion
 import net.zodac.ludoplus.ui.style.BoardStyles
@@ -44,6 +47,20 @@ class AppLogoTest : UiTest() {
             generateSequence(listOf(node)) { level -> level.flatMap { it.children }.ifEmpty { null } }.flatten().toList()
         }.flatMap { it.config.getOrElse(SemanticsProperties.Text) { emptyList() } + it.config.getOrElse(SemanticsProperties.ContentDescription) { emptyList() } }
         assertEquals(listOf("LudoPlus"), spoken.map { it.toString() })
+    }
+
+    @Test
+    fun `a debug build's logo has a small (d) after the name - for the eye only - and a release build's none`() = uiTest {
+        var debug by mutableStateOf(true)
+        // The mark hangs off the name's end, outside the logo's own width, as on the menu's full-width page.
+        compose.setContent { LudoPlusTheme { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { AppLogo(GameVisualTheme(), debugMark = debug) } } }
+        compose.onNodeWithTag(DEBUG_MARK_TAG, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNode(hasText("(d)", substring = true), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNode(isHeading and hasText("LudoPlus")).assertIsDisplayed()
+
+        debug = false
+        compose.waitForIdle()
+        compose.onNodeWithTag(DEBUG_MARK_TAG, useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

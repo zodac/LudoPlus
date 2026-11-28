@@ -24,6 +24,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -31,6 +34,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -103,6 +107,12 @@ internal val categoryHeaderStyle: TextStyle
 /** Whether `sora.ttf` has a glyph for this character - printable ASCII or Latin-1, as cut (see [SoraFontFamily]). */
 internal fun Char.isInSoraFont(): Boolean = this in ' '..'~' || this in '\u00A0'..'\u00FF'
 
+/** The test tag on a debug build's "(d)" after the logo's name. */
+const val DEBUG_MARK_TAG = "logo_debug_mark" // i18n: not translated - a test tag, never shown
+
+/** The space between the logo's name and a debug build's "(d)". */
+private val DEBUG_MARK_GAP = 4.dp
+
 /** The logo's art, wide by tall: the tilted board's diamond, with the pawn standing up out of it. */
 private val LOGO_ART_WIDTH = 200.dp
 private val LOGO_ART_HEIGHT = 112.dp
@@ -135,21 +145,46 @@ private const val PAWN_TAP_REACH = 1.2f
  *
  * With no [theme] (the picks not loaded yet), the art is held invisible, still taking its space, so it never flashes the
  * defaults. The art is decoration, so a screen reader hears only the name, as a heading.
+ *
+ * With [debugMark] (a debug build), a small "(d)" follows the name, for the eye only.
  */
 @Composable
-fun AppLogo(theme: GameVisualTheme?, modifier: Modifier = Modifier, onPawnTapped: (() -> Unit)? = null) {
+fun AppLogo(theme: GameVisualTheme?, modifier: Modifier = Modifier, debugMark: Boolean = false, onPawnTapped: (() -> Unit)? = null) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         val art = Modifier.size(LOGO_ART_WIDTH, LOGO_ART_HEIGHT).clearAndSetSemantics {}
         if (theme == null) Spacer(art) else LogoArt(theme.board, theme.pawns, onPawnTapped, art)
-        Text(
-            text = stringResource(Res.string.app_name),
-            modifier = Modifier.padding(top = 4.dp).semantics { heading() },
-            style = MaterialTheme.typography.displayMedium,
-            fontFamily = SoraFontFamily,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center,
-        )
+        // The name alone is measured, so it stays centred: the mark hangs off its end, on its baseline.
+        Layout(
+            modifier = Modifier.padding(top = 4.dp),
+            content = {
+                Text(
+                    text = stringResource(Res.string.app_name),
+                    modifier = Modifier.semantics { heading() },
+                    style = MaterialTheme.typography.displayMedium,
+                    fontFamily = SoraFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                )
+                if (debugMark) {
+                    Text(
+                        text = "(d)", // i18n: not translated - a debug-build developer mark
+                        modifier = Modifier.testTag(DEBUG_MARK_TAG).clearAndSetSemantics {},
+                        style = MaterialTheme.typography.titleMedium,
+                        fontFamily = SoraFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            },
+        ) { measurables, constraints ->
+            val name = measurables[0].measure(constraints)
+            val mark = measurables.getOrNull(1)?.measure(Constraints())
+            layout(name.width, name.height) {
+                name.place(0, 0)
+                mark?.place(name.width + DEBUG_MARK_GAP.roundToPx(), name[FirstBaseline] - mark[FirstBaseline])
+            }
+        }
     }
 }
 
