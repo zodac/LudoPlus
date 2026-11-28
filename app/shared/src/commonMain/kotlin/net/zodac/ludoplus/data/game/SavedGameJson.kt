@@ -207,6 +207,8 @@ object SavedGameJson {
         if (state.lostSquares.isNotEmpty()) put("lostSquares", jsonInts(state.lostSquares.sorted()))
         if (state.justLost.isNotEmpty()) put("justLost", jsonInts(state.justLost))
         if (state.suddenDeathTurns > 0) put("suddenDeathTurns", state.suddenDeathTurns)
+        // The round sudden death came in: absent before it has, or where a game saved before it was kept.
+        state.overtimeRound?.let { put("overtimeRound", it) }
         if (state.knockedOut.isNotEmpty()) put("knockedOut", jsonInts(state.knockedOut))
         // Over: never saved, but a Nearby host sends its guests the game's end (`.claude/NETPLAY.md`).
         if (state.isFinished) put("finished", true)
@@ -301,10 +303,9 @@ object SavedGameJson {
         val lostSquares = if ("lostSquares" in obj) obj.array("lostSquares").ints().toSet() else emptySet()
         val justLost = if ("justLost" in obj) obj.array("justLost").ints() else emptyList()
         val suddenDeathTurns = obj.intOrNull("suddenDeathTurns") ?: 0
-        require(suddenDeathTurns == 0 || (suddenDeathTurns > 0 && rules.suddenDeath && roundsPlayed >= rules.suddenDeathRound(GameRules.NOWHERE_SAFE_STAGE, playerCount))) {
-            "Turns of sudden death before it came"
-        }
-        require(lostSquares.isEmpty() || suddenDeathTurns >= Cataclysm.STARTS + Cataclysm.TURNS) { "Squares lost before the Cataclysm" }
+        val overtimeRound = obj.intOrNull("overtimeRound")
+        require(overtimeRound == null || (rules.suddenDeath && overtimeRound in 0..roundsPlayed)) { "Sudden death came after the rounds played" }
+        require(lostSquares.isEmpty() || suddenDeathTurns >= Cataclysm.STARTS) { "Squares lost before the Cataclysm" }
         require(lostSquares.all { it in 0..<board.trackLength } && lostSquares.containsAll(justLost) && board.trackLength - lostSquares.size > rules.dieFaces) {
             "The squares lost don't fit the track"
         }
@@ -312,6 +313,11 @@ object SavedGameJson {
         val knockedOut = if ("knockedOut" in obj) obj.array("knockedOut").ints() else emptyList()
         require(knockedOut.distinct() == knockedOut && knockedOut.toSet() == players.indices.filter { players[it].pawnsLeft == 0 }.toSet()) {
             "The players knocked out aren't those with no pawn left"
+        }
+        // Sudden death's second stage comes sooner as players are knocked out, and the Cataclysm at once with the last pawns.
+        val secondStage = rules.suddenDeathRound(GameRules.NOWHERE_SAFE_STAGE, playerCount - knockedOut.size)
+        require(suddenDeathTurns == 0 || (suddenDeathTurns > 0 && rules.suddenDeath && (roundsPlayed >= secondStage || players.sumOf { it.pawnsLeft } <= Cataclysm.LAST_PAWNS))) {
+            "Turns of sudden death before it came"
         }
         val powerUps = if (rules.powerUps) {
             obj.objectList("powerUps").associate { it.int("square") to storedId<PowerUp>(it.string("kind")) }
@@ -374,6 +380,7 @@ object SavedGameJson {
                 lostSquares = lostSquares,
                 justLost = justLost,
                 suddenDeathTurns = suddenDeathTurns,
+                overtimeRound = overtimeRound,
                 seed = seed,
                 lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
             )
@@ -413,6 +420,7 @@ object SavedGameJson {
             lostSquares = lostSquares,
             justLost = justLost,
             suddenDeathTurns = suddenDeathTurns,
+            overtimeRound = overtimeRound,
             seed = seed,
             lastEvent = obj.objOrNull("lastEvent")?.let { decodeEvent(it, playerCount) },
         )

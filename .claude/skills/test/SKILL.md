@@ -46,13 +46,13 @@ the `code-quality-config` submodule:
 
 ## While iterating
 
-| What | Command |
-| --- | --- |
-| One shared test as Android runs it (`commonTest`, `androidHostTest`; Robolectric for the UI) | `./gradlew -q :app:shared:testAndroidHostTest --tests '*BoardSemanticsTest'` |
-| One app test (`app/android/src/test`, or `src/testPlay`) | `./gradlew -q :app:android:testPlayDebugUnitTest --tests '*MainActivitySmokeTest'` |
-| One in the github app (`src/testGithub`, or `src/test` as the github app runs it) | `./gradlew -q :app:android:testGithubDebugUnitTest --tests '*GithubFlavourTest'` |
-| One test method | `--tests '*BoardSemanticsTest.a score box*'` |
-| Lint per module | `./gradlew -q :app:shared:lint :app:android:lintPlayDebug :app:android:lintGithubDebug` |
+| What                                                                                         | Command                                                                                 |
+|----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| One shared test as Android runs it (`commonTest`, `androidHostTest`; Robolectric for the UI) | `./gradlew -q :app:shared:testAndroidHostTest --tests '*BoardSemanticsTest'`            |
+| One app test (`app/android/src/test`, or `src/testPlay`)                                     | `./gradlew -q :app:android:testPlayDebugUnitTest --tests '*MainActivitySmokeTest'`      |
+| One in the github app (`src/testGithub`, or `src/test` as the github app runs it)            | `./gradlew -q :app:android:testGithubDebugUnitTest --tests '*GithubFlavourTest'`        |
+| One test method                                                                              | `--tests '*BoardSemanticsTest.a score box*'`                                            |
+| Lint per module                                                                              | `./gradlew -q :app:shared:lint :app:android:lintPlayDebug :app:android:lintGithubDebug` |
 
 Failures and `println` output are in `app/android/build/test-results/test{Play,Github}DebugUnitTest/TEST-*.xml` and
 `app/shared/build/test-results/testAndroidHostTest/TEST-*.xml`. Grep for `<failure`; output is under `system-out`.

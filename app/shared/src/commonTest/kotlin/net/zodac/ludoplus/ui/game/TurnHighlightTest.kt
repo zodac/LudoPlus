@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
@@ -21,7 +22,9 @@ import net.zodac.ludoplus.UiTest
 import net.zodac.ludoplus.game.GameState
 import net.zodac.ludoplus.game.TurnPhase
 import net.zodac.ludoplus.model.GameMode
+import net.zodac.ludoplus.model.PawnPosition.Companion.OUT_PROGRESS
 import net.zodac.ludoplus.model.PlayerColour
+import net.zodac.ludoplus.ui.theme.BoardEmptySeat
 import net.zodac.ludoplus.ui.theme.LudoPlusTheme
 import net.zodac.ludoplus.ui.theme.color
 
@@ -50,6 +53,26 @@ class TurnHighlightTest : UiTest() {
         held = null
         state = state.copy(current = 0, phase = TurnPhase.Finished)
         assertClose(red, redYardEdge(), "Game over: no ring")
+    }
+
+    @Test
+    fun `a knocked-out player's yard fades most of the way to grey - some of its colour kept - once the move has played out`() = uiTest {
+        val red = PlayerColour.defaultFor(0).color
+        val new = GameState.new(GameMode.SURVIVAL, 4, first = 1)
+        val out = new.copy(players = new.players.mapIndexed { i, it -> if (i == 0) it.copy(pawns = List(6) { OUT_PROGRESS }) else it }, knockedOut = listOf(0))
+        var state by mutableStateOf(new)
+        compose.setContent {
+            LudoPlusTheme {
+                LudoBoard(state, List(4) { PlayerColour.defaultFor(it) }, emptyList(), {}, Modifier.size(300.dp).testTag(ART))
+            }
+        }
+        fun redYardEdge(): Color = pixel(0.1f / 15, 12f / 15)
+
+        assertClose(red, redYardEdge(), "In the game: red's yard as it is")
+        state = out
+        val faded = redYardEdge()
+        assertClose(lerp(red, BoardEmptySeat, 0.75f), faded, "Knocked out: faded")
+        assertTrue(faded.red - faded.blue > 0.05f, "Still reddish, was $faded")
     }
 
     @Test

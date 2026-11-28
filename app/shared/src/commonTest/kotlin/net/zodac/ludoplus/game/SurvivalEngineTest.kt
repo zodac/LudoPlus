@@ -136,6 +136,44 @@ class SurvivalEngineTest {
     }
 
     @Test
+    fun `sudden death comes sooner as players are knocked out - its stages by the players still in`() {
+        assertEquals(45, game(gone, knockedOut = listOf(RED)).roundsToSuddenDeath)
+        assertEquals(40, game(gone, gone, knockedOut = listOf(RED, GREEN)).roundsToSuddenDeath)
+        // Five rounds short of Overtime for four: red's capture knocks green out, and three players' Overtime comes at once.
+        val before = game(one(1), one(42), rounds = 45)
+        assertEquals(0, before.suddenDeathStage)
+        val after = before.play(2)
+        assertEquals(listOf(GREEN), after.knockedOut)
+        assertEquals(1, after.suddenDeathStage)
+        assertEquals(45, after.overtimeRound)
+        assertTrue(after.suddenDeathJustCame)
+        assertEquals(22, after.roundsToSuddenDeath)
+        // Just come for the round it came in, not the next.
+        assertFalse(after.copy(roundsPlayed = 46).suddenDeathJustCame)
+        // Past the second stage for three, Sudden Death comes at once too.
+        assertEquals(2, game(one(1), one(42), rounds = 70).play(2).suddenDeathStage)
+    }
+
+    @Test
+    fun `with two pawns left in the game the Cataclysm comes at once - whatever the rounds - and takes squares as it comes`() {
+        // Red captures green's last on square 3, leaving red's and blue's (on square 7): two pawns.
+        val before = game(one(1), one(42), gone, one(20), knockedOut = listOf(YELLOW))
+        assertEquals(0, before.suddenDeathStage)
+        val after = before.play(2)
+        assertEquals(2, after.players.sumOf { it.pawnsLeft })
+        assertTrue(after.cataclysm)
+        assertTrue(after.suddenDeathJustCame)
+        assertEquals(0, after.overtimeRound)
+        assertTrue(after.justLost.size in 1..3)
+        assertTrue(after.lostSquares.none { it == 3 || it == 7 })
+        assertEquals(5, after.turnsToLoss)
+        // In the middle of red's turn: the capture's roll again comes in the Cataclysm.
+        assertEquals(RED, after.current)
+        // Three left, as with blue's two, isn't few enough.
+        assertFalse(game(one(1), one(42), gone, listOf(20, 20, X, X, X, X), knockedOut = listOf(YELLOW)).play(2).cataclysm)
+    }
+
+    @Test
     fun `sudden death makes the start squares unsafe - then the stars too`() {
         // Green's progress 39 is red's start, square 0, and 47 is the star on square 8. Red's own start stack is what's on 0.
         val onStart = game(start, listOf(38, 0, 0, 0, 0, 0)).copy(current = GREEN)

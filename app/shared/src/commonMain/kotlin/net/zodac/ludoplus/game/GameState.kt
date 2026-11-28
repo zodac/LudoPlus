@@ -46,8 +46,13 @@ data class GameState(
     val lostSquares: Set<Int> = emptySet(),
     /** The squares of [lostSquares] lost as the last action ended a turn: empty where it ended none, or took none. */
     val justLost: List<Int> = emptyList(),
-    /** How many turns have ended since sudden death came to its second stage, which its last comes by ([Cataclysm]). */
+    /**
+     * How many turns have ended since sudden death came to its second stage, which its last comes by ([Cataclysm]): set to
+     * [Cataclysm.STARTS] at once, whatever the rounds, as [Cataclysm.LAST_PAWNS] are left.
+     */
     val suddenDeathTurns: Int = 0,
+    /** Where the rules have sudden death, the round its first stage came in, once it has: null before then, or in a game saved before it was kept. */
+    val overtimeRound: Int? = null,
     /** Where the rules claim squares ([GameRules.claims]), the player each claimed one is, by its absolute track square. */
     val claimed: Map<Int, Int> = emptyMap(),
     /**
@@ -74,8 +79,11 @@ data class GameState(
         get() = when {
             !rules.suddenDeath -> 0
             suddenDeathTurns >= Cataclysm.STARTS -> CATACLYSM_STAGE
-            else -> (1..GameRules.NOWHERE_SAFE_STAGE).count { roundsPlayed >= rules.suddenDeathRound(it, players.size) }
+            else -> (1..GameRules.NOWHERE_SAFE_STAGE).count { roundsPlayed >= rules.suddenDeathRound(it, playersIn) }
         }
+
+    /** How many players are still in the game: those not [knockedOut]. Sudden death's stages come by them ([GameRules.suddenDeathRound]). */
+    val playersIn: Int get() = players.size - knockedOut.size
 
     /** Whether sudden death has come to its last stage, the Cataclysm. */
     val cataclysm: Boolean get() = suddenDeathStage == CATACLYSM_STAGE
@@ -101,7 +109,7 @@ data class GameState(
 
     /** How many rounds are left before sudden death's next stage, or null with none to come by rounds. */
     val roundsToSuddenDeath: Int?
-        get() = (suddenDeathStage + 1).takeIf { rules.suddenDeath && it <= GameRules.NOWHERE_SAFE_STAGE }?.let { rules.suddenDeathRound(it, players.size) - roundsPlayed }
+        get() = (suddenDeathStage + 1).takeIf { rules.suddenDeath && it <= GameRules.NOWHERE_SAFE_STAGE }?.let { rules.suddenDeathRound(it, playersIn) - roundsPlayed }
 
     /** Whether [player]'s pawn [pawn] has a shield. */
     fun isShielded(player: Int, pawn: Int): Boolean = pawn in players[player].shielded
@@ -110,7 +118,7 @@ data class GameState(
     val suddenDeathJustCame: Boolean
         get() = when (suddenDeathStage) {
             0 -> false
-            1 -> roundsPlayed == rules.suddenDeathRound(1, players.size)
+            1 -> roundsPlayed == (overtimeRound ?: rules.suddenDeathRound(1, playersIn))
             GameRules.NOWHERE_SAFE_STAGE -> suddenDeathTurns < JUST_CAME_TURNS
             else -> suddenDeathTurns == Cataclysm.STARTS
         }
@@ -232,6 +240,8 @@ data class GameState(
                 phase = TurnPhase.AwaitingRoll,
                 seed = seed,
             ).let { if (rules.portals) Portals.start(it) else it }.let { if (rules.powerUps) PowerUps.start(it) else it }.let { if (rules.ghosts) Ghosts.start(it) else it }
+                // Few enough pawns that the Cataclysm comes at once.
+                .let { LudoEngine.suddenDeath(it, chances = true) }
         }
     }
 }

@@ -159,23 +159,23 @@ class BoardSemanticsTest : UiTest() {
         compose.onNode(hasContentDescription("home", substring = true, ignoreCase = true)).assertDoesNotExist()
         compose.onNode(hasText("Alex") and stateSays("3 pawns left, playing now, currently 3rd")).assertExists()
         compose.onNode(hasText("Gambit") and stateSays("0 pawns left, 4th place")).assertExists()
-        compose.onNodeWithText("Overtime in 50 rounds: start tiles unsafe.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+        compose.onNodeWithText("Overtime in 45 rounds: start tiles unsafe.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
 
-        // The last three rounds are counted down aloud, and the stage said as it comes.
-        show(state.copy(roundsPlayed = 49))
+        // The last three rounds are counted down aloud, and the stage said as it comes: by the three players still in.
+        show(state.copy(roundsPlayed = 44))
         compose.onNodeWithText("Overtime in 1 round: start tiles unsafe.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
-        show(state.copy(roundsPlayed = 50))
+        show(state.copy(roundsPlayed = 45))
         compose.onNodeWithText("Overtime! Only stars are safe.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
         compose.onNodeWithContentDescription("Tile 1, Red start, Red pawn 1, Red pawn 2").assertExists()
         compose.onNodeWithContentDescription("Tile 9, safe, empty").assertExists()
-        show(state.copy(roundsPlayed = 60))
-        compose.onNodeWithText("Sudden Death in 15 rounds: stars unsafe.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
-        show(state.copy(roundsPlayed = 75))
+        show(state.copy(roundsPlayed = 55))
+        compose.onNodeWithText("Sudden Death in 12 rounds: stars unsafe.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+        show(state.copy(roundsPlayed = 67))
         compose.onNodeWithText("Sudden Death! Nowhere is safe.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
         compose.onNodeWithContentDescription("Tile 9, empty").assertExists()
-        show(state.copy(roundsPlayed = 76, suddenDeathTurns = 6))
+        show(state.copy(roundsPlayed = 68, suddenDeathTurns = 6))
         compose.onNodeWithText("Cataclysm in 4 turns: tiles vanish.").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
-        show(state.copy(roundsPlayed = 76, suddenDeathTurns = 9))
+        show(state.copy(roundsPlayed = 68, suddenDeathTurns = 9))
         compose.onNodeWithText("Cataclysm in 1 turn: tiles vanish.").assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
     }
 

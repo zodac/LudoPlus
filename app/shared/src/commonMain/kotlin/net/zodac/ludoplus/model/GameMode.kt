@@ -266,8 +266,9 @@ data class GameRules(
     fun forPlayers(players: Int): GameRules = copy(board = BoardGeometry.forPlayers(players).copy(endless = board.endless))
 
     /**
-     * How many rounds (a turn for every player still in) are played before sudden death's [stage] comes, in a game of
-     * [players]: 1 makes the start squares unsafe, and 2 the star squares too. Later the more players there are.
+     * How many rounds (a turn for every player still in) are played before sudden death's [stage] comes, with [players]
+     * still in the game: 1 makes the start squares unsafe, and 2 the star squares too. Later the more players there are,
+     * and sooner as each is knocked out.
      */
     fun suddenDeathRound(stage: Int, players: Int): Int {
         val first = SUDDEN_DEATH_ROUNDS + SUDDEN_DEATH_ROUNDS_A_PLAYER * players

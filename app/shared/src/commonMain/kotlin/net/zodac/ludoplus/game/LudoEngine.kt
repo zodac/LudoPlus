@@ -325,7 +325,20 @@ object LudoEngine {
      */
     internal fun moveWithoutChances(state: GameState, move: Move): GameState = move(state, move.pawn, move.owner, move.roll, move.swap, chances = false)
 
-    private fun move(state: GameState, pawn: Int, owner: Int?, die: Int?, swap: PawnRef?, chances: Boolean): GameState {
+    private fun move(state: GameState, pawn: Int, owner: Int?, die: Int?, swap: PawnRef?, chances: Boolean): GameState =
+        suddenDeath(moveOnce(state, pawn, owner, die, swap, chances), chances)
+
+    /**
+     * [state] with sudden death as it stands kept: the round its first stage came in ([GameState.overtimeRound]), and the
+     * Cataclysm come at once as the last pawns are left ([Cataclysm.comeEarly]), with [chances] taking squares as it comes.
+     * A knock-out brings the stages sooner ([GameState.playersIn]), so either can come in the middle of a turn.
+     */
+    internal fun suddenDeath(state: GameState, chances: Boolean): GameState {
+        val come = Cataclysm.comeEarly(state, chances)
+        return if (come.overtimeRound == null && come.suddenDeathStage >= 1) come.copy(overtimeRound = come.roundsPlayed) else come
+    }
+
+    private fun moveOnce(state: GameState, pawn: Int, owner: Int?, die: Int?, swap: PawnRef?, chances: Boolean): GameState {
         val phase = state.phase
         check(phase is TurnPhase.AwaitingMove) { "Not waiting for a move: $phase" }
         // Weighed, a landing and its swap are one.
@@ -542,7 +555,7 @@ object LudoEngine {
             roundsPlayed = if (state.rules.suddenDeath && next <= state.current) state.roundsPlayed + 1 else state.roundsPlayed,
             // The turn that brings sudden death's second stage isn't one of those in it.
             suddenDeathTurns = if (state.suddenDeathStage >= GameRules.NOWHERE_SAFE_STAGE) state.suddenDeathTurns + 1 else state.suddenDeathTurns,
-        ).let { if (chances) Ghosts.afterTurn(it) else it }.let { if (chances && it.cataclysm) Cataclysm.afterTurn(it) else it }.let(::withFreeRelease)
+        ).let { if (chances) Ghosts.afterTurn(it) else it }.let { if (chances && it.cataclysm) Cataclysm.afterTurn(it) else it }.let { suddenDeath(it, chances) }.let(::withFreeRelease)
     }
 
     internal inline fun <T> List<T>.replace(index: Int, change: (T) -> T): List<T> =

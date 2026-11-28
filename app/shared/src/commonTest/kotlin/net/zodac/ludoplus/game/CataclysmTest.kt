@@ -18,11 +18,11 @@ import net.zodac.ludoplus.model.withHouseRules
 /** Survival's last stage: squares vanish from the track, and pawns step over the gaps ([Cataclysm]). */
 class CataclysmTest {
 
-    /** A Survival game with one pawn each, at the progress given, [rounds] in, and [turns] into Sudden Death. */
-    private fun game(vararg at: Int, rounds: Int = 100, turns: Int = 10, lost: Set<Int> = emptySet(), seed: Long = 1): GameState {
+    /** A Survival game with [pawns] each (one by default), at the progress given, [rounds] in, and [turns] into Sudden Death. */
+    private fun game(vararg at: Int, rounds: Int = 100, turns: Int = 10, lost: Set<Int> = emptySet(), seed: Long = 1, pawns: Int = 1): GameState {
         val new = GameState.new(GameMode.SURVIVAL, at.size, rules = GameMode.SURVIVAL.rules.forPlayers(at.size), seed = seed)
         return new.copy(
-            players = new.players.mapIndexed { i, it -> it.copy(pawns = listOf(at[i]) + List(5) { OUT_PROGRESS }) },
+            players = new.players.mapIndexed { i, it -> it.copy(pawns = List(pawns) { at[i] } + List(6 - pawns) { OUT_PROGRESS }) },
             roundsPlayed = rounds,
             lostSquares = lost,
             suddenDeathTurns = turns,
@@ -59,11 +59,11 @@ class CataclysmTest {
     }
 
     @Test
-    fun `the Cataclysm comes ten turns after Sudden Death, however many play - the turn that brings Sudden Death not counted`() {
+    fun `the Cataclysm comes ten turns after Sudden Death, however many play - the turn that brings Sudden Death not counted - and takes squares as it comes`() {
         for (players in listOf(2, 4, 8)) {
             val rules = GameMode.SURVIVAL.rules
             val second = rules.suddenDeathRound(2, players)
-            var state = game(*IntArray(players), rounds = second - 1, turns = 0).copy(current = players - 1).turn()
+            var state = game(*IntArray(players), rounds = second - 1, turns = 0, pawns = 2).copy(current = players - 1).turn()
             assertEquals(second, state.roundsPlayed)
             assertEquals(10, state.turnsToCataclysm, "$players players")
             repeat(9) { state = state.turn() }
@@ -71,14 +71,33 @@ class CataclysmTest {
             assertFalse(state.cataclysm)
             state = state.turn()
             assertTrue(state.cataclysm)
+            assertTrue(state.suddenDeathJustCame)
             assertEquals(5, state.turnsToLoss)
-            assertEquals(emptySet(), state.lostSquares)
+            assertTrue(state.justLost.size in 1..3, "$players players")
+            assertEquals(state.justLost.toSet(), state.lostSquares)
+            assertTrue(state.squares().none { it in state.lostSquares })
         }
         var early = game(0, 0, 0, 0, rounds = 60, turns = 0)
         repeat(8) { early = early.turn() }
         assertEquals(0, early.suddenDeathTurns)
         assertNull(early.turnsToLoss)
         assertFalse(GameState.new(GameMode.CLASSIC, 4).copy(roundsPlayed = 500).cataclysm)
+    }
+
+    @Test
+    fun `a game that starts with two pawns is in the Cataclysm from the start - squares lost as it comes`() {
+        for (seed in 0L..<10) {
+            val duel = GameState.new(GameMode.SURVIVAL, 2, rules = GameMode.SURVIVAL.rules.forPlayers(2).withPawns(1), seed = seed)
+            assertTrue(duel.cataclysm)
+            assertTrue(duel.suddenDeathJustCame)
+            assertEquals(10, duel.suddenDeathTurns)
+            assertTrue(duel.lostSquares.size in 1..3)
+            assertTrue(duel.squares().none { it in duel.lostSquares })
+            assertEquals(0, duel.overtimeRound)
+            assertEquals(5, duel.turnsToLoss)
+        }
+        // Three pawns aren't few enough.
+        assertFalse(GameState.new(GameMode.SURVIVAL, 3, rules = GameMode.SURVIVAL.rules.forPlayers(3).withPawns(1)).cataclysm)
     }
 
     @Test

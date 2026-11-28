@@ -161,14 +161,18 @@ its start square, and the board is endless (`BoardGeometry.endless`): no home co
 progress counting on lap after lap. A captured pawn is `PawnPosition.Out`; a player with none is knocked out
 (`GameState.knockedOut`), placed at once, and passed by; a team lasts while any of its players does. A round is a turn for
 everyone still in (`roundsPlayed`). Sudden death (`suddenDeathStage`) has three stages (the
-maintainer, 2026-11-24): **Overtime**, the start squares unsafe after 30 + 5 rounds a player; **Sudden Death**, the stars
+maintainer, 2026-11-24): **Overtime**, the start squares unsafe after 30 + 5 rounds a player still in; **Sudden Death**, the stars
 too after half as many again; and the **Cataclysm**,
-ten turns after that, however many play (`suddenDeathTurns`; below). So safety is asked of the state (`GameState.isSafe`,
+ten turns after that, however many play (`suddenDeathTurns`; below). The players counted are those not knocked out
+(`GameState.playersIn`; the maintainer, 2026-11-28), so a knock-out brings the stages sooner, and can bring one at once, in
+the middle of a turn: the round Overtime came in is kept (`overtimeRound`) for the line over the board to say so. So safety is asked of the state (`GameState.isSafe`,
 `isSafeFor`), never the board alone. A 6 needn't move a pawn off the start stack (the maintainer's choice): a stack left
 there as sudden death comes can be captured whole. No Home Roll, Out on a 1, Free Start, Three Tries, and No Free Pawn change nothing
 here, so are locked, saying so (`HouseRule.appliesTo`), and not played. The board is drawn with no home, and as sudden death comes without its
 start colours, then its stars (`BoardParts`), under `SurvivalArt.kt`'s arena: crossed swords, then flames, then a skull,
-with a red cross on the squares no longer safe. Yards tally the fallen; cards' dots are the pawns left. The Leaderboard ranks
+with a red cross on the squares no longer safe. A knocked-out player's yard and start square fade 75% of the way to an
+empty seat's grey once the move has played out, keeping some of their colour (`KNOCKED_OUT_FADE`; the maintainer,
+2026-11-28). Yards tally the fallen; cards' dots are the pawns left. The Leaderboard ranks
 the furthest travelled (the maintainer, 2026-11-26): the most squares the winner's pawns walked in the game
 (`PlayerState.squaresMoved`, `Move.walked`: to a portal, not through it, 1 out of the yard; `GameResult.squaresMoved`),
 then captures; a win recorded before 1.2.0 kept them is last, a dash in the column, spoken "distance not recorded". Its
@@ -177,7 +181,9 @@ pawns left, playing now"; the line over the board ("Overtime in 3 rounds: start 
 are safe.") is live in the last three rounds before a stage and as it comes.
 
 **The Cataclysm** (`game/Cataclysm.kt`, `CataclysmTest`; the maintainer, 2026-11-24): two last pawns can chase each other
-round a big board without ever meeting, so the track shrinks. After every fifth turn (anyone's; a run of rolls is one) one to
+round a big board without ever meeting, so the track shrinks. It comes at once, whatever the rounds, as only two pawns
+are left in the game, everyone's together (`Cataclysm.LAST_PAWNS`, `comeEarly`; a game of one pawn each for two starts in it;
+the maintainer, 2026-11-28). As it comes, and after every fifth turn from then (anyone's; a run of rolls is one), one to
 three random squares with no pawn on them vanish (`GameState.lostSquares`, drawn from `seed`), until seven are left: one more
 than the die's faces, so a 6 never comes round to its own square, and a lone rival is always within a roll. Pawns step over
 the gaps (`GameState.stepOn`); progress still counts every square, and a move says which it stepped over (`Move.skipped`,

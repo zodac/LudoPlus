@@ -175,9 +175,9 @@ class RulesTextTest : UiTest() {
             listOf(
                 "In Survival there's no home to reach. Each player's six pawns start out on their start tile and go round the track until one player is left.",
                 "A captured pawn is out of the game. Lose all six and you're out: the last player with a pawn left wins, and everyone else is placed by how long they lasted.",
-                "Start tiles and star tiles are safe at first. In Overtime the start tiles stop being safe, and in Sudden Death the star tiles do too. The line above the board counts the rounds, and with more players it takes longer.",
+                "Start tiles and star tiles are safe at first. In Overtime the start tiles stop being safe, and in Sudden Death the star tiles do too. The line above the board counts the rounds: with more players it takes longer, and each player knocked out brings it sooner.",
                 "On a tile that isn't safe, all your pawns there are captured together, so don't leave them stacked on your start tile when Overtime comes.",
-                "Ten turns after that comes the Cataclysm: after every five turns, up to three tiles with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven tiles left, so nobody can keep away for ever.",
+                "Ten turns after that comes the Cataclysm, or at once when only two pawns are left in the game. As it comes, and after every five turns from then, up to three tiles with no pawn on them vanish, and pawns step over the gaps. The track shrinks until there are only seven tiles left, so nobody can keep away for ever.",
                 "The Leaderboard ranks Survival wins by the furthest travelled: the most tiles the winner's pawns moved.",
             ),
             diagram = "Board: a game of Survival in the Cataclysm. Six tiles of the track have vanished, the start and star tiles are crossed out as no longer safe, and each yard crosses out the pawns its player has lost.",

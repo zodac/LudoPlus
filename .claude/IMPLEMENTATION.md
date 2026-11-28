@@ -427,6 +427,8 @@ count but 4 has a board of its own; one player on two colours was dropped.
     random, as long as before (the maintainer, 2026-11-26).
 - [x] Survival, a mode (the maintainer, 2026-11-24): six pawns each starting out, no home, captured pawns out of the game,
     and stages of sudden death, later the more players there are (Overtime and Sudden Death, then the Cataclysm) (`DESIGN.md`, "Game modes").
+    The stages count the players still in, and the Cataclysm comes at once with two pawns left, taking tiles as it comes
+    (the maintainer, 2026-11-28).
 - [x] Chaos, a mode (the maintainer, 2026-11-24): five power-ups on the track, Double, Shield, Roll Again, Call
     Up, and Swap (`DESIGN.md`, "Game modes"). It reverses the decision above against power-up squares.
 - [x] Haunted House, a mode (the maintainer, 2026-11-24), the seventh, as DiceFive had: ghosts that send pawns back.

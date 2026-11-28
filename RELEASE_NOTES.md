@@ -1,0 +1,5 @@
+- Tuning for `Colour Rush` and `Survival` game modes
+- Added a new pawn icon to replace existing 'peg' style
+- Added `tiles traversed` stat to in-game player stats card
+- Ads not shown until after a game has been completed
+- Minor UI updates to add banner and leaderboard page

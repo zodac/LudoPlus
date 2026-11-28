@@ -237,10 +237,11 @@ class SavedGameJsonTest {
     }
 
     @Test
-    fun `every state of random Survival games comes back as it was saved - rounds - and players knocked out - to the end a host sends`() {
+    fun `every state of random Survival games comes back as it was saved - rounds - the round sudden death came - and players knocked out - to the end a host sends`() {
         val random = Random(23)
         var knockedOut = 0
         var suddenDeath = 0
+        var overtime = 0
         var lost = 0
         repeat(6) {
             var state = GameState.new(GameMode.SURVIVAL, 4)
@@ -249,6 +250,7 @@ class SavedGameJsonTest {
                 assertEquals(saved, SavedGameJson.decode(SavedGameJson.encode(saved)))
                 if (state.knockedOut.isNotEmpty()) knockedOut++
                 if (state.suddenDeathStage == 2) suddenDeath++
+                if (state.overtimeRound != null) overtime++
                 if (state.justLost.isNotEmpty()) lost++
                 state = when (val phase = state.phase) {
                     is TurnPhase.AwaitingMove -> LudoEngine.move(state, phase.moves.random(random))
@@ -270,7 +272,7 @@ class SavedGameJsonTest {
                 else -> LudoEngine.roll(state, random)
             }
         }
-        assert(knockedOut > 0 && suddenDeath > 0 && lost > 0) { "No player knocked out, or no sudden death or lost squares, were saved" }
+        assert(knockedOut > 0 && suddenDeath > 0 && overtime > 0 && lost > 0) { "No player knocked out, or no sudden death, the round it came, or lost squares, were saved" }
     }
 
     @Test

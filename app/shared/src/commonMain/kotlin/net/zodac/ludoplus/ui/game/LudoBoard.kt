@@ -97,13 +97,17 @@ private const val HOME_POP = 0.5f
 private const val TURN_RING_INNER = 0.2f
 private const val TURN_RING_OUTER = 0.26f
 
+/** How far a knocked-out player's yard (and start square) fades towards an empty seat's grey: some of its colour kept. */
+private const val KNOCKED_OUT_FADE = 0.75f
+
 /** How many streaks a capture's burst throws out, and sparks a pawn home's flourish. */
 private const val BURST_STREAKS = 8
 private const val HOME_SPARKS = 10
 
 /**
  * The board for [state]'s players, drawn from its [BoardLayout], with [state]'s pawns on it. [seatColours] colours each
- * seat's yard, start square, home column, and pawns (null for a seat nobody sits at). Until the game is over, the yard of
+ * seat's yard, start square, home column, and pawns (null for a seat nobody sits at); a player knocked out has their yard
+ * and start square faded most of the way to an empty seat's grey, once the move that took their last pawn has played out. Until the game is over, the yard of
  * the player whose [turn] it is has a ring round its inside edge, and that of one with a power-up in force has it, and how
  * many are left ([InForce]). The pawns that [moves] can move
  * are ringed (a partner's too, when the player rolls for one), and a tap near one, or anywhere in its yard, or a screen reader's action on its
@@ -143,6 +147,8 @@ fun LudoBoard(
     val currentSwapping by rememberUpdatedState(swapping)
     // The squares claimed as they're shown: as they were, while a move plays out.
     val shownClaims = remember { arrayOf(state.claimed) }
+    // The players knocked out, as they're shown: likewise.
+    val shownOut = remember { arrayOf(state.knockedOut) }
     // The portals open, as they're shown: likewise, so a pawn goes through the pair it was moved to, which opens somewhere else once it has landed.
     val shownPortals = remember { arrayOf(state.portals) }
     // The power-ups on the track, as they're shown: likewise, but for one taken, which goes with its move.
@@ -197,9 +203,15 @@ fun LudoBoard(
             }
             // A last-standing yard's spots are its tally, drawn with the pawns.
             val spots = if (lastStanding) 0 else pawns
-            val surface = BoardSurface(theme.board, layout, colours, spots, parts)
+            // A knocked-out player's seat faded, painted again as one goes out.
+            if (motion.moving == null) shownOut[0] = state.knockedOut
+            val outSeats = shownOut[0].map { state.players[it].seat }
+            val boardColours = remember(colours, outSeats) {
+                colours.mapIndexed { seat, colour -> if (colour != null && seat in outSeats) lerp(colour, BoardEmptySeat, KNOCKED_OUT_FADE) else colour }
+            }
+            val surface = BoardSurface(theme.board, layout, boardColours, spots, parts)
             PaintedSurface(surface, modifier = Modifier.fillMaxSize().graphicsLayer { }) {
-                with(theme.board) { drawBoard(layout, size.minDimension / layout.size, colours, spots, parts) }
+                with(theme.board) { drawBoard(layout, size.minDimension / layout.size, boardColours, spots, parts) }
             }
             // The arena, drawn again only as sudden death comes on, or takes squares.
             if (lastStanding) {
